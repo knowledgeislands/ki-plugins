@@ -9,7 +9,12 @@ visibility = "public"   # public so Cowork's extraKnownMarketplaces github sourc
 # hand-maintained. So it declares no ki-engineering / ki-skills / ki-agents governance
 # here: those standards are enforced at the source (the harness), not on the projection.
 
-# Two standard checks are deliberately relaxed for this generated projection repo:
+# The standard's topic set (typescript/bun/mcp) describes source repos; this is a plugin projection.
 [ki-repo.checks]
-license = false   # proprietary "all rights reserved" (public-but-not-open, like the harness), not MIT
-topics = false    # the standard's topic set (typescript/bun/mcp) describes source repos; this is a plugin projection
+topics = false
+
+# KNOWN DIVERGENCE (not overridable): ki-repo wants PUBLIC repos under MIT, but this repo
+# projects the proprietary ki-agentic-harness content and keeps its "all rights reserved"
+# LICENSE (public-but-not-open). The audit will report one [license] FAIL until this is
+# resolved — either relicense the projected content, or make the repo private if Cowork can
+# reach a private marketplace source. Left for a deliberate decision, not silently flipped to MIT.
