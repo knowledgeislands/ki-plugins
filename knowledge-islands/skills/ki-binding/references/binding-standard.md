@@ -26,10 +26,10 @@ Two shapes: a **command server** (`command` + `args` + `env`, as above) or a **u
 | Claude Code | `code` | `~/.claude.json` `mcpServers` (in practice: the one `ki-mcporter` url proxy) | file-editable · chezmoi-rendered |
 | Desktop | `desktop` | `~/Library/Application Support/Claude/claude_desktop_config.json` | file-editable · chezmoi-rendered |
 | mcporter | `mcporter` | `~/.mcporter/mcporter.json` `mcpServers` (proxied daemon) | file-editable · chezmoi-rendered |
-| Cowork | `cowork` † | `local-agent-mode-sessions/<account>/<workspace>/cowork_settings.json` (`enabledPlugins`) | gated — external-edit-honoured unverified ‡ |
+| Cowork | `cowork` † | `local-agent-mode-sessions/<account>/<workspace>/cowork_settings.json` (`enabledPlugins`) | file-editable · this skill writes it ‡ |
 | claude.ai | _(none)_ | no local file — Admin Console allowlist | manual-only · documented convention |
 
-† `cowork` becomes an active token once the KI plugin exists (step 6): a server declaring `cowork` is bundled into that plugin. Until the plugin is built, the checker treats a `cowork` token as declared-but-unwired (WARN), never silently rendered. ‡ Gate **PASSED 2026-07-06** (design record Verification log): an external edit to `cowork_settings.json` is honoured on next Cowork launch, so the skill may write `enabledPlugins` / `extraKnownMarketplaces`. What remains for Cowork is the plugin/marketplace packaging (step 6), not the enablement mechanism.
+† The Cowork surface is the KI plugin `knowledge-islands@ki-plugins`, carrying **skills + agents** only. MCP servers are deferred: they are host-local and do not port into Cowork's gVisor sandbox, so a server declaring `cowork` is surfaced by BIND-4 as deferred-not-shipped, never silently bundled. ‡ Gate **PASSED 2026-07-06** (design record Verification log): an external edit to `cowork_settings.json` is honoured on next Cowork launch. The plugin + marketplace repo is **built** (`knowledgeislands/ki-plugins`); this skill registers it under `extraKnownMarketplaces` and toggles `enabledPlugins` via [`conform-cowork.ts`](../scripts/conform-cowork.ts). A full Cowork relaunch applies the change.
 
 ## The Cowork enablement schema (characterized 2026-07-06)
 

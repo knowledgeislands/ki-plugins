@@ -18,7 +18,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, realpathSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -148,17 +148,55 @@ for (const s of SURFACES) {
   }
 }
 
-// BIND-4 — Cowork integrity.
-const coworkServers = [...universe].filter((n) => entries.find((e) => e.name === n)?.clients?.includes('cowork')).sort()
-if (coworkServers.length === 0) {
-  add('PASS', 'BIND-4', 'Cowork not in use — no server declares `cowork` (surface pending its external-edit gate)')
+// BIND-4 — Cowork agreement: the KI plugin is registered + toggled in every workspace.
+// v1 ships a skills+agents plugin (no servers port into the sandbox), so this checks the
+// plugin enablement in cowork_settings.json rather than server rendering. Any server that
+// nonetheless declares `cowork` is surfaced separately, since servers are deferred.
+const COWORK_MARKETPLACE = 'ki-plugins'
+const COWORK_PLUGIN_KEY = `knowledge-islands@${COWORK_MARKETPLACE}`
+const COWORK_REPO = 'knowledgeislands/ki-plugins'
+const coworkBase = join(HOME, 'Library', 'Application Support', 'Claude', 'local-agent-mode-sessions')
+
+function findCoworkSettings(dir: string, depth = 0): string[] {
+  if (!existsSync(dir) || depth > 4) return []
+  const out: string[] = []
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (e.name === 'cowork_settings.json' && e.isFile()) out.push(join(dir, e.name))
+    else if (e.isDirectory() && e.name !== 'cowork_plugins') out.push(...findCoworkSettings(join(dir, e.name), depth + 1))
+  }
+  return out
+}
+
+const coworkFiles = findCoworkSettings(coworkBase)
+if (coworkFiles.length === 0) {
+  add('INFO', 'BIND-4', `no cowork_settings.json found under ${coworkBase} — Cowork surface not present on this machine`)
 } else {
+  const unconformed: string[] = []
+  for (const path of coworkFiles) {
+    const cfg = readJson(path)
+    const enabled = (cfg?.enabledPlugins ?? {}) as Record<string, unknown>
+    const markets = (cfg?.extraKnownMarketplaces ?? {}) as Record<string, unknown>
+    const on = enabled[COWORK_PLUGIN_KEY] === true
+    const registered = (markets[COWORK_MARKETPLACE] as { source?: { repo?: string } })?.source?.repo === COWORK_REPO
+    if (!(on && registered)) unconformed.push(path)
+  }
+  if (unconformed.length === 0)
+    add('PASS', 'BIND-4', `Cowork agrees — ${COWORK_PLUGIN_KEY} registered + enabled in all ${coworkFiles.length} workspace(s)`)
+  else
+    add(
+      'WARN',
+      'BIND-4',
+      `Cowork: ${COWORK_PLUGIN_KEY} not registered/enabled in ${unconformed.length}/${coworkFiles.length} workspace(s) — run conform-cowork.ts (then relaunch Cowork)`
+    )
+}
+
+const coworkServers = [...universe].filter((n) => entries.find((e) => e.name === n)?.clients?.includes('cowork')).sort()
+if (coworkServers.length > 0)
   add(
     'WARN',
     'BIND-4',
-    `${coworkServers.length} server(s) declare \`cowork\` but the enablement gate is unverified: ${coworkServers.join(', ')} — verify cowork_settings.json honours an external edit before wiring enabledPlugins`
+    `${coworkServers.length} server(s) declare \`cowork\` but MCP servers are deferred (host-local, not sandbox-portable): ${coworkServers.join(', ')} — skills+agents port, servers need separate work`
   )
-}
 
 // BIND-3 — compose ki-bootstrap --check for the project's skill half.
 const bootstrap = join(SKILLS_ROOT, 'ki-bootstrap', 'scripts', 'link-skills.ts')

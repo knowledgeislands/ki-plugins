@@ -52,7 +52,6 @@ const OWNER = 'Knowledge Islands'
 
 const PLUGIN_DESCRIPTION =
   'Knowledge Islands governance skills and agents — the ki-* house standards (AUDIT / CONFORM / REFRESH) and the governance agents, generated from the ki-agentic-harness. Skills and agents only; host-local MCP servers are deferred (they do not run in Cowork’s sandbox).'
-const MARKETPLACE_DESCRIPTION = 'The Knowledge Islands skills + agents plugin, generated from the ki-agentic-harness.'
 
 // ── Discover source content ──
 const skillDirs = readdirSync(SKILLS_DIR)
