@@ -1,0 +1,12 @@
+# Mode REFRESH — re-anchor the standard to the latest MCP spec
+
+_On-demand procedure for mcp's REFRESH mode. The cadence and source list are declared in [`sources.md`](sources.md). The full standard lives in [`workspace-mcp-standard.md`](workspace-mcp-standard.md)._
+
+The MCP specification is versioned by date and moves; the in-house standard is built **on top of** it. This mode keeps the standard honest — it pulls the current gold standard and diffs it against what this skill codifies, so the audit never green-lights a repo against a spec that has moved on. Run it on its declared cadence (see [`sources.md`](sources.md)), or when someone asks "is our MCP standard up to date".
+
+1. **Read [the source list](sources.md)** — the tracked authoritative (official MCP spec) + community + in-house sources, each with a `last reviewed` date and what it governs. The Authoritative table names the **latest released** spec version; everything else is house style layered on top.
+2. **Confirm the current spec version**, then re-fetch each source (WebFetch/WebSearch) and **diff against the [standard](workspace-mcp-standard.md) + [rubric](audit-rubric.md) + [`scripts/audit-mcp.ts`](../scripts/audit-mcp.ts)**. Look for: new/changed tool fields (`outputSchema`, `structuredContent`, `icons`, `execution.taskSupport`), changed annotation semantics or defaults, the `isError` vs protocol-error rules, tool-name charset/length bounds, and new security mitigations (esp. the OAuth page — it bears on the gmail / m365 auth-servers).
+3. **Separate spec-driven from house style.** A change is only a new _requirement_ if it traces to the Authoritative table; otherwise it is opinion and must be labelled as such so a protocol "MUST" is never confused with a workspace preference. Where the spec adds something optional (e.g. structured output), codify it as recommended-where-applicable, not mandatory.
+4. **Scan our own repos** for emergent patterns the standard hasn't captured yet (e.g. m365 already returning `structuredContent`) — promote the good ones; flag any that contradict the standard.
+5. **Propose a diff** to the standard, checklist, and (where a check became mechanical) `audit-mcp.ts`. Confirm before writing.
+6. **Update [the source list](sources.md)** — bump each `last reviewed` date, add any new source, retire dead ones, and refresh the `## Last review` block (pinned revision, confirmations, open watch-items). What changed goes in the commit, not a changelog. This step is mandatory: the source list is the skill's memory of where the standard comes from.

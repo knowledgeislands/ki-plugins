@@ -1,0 +1,8 @@
+{
+  "name": "knowledge-islands",
+  "version": "1.0.0",
+  "description": "Knowledge Islands governance skills and agents — the ki-* house standards (AUDIT / CONFORM / REFRESH) and the governance agents, generated from the ki-agentic-harness. Skills and agents only; host-local MCP servers are deferred (they do not run in Cowork’s sandbox).",
+  "author": {
+    "name": "Knowledge Islands"
+  }
+}
