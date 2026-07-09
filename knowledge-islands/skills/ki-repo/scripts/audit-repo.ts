@@ -49,7 +49,9 @@ import { join, resolve } from 'node:path'
 
 // ── the standard (keep in sync with references/repo-standard.md) ──────
 const DEFAULT_BRANCH = 'main'
-const LICENSE_KEY = 'mit'
+// The declared license defaults to MIT when `[ki-repo] license` is unset. Decoupled
+// from visibility (a private repo may be MIT; a public repo may be proprietary).
+const DEFAULT_LICENSE = 'MIT'
 const TOPICS = ['mcp', 'model-context-protocol', 'claude', 'typescript', 'bun']
 const REQUIRED_CHECK = 'build'
 const ALLOWED_ACTIONS = 'all'
@@ -190,6 +192,7 @@ function treePaths(nwo: string, branch: string): Set<string> {
 const KI_SECTION = 'ki-repo'
 const KI_DEFAULT = `[${KI_SECTION}]
 visibility = "private"   # "public" | "private" — must match the repo's actual GitHub visibility
+license = "MIT"          # SPDX id the LICENSE, package.json, and GitHub must match; default MIT. Use "UNLICENSED" for proprietary. Pick one at https://choosealicense.com/
 
 # Per-repo check overrides — true = enforce, false = don't. Omit any check to take
 # the org default; a repo that fully conforms needs nothing here.
@@ -202,7 +205,7 @@ visibility = "private"   # "public" | "private" — must match the repo's actual
 // `[...checks]` sub-table), flat `key = "string"` and `key = true|false` on a single
 // line, `#` comments. NOT a full TOML parser. Returns this skill's config, or null
 // if the file has no [ki-repo] table at all.
-type KiConfig = { visibility?: string; checks: Record<string, boolean> }
+type KiConfig = { visibility?: string; license?: string; checks: Record<string, boolean> }
 const CHECKS_SECTION = `${KI_SECTION}.checks`
 function parseKiConfig(text: string): KiConfig | null {
   let section = ''
@@ -222,6 +225,7 @@ function parseKiConfig(text: string): KiConfig | null {
     const key = line.slice(0, eq).trim()
     const val = line.slice(eq + 1).trim()
     if (section === KI_SECTION && key === 'visibility') out.visibility = val.replace(/^["']|["']$/g, '')
+    if (section === KI_SECTION && key === 'license') out.license = val.replace(/^["']|["']$/g, '')
     else if (section === CHECKS_SECTION && (val === 'true' || val === 'false')) out.checks[key] = val === 'true'
   }
   return seen ? out : null
@@ -261,20 +265,20 @@ const COVERAGE: { skill: string; table: string; artifact: string; detect: (s: Si
   { skill: 'engineering', table: 'ki-engineering', artifact: 'package.json', detect: (s) => s.root.has('package.json') },
   {
     skill: 'kb',
-    table: 'ki-kb-base',
+    table: 'ki-kb',
     artifact: 'KB zones (Pillars/ + Resources/)',
     detect: (s) => s.root.has('Pillars') && s.root.has('Resources')
   },
   { skill: 'streams', table: 'ki-kb-streams', artifact: 'Streams/ zone', detect: (s) => s.root.has('Streams') },
   {
-    skill: '11ty-websites',
-    table: 'ki-websites-11ty',
+    skill: 'website',
+    table: 'ki-website',
     artifact: 'eleventy.config.*',
     detect: (s) => ELEVENTY.some((f) => s.root.has(f)) || [...s.tree].some((p) => ELEVENTY.some((f) => p.endsWith(`/${f}`)))
   },
   {
-    skill: 'cloudflare-hosting',
-    table: 'ki-hosting-cloudflare',
+    skill: 'website-cloudflare',
+    table: 'ki-website-cloudflare',
     artifact: 'wrangler config',
     detect: (s) => WRANGLER.some((f) => s.root.has(f)) || [...s.tree].some((p) => WRANGLER.some((f) => p.endsWith(`/${f}`)))
   },
@@ -283,6 +287,12 @@ const COVERAGE: { skill: string; table: string; artifact: string; detect: (s: Si
     table: 'ki-mcp',
     artifact: '@modelcontextprotocol/sdk dependency',
     detect: (s) => pkgHasDep(s.pkg, '@modelcontextprotocol/sdk')
+  },
+  {
+    skill: 'plugins',
+    table: 'ki-plugins',
+    artifact: '.claude-plugin/marketplace.json',
+    detect: (s) => s.tree.has('.claude-plugin/marketplace.json') || [...s.tree].some((p) => p.endsWith('/.claude-plugin/marketplace.json'))
   },
   {
     skill: 'skills',
@@ -327,14 +337,25 @@ function auditRepo(r: Repo, files: Set<string>, ki: KiConfig | null, kiText: str
   // ── layer 2: core GitHub ──
   if (r.defaultBranchRef?.name !== DEFAULT_BRANCH)
     fail('default-branch', `default branch is "${r.defaultBranchRef?.name ?? '?'}" (want ${DEFAULT_BRANCH})`)
-  if (r.visibility === 'PUBLIC' && r.licenseInfo?.key !== LICENSE_KEY)
-    fail('license', `license is "${r.licenseInfo?.key ?? 'none'}" (want ${LICENSE_KEY})`)
-  else if (r.visibility === 'PRIVATE' && r.licenseInfo?.key === LICENSE_KEY)
-    fail('license', `private repo must use a proprietary LICENSE, not MIT`)
-  if (r.visibility === 'PRIVATE' && signals.pkg != null) {
+  // License is the declared SPDX id from `[ki-repo] license` (default MIT), decoupled
+  // from visibility. The live GitHub license and package.json "license" must match the
+  // declared id. A proprietary declaration (`UNLICENSED`/`proprietary`/`none`) expects
+  // no recognised OSI license on GitHub and `"UNLICENSED"` in package.json.
+  const declaredLicense = ki?.license ?? DEFAULT_LICENSE
+  const proprietary = /^(unlicensed|proprietary|none)$/i.test(declaredLicense)
+  const declaredKey = declaredLicense.toLowerCase()
+  const liveKey = r.licenseInfo?.key ?? null
+  if (proprietary) {
+    if (liveKey && !['other', 'noassertion'].includes(liveKey))
+      fail('license', `${KI_CONFIG} declares a proprietary license but GitHub reports "${liveKey}"`)
+  } else if (liveKey !== declaredKey) {
+    fail('license', `license is "${liveKey ?? 'none'}" (want ${declaredLicense} per ${KI_CONFIG})`)
+  }
+  if (signals.pkg != null) {
     const pkgLicense = typeof signals.pkg.license === 'string' ? signals.pkg.license : null
-    if (pkgLicense !== 'UNLICENSED')
-      fail('package-license', `package.json "license" is ${JSON.stringify(pkgLicense)} (private repos must use "UNLICENSED")`)
+    const wantPkg = proprietary ? 'UNLICENSED' : declaredLicense
+    if (pkgLicense !== wantPkg)
+      fail('package-license', `package.json "license" is ${JSON.stringify(pkgLicense)} (want ${JSON.stringify(wantPkg)} per ${KI_CONFIG})`)
   }
   // ── layer 2: package.json identity & metadata (the repo skill's manifest keys) ──
   // engineering's coverage manifest assigns the identity/metadata keys to this skill;
@@ -572,7 +593,7 @@ if (!jsonOut) {
   console.log(
     paint(
       C.dim,
-      `standard: files(README,LICENSE,.gitignore,.editorconfig,${KI_CONFIG}) · github(main,mit,squash-only,del-branch,update-branch,issues,no-wiki/projects,desc,visibility) · public+(topics) · deeper(dependabot;secret-scanning;actions=all) · coverage[ki-repo→](${COVERAGE.map((c) => c.skill).join(',')}) · overridable via [..checks]: ${Object.keys(CHECK_DEFAULTS).join(',')},coverage-<skill>`
+      `standard: files(README,LICENSE,.gitignore,.editorconfig,${KI_CONFIG}) · github(main,license,squash-only,del-branch,update-branch,issues,no-wiki/projects,desc,visibility) · public+(topics) · deeper(dependabot;secret-scanning;actions=all) · coverage[ki-repo→](${COVERAGE.map((c) => c.skill).join(',')}) · overridable via [..checks]: ${Object.keys(CHECK_DEFAULTS).join(',')},coverage-<skill>`
     )
   )
 }

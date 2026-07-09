@@ -1,5 +1,6 @@
 ---
 name: ki-engineering
+implies: []
 description: >
   Use to audit our engineering standards, conform or scaffold a repo's toolchain, or check script-family / tsconfig / biome consistency. Owns the shared build/lint/test layer every Knowledge Islands TypeScript/Bun repo conforms to — the twin of `ki-authoring`. Covers the closed `package.json` key-set (toolchain fields here; identity/metadata content in `ki-repo`), the `mise.toml` toolchain pin, the `ki:lint:*`/`ki:deps:*` script families, the Bun-install/Node-run split, `tsconfig`/`biome`/`vitest` shape with 100% coverage, the CI-workflow shape, and the build/cli-chmod rule — plus the enforcement framework the governance skills follow. Triggers: "audit our engineering standards", "do the repos' scripts match", "why are lint:/deps: scripts inconsistent". For GitHub settings, security, and the `.ki-config.toml` contract use `ki-repo`; for Markdown/TOML style use `ki-authoring`; for MCP server code use `ki-mcp`.
 argument-hint: 'audit <repo> | conform <repo> | init <repo> | refresh'
@@ -38,7 +39,7 @@ A repo is "clean" only when **every applicable** skill's audit passes. The `.ki-
 
 ## Operating modes
 
-Carries the universal **AUDIT · CONFORM · REFRESH**, plus **INIT** (scaffold a new TS repo's toolchain). If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too. The mode shape itself is defined in [the enforcement framework](references/enforcement-framework.md).
+Carries the universal four **AUDIT · CONFORM · INIT · REFRESH** — INIT scaffolds a new TS repo's toolchain. If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too. The mode shape itself is defined in [the enforcement framework](references/enforcement-framework.md).
 
 ### Mode AUDIT — check a repo's common toolchain
 

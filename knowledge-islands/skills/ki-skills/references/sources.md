@@ -34,7 +34,7 @@ Abbreviations match the `(SOURCE)` tags in [the standard](agent-skills-standard.
 | Tag                       | Source                       | Governs          | Last reviewed |
 | ------------------------- | ---------------------------- | ---------------- | ------------- |
 | ki-agentic-harness README | The repo's own `README.md`   | †                | 2026-06-21    |
-| `ki-kb-base`              | The reference standard skill | Worked example ※ | 2026-06-21    |
+| `ki-kb`                   | The reference standard skill | Worked example ※ | 2026-06-21    |
 
 † Linking convention (no wikilinks), standard vs base-coupled-extension, the house toolchain, Knowledge Islands structure.
 
@@ -42,7 +42,7 @@ Abbreviations match the `(SOURCE)` tags in [the standard](agent-skills-standard.
 
 ## Last review
 
-REFRESH last run **2026-07-04** against the tracked sources above. The four primary authoritative sources (SPEC, home, BP, CC) plus ENG, COMMUNITY/patterns, and the `skills-ref` baseline (re-confirmed via the SPEC page it is linked from) were re-fetched via WebFetch this run; `superpowers` (a community restatement of BP, which was re-fetched and confirmed unchanged) carries its 2026-06-18 date; the in-house README and `ki-kb-base` rows were not re-audited this run and keep their 2026-06-21 dates. No drift: nothing in the standard, rubric, or linter changed.
+REFRESH last run **2026-07-04** against the tracked sources above. The four primary authoritative sources (SPEC, home, BP, CC) plus ENG, COMMUNITY/patterns, and the `skills-ref` baseline (re-confirmed via the SPEC page it is linked from) were re-fetched via WebFetch this run; `superpowers` (a community restatement of BP, which was re-fetched and confirmed unchanged) carries its 2026-06-18 date; the in-house README and `ki-kb` rows were not re-audited this run and keep their 2026-06-21 dates. No drift: nothing in the standard, rubric, or linter changed.
 
 - **SPEC (agentskills.io/specification):** accessible. Fields and constraints unchanged: `name` (required, 1–64 chars, lowercase letters/digits/hyphens, no leading/trailing/consecutive hyphen, matches directory), `description` (required, 1–1024 chars, non-empty), `license`, `compatibility` (1–500), `metadata` (string→string map), `allowed-tools` (Experimental). Body budget restated as "< 5000 tokens recommended", "under 500 lines", references "one level deep". No new fields, no deprecations.
 - **Agent Skills home:** accessible; three-stage progressive disclosure (metadata ~100 tok / instructions < 5000 tok / resources on demand). Spec unchanged.

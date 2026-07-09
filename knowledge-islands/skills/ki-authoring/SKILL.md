@@ -1,7 +1,8 @@
 ---
 name: ki-authoring
+implies: []
 description: >
-  The foundational authoring and formatting conventions shared across every Knowledge Islands skill, repo, and base — the common style layer the others build on rather than restate. Currently covers Markdown authoring (wide tables → footnotes, link style) and TOML formatting style (for the shared `.ki-config.toml`). Use when writing or editing Markdown or TOML, bringing a document, README, table, or config to house style (conform), checking one against the conventions (audit), or refreshing them against their sources. Triggers: "format this to our style", "fix this markdown", "tidy this README", "audit this doc's formatting", "does this follow house style", "what's our convention for tables / links / footnotes". For KB note-writing use the `ki-kb-base` skill; for a repo's configuration and the `.ki-config.toml` contract use `ki-repo`; to judge a SKILL.md use `ki-skills`; for the build/lint/test toolchain use `ki-engineering`.
+  The foundational authoring and formatting conventions shared across every Knowledge Islands skill, repo, and base — the common style layer the others build on rather than restate. Currently covers Markdown authoring (wide tables → footnotes, link style) and TOML formatting style (for the shared `.ki-config.toml`). Use when writing or editing Markdown or TOML, bringing a document, README, table, or config to house style (conform), checking one against the conventions (audit), or refreshing them against their sources. Triggers: "format this to our style", "fix this markdown", "tidy this README", "audit this doc's formatting", "does this follow house style", "what's our convention for tables / links / footnotes". For KB note-writing use the `ki-kb` skill; for a repo's configuration and the `.ki-config.toml` contract use `ki-repo`; to judge a SKILL.md use `ki-skills`; for the build/lint/test toolchain use `ki-engineering`.
 argument-hint: 'audit <path> | conform <path> | refresh'
 ---
 
@@ -22,7 +23,7 @@ So the workflow when authoring or tidying Markdown is: write to the judgment con
 
 ## Operating modes
 
-Like every governance skill it carries **AUDIT · CONFORM · REFRESH** — no INIT, since it conforms existing documents rather than scaffolding new artifacts. If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too. The conventions each mode acts on are the **Convention sets** below; the checkable criteria are in [the rubric](references/audit-rubric.md).
+Like every governance skill it carries **AUDIT · CONFORM · REFRESH**; it scaffolds no artifact of its own. If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too. The conventions each mode acts on are the **Convention sets** below; the checkable criteria are in [the rubric](references/audit-rubric.md).
 
 ### Mode AUDIT — check a document against house style
 
@@ -55,7 +56,7 @@ Each set is a self-contained reference, loaded on demand. Read the one relevant 
 
 Out of scope by design, with their natural homes:
 
-- **KB note-writing conventions** (zones, frontmatter, routing) → the `ki-kb-base` skill.
+- **KB note-writing conventions** (zones, frontmatter, routing) → the `ki-kb` skill.
 - **Commit and PR conventions, a repo's configuration, and the `.ki-config.toml` _contract_** (the compliance marker + one-table-per-skill model) → the `ki-repo` skill. This skill owns only the TOML _formatting_ style every such table is written in.
 - **SKILL.md authoring** (frontmatter, description, body altitude) → the `ki-skills` skill.
 

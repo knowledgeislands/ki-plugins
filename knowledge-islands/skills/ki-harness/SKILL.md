@@ -1,5 +1,6 @@
 ---
 name: ki-harness
+implies: [ki-skills, ki-agents, ki-decision-records]
 description: >
   Audit, conform, and scaffold Knowledge Islands agentic harnesses — repos that bundle skills, agents, MCP servers, and evals together for versioned, co-installed deployment. Use when creating a new harness, checking an existing harness's four-part layout (`skills/`, `agents/`, `mcp/`, `evals/`), verifying its CLAUDE.md covers required orientation sections, checking its package.json script families, or auditing its `.ki-config.toml` harness table. Triggers: "audit the harness", "scaffold a new harness", "does this repo follow the harness standard", "refresh the harness standard", "is this a valid harness". Governs the **container** (directory structure, CLAUDE.md, package.json script families, installation conventions, `.ki-config.toml` table) — not the **contents**: skill quality → `ki-skills`; agent quality → `ki-agents`; MCP server code → `ki-mcp`; engineering toolchain → `ki-engineering`; GitHub repo settings → `ki-repo`.
 argument-hint: 'audit [path] | conform [path] | init <name> | refresh'
@@ -18,12 +19,12 @@ Modes: **AUDIT · CONFORM · INIT · REFRESH** (named, alphabetical). If invoked
 ## Mode AUDIT — check a harness against the standard
 
 1. **Run the mechanical checker.** `bun scripts/audit-harness.ts [path]` from this skill's directory (or `bun run ki:harness:audit` at the harness root, if wired). It checks: the four-part directory presence, each directory's `README.md`, root `CLAUDE.md` / `ROADMAP.md`, `package.json` script families, `.ki-config.toml` `[ki-harness]` table presence, and each `skills/<dir>` name matching its `SKILL.md` `name:` frontmatter. Reports on the unified severity ladder (FAIL / WARN / POLISH / ADVISORY / INFO / SKIP / PASS — defined in `ki-engineering`'s enforcement-framework §2).
-2. **Compose on sibling skills via subagent isolation** ([ADR-KI-HARNESS-AGENTS-001](../../docs/decisions/ADR-KI-HARNESS-AGENTS-001.md)). A harness audit is layered — fan out one `agent()` per concern in `parallel()` after the COLL checks:
+2. **Compose on sibling skills via subagent isolation** ([ADR-KI-HARNESS-AGENTS-001](../../docs/decisions/ADR-KI-HARNESS-AGENTS-001-subagent-isolation.md)). A harness audit is layered — fan out one `agent()` per concern in `parallel()` after the COLL checks:
    - `ki-repo` — GitHub settings and the `.ki-config.toml` contract
    - `ki-engineering` — common toolchain (package.json script families, tsconfig, biome)
    - `ki-skills` linter (`bun run ki:skills:lint`) — if `skills/` is populated
    - `ki-agents` linter — if `agents/` is populated
-   - `ki-mcp` audit — if `mcp/` has server code The saved workflow `.claude/workflows/ki-multi-skill-audit.ts` implements this fan-out. See [ADR-KI-HARNESS-002](../../docs/decisions/ADR-KI-HARNESS-002.md) for the four-part layout this step audits.
+   - `ki-mcp` audit — if `mcp/` has server code The saved workflow `.claude/workflows/ki-multi-skill-audit.ts` implements this fan-out. See [ADR-KI-HARNESS-002](../../docs/decisions/ADR-KI-HARNESS-002-four-part-bundle-layout.md) for the four-part layout this step audits.
 3. **Judge the prose the script can't.** Walk the [J]-tagged criteria in [the rubric](references/audit-rubric.md):
    - **CLAUDE.md coverage** — does it open with a what-the-harness-is paragraph covering all four parts? Is the skill map present (if skills exist) and does it reflect current reality? Are working conventions documented for each part? Are the key `bun run *` commands listed?
    - **Freshness** — do the skill count, shelf statuses, and command names in `CLAUDE.md` still match the actual repo state?

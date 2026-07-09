@@ -77,8 +77,8 @@ async function detectKbMode(decisionsDir: string): Promise<boolean> {
   const content = await readFile(configPath, 'utf8')
   // Check for explicit repo_type = "kb" anywhere in the file
   if (/^\s*repo_type\s*=\s*["']kb["']/m.test(content)) return true
-  // Presence of [ki-kb-base] table also implies KB mode
-  if (/^\[ki-kb-base\]/m.test(content)) return true
+  // Presence of [ki-kb] table also implies KB mode
+  if (/^\[ki-kb\]/m.test(content)) return true
   return false
 }
 
@@ -130,13 +130,11 @@ async function main() {
   // its status/date cells. Works for both the KB (`Decisions.md`) and code (`README.md`)
   // index conventions.
   interface IndexRow {
-    status: string
     date: string
   }
   const indexedIds = new Set<string>()
   const indexRows = new Map<string, IndexRow>()
   const ID_IN_CELL = /([A-Z]+DR-[A-Z][A-Z0-9-]+-\d{3,})/
-  let statusCol = -1
   let dateCol = -1
 
   const splitRow = (line: string): string[] | null => {
@@ -150,9 +148,8 @@ async function main() {
   for (const line of indexContent.split('\n')) {
     const cells = splitRow(line)
     if (!cells) continue
-    // Header row: locate the Status/Date columns by label, once.
-    if (statusCol === -1 && cells.some((c) => /^status$/i.test(c))) {
-      statusCol = cells.findIndex((c) => /^status$/i.test(c))
+    // Header row: locate the Date column by label, once.
+    if (dateCol === -1 && cells.some((c) => /^date$/i.test(c))) {
       dateCol = cells.findIndex((c) => /^date$/i.test(c))
       continue
     }
@@ -162,7 +159,6 @@ async function main() {
     const id = idMatch[1]
     indexedIds.add(id)
     indexRows.set(id, {
-      status: statusCol >= 0 ? (cells[statusCol] ?? '') : '',
       date: dateCol >= 0 ? (cells[dateCol] ?? '') : ''
     })
   }
@@ -260,33 +256,11 @@ async function main() {
       add('BODY-1', Sev.WARN, file, `heading ID '${headingMatch[1]}' does not match filename ID '${drId}'`)
     }
 
-    // BODY-2: **Status:** line
-    const statusMatch = body.match(/^\*\*Status:\*\*\s+(.+)$/m)
-    if (!statusMatch) {
-      add('BODY-2', Sev.FAIL, file, '`**Status:**` line missing')
-    }
-
-    // BODY-2b: **Mutability:** line present with a valid value
-    const mutabilityMatch = body.match(/^\*\*Mutability:\*\*\s+(open|locked)\s*$/m)
-    if (!mutabilityMatch) {
-      add('BODY-2b', Sev.FAIL, file, '`**Mutability:**` line missing or not `open` / `locked`')
-    } else if (statusMatch) {
-      // MUT-1: Mutability must align with Status (free choice only in Accepted)
-      const statusWord = statusMatch[1].trim().split(/\s+/)[0] ?? ''
-      const mutability = mutabilityMatch[1]
-      const requiredOpen = statusWord === 'Draft' || statusWord === 'Proposed'
-      const requiredLocked = statusWord === 'Deprecated' || statusWord === 'Superseded'
-      if (requiredOpen && mutability !== 'open') {
-        add('MUT-1', Sev.FAIL, file, `Status '${statusWord}' requires Mutability 'open', got '${mutability}'`)
-      } else if (requiredLocked && mutability !== 'locked') {
-        add('MUT-1', Sev.FAIL, file, `Status '${statusWord}' requires Mutability 'locked', got '${mutability}'`)
-      }
-    }
-
-    // BODY-3: **Date:** line
-    const dateMatch = body.match(/^\*\*Date:\*\*\s+(\d{4}-\d{2}-\d{2})$/m)
-    if (!dateMatch) {
-      add('BODY-3', Sev.FAIL, file, '`**Date:**` line missing or not in YYYY-MM-DD format')
+    // BODY-3: **Date:** line is optional; if present it must be YYYY-MM-DD
+    const dateMatch = body.match(/^\*\*Date:\*\*\s+(.+)$/m)
+    const dateValue = dateMatch?.[1]?.trim()
+    if (dateValue && !/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+      add('BODY-3', Sev.WARN, file, `\`**Date:**\` present but not in YYYY-MM-DD format: '${dateValue}'`)
     }
 
     // BODY-4: required sections
@@ -296,46 +270,16 @@ async function main() {
       }
     }
 
-    // SUPER-1: superseded reference target exists
-    if (statusMatch?.[1]?.trim().startsWith('Superseded')) {
-      const superIdMatch = statusMatch[1].match(/Superseded by ([A-Z]+DR-[A-Z][A-Z0-9-]+-\d{3,})/)
-      if (superIdMatch) {
-        const targetId = superIdMatch[1]
-        const targetExists = drFiles.some((f) => f.startsWith(targetId))
-        if (!targetExists) {
-          add('SUPER-1', Sev.FAIL, file, `references superseding DR '${targetId}' but no matching file found`)
-        }
-      }
-    }
-
-    // SUPER-2: if this DR supersedes another, that other must reference this one back
-    const supersedingMatch = body.match(/Supersedes ([A-Z]+DR-[A-Z][A-Z0-9-]+-\d{3,})/i)
-    if (supersedingMatch) {
-      const oldId = supersedingMatch[1]
-      const oldFile = drFiles.find((f) => f.startsWith(oldId))
-      if (oldFile) {
-        const oldContent = await readFile(join(resolvedDir, oldFile), 'utf8')
-        if (!oldContent.includes(`Superseded by ${drId}`)) {
-          add('SUPER-2', Sev.FAIL, file, `${oldId} does not reference 'Superseded by ${drId}' (bidirectional link missing)`)
-        }
-      }
-    }
-
-    // INDEX-2: must have a row in Decisions.md
+    // INDEX-2: must have a row in the index
     if (hasIndex && !indexedIds.has(drId)) {
       add('INDEX-2', Sev.FAIL, file, `no row in ${indexFile} for ${drId}`)
     }
 
-    // INDEX-4/5: status/date sync with index (only when the columns were located)
-    if (hasIndex && statusCol >= 0 && dateCol >= 0 && statusMatch && dateMatch) {
+    // INDEX-5: date sync with index (only when the Date column exists and the DR carries a valid date)
+    if (hasIndex && dateCol >= 0 && dateValue && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
       const row = indexRows.get(drId)
-      if (row) {
-        if (row.status !== statusMatch[1].trim()) {
-          add('INDEX-4', Sev.WARN, file, `index status '${row.status}' does not match DR status '${statusMatch[1].trim()}'`)
-        }
-        if (row.date !== dateMatch[1]) {
-          add('INDEX-5', Sev.WARN, file, `index date '${row.date}' does not match DR date '${dateMatch[1]}'`)
-        }
+      if (row?.date && row.date !== dateValue) {
+        add('INDEX-5', Sev.WARN, file, `index date '${row.date}' does not match DR date '${dateValue}'`)
       }
     }
   }

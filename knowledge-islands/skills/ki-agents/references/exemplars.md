@@ -65,7 +65,7 @@ From the KI harness `agents/governance/ki-kb-curator.md`. Demonstrates: groundin
 ---
 name: ki-kb-curator
 description: >
-  Knowledge Islands KB Curator — owns KB zone health, note structure, and conformance to the ki-kb-base standard … Does not own SKILL.md authoring — that is ki-skills-lead — or decision record authoring — that is ki-decision-author.
+  Knowledge Islands KB Curator — owns KB zone health, note structure, and conformance to the ki-kb standard … Does not own SKILL.md authoring — that is ki-skills-lead — or decision record authoring — that is ki-decision-author.
 model: inherit
 color: green
 ---

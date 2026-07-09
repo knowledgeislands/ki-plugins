@@ -6,7 +6,7 @@ _On-demand procedure for activities' AUDIT and CONFORM modes (CONFORM runs AUDIT
 
 1. **Run the mechanical checker** — `bun scripts/audit-activities.ts <base-path>` (from this skill's directory or with `--harness` pointing to the harness root). It reports: activity notes found outside `Admin/Operations/Activities/` (WARN), notes missing `status` or `realization` (WARN), unrecognised `realization` values (ADVISORY), `slash-command` activities whose declared `skill` is absent from the harness `skills/` directory (FAIL), `scheduled-task` activities missing `schedule_name` (WARN), and absence of the `Activities.md` index when any note is found (WARN). Exit non-zero on any FAIL.
 2. **Apply the judgment layer** — read the **[J]** criteria in [the rubric](audit-rubric.md): whether each note body describes the activity clearly (ACT-J-1), whether the index is current (ACT-J-2), whether retired activities carry a retirement rationale (ACT-J-3), and realization-specific narrative checks (ACT-J-4, ACT-J-5).
-3. **Compose on `ki-kb-base`** — zone and zone-index checks are owned by `ki-kb-base`; run its audit for the base first and note its result rather than re-deriving zone structure here.
+3. **Compose on `ki-kb`** — zone and zone-index checks are owned by `ki-kb`; run its audit for the base first and note its result rather than re-deriving zone structure here.
 4. **Report** by location → criterion → fix, leading with FAILs then WARNs.
 
 ## Mode CONFORM — bring the base's activity notes into line

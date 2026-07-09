@@ -24,7 +24,7 @@ Every harness must have these four directories at the repo root, each containing
 ```text
 skills/
   README.md
-  ki-kb-base/
+  ki-kb/
     SKILL.md
     references/
     scripts/

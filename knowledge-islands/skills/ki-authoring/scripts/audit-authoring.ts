@@ -114,7 +114,7 @@ add(
   'md-link',
   "MD-link [J]: link text must be descriptive (words you'd skim for) beyond what MD059 enforces. " +
     'Use relative markdown links in house files (SKILL.md, repo docs) — wikilinks are correct only ' +
-    'in KB note content and agent system prompts (scoped by ki-kb-base / ki-agents LINK-2). ' +
+    'in KB note content and agent system prompts (scoped by ki-kb / ki-agents LINK-2). ' +
     'Angle-bracket form for paths with spaces. (references/markdown-authoring.md)'
 )
 

@@ -66,8 +66,8 @@ Every directory under `skills/` MUST be a valid skill: it must contain a `SKILL.
 
 ```text
 skills/
-  ki-kb-base/        ← directory name
-    SKILL.md                  ← name: ki-kb-base  ← must match
+  ki-kb/        ← directory name
+    SKILL.md                  ← name: ki-kb  ← must match
 ```
 
 **Why:** agents and the Agent Skills runtime discover a skill by its `name` — not by path. If the directory name and the frontmatter drift, the skill loads under the wrong name or fails to load at all. The `ki:skills:link:project` script (see §package.json) creates symlinks named by the directory, so the symlink target name is the one the agent actually resolves.

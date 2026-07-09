@@ -8,7 +8,7 @@
  * This is the mechanical half of the skill's Mode AUDIT — the deterministic
  * layer the judgment pass (index ordering, Governance sections, proposals-index
  * accuracy, completed-proposal deletion) builds on. It checks, inside the
- * `Streams/` zone (resolved THROUGH any `[ki-kb-base.zones]` alias, so a
+ * `Streams/` zone (resolved THROUGH any `[ki-kb.zones]` alias, so a
  * base mid-rename is audited at its real folder):
  *
  *   STREAM-1  folders directly under Streams/ are the Focus set.
@@ -21,7 +21,7 @@
  *   GATE-1    once the base runs proposals, its CLAUDE.md / AGENTS.md anchors the gate.
  *
  * That `Streams/` exists at all and carries a same-name zone index is the
- * `ki-kb-base` checker's ZONE-* job, not repeated here. Parent / multi
+ * `ki-kb` checker's ZONE-* job, not repeated here. Parent / multi
  * proposal layout and the [J] criteria are applied by reading, per the rubric.
  *
  * READ-ONLY: never mutates the base. `--init` prints the default block to stdout.
@@ -39,7 +39,7 @@ const PROPOSAL_FM = ['status', 'priority', 'dependencies']
 
 const KI_CONFIG = '.ki-config.toml'
 const KI_SECTION = 'ki-kb-streams'
-const KB_ZONES = 'ki-kb-base.zones'
+const KB_ZONES = 'ki-kb.zones'
 const SCHEMES = ['type', 'tags']
 
 // The default block `--init` emits. The bare [ki-kb-streams] header is the
@@ -92,7 +92,7 @@ const subdirs = (p: string): string[] =>
     : []
 
 // Minimal reader for the constrained schema: this skill's own `[ki-kb-streams]`
-// scalars and the kb `[ki-kb-base.zones]` Streams alias. Validate down, ignore across.
+// scalars and the kb `[ki-kb.zones]` Streams alias. Validate down, ignore across.
 type Ki = { keys: Record<string, string>; streamsZone: string }
 const unquote = (s: string): string => s.replace(/^["']|["']$/g, '')
 function parseKi(text: string): Ki {
@@ -171,7 +171,7 @@ function auditStreams(base: string, ki: Ki): Finding[] {
   if (ki.streamsZone !== 'Streams') note('alias', `Streams zone resolves to ${ki.streamsZone}/ (per [${KB_ZONES}])`)
 
   if (!isDir(streamsRoot)) {
-    note('zone', `no ${ki.streamsZone}/ zone at ${base} — nothing to audit (its presence is a ki-kb-base ZONE check)`)
+    note('zone', `no ${ki.streamsZone}/ zone at ${base} — nothing to audit (its presence is a ki-kb ZONE check)`)
     return f
   }
 

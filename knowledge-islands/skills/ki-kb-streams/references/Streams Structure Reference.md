@@ -16,7 +16,7 @@ Long-form detail on how the `Streams` zone is laid out, for the [Knowledge Islan
 
 ## The zone
 
-`Streams/` carries knowledge **in motion**: active projects, evolving ideas, ongoing work. Its content is _not_ canonical — durable knowledge lives in `Pillars/` (internal; a base that holds it under a legacy folder name resolves it via the `ki-kb-base` zone alias) or `Resources/` (external). The lifecycle of a stream is: emerge → mature through work → stabilise into a store → the stream is retired. A stream is a **status tracker and proposal document**, never a knowledge store; a stream note that accumulates deep subject-matter content is a signal that the content needs to move out.
+`Streams/` carries knowledge **in motion**: active projects, evolving ideas, ongoing work. Its content is _not_ canonical — durable knowledge lives in `Pillars/` (internal; a base that holds it under a legacy folder name resolves it via the `ki-kb` zone alias) or `Resources/` (external). The lifecycle of a stream is: emerge → mature through work → stabilise into a store → the stream is retired. A stream is a **status tracker and proposal document**, never a knowledge store; a stream note that accumulates deep subject-matter content is a signal that the content needs to move out.
 
 The defining contrast across the in-motion vs. settled zones:
 
@@ -102,7 +102,7 @@ Every Focus folder carries an **index note same-named as the folder** (`Active/A
 
 **Ordering.** In `Active/`, `Background/`, `Dormant/`, `Future/`: `in-progress` → `ready` → `draft`, then by priority within each group. In `Settled/`: `rolled-out` → `reviewed` → `completed` → `rejected`. Group by category before sorting where categories are in use.
 
-The `Streams/` zone index note (`type: stream-zone`) also carries a cross-Focus **proposals index** — a live triage view of every proposal by Topic / Focus / Status / Priority. It has no value if it lags: update it on creation, status change, and priority change. (Note-content links inside a base use Obsidian `[[wikilinks]]` per the `ki-kb-base` convention; this skill's own files use relative markdown links.)
+The `Streams/` zone index note (`type: stream-zone`) also carries a cross-Focus **proposals index** — a live triage view of every proposal by Topic / Focus / Status / Priority. It has no value if it lags: update it on creation, status change, and priority change. (Note-content links inside a base use Obsidian `[[wikilinks]]` per the `ki-kb` convention; this skill's own files use relative markdown links.)
 
 ## What lives in a stream note
 

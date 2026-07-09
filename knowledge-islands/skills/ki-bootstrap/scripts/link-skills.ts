@@ -20,20 +20,10 @@
  *                .claude/skills gitignored; exits non-zero on FAIL
  */
 
-import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  readlinkSync,
-  realpathSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync
-} from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, readdirSync, readlinkSync, realpathSync, rmSync, symlinkSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ensureScripts, gitignoresPath, hasScript, readText } from './package-scripts.ts'
 
 // ── Self-location: find the harness skills/ root through the (possibly symlinked) script path ──
 const SELF = realpathSync(fileURLToPath(import.meta.url))
@@ -67,23 +57,6 @@ function isSymlink(p: string): boolean {
   }
 }
 
-function readText(path: string): string {
-  return existsSync(path) ? readFileSync(path, 'utf8') : ''
-}
-
-function hasScript(pkgText: string, name: string): boolean {
-  try {
-    const pkg = JSON.parse(pkgText) as { scripts?: Record<string, unknown> }
-    return !!pkg.scripts && name in pkg.scripts
-  } catch {
-    return false
-  }
-}
-
-function gitignoresClaudeSkills(gitignore: string): boolean {
-  return gitignore.split(/\r?\n/).some((l) => /^\.claude\/skills\/?$/.test(l.trim()))
-}
-
 function discoverSkills(): string[] {
   if (!existsSync(SKILLS_ROOT)) return []
   return readdirSync(SKILLS_ROOT, { withFileTypes: true })
@@ -92,7 +65,7 @@ function discoverSkills(): string[] {
     .sort()
 }
 
-// A skill's checker script isn't a fixed function of its name (ki-kb-base -> audit-kb.ts,
+// A skill's checker script isn't a fixed function of its name (ki-kb -> audit-kb.ts,
 // ki-decision-records -> audit-drs.ts) — discover it by scanning scripts/ instead of templating.
 interface CheckerScript {
   verb: 'audit' | 'lint'
@@ -115,47 +88,31 @@ function scriptKey(skill: string, verb: string): string {
   return `ki:${skill.replace(/^ki-/, '')}:${verb}`
 }
 
+// A skill may separately carry a conform-*.ts alongside its audit/lint checker — discovered
+// independently since a skill can have both (not one-or-the-other like audit vs lint).
+function discoverConformScript(skill: string): string | null {
+  const scriptsDir = join(SKILLS_ROOT, skill, 'scripts')
+  if (!existsSync(scriptsDir)) return null
+  const matches = readdirSync(scriptsDir).filter((f) => /^conform-.*\.ts$/.test(f))
+  if (matches.length !== 1) {
+    if (matches.length > 1) console.log(`${YELLOW}skip  ${RESET}${skill} ${DIM}(ambiguous conform scripts: ${matches.join(', ')})${RESET}`)
+    return null
+  }
+  return matches[0]
+}
+
 // Add missing per-skill checker scripts to package.json — never overwrite an existing entry
 // (a repo may have deliberately customized the command), never create package.json from scratch.
-// Edited as text (not JSON.parse -> JSON.stringify) so untouched parts of the file — formatting,
-// key order, whether an array is inlined or multi-line — are never rewritten as a side effect.
 function ensureCheckerScripts(target: string, set: string[], dryRun: boolean): void {
-  const pkgPath = join(target, 'package.json')
-  if (!existsSync(pkgPath)) return
-
-  const pkgText = readFileSync(pkgPath, 'utf8')
-  let pkg: { scripts?: Record<string, string> }
-  try {
-    pkg = JSON.parse(pkgText)
-  } catch {
-    console.log(`${YELLOW}skip  ${RESET}package.json ${DIM}(not valid JSON — leaving scripts untouched)${RESET}`)
-    return
-  }
-
   const additions: Array<[string, string]> = []
   for (const skill of set) {
     const checker = discoverCheckerScript(skill)
     if (!checker) continue
-    const key = scriptKey(skill, checker.verb)
-    if (pkg.scripts?.[key]) continue
-    additions.push([key, `bun .claude/skills/${skill}/scripts/${checker.file} .`])
+    additions.push([scriptKey(skill, checker.verb), `bun .claude/skills/${skill}/scripts/${checker.file} .`])
+    const conform = discoverConformScript(skill)
+    if (conform) additions.push([scriptKey(skill, 'conform'), `bun .claude/skills/${skill}/scripts/${conform} .`])
   }
-  if (additions.length === 0) return
-
-  for (const [key, command] of additions) console.log(`${GREEN}script${RESET} ${key} -> ${DIM}${command}${RESET}`)
-  if (dryRun) return
-
-  const scriptsMatch = pkgText.match(/^([ \t]*)"scripts"\s*:\s*\{([\s\S]*?)\n([ \t]*)\}/m)
-  if (!scriptsMatch) {
-    console.log(`${YELLOW}skip  ${RESET}package.json ${DIM}(no "scripts" block to extend — add one by hand first)${RESET}`)
-    return
-  }
-  const [whole, , body, closeIndent] = scriptsMatch
-  const entryIndent = `${closeIndent}  `
-  const trimmedBody = body.replace(/,\s*$/, '')
-  const newLines = additions.map(([key, command]) => `${entryIndent}"${key}": ${JSON.stringify(command)}`).join(',\n')
-  const rebuilt = `${scriptsMatch[1]}"scripts": {${trimmedBody ? `${trimmedBody},\n` : '\n'}${newLines}\n${closeIndent}}`
-  writeFileSync(pkgPath, pkgText.replace(whole, rebuilt))
+  ensureScripts(target, additions, dryRun)
 }
 
 // Declared `[ki-<skill>]` top-level tables (sub-tables like `.checks` / `.zones` are ignored).
@@ -258,26 +215,29 @@ function cmdCheck(target: string, set: string[]): number {
   )
 
   findings.push(
-    gitignoresClaudeSkills(readText(join(target, '.gitignore')))
+    gitignoresPath(readText(join(target, '.gitignore')), '.claude/skills')
       ? { severity: 'PASS', criterion: 'BOOT-3', message: '.claude/skills/ is gitignored' }
       : { severity: 'WARN', criterion: 'BOOT-3', message: '.claude/skills/ is not gitignored — generated links would be committed' }
   )
 
-  const missingScripts = set.filter((skill) => {
+  const missingKeys: string[] = []
+  for (const skill of set) {
     const checker = discoverCheckerScript(skill)
-    return checker && !hasScript(pkgText, scriptKey(skill, checker.verb))
-  })
-  if (missingScripts.length === 0) {
+    if (checker && !hasScript(pkgText, scriptKey(skill, checker.verb))) missingKeys.push(scriptKey(skill, checker.verb))
+    const conform = discoverConformScript(skill)
+    if (conform && !hasScript(pkgText, scriptKey(skill, 'conform'))) missingKeys.push(scriptKey(skill, 'conform'))
+  }
+  if (missingKeys.length === 0) {
     findings.push({
       severity: 'PASS',
       criterion: 'BOOT-5',
-      message: 'every linked skill with a checker script has a matching package.json script'
+      message: 'every linked skill with a checker/conform script has a matching package.json script'
     })
   } else {
     findings.push({
       severity: 'WARN',
       criterion: 'BOOT-5',
-      message: `missing checker scripts: ${missingScripts.map((s) => scriptKey(s, discoverCheckerScript(s)!.verb)).join(', ')} — run \`ki:skills:link:project\``
+      message: `missing scripts: ${missingKeys.join(', ')} — run \`ki:skills:link:project\``
     })
   }
 

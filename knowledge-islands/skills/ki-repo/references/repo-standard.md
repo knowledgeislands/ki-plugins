@@ -21,13 +21,13 @@ Every repo carries these at the root. Presence is checked **on the default branc
 | File              | Why                                                                                                             |
 | ----------------- | --------------------------------------------------------------------------------------------------------------- |
 | `README.md`       | The repo's entry point.                                                                                         |
-| `LICENSE`         | MIT text _(public)_; proprietary copyright text _(private)_.                                                    |
+| `LICENSE`         | The declared license's text (default MIT); proprietary copyright text if `license` is `UNLICENSED`.             |
 | `.gitignore`      | Keeps build/dep noise out of history.                                                                           |
 | `.editorconfig`   | Shared editor defaults across the workspace toolchain.                                                          |
 | `CLAUDE.md`       | Agent instructions — the always-loaded anchor for any repo-specific gate or convention (skills rubric SHAPE-7). |
 | `.ki-config.toml` | Declares this repo's expected config under `[ki-repo]`. †                                                       |
 
-† The values it carries: `visibility` and any per-repo check overrides.
+† The values it carries: `visibility`, the declared `license` (SPDX id, default MIT), and any per-repo check overrides.
 
 `ROADMAP.md` is **expected but not required** — a warn, not a fail: most repos carry one, but a base that keeps its forward view elsewhere (a KB base's `Streams/Future`) may omit it.
 
@@ -44,18 +44,18 @@ Presence is **not required** — the directory appears the first time a checker 
 
 For every repo on github.com:
 
-| Setting            | Value                                                              | Why                                      |
-| ------------------ | ------------------------------------------------------------------ | ---------------------------------------- |
-| Default branch     | `main`                                                             | Uniform; what tooling and docs assume.   |
-| License            | MIT _(public)_; proprietary (not MIT) _(private)_                  | House default for open-source repos.     |
-| Package license    | _(public)_ any; `"UNLICENSED"` _(private with package.json)_       | Matches the LICENSE file intent.         |
-| Description        | Present, one sentence; synced with `package.json` where one exists | One-line identity on GitHub.             |
-| Merge methods      | **Squash only** — merge-commit off, rebase off                     | One commit per PR; clean, linear `main`. |
-| Auto-delete branch | On                                                                 | No stale merged branches.                |
-| Issues             | On                                                                 | The tracker.                             |
-| Wiki               | Off                                                                | Docs live in-repo.                       |
-| Projects           | Off                                                                | Unused.                                  |
-| Discussions        | Off                                                                | Unused.                                  |
+| Setting | Value | Why |
+| --- | --- | --- |
+| Default branch | `main` | Uniform; what tooling and docs assume. |
+| License | Live GitHub license matches the declared `license` SPDX id (default MIT) | Decoupled from visibility. |
+| Package license | `package.json` `"license"` matches the declared id (`UNLICENSED` if proprietary) | Matches the declared license. |
+| Description | Present, one sentence; synced with `package.json` where one exists | One-line identity on GitHub. |
+| Merge methods | **Squash only** — merge-commit off, rebase off | One commit per PR; clean, linear `main`. |
+| Auto-delete branch | On | No stale merged branches. |
+| Issues | On | The tracker. |
+| Wiki | Off | Docs live in-repo. |
+| Projects | Off | Unused. |
+| Discussions | Off | Unused. |
 
 Public repos (`mcp-*`) additionally:
 
@@ -69,18 +69,18 @@ Public repos (`mcp-*`) additionally:
 
 The engineering coverage manifest assigns the `package.json` **identity & metadata** keys to this skill (engineering owns the closed key set; this skill owns their content). Where the repo has a `package.json`, these are checked:
 
-| Field         | Rule                                                      | Severity  |
-| ------------- | --------------------------------------------------------- | --------- |
-| `name`        | present, non-empty                                        | FAIL      |
-| `version`     | semver (`x.y.z`)                                          | FAIL      |
-| `description` | present; **synced** with the GitHub description           | FAIL      |
-| `author`      | present (string or object)                                | FAIL      |
-| `license`     | `UNLICENSED` _(private)_ / MIT-or-any _(public)_ — above  | FAIL      |
-| `private`     | `true` iff the repo is private                            | FAIL      |
-| `repository`  | carries a `url`; should reference the repo's `owner/name` | FAIL/WARN |
-| `bugs`        | carries a `url`                                           | WARN      |
-| `homepage`    | present                                                   | WARN      |
-| `keywords`    | non-empty array                                           | WARN      |
+| Field         | Rule                                                                    | Severity  |
+| ------------- | ----------------------------------------------------------------------- | --------- |
+| `name`        | present, non-empty                                                      | FAIL      |
+| `version`     | semver (`x.y.z`)                                                        | FAIL      |
+| `description` | present; **synced** with the GitHub description                         | FAIL      |
+| `author`      | present (string or object)                                              | FAIL      |
+| `license`     | matches the declared `license` id (`UNLICENSED` if proprietary) — above | FAIL      |
+| `private`     | `true` iff the repo is private                                          | FAIL      |
+| `repository`  | carries a `url`; should reference the repo's `owner/name`               | FAIL/WARN |
+| `bugs`        | carries a `url`                                                         | WARN      |
+| `homepage`    | present                                                                 | WARN      |
+| `keywords`    | non-empty array                                                         | WARN      |
 
 ## Layer 3 — deeper GitHub
 
@@ -112,7 +112,7 @@ branch-protection = true   # default off — protect `main` on this repo
 
 ## Per-repo overrides
 
-The rubric carries the **org default** for every check. Most are bedrock — file presence, default branch, description, merge policy, auto-delete-branch, visibility, Dependabot — and aren't negotiable. License is bedrock but **visibility-scoped**: public repos must carry MIT (`license`) and a LICENSE file (`license-file`); private repos must carry a proprietary copyright LICENSE file (`license-file`) and `"UNLICENSED"` in `package.json` (`package-license`) — MIT is not permitted. The rest are **overridable**: a repo flips one for itself with a single boolean in its `[ki-repo.checks]` table, where `true` = enforce this check and `false` = don't. A check you omit takes the org default, so **a fully-conforming repo writes no overrides at all**. The auditor reports every active override as a `note` (never a failure), so a deliberate departure stays visible without reading as drift.
+The rubric carries the **org default** for every check. Most are bedrock — file presence, default branch, description, merge policy, auto-delete-branch, visibility, Dependabot — and aren't negotiable. License is bedrock and **declared, not inferred from visibility**: a repo names its license as an SPDX id in `[ki-repo]` `license` (default MIT), and the auditor checks that the live GitHub license (`license`), a present LICENSE file (`license-file`), and `package.json` `"license"` (`package-license`) all match it. A proprietary declaration (`UNLICENSED`/`proprietary`) expects no recognised OSI license on GitHub and `"UNLICENSED"` in `package.json`. Visibility is a separate, independent check — a private repo may be MIT, a public repo proprietary. The rest are **overridable**: a repo flips one for itself with a single boolean in its `[ki-repo.checks]` table, where `true` = enforce this check and `false` = don't. A check you omit takes the org default, so **a fully-conforming repo writes no overrides at all**. The auditor reports every active override as a `note` (never a failure), so a deliberate departure stays visible without reading as drift.
 
 | Check               | Org default | When enforced, the auditor requires…                |
 | ------------------- | ----------- | --------------------------------------------------- |
@@ -131,11 +131,11 @@ The rubric carries the **org default** for every check. Most are bedrock — fil
 - `topics` / `secret-scanning` / `push-protection` are **public-only** — they don't apply to a private repo regardless of the override, so the private `arcadia-*` repos need say nothing about them.
 - A key under `[…checks]` that names no overridable check (a typo, or a bedrock check) **WARNs** — it would otherwise silently do nothing. The auditor's `CHECK_DEFAULTS` registry is the source of truth for what's overridable.
 - A **redundant** override — one whose value just restates the org default (e.g. `wiki = true`) — does nothing, so the auditor flags it with a `note` advising it be dropped. The aim is that a `.ki-config.toml` carries only genuine divergences, and a conforming repo's `[…checks]` is empty or absent.
-- `coverage-<skill>` (e.g. `coverage-11ty-websites = false`) is also accepted here — it opts the repo out of **one** coverage signal of the cascade below (the default is enforced: a detected artifact with no opt-in table WARNs). A `coverage-<skill>` naming no coverage skill WARNs, like any unknown check.
+- `coverage-<skill>` (e.g. `coverage-website = false`) is also accepted here — it opts the repo out of **one** coverage signal of the cascade below (the default is enforced: a detected artifact with no opt-in table WARNs). A `coverage-<skill>` naming no coverage skill WARNs, like any unknown check.
 
 ## Coverage cascade
 
-`.ki-config.toml`'s presence is the **gate** (Layer 1): once it confirms the repo is a ki-repo, the auditor checks the repo **declares an opt-in `[ki-<skill>]` table for every governance skill whose applicability it can detect** — a `Streams/` zone ⇒ `[ki-kb-streams]`, an `eleventy.config` ⇒ `[ki-websites-11ty]`, an `@modelcontextprotocol/sdk` dependency ⇒ `[ki-mcp]`, `skills/*/SKILL.md` ⇒ `[ki-skills]`, and so on. Detected-but-undeclared WARNs; a declared table with no matching artifact WARNs as possibly stale.
+`.ki-config.toml`'s presence is the **gate** (Layer 1): once it confirms the repo is a ki-repo, the auditor checks the repo **declares an opt-in `[ki-<skill>]` table for every governance skill whose applicability it can detect** — a `Streams/` zone ⇒ `[ki-kb-streams]`, an `eleventy.config` ⇒ `[ki-website]`, an `@modelcontextprotocol/sdk` dependency ⇒ `[ki-mcp]`, a `.claude-plugin/marketplace.json` ⇒ `[ki-plugins]`, `skills/*/SKILL.md` ⇒ `[ki-skills]`, and so on. Detected-but-undeclared WARNs; a declared table with no matching artifact WARNs as possibly stale.
 
 A repo that is **not** a ki-repo (no `.ki-config.toml`) is never coverage-checked — it just takes the `ki-config` FAIL, so a lookalike repo (an `eleventy.config` but no marker) is not falsely told to opt in. This is `ki-repo`'s single cross-table read, and it reads only table **presence**, never another skill's keys. The full signal list and the marker-vs-config model live in [the `.ki-config.toml` contract](ki-config-standard.md#coverage-enforcement). Silence one signal with `coverage-<skill> = false` under `[ki-repo.checks]`.
 

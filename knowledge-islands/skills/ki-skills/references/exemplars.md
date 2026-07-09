@@ -44,7 +44,7 @@ argument-hint: 'audit <agent-or-dir> | conform <agent> | init <description> | re
 
 ### Well-formed standard mode definition (AUDIT)
 
-Every governance skill carries AUDIT, CONFORM, and REFRESH. The mode definition opens with a one-sentence statement of what the mode does, then lists numbered concrete steps. Steps name the mechanical tool first (`bun scripts/…`) so the model runs the linter before reading — never re-derive what the script checks. Judgment criteria are applied only after the linter output is captured. The rubric file is referenced by relative link from the step that applies it, not re-stated in-line.
+Every governance skill carries the universal four — AUDIT, CONFORM, INIT, REFRESH. The mode definition opens with a one-sentence statement of what the mode does, then lists numbered concrete steps. Steps name the mechanical tool first (`bun scripts/…`) so the model runs the linter before reading — never re-derive what the script checks. Judgment criteria are applied only after the linter output is captured. The rubric file is referenced by relative link from the step that applies it, not re-stated in-line.
 
 ```markdown
 ## Mode AUDIT — review an existing agent
@@ -56,9 +56,9 @@ Review an agent (or every agent in a directory) against the rubric and report.
 3. **Report** findings by location → criterion → fix; lead with FAIL findings.
 ```
 
-### Well-formed skill-specific mode definition (INIT)
+### Well-formed mode definition (INIT)
 
-A skill-specific mode sits alongside the three standard modes, named and alphabetical in the body. It states what kind of artifact it produces, the inputs it needs, what it reads before writing, and the output format. "INIT" is the conventional name for a scaffold/create mode; CONFORM is for bringing an existing artifact into line. Do not name a skill-specific mode AUDIT, CONFORM, or REFRESH — those are reserved for the standard three.
+INIT is one of the universal four (its mechanical half a per-skill `scripts/bootstrap.ts` that scaffolds a new artifact — or brings an off-standard one onto the floor from scratch); a skill-specific mode (e.g. an operational note-op, or OPTIMISE) follows the same definition shape, sitting alongside the four, named and alphabetical in the body. A mode definition states what kind of artifact it produces, the inputs it needs, what it reads before writing, and the output format. Do not name a skill-specific mode AUDIT, CONFORM, INIT, or REFRESH — those are reserved for the universal four.
 
 ```markdown
 ## Mode INIT — write a new agent definition

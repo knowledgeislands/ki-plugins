@@ -1,6 +1,6 @@
 # Modes AUDIT and CONFORM
 
-_On-demand procedure for decision-records' AUDIT and CONFORM modes (CONFORM runs AUDIT first, so they share this file). The format standard, prefix table, naming convention, status lifecycle, index rule, and placement rule live in [`SKILL.md`](../SKILL.md) and are already loaded; this file is the procedure only._
+_On-demand procedure for decision-records' AUDIT and CONFORM modes (CONFORM runs AUDIT first, so they share this file). The format standard, prefix table, naming convention, index rule, and placement rule live in [`SKILL.md`](../SKILL.md) and are already loaded; this file is the procedure only._
 
 ## Mode AUDIT — check DRs against the standard
 
@@ -13,6 +13,6 @@ _On-demand procedure for decision-records' AUDIT and CONFORM modes (CONFORM runs
 1. Run **AUDIT** first.
 2. **File renames** — if a filename or prefix does not match, confirm with the user before renaming (a rename changes the canonical ID).
 3. **Section repairs** — add missing section stubs; leave content for the author.
-4. **Index repair** — add missing rows, correct stale statuses, restore filename ordering.
-5. **Superseded links** — confirm bidirectional references: the superseded record's `**Status:**` reads `Superseded by <ID>` and the new record carries a `Supersedes <ID>` line.
+4. **Index repair** — add missing rows, correct stale dates, restore reveal-order ordering, drop any leftover Status column.
+5. **Present-state migration** — flag any record still carrying old-format lifecycle cruft (`**Status:**`, `**Mutability:**`, `## Changelog`, `Superseded by`/`Supersedes` lines) and rewrite it to the living-record form.
 6. Re-run **AUDIT** to confirm convergence.

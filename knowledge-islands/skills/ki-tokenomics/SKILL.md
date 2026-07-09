@@ -1,7 +1,8 @@
 ---
 name: ki-tokenomics
+implies: []
 description: >
-  Audit, codify, and optimise the tokenomics of a Claude Code environment — the standing context surface paid on every turn, composed across the user-wide (`~/.claude`) and project-local layers and any Knowledge Islands base, plus the runtime levers (caching, model tier, compaction, sub-agent fan-out, verbosity). Measures each layer's CLAUDE.md (+`@imports`), memory, installed-skill descriptions, MCP tool definitions, and settings against budgets, and checks context-compression tooling such as Headroom is set up optimally. Use when context feels heavy or token costs climb. Triggers: "audit my token usage", "why is my context so big", "reduce my token costs", "trim my context", "too many MCP tools", "is Headroom set up right". For the volatile numbers (model ids, prices, cache TTLs, window sizes) use `claude-api`; for a base's structure/content use `ki-kb-base`; for one skill's quality use `ki-skills`; for an MCP server's code use `ki-mcp`.
+  Audit, codify, and optimise the tokenomics of a Claude Code environment — the standing context surface paid on every turn, composed across the user-wide (`~/.claude`) and project-local layers and any Knowledge Islands base, plus the runtime levers (caching, model tier, compaction, sub-agent fan-out, verbosity). Measures each layer's CLAUDE.md (+`@imports`), memory, installed-skill descriptions, MCP tool definitions, and settings against budgets, and checks context-compression tooling such as Headroom is set up optimally. Use when context feels heavy or token costs climb. Triggers: "audit my token usage", "why is my context so big", "reduce my token costs", "trim my context", "too many MCP tools", "is Headroom set up right". For the volatile numbers (model ids, prices, cache TTLs, window sizes) use `claude-api`; for a base's structure/content use `ki-kb`; for one skill's quality use `ki-skills`; for an MCP server's code use `ki-mcp`.
 argument-hint: 'audit | conform | init | refresh'
 ---
 
@@ -41,7 +42,7 @@ A target opts in (and tunes) via a `[ki-tokenomics]` table in its `.ki-config.to
 
 ## Operating modes
 
-Every governance skill carries **AUDIT · CONFORM · REFRESH**; this one adds **INIT**. If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too.
+Every governance skill carries the universal four **AUDIT · CONFORM · INIT · REFRESH**. If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too.
 
 ### Mode AUDIT
 
@@ -63,7 +64,7 @@ Every governance skill carries **AUDIT · CONFORM · REFRESH**; this one adds **
 
 - `ki-mcp` — owns the design of MCP servers (tool surface breadth, resource scope). When the audit reveals an over-broad server is the largest cost item, route the _fix_ there; this skill only measures and names the cost.
 - `ki-skills` — owns the skill `description` field and its standing cost. When a bloated or unused skill description is flagged, route the trim there.
-- `ki-kb-base` — owns a base's zone structure and loaded surface. When a base's large CLAUDE.md or memory is the cost driver, route the restructuring there.
+- `ki-kb` — owns a base's zone structure and loaded surface. When a base's large CLAUDE.md or memory is the cost driver, route the restructuring there.
 
 ## Notes
 

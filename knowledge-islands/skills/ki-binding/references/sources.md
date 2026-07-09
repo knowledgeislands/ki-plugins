@@ -15,6 +15,14 @@ Provenance only: the record of _what changed_ lives in git (the REFRESH commit),
 
 † The operating rationale this skill implements. ‡ Render output shape, recognised `clients` tokens, rendered config paths.
 
+## External
+
+| Tag | Source | Governs | Last reviewed |
+| --- | --- | --- | --- |
+| [CP] | [code.claude.com/docs/en/plugins](https://code.claude.com/docs/en/plugins) | Plugin packaging shape (`.claude-plugin/plugin.json`) that `build-plugin.ts` generates | 2026-07-07 |
+| [CM] | [code.claude.com/docs/en/plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) | Marketplace manifest shape (`.claude-plugin/marketplace.json`) that `build-plugin.ts` generates | 2026-07-07 |
+| [CS] | [code.claude.com/docs/en/skills](https://code.claude.com/docs/en/skills) | Native `/skill-name` invocation — confirms skills projected into the plugin need no separate command wiring | 2026-07-07 |
+
 ## Open gates & watch-items
 
 - **The Cowork external-edit gate — RESOLVED (PASSED) 2026-07-06.** `local-agent-mode-sessions/<account>/<workspace>/cowork_settings.json` (`enabledPlugins`, `extraKnownMarketplaces`). Verified: Cowork honours an external edit on next launch ([DR] Verification log). What remains for Cowork is the plugin/marketplace packaging (plan 007 step 6), not the enablement mechanism.

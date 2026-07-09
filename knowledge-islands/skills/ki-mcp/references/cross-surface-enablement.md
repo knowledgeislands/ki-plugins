@@ -4,7 +4,7 @@ The design record for how a single source of truth enables the Knowledge Islands
 
 ## The problem
 
-The workspace controls MCP servers and skills for **Claude Code only**: mcporter proxies the KI servers ([ADR-KI-HARNESS-TOOLCHAIN-003](../../../docs/decisions/ADR-KI-HARNESS-TOOLCHAIN-003.md)) and `ki-bootstrap` links project-local skills — both write Claude-Code-only locations. The other surfaces drift: Cowork has no per-workspace enablement wired up, Desktop is fed only incidentally by the shared chezmoi template, and claude.ai web has no local config at all. The goal is one place to declare "these tools are on for this project/workspace" that fans out to every surface that can be controlled.
+The workspace controls MCP servers and skills for **Claude Code only**: mcporter proxies the KI servers ([ADR-KI-HARNESS-TOOLCHAIN-003](../../../docs/decisions/ADR-KI-HARNESS-TOOLCHAIN-003-mcporter-mcp-proxy.md)) and `ki-bootstrap` links project-local skills — both write Claude-Code-only locations. The other surfaces drift: Cowork has no per-workspace enablement wired up, Desktop is fed only incidentally by the shared chezmoi template, and claude.ai web has no local config at all. The goal is one place to declare "these tools are on for this project/workspace" that fans out to every surface that can be controlled.
 
 ## Per-surface targeting
 

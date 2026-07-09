@@ -1,5 +1,6 @@
 ---
 name: ki-handoffs
+implies: []
 description: >
   Govern the Knowledge Islands handoff doctrine: plan work once at the top reasoning tier, then write it as an implementation-ready spec a cheaper tier or a cold agent can execute without re-reasoning. Owns the reasoning-layer split, the handoff-spec quality bar (definition-of-done, decisions-locked vs escalate, ordered steps, acceptance criteria, a recommended implementer tier per unit), and the cold-model readiness test. AUDIT checks handoff-opted-in plans/proposals for the required markers; CONFORM fixes them; REFRESH revisits the doctrine. Does not own model-tier cost or selection — that is ki-tokenomics. Triggers: "is this ready to hand off", "make this delegable", "implementation-ready spec", "plan once execute cheap", "which tier should run this". Off-ramps: ki-tokenomics (tier cost/selection), ki-plans (plan format & lifecycle), ki-kb-streams (KB proposal Checklist), ki-agents (subagent definitions).
 argument-hint: 'audit [dir] | conform [dir] | refresh'
@@ -33,7 +34,7 @@ A spec is ready to hand down a tier when it passes these checks (they extend, no
 
 ## Operating modes
 
-Carries the universal **AUDIT · CONFORM · REFRESH**. If invoked without a mode and with no clear context signal, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a `[dir]` target in the `argument-hint`, prompt for it too.
+Carries **AUDIT · CONFORM · REFRESH**. If invoked without a mode and with no clear context signal, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a `[dir]` target in the `argument-hint`, prompt for it too.
 
 ### Mode AUDIT
 

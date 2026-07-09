@@ -1,5 +1,6 @@
 ---
 name: ki-plans
+implies: []
 description: >
   Govern the Knowledge Islands planning methodology for code repos: when to write a plan, how it derives from the ROADMAP, dependency discipline, and plan quality. Owns the mandate (plan before code for multi-file or multi-step changes), the near-horizon principle (plans exist only for ROADMAP "Next" items), the blocks/blocked-by dependency graph, and the quality bar for Steps and Verify. AUDIT checks docs/plans for frontmatter, README sync, and dependency integrity; CONFORM fixes mechanical issues; REFRESH revisits the methodology. Does not own the plan lifecycle (new/execute/done/status) — that is the /plan slash command. A code-repo instrument: in a KB, planning is a stream proposal's Checklist (ki-kb-streams). Triggers: "audit plans", "are my plans in order", "should I write a plan for this", "plan methodology". Off-ramps: /plan (lifecycle), ki-kb-streams (KB planning), ki-decision-records (decisions vs. plans), ki-harness (ROADMAP structure and phasing).
 argument-hint: 'audit [dir] | conform [dir] | refresh'
@@ -36,7 +37,7 @@ A plan is ready to execute when it passes these four checks:
 
 ## Operating modes
 
-Carries the universal **AUDIT · CONFORM · REFRESH**. If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too.
+Carries **AUDIT · CONFORM · REFRESH**. If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too.
 
 ### Mode AUDIT
 

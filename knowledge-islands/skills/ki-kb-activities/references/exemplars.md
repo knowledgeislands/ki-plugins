@@ -6,7 +6,7 @@
 ---
 status: active
 realization: slash-command
-skill: ki-kb-base
+skill: ki-kb
 author: Written with Claude
 ---
 ```
@@ -14,7 +14,7 @@ author: Written with Claude
 ```markdown
 # KB Audit
 
-Runs `ki-kb-base` AUDIT mode on demand to check the base structure against the KB standard.
+Runs `ki-kb` AUDIT mode on demand to check the base structure against the KB standard.
 
 Adopted because the KB grows rapidly and manual structure reviews are error-prone.
 ```

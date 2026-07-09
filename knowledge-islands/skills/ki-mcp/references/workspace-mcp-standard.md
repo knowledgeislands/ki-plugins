@@ -64,7 +64,7 @@ Top-level `src/` folders are identical across all six repos: `config`, `main`, `
 | ----------------------- | ----------------------------------------- |
 | mcp-git-audit           | `git`                                     |
 | mcp-ki-kb-fs            | `kb`                                      |
-| mcp-gsuite               | `gsuite`                                   |
+| mcp-gsuite              | `gsuite`                                  |
 | mcp-m365                | `m365`                                    |
 | mcp-claude-housekeeping | `claude_code`, `claude_desktop`, `vscode` |
 | mcp-kb-notion-mirror    | `notion_mirror`                           |

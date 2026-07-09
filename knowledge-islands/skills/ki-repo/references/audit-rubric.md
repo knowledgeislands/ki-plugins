@@ -4,10 +4,12 @@ The line-by-line checkable criteria behind [the standard](repo-standard.md). Eac
 
 A criterion's tag is a contract with the script: if you find yourself eyeballing an **[M]** check, run the auditor instead; a **[J]** check that becomes deterministic should move into the script and flip to **[M]**.
 
+Every **[M]** finding here is also auto-fixable: [`../scripts/conform-repo.ts`](../scripts/conform-repo.ts) applies the matching `gh` call or local scaffold directly (`--dry-run` to preview). The **[J]** findings (README content, description text/visibility, whether a `[ki-repo.checks]` override is warranted) are printed as manual TODOs, never guessed.
+
 ## Layer 1 — repo files (presence on the default branch, via the GitHub git-tree API)
 
 - **readme [M]** `README.md` present. (standard: Layer 1)
-- **license-file [M]** `LICENSE` (or `LICENSE.md`) present. FAIL for all repos — public: MIT text; private: proprietary copyright text. (Layer 1)
+- **license-file [M]** `LICENSE` (or `LICENSE.md`) present. FAIL for all repos — its text is the declared license (default MIT), or proprietary copyright text if `license` is `UNLICENSED`. (Layer 1)
 - **gitignore [M]** `.gitignore` present. (Layer 1)
 - **editorconfig [M]** `.editorconfig` present. (Layer 1)
 - **claude-md [M]** `CLAUDE.md` present — the always-loaded anchor for any repo-specific gate or convention (skills rubric SHAPE-7). (Layer 1)
@@ -17,8 +19,8 @@ A criterion's tag is a contract with the script: if you find yourself eyeballing
 ## Layer 2 — core GitHub settings (repos on github.com)
 
 - **default-branch [M]** default branch is `main`. (Layer 2)
-- **license [M]** _(public)_ license is MIT; _(private)_ must not be MIT — FAIL if GitHub detects MIT. (Layer 2)
-- **package-license [M]** _(private, when package.json exists)_ `package.json` `"license"` is `"UNLICENSED"`. FAIL if set to any other value or absent. (Layer 2)
+- **license [M]** live GitHub license matches the declared `[ki-repo]` `license` SPDX id (default MIT); a proprietary declaration expects no recognised OSI license. Decoupled from visibility. (Layer 2)
+- **package-license [M]** _(when package.json exists)_ `package.json` `"license"` matches the declared `license` id (`"UNLICENSED"` for a proprietary declaration). FAIL on any mismatch. (Layer 2)
 - **description [M]** description is non-empty. (Layer 2)
 - **description-sync [M]** the GitHub description equals the repo's `package.json` `description` (its in-repo source of truth), where a package.json description exists. (Layer 2)
 - **merge [M]** squash only — merge-commit off, rebase off. (Layer 2)
@@ -43,7 +45,7 @@ A criterion's tag is a contract with the script: if you find yourself eyeballing
 
 ## Coverage cascade (gated on the `.ki-config.toml` marker)
 
-- **coverage [M, gated]** Once `.ki-config.toml` confirms the repo is a ki-repo, every governance skill whose applicability is **detected** in the repo must declare its opt-in `[ki-<skill>]` table; a detected artifact with no table WARNs, and a declared table with no matching artifact WARNs as possibly stale. Signals → tables: `package.json` → engineering, `Pillars/`+`Resources/` → kb, `Streams/` → streams, `eleventy.config.*` → 11ty-websites, `wrangler.*` → cloudflare-hosting, `@modelcontextprotocol/sdk` dep → mcp, `skills/*/SKILL.md` → skills, `agents/**/*.md` → agents. **Gated**: a repo with no `.ki-config.toml` is never coverage-checked (it takes the `ki-config` FAIL), so a lookalike is not falsely flagged. This is `repo`'s one cross-table read — **presence only**, never another skill's keys. Silence one signal with `coverage-<skill> = false` under `[ki-repo.checks]`. (standard: Coverage cascade)
+- **coverage [M, gated]** Once `.ki-config.toml` confirms the repo is a ki-repo, every governance skill whose applicability is **detected** in the repo must declare its opt-in `[ki-<skill>]` table; a detected artifact with no table WARNs, and a declared table with no matching artifact WARNs as possibly stale. Signals → tables: `package.json` → engineering, `Pillars/`+`Resources/` → kb, `Streams/` → streams, `eleventy.config.*` → website, `wrangler.*` → website-cloudflare, `@modelcontextprotocol/sdk` dep → mcp, `.claude-plugin/marketplace.json` → plugins, `skills/*/SKILL.md` → skills, `agents/**/*.md` → agents. **Gated**: a repo with no `.ki-config.toml` is never coverage-checked (it takes the `ki-config` FAIL), so a lookalike is not falsely flagged. This is `repo`'s one cross-table read — **presence only**, never another skill's keys. Silence one signal with `coverage-<skill> = false` under `[ki-repo.checks]` (e.g. `coverage-website = false`). (standard: Coverage cascade)
 
 ## Judgment (not deterministic — apply by reading)
 

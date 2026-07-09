@@ -9,11 +9,11 @@ Curated illustrations of well-formed Decision Records. Use these when authoring 
 
 ## Collections
 
-| Source                                                 | Covers                                                          | Last reviewed |
-| ------------------------------------------------------ | --------------------------------------------------------------- | ------------- |
-| [Nygard (original)][nygard]                            | The five-section format, status vocabulary, immutability stance | 2026-06-25    |
-| [ADR GitHub community resources][adr-gh]               | Community patterns: Options, Pros/Cons, multi-type variants     | 2026-06-25    |
-| `ki-arcadia-principal` `Admin/Governance/Decisions/` † | The canonical KI KB-repo implementation of the DR format        | 2026-06-25    |
+| Source                                                 | Covers                                                      | Last reviewed |
+| ------------------------------------------------------ | ----------------------------------------------------------- | ------------- |
+| [Nygard (original)][nygard]                            | The section format and rationale style                      | 2026-06-25    |
+| [ADR GitHub community resources][adr-gh]               | Community patterns: Options, Pros/Cons, multi-type variants | 2026-06-25    |
+| `ki-arcadia-principal` `Admin/Governance/Decisions/` † | The canonical KI KB-repo implementation of the DR format    | 2026-06-25    |
 
 † The `ki-arcadia-principal` base is not publicly hosted; the DRs are the primary exemplars for the KB-repo shape.
 
@@ -24,7 +24,7 @@ Curated illustrations of well-formed Decision Records. Use these when authoring 
 
 ### Well-formed KB-repo GDR (Governance Decision Record)
 
-`GDR-KI-ARCADIA-001-adopting-decision-records.md` is the reference implementation of the KB-repo shape. Note: frontmatter `decision_type` matches the `GDR-` prefix; `status` tracks maintenance state, not the decision lifecycle (the lifecycle lives in the `**Status:**` body field); `decision_depends_on` is a YAML list of full DR codes; the five sections appear in canonical order; voice is active present tense; the References section uses relative Markdown links only.
+`GDR-KI-ARCADIA-001-adopting-decision-records.md` is the reference implementation of the KB-repo shape. Note: frontmatter `decision_type` matches the `GDR-` prefix; `status` tracks maintenance state (freshness), not a decision lifecycle — DRs have none; `decision_depends_on` is a YAML list of full DR codes; the body sections appear in canonical order; voice is active present tense; the References section uses relative Markdown links only.
 
 ```markdown
 ---
@@ -36,8 +36,6 @@ decision_depends_on: ['SDR-KI-ARCADIA-001']
 ---
 
 # GDR-KI-ARCADIA-001: Adopting Decision Records
-
-**Status:** Accepted
 
 **Date:** 2026-06-25
 
@@ -76,8 +74,6 @@ author: Written with Claude
 
 # SDR-KI-ARCADIA-001: Knowledge Islands — The Strategy
 
-**Status:** Accepted
-
 **Date:** 2026-06-25
 
 ## Context
@@ -104,23 +100,21 @@ Each island is introduced independently when its time comes.
 
 ### Decisions index table
 
-The index — `Decisions.md` in a KB, `README.md` in a code repo — carries one row per DR ordered by **reveal order** (the logical reading sequence derived from the `decision_depends_on` dependency graph, roots first). The KB style below links the ID cell; a code repo may instead keep a bare ID in column 0 and link the Title (as the harness `docs/decisions/README.md` does) — the checker accepts either and finds Status and Date by their header labels. Status and Date must match the DR body exactly. Do not use wikilinks in table cells: the `|` in `[[target|Display text]]` breaks the column boundary.
+The index — `Decisions.md` in a KB, `README.md` in a code repo — carries one row per DR ordered by **reveal order** (the logical reading sequence derived from the `decision_depends_on` dependency graph, roots first). The KB style below links the ID cell; a code repo may instead keep a bare ID in column 0 and link the Title (as the harness `docs/decisions/README.md` does) — the checker accepts either and finds an optional Date column by its header label. A Date column (if present) must match the DR body. There is no Status column — records are living and present-state. Do not use wikilinks in table cells: the `|` in `[[target|Display text]]` breaks the column boundary.
 
 ```markdown
-| DR ID                                                                  | Title                            | Status   | Date       |
-| ---------------------------------------------------------------------- | -------------------------------- | -------- | ---------- |
-| [SDR-KI-ARCADIA-001](SDR-KI-ARCADIA-001-knowledge-islands-strategy.md) | Knowledge Islands — The Strategy | Accepted | 2026-06-25 |
-| [GDR-KI-ARCADIA-001](GDR-KI-ARCADIA-001-adopting-decision-records.md)  | Adopting Decision Records        | Accepted | 2026-06-25 |
+| DR ID                                                                  | Title                            | Date       |
+| ---------------------------------------------------------------------- | -------------------------------- | ---------- |
+| [SDR-KI-ARCADIA-001](SDR-KI-ARCADIA-001-knowledge-islands-strategy.md) | Knowledge Islands — The Strategy | 2026-06-25 |
+| [GDR-KI-ARCADIA-001](GDR-KI-ARCADIA-001-adopting-decision-records.md)  | Adopting Decision Records        | 2026-06-25 |
 ```
 
 ### Code-repo ADR (bare Markdown, no frontmatter)
 
-Code repos (non-KB) may omit YAML frontmatter entirely. The `ADR-` prefix aligns with the established Nygard / adr.github.io ecosystem. The five sections and the bold `**Status:**` / `**Date:**` fields are still required; the `## References` section is optional but encouraged when the decision codifies an existing standard.
+Code repos (non-KB) may omit YAML frontmatter entirely. The `ADR-` prefix aligns with the established Nygard / adr.github.io ecosystem. The body sections (Context, Decision, Consequences) are required; a `**Date:**` line is optional; the `## References` section is optional but encouraged when the decision codifies an existing standard.
 
 ```markdown
 # ADR-HARNESS-001: Adopting Bun as the Package Manager
-
-**Status:** Accepted
 
 **Date:** 2026-01-15
 

@@ -1,7 +1,8 @@
 ---
 name: ki-kb-streams
+implies: []
 description: >
-  Operate and govern the Streams zone of a Knowledge Islands base — the working copy of work in motion, run as the Enactment Process (the canonical change process: a proposal goes draft → ready → ratify → roll out → review → settle, and nothing reaches stable knowledge except through that gate). Use to start a stream, iterate a proposal, mark one ready, roll out an approved change, run a post-change review, and settle or reject a stream — and to audit a base's Streams structure (Focus lifecycle, the `Proposal` suffix, leaf/parent layout, proposal frontmatter) or conform it. Triggers: "start a stream", "create a proposal", "mark this ready", "roll out this proposal", "settle this stream", "what's the enactment process", "plan mode for my knowledge base", "does this change need a proposal", "audit my streams". For the five-zone model and note CRUD / routing use the `ki-kb-base` skill, which delegates the Streams zone here; for Markdown / TOML house style use `ki-authoring`.
+  Operate and govern the Streams zone of a Knowledge Islands base — the working copy of work in motion, run as the Enactment Process (the canonical change process: a proposal goes draft → ready → ratify → roll out → review → settle, and nothing reaches stable knowledge except through that gate). Use to start a stream, iterate a proposal, mark one ready, roll out an approved change, run a post-change review, and settle or reject a stream — and to audit a base's Streams structure (Focus lifecycle, the `Proposal` suffix, leaf/parent layout, proposal frontmatter) or conform it. Triggers: "start a stream", "create a proposal", "mark this ready", "roll out this proposal", "settle this stream", "what's the enactment process", "plan mode for my knowledge base", "does this change need a proposal", "audit my streams". For the five-zone model and note CRUD / routing use the `ki-kb` skill, which delegates the Streams zone here; for Markdown / TOML house style use `ki-authoring`.
 argument-hint: 'audit | conform | iterate | propose | ready | refresh | reject | review | rollout | settle'
 ---
 
@@ -9,7 +10,7 @@ argument-hint: 'audit | conform | iterate | propose | ready | refresh | reject |
 
 You are operating the **`Streams` zone** of a Knowledge Islands base. `Streams/` is the base's _working copy_ — the home of work in motion, and what the user thinks of as "plan mode." It is governed by the **Enactment Process**. A stream is one of two weights (chosen per stream): a **full proposal** — a governed change that iterates in place, is submitted for approval, rolled out, and retired — or a **lightweight stream**, a tracker for work that isn't (yet) a formal change to canonical content. **Nothing reaches a canonical zone (`Admin/` — the base's own operating model — `Pillars/`, and `Resources/`) except through an approved proposal** — authority to work in a stream is granted by its presence in the workspace; authority to edit a canonical zone is granted only by approval of a `ready` proposal that specifies the change.
 
-The companion `ki-kb-base` skill owns the five-zone model and note CRUD / routing, and **delegates the inside of `Streams/` here**; load it for anything outside this zone. This skill carries the structure and process as fixed knowledge; only a couple of store-level **bindings** come from the host base.
+The companion `ki-kb` skill owns the five-zone model and note CRUD / routing, and **delegates the inside of `Streams/` here**; load it for anything outside this zone. This skill carries the structure and process as fixed knowledge; only a couple of store-level **bindings** come from the host base.
 
 The full detail lives in the references (progressive disclosure): the structure in [the Streams structure reference](<references/Streams Structure Reference.md>), the process in [the Enactment Process reference](<references/Enactment Process Reference.md>). The line-by-line checkable items live in [the rubric](references/audit-rubric.md); the mechanical checker is [`scripts/audit-streams.ts`](scripts/audit-streams.ts).
 
@@ -70,7 +71,7 @@ Almost everything is fixed above. Only these come from the host base — take de
 
 - **Process note** — the base's local change-process note that streams' `Governance` footers link to: a thin pointer to **this skill** (the canonical definition) plus the base's local specifics. _Default:_ `Enactment Process`. A base may host it under a non-default name or location (e.g. `kit-legal` keeps it under `Admin/Operations/Processes/`); declare it as `process_note = "Admin/Operations/Processes/Enactment Process"`. Resolve every `Governance` link through it.
 - **Frontmatter scheme** — the note-type convention for zone / focus / proposal notes. The canonical scheme is the machine-readable **`type:`** key (`type: stream-zone` / `stream-focus` / `stream-proposal`) — `type` is the fundamental note-type marker, and the checker keys on it. A base still carrying the legacy `card/*` tag scheme declares `note_type_scheme = "tags"` as a transitional accommodation (like a zone alias), to be retired as it migrates to `type`.
-- **Canonical zones** — the zones the gate protects, where a proposal's output lands. The knowledge **stores** a settled stream migrates into are `Pillars/` (internal; a base that holds it under a legacy folder name resolves it via the `ki-kb-base` zone alias) and `Resources/` (external knowledge). `Admin/` — the base's operating model (its processes, conventions, configuration) — is equally canonical and equally gated, but receives operating-model changes rather than migrated subject-knowledge.
+- **Canonical zones** — the zones the gate protects, where a proposal's output lands. The knowledge **stores** a settled stream migrates into are `Pillars/` (internal; a base that holds it under a legacy folder name resolves it via the `ki-kb` zone alias) and `Resources/` (external knowledge). `Admin/` — the base's operating model (its processes, conventions, configuration) — is equally canonical and equally gated, but receives operating-model changes rather than migrated subject-knowledge.
 
 ## Step 1 — Load context
 
@@ -79,7 +80,7 @@ Almost everything is fixed above. Only these come from the host base — take de
 
 ## Operating modes
 
-If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too. The shared model above — the zone-at-a-glance, the status lifecycle, the proposal anatomy, the bindings, Step 1, and the **Working rules** and **Enactment gate** below — is what every mode needs and stays loaded; each mode's _procedure_ lives in its own on-demand file, so read only the one the request selects. Like every governance skill this carries **AUDIT · CONFORM · REFRESH**; its enactment-lifecycle modes are **ITERATE · PROPOSE · READY · REJECT · REVIEW · ROLLOUT · SETTLE**. Modes are named and alphabetical.
+If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too. The shared model above — the zone-at-a-glance, the status lifecycle, the proposal anatomy, the bindings, Step 1, and the **Working rules** and **Enactment gate** below — is what every mode needs and stays loaded; each mode's _procedure_ lives in its own on-demand file, so read only the one the request selects. This carries **AUDIT · CONFORM · REFRESH**; its enactment-lifecycle modes are **ITERATE · PROPOSE · READY · REJECT · REVIEW · ROLLOUT · SETTLE**. Modes are named and alphabetical.
 
 | Mode    | Fires on                                                       | Read before acting                                        |
 | ------- | -------------------------------------------------------------- | --------------------------------------------------------- |
@@ -113,11 +114,11 @@ These apply to every change (the discipline that keeps the workspace trustworthy
 The Enactment gate ("nothing reaches a canonical zone except through a `ready` proposal") only bites if it is _consulted_ — and skills load **on demand**, so this one will not fire on a plain "edit the X note" request that never mentions a proposal. The gate must therefore be **anchored in always-loaded context**:
 
 - A base that runs the Enactment Process carries a standing directive in its **`CLAUDE.md` / `AGENTS.md`**: _substantive changes to a canonical zone (`Admin`, `Pillars`, `Resources`) go through a proposal — load `ki-kb-streams`; do not edit a canonical zone directly_ (trivial fixes, `Calendar/` entries, and `+/` triage exempt).
-- `ki-kb-base`'s UPDATE / SAVE modes defer here when the target is a canonical zone and the base runs the gate, rather than writing directly.
+- `ki-kb`'s UPDATE / SAVE modes defer here when the target is a canonical zone and the base runs the gate, rather than writing directly.
 - The checker's **GATE-1** verifies the `CLAUDE.md` directive is present — so a base can't quietly lose the gate.
 
 ## Notes
 
-- This skill governs the **inside of the `Streams/` zone**. For the five-zone model, routing into the zones, note CRUD, and session digests, use the `ki-kb-base` skill — it knows `Streams` is a zone and delegates its internals here.
+- This skill governs the **inside of the `Streams/` zone**. For the five-zone model, routing into the zones, note CRUD, and session digests, use the `ki-kb` skill — it knows `Streams` is a zone and delegates its internals here.
 - When a proposal's `Decision` (an Inputs or Outputs row) warrants a durable, standalone Decision Record rather than an inline note, author it with the `ki-decision-records` skill and reference it from the row.
 - If a base does not follow this structure, or a binding cannot be resolved and no default fits, ask rather than guess.

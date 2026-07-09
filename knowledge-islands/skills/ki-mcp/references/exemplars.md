@@ -15,7 +15,7 @@ Curated patterns worth reading when authoring or auditing a Knowledge Islands MC
 | MCP spec — Security           | [Security Best Practices][spec-sec]         | Security hardening ¥       |
 | Tool Annotations (MCP blog)   | [Tool Annotations post][annotations]        | Annotation keys ※※         |
 | mcp-git-audit (in-house)      | [knowledgeislands/mcp-git-audit][git-audit] | Reference implementation ※ |
-| mcp-gsuite (in-house)          | [knowledgeislands/mcp-gsuite][gsuite]         | Auth-server variant ❡      |
+| mcp-gsuite (in-house)         | [knowledgeislands/mcp-gsuite][gsuite]       | Auth-server variant ❡      |
 
 ※ Layout, config, access-level gate, audit logging, testing.
 

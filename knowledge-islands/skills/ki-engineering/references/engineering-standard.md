@@ -1,6 +1,6 @@
 # The Knowledge Islands engineering standard
 
-ADR: [ADR-KI-HARNESS-TOOLCHAIN-001](../../../docs/decisions/ADR-KI-HARNESS-TOOLCHAIN-001.md)
+ADR: [ADR-KI-HARNESS-TOOLCHAIN-001](../../../docs/decisions/ADR-KI-HARNESS-TOOLCHAIN-001-standard-toolchain.md)
 
 The shared **engineering toolchain** every Knowledge Islands TypeScript/Bun repo conforms to — the common layer the artifact-type skills (`ki-mcp`, and future ones) build on rather than restate. It is the build/test twin of `ki-authoring` (which owns _how we write_); this owns _how we build, lint, and test_.
 
@@ -44,13 +44,13 @@ Every KI TS/Bun repo is one of exactly **two shapes**, distinguished by the stan
 
 | Shape        | Marker                                | Canonical examples                                     |
 | ------------ | ------------------------------------- | ------------------------------------------------------ |
-| **Flat**     | no `workspaces` key in `package.json` | the `mcp-*` repos (`mcp-kb-fs`, `mcp-gsuite`, …)        |
+| **Flat**     | no `workspaces` key in `package.json` | the `mcp-*` repos (`mcp-kb-fs`, `mcp-gsuite`, …)       |
 | **Monorepo** | `workspaces` array in `package.json`  | every 11ty/Cloudflare website (`vallearmonia-website`) |
 
 - **Flat** is the default: all source under one root TS project, one root `tsconfig.json`, scripts unprefixed. A single root `tsc --noEmit` type-checks the whole repo (§2).
 - **Monorepo** declares its packages as workspace directories — `"workspaces": ["site", "ingress"]` (or just `["site"]`). Each workspace carries its own `package.json` and `tsconfig.json`. Because two workspaces can carry mutually incompatible `types`/`lib` (e.g. `site/` on Bun types vs `ingress/` on `@cloudflare/workers-types`), one root `tsc --noEmit` cannot span them — so `ki:lint:types` aggregates a per-workspace check (§2) and scripts take the workspace-name prefix (`ki:site:build`, `ki:ingress:types`).
 - **Per-workspace artifacts and test scope.** In a monorepo every build/test artifact and the config globs that produce it are **scoped to the workspace directory that owns them**, never the repo root: each workspace's compiled `dist/` (§7), its vitest coverage output — the `reportsDirectory`, e.g. `site/coverage` (§6) — and its test files with their `include`/`exclude` globs all sit under `<workspace>/…`. The repo root carries only shared, workspace-spanning config (root `package.json`, the `ki:lint:*`/`biome`/`prettier`/`markdownlint` toolchain, root `.gitignore`). In the **flat** shape these same artifacts live at the root because the root _is_ the single package, so `dist/` and `coverage/` at the root are already "under the workspace". This is the one rule behind a site's output at `site/dist` (not root `dist/`) and its coverage at `site/coverage` (not root `coverage/`); when it is violated the artifact escapes its workspace and the root fills with per-package output. Cross-refs: §6 (tests), §7 (build).
-- **All house 11ty/Cloudflare website repos are monorepos**, even a single-concern site — it declares `"workspaces": ["site"]` from day one so the shape is explicit and adding a companion workspace (an ingress Worker, an API) is a pure addition, not a migration. See `ki-websites-11ty` §2 and `ki-hosting-cloudflare` §1/§3 for the site-specific layout this implies.
+- **All house 11ty/Cloudflare website repos are monorepos**, even a single-concern site — it declares `"workspaces": ["site"]` from day one so the shape is explicit and adding a companion workspace (an ingress Worker, an API) is a pure addition, not a migration. See `ki-website` §2 and `ki-website-cloudflare` §1/§3 for the site-specific layout this implies.
 
 The shape signal is `workspaces` in `package.json` — a standard tooling convention, read directly by the checker. It is **not** a `.ki-config.toml` key; `.ki-config.toml`'s `[ki-engineering]` table is a conformance marker only (§9).
 
@@ -198,7 +198,7 @@ When a repo ships a compiled `dist/` (it has `tsconfig.build.json`, or `build` i
 - `"build": "tsc -p tsconfig.build.json"`. `"files": ["dist"]`.
 - `tsconfig.build.json` extends `tsconfig.json`: `noEmit: false`, `declaration` + `declarationMap`, `outDir: ./dist`, `rootDir: ./src`, `allowImportingTsExtensions: false`, `noUncheckedIndexedAccess: true`, `exclude: [..., "**/*.test.ts"]`.
 - **CLI chmod rule.** `build` appends `&& chmod +x dist/cli/cli.js` **iff** `src/cli/` exists, and chmods **nothing else** — in particular **not** a server/`mcp-server` bin. (Package managers set `+x` on `bin` targets at install, and launchers invoke via `node`, so the entry bin needs no chmod; the executable CLI does.) A `build` that chmods a path with no matching `src/` dir, or omits the chmod while `src/cli/` exists, is drift.
-- **Monorepo variant (§0).** In a monorepo the compiled output lands under the owning workspace (`site/dist`, `ingress/dist`), and the workspace's `files`/`clean` entries and the root `.gitignore` reference that workspace-scoped path (`/site/dist`), not a root `dist/`. A website's `dist/` location specifically is owned by `ki-websites-11ty` (which builds it) and `ki-hosting-cloudflare` (which serves it); this section governs the `tsc`-compiled case.
+- **Monorepo variant (§0).** In a monorepo the compiled output lands under the owning workspace (`site/dist`, `ingress/dist`), and the workspace's `files`/`clean` entries and the root `.gitignore` reference that workspace-scoped path (`/site/dist`), not a root `dist/`. A website's `dist/` location specifically is owned by `ki-website` (which builds it) and `ki-website-cloudflare` (which serves it); this section governs the `tsc`-compiled case.
 
 A non-`tsc` build (e.g. ki-website's 11ty `build`) is outside this section — the repo compiles by another toolchain; only the families in §2 and the core (§1–§5) apply.
 

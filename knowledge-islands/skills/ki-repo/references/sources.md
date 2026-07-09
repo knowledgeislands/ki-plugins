@@ -15,6 +15,7 @@ The authoritative sources behind [the standard](repo-standard.md), [the rubric](
 | [Secret scanning & push protection][secret-scanning] | `security_and_analysis` toggles and their plan/GHAS gating | 2026-07-04 |
 | [REST: Actions permissions for a repository][actions] | `allowed_actions` policy | 2026-07-04 |
 | [`gh` CLI manual][gh-cli] | `gh repo list/view/edit`, `gh api` — how the script reads/writes | 2026-06-21 |
+| [choosealicense.com][choosealicense] | the declared `license` SPDX id — the picker and the reference for license/`LICENSE`/`package.json` conformance | 2026-07-09 |
 
 ## Last review
 
@@ -36,3 +37,4 @@ REFRESH last run **2026-07-04** against the GitHub REST API (repository settings
 [secret-scanning]: https://docs.github.com/en/code-security/secret-scanning/about-secret-scanning
 [actions]: https://docs.github.com/en/rest/actions/permissions
 [gh-cli]: https://cli.github.com/manual/
+[choosealicense]: https://choosealicense.com/

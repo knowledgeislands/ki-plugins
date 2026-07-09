@@ -1,6 +1,6 @@
 # The mechanical-checker contract
 
-ADR: [ADR-KI-HARNESS-SKILLS-002](../../../docs/decisions/ADR-KI-HARNESS-SKILLS-002.md)
+ADR: [ADR-KI-HARNESS-SKILLS-002](../../../docs/decisions/ADR-KI-HARNESS-SKILLS-002-mechanical-judgment-checker-split.md)
 
 A checker is the deterministic half of a standard. It MUST:
 

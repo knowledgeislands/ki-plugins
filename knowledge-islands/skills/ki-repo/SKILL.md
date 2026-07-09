@@ -1,5 +1,6 @@
 ---
 name: ki-repo
+implies: [ki-authoring, ki-engineering]
 description: >
   Codify, audit, and apply the Knowledge Islands repo standard to any Knowledge Islands–compliant git repo — one that carries a `.ki-config.toml` — not only the `knowledgeislands` org, which is its reference set. Covers the local files (README, LICENSE, .gitignore, .editorconfig), GitHub settings (merge policy, branch, features, topics, visibility, description), and security (secret scanning, Dependabot, Actions). Use when checking whether repos match the standard, bringing one into line, onboarding a new repo, or refreshing the standard against GitHub's surface. Triggers: "audit the repos", "do our repos follow the standard", "apply the repo standard", "enable secret scanning / Dependabot", "refresh the repo standard". Discovers repos from a local tree (github.com-gated) or a whole org via `gh`. Governs repo configuration, not source code. Off-ramps: `ki-authoring` (Markdown/TOML style), `ki-engineering` (toolchain), `ki-harness` (bundle layout).
 argument-hint: 'audit | conform <repo> | init <repo> | refresh'
@@ -19,11 +20,11 @@ This skill governs a repo's **configuration and Knowledge Islands compliance** �
 
 **Visibility** is **declared** per repo in `.ki-config.toml` under `[ki-repo]` (`visibility = "public" | "private"`) and checked against live GitHub — not inferred from the name. `.ki-config.toml` is a shared file: each skill reads its own `[table]`, and `--init` scaffolds this skill's default keys. Per-repo overrides live in a `[ki-repo.checks]` sub-table — one boolean per overridable check (`true` = enforce, `false` = don't); omit any to take the org default, so a fully-conforming repo writes none. `branch-protection` defaults **off** (set `true` to protect `main`); the GitHub-feature and security checks default **on** (set `false` to step out). The auditor prints each active override as a `note`, never a failure. See [the standard](references/repo-standard.md).
 
-**Coverage** is enforced on top of that marker — a gated cascade. Once `.ki-config.toml` confirms the repo _is_ a Knowledge Islands repo, the auditor checks that every governance standard whose applicability is _detectable_ in the repo declares its opt-in table: an `eleventy.config` expects `[ki-websites-11ty]`, a `Streams/` zone expects `[ki-kb-streams]`, the MCP SDK expects `[ki-mcp]`, and so on across `engineering`, `kb`, `cloudflare-hosting`, `skills`, and `agents`. A detected-but-undeclared standard is a **WARN** (never a FAIL); a declared table with no matching artifact is a softer "stale?" WARN. The **gate** is what stops a false positive — a plain git repo with an 11ty config but no `.ki-config.toml` is not a Knowledge Islands repo, so coverage is skipped entirely and it simply takes the `ki-config` FAIL. Silence a deliberate non-coverage with `[ki-repo.checks]` `coverage-<skill> = false`. The cascade reads only table _presence_ across the set (presence is a compliance fact `repo` is entitled to check); it never interprets another skill's keys. See [the contract](references/ki-config-standard.md).
+**Coverage** is enforced on top of that marker — a gated cascade. Once `.ki-config.toml` confirms the repo _is_ a Knowledge Islands repo, the auditor checks that every governance standard whose applicability is _detectable_ in the repo declares its opt-in table: an `eleventy.config` expects `[ki-website]`, a `Streams/` zone expects `[ki-kb-streams]`, the MCP SDK expects `[ki-mcp]`, and so on across `engineering`, `kb`, `website-cloudflare`, `skills`, and `agents`. A detected-but-undeclared standard is a **WARN** (never a FAIL); a declared table with no matching artifact is a softer "stale?" WARN. The **gate** is what stops a false positive — a plain git repo with an 11ty config but no `.ki-config.toml` is not a Knowledge Islands repo, so coverage is skipped entirely and it simply takes the `ki-config` FAIL. Silence a deliberate non-coverage with `[ki-repo.checks]` `coverage-<skill> = false`. The cascade reads only table _presence_ across the set (presence is a compliance fact `repo` is entitled to check); it never interprets another skill's keys. See [the contract](references/ki-config-standard.md).
 
 ## Operating modes
 
-Every governance skill carries **AUDIT · CONFORM · REFRESH**; this one adds **INIT** (onboard a repo). If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too.
+Every governance skill carries the universal four **AUDIT · CONFORM · INIT · REFRESH**; INIT here onboards a repo. If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too.
 
 ### Mode AUDIT — check a repo against the standard
 
@@ -38,11 +39,12 @@ Auditing a whole tree or org is a set audit — **bound the context** (the set-a
 
 Outward-facing: it changes live GitHub settings and may open PRs. Show the diff and confirm before mutating.
 
+The audit-rubric's `[M]` findings are scripted: `bun scripts/conform-repo.ts [path]` (`--dry-run` to preview) applies every mechanical `gh` call in [the standard](references/repo-standard.md#applying-it) directly — merge methods, auto-delete-branch, Wiki/Projects/Issues, topics, branch protection (only when `[ki-repo.checks]` opts it in), Dependabot alerts/updates, `allow_update_branch`, secret scanning + push protection (public), Actions permissions — and scaffolds `.gitignore` / `.editorconfig` / a `.ki-config.toml` `[ki-repo]` block when absent. It prints the 3 `[J]` findings (README content, description text/visibility, whether a `[ki-repo.checks]` override is warranted) as manual TODOs rather than guessing — those still need a human read.
+
 1. Run **AUDIT** first, so you change against a known gap list.
-2. **Files** — add any missing `README.md` / `LICENSE` / `.gitignore` / `.editorconfig` (and a `.ki-config.toml` — or run **INIT** first). `main` is unprotected, so this can be a direct push (or a PR if you prefer).
-3. **GitHub settings** — apply with the `gh` commands in [the standard](references/repo-standard.md) (merge methods, auto-delete-branch, features, description, topics).
-4. **Deeper** — Dependabot alerts/updates, secret scanning + push protection (public), Actions permissions.
-5. **Re-audit** to confirm convergence.
+2. Run `conform-repo.ts` for the mechanical layer (or apply the `gh` commands in [the standard](references/repo-standard.md) by hand).
+3. Resolve the 3 printed `[J]` TODOs yourself — README content, description/visibility, per-repo check overrides.
+4. **Re-audit** to confirm convergence.
 
 ### Mode INIT — make a repo Knowledge Islands–compliant
 
