@@ -1,6 +1,6 @@
 # Workspace MCP Standard
 
-The canonical shape shared by every stdio MCP server in the `knowledgeislands/` workspace: `mcp-git-audit`, `mcp-ki-kb-fs`, `mcp-gmail`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-kb-notion-mirror`. This is the reference the `ki-mcp` skill codifies and audits against. Where repos disagree, the majority shape is the standard; documented per-repo exceptions are noted inline.
+The canonical shape shared by every stdio MCP server in the `knowledgeislands/` workspace: `mcp-git-audit`, `mcp-ki-kb-fs`, `mcp-gsuite`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-kb-notion-mirror`. This is the reference the `ki-mcp` skill codifies and audits against. Where repos disagree, the majority shape is the standard; documented per-repo exceptions are noted inline.
 
 ## Contents
 
@@ -64,14 +64,14 @@ Top-level `src/` folders are identical across all six repos: `config`, `main`, `
 | ----------------------- | ----------------------------------------- |
 | mcp-git-audit           | `git`                                     |
 | mcp-ki-kb-fs            | `kb`                                      |
-| mcp-gmail               | `gmail`                                   |
+| mcp-gsuite               | `gsuite`                                   |
 | mcp-m365                | `m365`                                    |
 | mcp-claude-housekeeping | `claude_code`, `claude_desktop`, `vscode` |
 | mcp-kb-notion-mirror    | `notion_mirror`                           |
 
-- **Plural** resource for collection ops (`git_repos_scan`, `gmail_messages_search`, `kb_notes_list`).
-- **Singular** for single-item ops (`kb_note_read`, `git_repo_commit`, `gmail_message_get`).
-- Metadata/lifecycle tools may drop the resource segment (`m365_about`, `gmail_auth_start`).
+- **Plural** resource for collection ops (`git_repos_scan`, `gsuite_email_messages_search`, `kb_notes_list`).
+- **Singular** for single-item ops (`kb_note_read`, `git_repo_commit`, `gsuite_email_message_get`).
+- Metadata/lifecycle tools may drop the resource segment (`m365_about`, `gsuite_auth_start`).
 - The CLI verb surface mirrors the tool names.
 
 The house scheme is a deliberate **subset** of what the spec permits: per [TOOLS](sources.md), names SHOULD be 1–128 chars from `[A-Za-z0-9_.-]`. Snake*case `<app>*<resource>\_<action>` stays well inside that, so a conformant house name is always a conformant spec name — the constraint to enforce is the house scheme, not the looser spec one.
@@ -157,7 +157,7 @@ These trace to the MCP spec ([TOOLS](sources.md) + [CHANGELOG](sources.md), 2025
 
 ## 13. OAuth security (auth-server repos)
 
-Only the OAuth repos — **mcp-gmail** and **mcp-m365** — have an `auth-server/` and a token store; these items do not apply to the filesystem/subprocess repos. They trace to the spec's [SEC](sources.md) and [AUTH](sources.md) pages. The §6 invariants still apply on top of these.
+Only the OAuth repos — **mcp-gsuite** and **mcp-m365** — have an `auth-server/` and a token store; these items do not apply to the filesystem/subprocess repos. They trace to the spec's [SEC](sources.md) and [AUTH](sources.md) pages. The §6 invariants still apply on top of these.
 
 **Two roles, only one of them ours — items 1–6 apply, 7–8 don't (yet).** Items 1–6 govern these repos' actual role: an OAuth **client** of a third-party IdP (Google / Microsoft) running the loopback consent flow and holding the resulting downstream tokens. Items 7–8 come from the **MCP authorization framework**, which governs a server that is itself a **remote HTTP OAuth resource server** (and the authorization server fronting it). **No current workspace server occupies that role** — all are stdio servers that obtain their own tokens — so 7–8 are **N/A today**; they go live only if a server is deployed remotely. When citing 7–8, say which role you mean.
 

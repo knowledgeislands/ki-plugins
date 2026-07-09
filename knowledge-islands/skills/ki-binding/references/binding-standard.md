@@ -8,12 +8,12 @@ The quotable invariant for `ki-binding`: what the single source is, how a server
 
 ```yaml
 mcpServers:
-  - name: kit-mcp-gmail # unique key; the server's key in every rendered mcpServers map
+  - name: kit-mcp-gsuite # unique key; the server's key in every rendered mcpServers map
     clients: [desktop, mcporter] # the surfaces this server targets — the binding field
     command: node
     args: [/abs/path/to/dist/mcp-server/index.js]
     env:
-      MCP_GMAIL_ACCESS_LEVEL: read
+      MCP_GSUITE_ACCESS_LEVEL: read
       SECRET: { op: op://vault/item/field } # 1Password ref, resolved at chezmoi apply
 ```
 

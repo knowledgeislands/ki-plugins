@@ -44,7 +44,7 @@ Every KI TS/Bun repo is one of exactly **two shapes**, distinguished by the stan
 
 | Shape        | Marker                                | Canonical examples                                     |
 | ------------ | ------------------------------------- | ------------------------------------------------------ |
-| **Flat**     | no `workspaces` key in `package.json` | the `mcp-*` repos (`mcp-kb-fs`, `mcp-gmail`, …)        |
+| **Flat**     | no `workspaces` key in `package.json` | the `mcp-*` repos (`mcp-kb-fs`, `mcp-gsuite`, …)        |
 | **Monorepo** | `workspaces` array in `package.json`  | every 11ty/Cloudflare website (`vallearmonia-website`) |
 
 - **Flat** is the default: all source under one root TS project, one root `tsconfig.json`, scripts unprefixed. A single root `tsc --noEmit` type-checks the whole repo (§2).

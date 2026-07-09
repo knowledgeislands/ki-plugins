@@ -15,7 +15,7 @@ Curated patterns worth reading when authoring or auditing a Knowledge Islands MC
 | MCP spec — Security           | [Security Best Practices][spec-sec]         | Security hardening ¥       |
 | Tool Annotations (MCP blog)   | [Tool Annotations post][annotations]        | Annotation keys ※※         |
 | mcp-git-audit (in-house)      | [knowledgeislands/mcp-git-audit][git-audit] | Reference implementation ※ |
-| mcp-gmail (in-house)          | [knowledgeislands/mcp-gmail][gmail]         | Auth-server variant ❡      |
+| mcp-gsuite (in-house)          | [knowledgeislands/mcp-gsuite][gsuite]         | Auth-server variant ❡      |
 
 ※ Layout, config, access-level gate, audit logging, testing.
 
@@ -60,7 +60,7 @@ The `name`, `bin`, `main`, `exports`, and `files` fields are the MCP-specific co
 }
 ```
 
-An auth-server repo (e.g. `mcp-gmail`) adds a second `bin` entry: `"mcp-gmail-auth": "dist/auth-server/index.js"` and an `./auth` export pointing at `dist/main/auth/`.
+An auth-server repo (e.g. `mcp-gsuite`) adds a second `bin` entry: `"mcp-gsuite-auth": "dist/auth-server/index.js"` and an `./auth` export pointing at `dist/main/auth/`.
 
 ### stdio entry point — `src/mcp-server/index.ts`
 
@@ -155,4 +155,4 @@ export default defineConfig({
 [spec-sec]: https://modelcontextprotocol.io/specification/2025-11-25/basic/security_best_practices
 [annotations]: https://blog.modelcontextprotocol.io/posts/2026-03-16-tool-annotations/
 [git-audit]: https://github.com/knowledgeislands/mcp-git-audit
-[gmail]: https://github.com/knowledgeislands/mcp-gmail
+[gsuite]: https://github.com/knowledgeislands/mcp-gsuite

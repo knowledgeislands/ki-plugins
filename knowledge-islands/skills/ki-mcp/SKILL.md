@@ -7,7 +7,7 @@ argument-hint: 'audit <repo> | conform <repo> | init <repo> | refresh'
 
 # Knowledge Islands MCP standards
 
-You are helping audit, conform, or scaffold a **workspace MCP server** — one of the stdio MCP servers in the `knowledgeislands/` workspace (`mcp-git-audit`, `mcp-ki-kb-fs`, `mcp-gmail`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-kb-notion-mirror`). They all share one canonical shape, so a new one should be scaffolded to it and an existing one should be auditable against it. This skill carries that standard and the audit procedure.
+You are helping audit, conform, or scaffold a **workspace MCP server** — one of the stdio MCP servers in the `knowledgeislands/` workspace (`mcp-git-audit`, `mcp-ki-kb-fs`, `mcp-gsuite`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-kb-notion-mirror`). They all share one canonical shape, so a new one should be scaffolded to it and an existing one should be auditable against it. This skill carries that standard and the audit procedure.
 
 This skill audits the **server code** — `src/` layout, config injection, tool surface, security invariants, tooling. A repo's GitHub configuration and standard files, and a `SKILL.md`'s prose, are out of scope (other skills own those). How the skills divide the work is documented once in the ki-agentic-harness `README.md`.
 
@@ -43,7 +43,7 @@ Decide _where code lives_ by who needs to call it, not by what it does:
 
 ## Tool naming
 
-`<app>_<resource>_<action>`, snake_case. `<app>` is fixed per repo (`git`, `kb`, `gmail`, `m365`, `claude_code`/`claude_desktop`/`vscode`, `voicenotes`, `notion_mirror`). **Plural** resource for collection ops (`git_repos_scan`, `gmail_messages_search`); **singular** for single-item ops (`kb_note_read`, `git_repo_commit`). Metadata/lifecycle tools may drop the resource segment (`gmail_auth_start`, `m365_about`). The CLI verb surface mirrors these names.
+`<app>_<resource>_<action>`, snake_case. `<app>` is fixed per repo (`git`, `kb`, `gsuite`, `m365`, `claude_code`/`claude_desktop`/`vscode`, `voicenotes`, `notion_mirror`). **Plural** resource for collection ops (`git_repos_scan`, `gsuite_email_messages_search`); **singular** for single-item ops (`kb_note_read`, `git_repo_commit`). Metadata/lifecycle tools may drop the resource segment (`gsuite_auth_start`, `m365_about`). The CLI verb surface mirrors these names.
 
 ## Access-level gate
 

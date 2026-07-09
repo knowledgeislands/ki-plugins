@@ -13,7 +13,7 @@ Severity: **FAIL** (security invariant breach or gate bypass — ship-stopper), 
 - [Audit logging](#audit-logging)
 - [Security invariants](#security-invariants)
 - [Spec conformance — tool results & metadata](#spec-conformance--tool-results--metadata-standard-12)
-- [OAuth security — auth-server repos only](#oauth-security--auth-server-repos-only-mcp-gmail-mcp-m365-standard-13)
+- [OAuth security — auth-server repos only](#oauth-security--auth-server-repos-only-mcp-gsuite-mcp-m365-standard-13)
 - [Bun vs Node](#bun-vs-node)
 - [package.json](#packagejson)
 - [tsconfig / vitest / biome](#tsconfig--vitest--biome)
@@ -81,7 +81,7 @@ Severity: **FAIL** (security invariant breach or gate bypass — ship-stopper), 
 - [ ] [M] WARN — tool registration order within each `tools/<group>/index.ts` is stable and deterministic (e.g. alphabetical by tool name or consistent CRUD order). Nondeterministic ordering hurts prompt-cache hit rates.
 - [ ] [J] POLISH — optional spec metadata (`icons`, `title`, `execution.taskSupport`) is per-repo opt-in, not required — do **not** flag its absence.
 
-## OAuth security — auth-server repos only: mcp-gmail, mcp-m365 (standard §13)
+## OAuth security — auth-server repos only: mcp-gsuite, mcp-m365 (standard §13)
 
 Skip this whole section for the filesystem/subprocess repos.
 

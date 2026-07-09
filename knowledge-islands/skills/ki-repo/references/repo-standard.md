@@ -144,8 +144,8 @@ A repo that is **not** a ki-repo (no `.ki-config.toml`) is never coverage-checke
 `gh` CLI, authenticated with repo-admin scope. (zsh: use an array, not a bare string — unquoted `$var` does not word-split.)
 
 ```zsh
-all=(ki-arcadia-principal ki-agentic-harness ki-website mcp-claude-housekeeping mcp-git-audit mcp-gmail mcp-kb-fs mcp-kb-notion-mirror mcp-m365)
-public=(mcp-claude-housekeeping mcp-git-audit mcp-gmail mcp-kb-fs mcp-kb-notion-mirror mcp-m365)
+all=(ki-arcadia-principal ki-agentic-harness ki-website mcp-claude-housekeeping mcp-git-audit mcp-gsuite mcp-kb-fs mcp-kb-notion-mirror mcp-m365)
+public=(mcp-claude-housekeeping mcp-git-audit mcp-gsuite mcp-kb-fs mcp-kb-notion-mirror mcp-m365)
 
 # Layer 1 — each repo declares its config in .ki-config.toml (committed via PR like any file).
 #   Scaffold the [ki-repo] defaults, then edit:

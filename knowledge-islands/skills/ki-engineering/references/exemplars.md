@@ -13,7 +13,7 @@ For the full upstream pin list and in-house sources, see [sources.md](sources.md
 
 | Source                        | URL                               | What it covers                                               |
 | ----------------------------- | --------------------------------- | ------------------------------------------------------------ |
-| mcp-gmail                     | [github][mcp-gmail]               | Canonical flat-repo compiled-TS profile with env config      |
+| mcp-gsuite                     | [github][mcp-gsuite]               | Canonical flat-repo compiled-TS profile with env config      |
 | mcp-kb-fs                     | [github][mcp-kb-fs]               | Canonical flat-repo compiled-TS profile, no CLI binary       |
 | ki-agentic-harness            | [github][harness]                 | Scripts-only profile (no `src/`, no tests); the harness repo |
 | Biome configuration reference | [biomejs.dev][biome-config]       | The schema the `$schema` pin tracks                          |
@@ -140,7 +140,7 @@ The table is a conformance marker — its presence declares "the engineering sta
 # <check-id> = false  # reason: …
 ```
 
-[mcp-gmail]: https://github.com/knowledgeislands/mcp-gmail
+[mcp-gsuite]: https://github.com/knowledgeislands/mcp-gsuite
 [mcp-kb-fs]: https://github.com/knowledgeislands/mcp-kb-fs
 [harness]: https://github.com/knowledgeislands/ki-agentic-harness
 [biome-config]: https://biomejs.dev/reference/configuration/
