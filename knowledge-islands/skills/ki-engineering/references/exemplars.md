@@ -27,7 +27,7 @@ All 10 KI TS/Bun repos carry this config verbatim. The `$schema` pins the Biome 
 
 ```json
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.2/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.3/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": { "includes": ["src/**", "*.ts", "*.json"], "ignoreUnknown": true },
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 140 },
