@@ -1,0 +1,15 @@
+{
+  "ref": "4a327ca2f94ced1dc9e499cce07e81cbab576169",
+  "files": {
+    ".ki-meta/skills/ki-authoring/audit.ts": "748a34c86942dcfd5a4036aee30bafebd7aba8190ddef0b466b01a81934a9fc1",
+    ".ki-meta/skills/ki-authoring/conform.ts": "73ea8ebc371bc1307d8e5aa24cf924376ab575e95dede89b92fcc80add557fc1",
+    ".ki-meta/skills/ki-authoring/help.md": "ee3408470f0ac2c1800451a9f494170b99b55c227850fa3d5c537f7160cdc6b1",
+    ".ki-meta/skills/ki-plugins/audit.ts": "9951fcb37ffb17d90f0b0e2709f3f3d905a2f27b90712705abc4aef40fe66f77",
+    ".ki-meta/skills/ki-plugins/conform.ts": "16b3b2d483840c03bd07d863572f4d2649d01f1b60639206af64ad11547998e2",
+    ".ki-meta/skills/ki-plugins/help.md": "086f1eeea4c7fd663b54526bd37b3f2468338296cdd3d6490485a6c02fa7f34c",
+    ".ki-meta/skills/ki-repo/audit.ts": "84cd3a5c85d1eed748bc2ac1b08256ec7337a6ea49c12a3b7376d9610f8c93b7",
+    ".ki-meta/skills/ki-repo/conform.ts": "2c9798ccfbe5069f0cf1d994e2fcb9770b3c4ed6186dba62c510f5426816ff52",
+    ".ki-meta/skills/ki-repo/help.md": "f822f9346f0d2da888865497a5e1e8a3dd8b18ecdc70f9bcb9f1dc163ccd5b67",
+    ".ki-meta/bin/aggregate.ts": "1e3d504d2aea9bcbd5dd299bb2ac5cdde1a098c24d83450e0f008723eda2e1bb"
+  }
+}
