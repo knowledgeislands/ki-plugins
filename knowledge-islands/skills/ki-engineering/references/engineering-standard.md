@@ -166,7 +166,7 @@ Install and dev use **Bun (â‰¥ 1.3)**; the compiled `dist/` runs under **Node (â
 
 ```json
 {
-  "printWidth": 140,
+  "printWidth": 160,
   "tabWidth": 2,
   "useTabs": false,
   "semi": false,
