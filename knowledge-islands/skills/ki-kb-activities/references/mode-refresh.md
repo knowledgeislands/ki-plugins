@@ -1,5 +1,7 @@
 # Mode REFRESH — keep the activity model current
 
+**Precondition:** REFRESH edits this skill's own canonical files, which exist only in `ki-agentic-harness`. Invoked from a repo where the skill is vendored, it stops here and names the harness as where to run it — or, for a pattern recurring across bases, routes it through `ki-kb`'s IMPROVE mode instead.
+
 _On-demand procedure for activities' REFRESH mode. The cadence marker (`canonical · on-change`) is declared in [`sources.md`](sources.md)._
 
 The realization type list and required frontmatter are canonical to this skill; they have no external spec. Run REFRESH when the realization model changes — a new environment type is adopted, a field is added, or a realization type is retired.

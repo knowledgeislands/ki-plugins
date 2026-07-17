@@ -1,8 +1,8 @@
 # Audit Rubric — the checkable criteria
 
-Line-by-line pass/fail criteria for auditing a Knowledge Islands base's **`Streams` zone** against the model carried in [the SKILL body](../SKILL.md), [the structure reference](<Streams Structure Reference.md>), and [the Enactment Process reference](<Enactment Process Reference.md>). Each is tagged **[M] mechanical** (the bundled [checker](../scripts/audit-streams.ts) enforces it) or **[J] judgment** (you assess it by reading). The **code** in bold (`STREAM-1`, `ENACT-2`, …) is the area's short code plus its number — it is what an audit should cite.
+Line-by-line pass/fail criteria for auditing a Knowledge Islands base's **`Streams` zone** against the model carried in [the SKILL body](../SKILL.md), [the structure reference](<Streams Structure Reference.md>), and [the Enactment Process reference](<Enactment Process Reference.md>). Each is tagged **[M] mechanical** (the bundled [checker](../scripts/audit.ts) enforces it) or **[J] judgment** (you assess it by reading). The **code** in bold (`STREAM-1`, `ENACT-2`, …) is the area's short code plus its number — it is what an audit should cite.
 
-A criterion's tag is a contract with the checker: an **[M]** check is run by `audit-streams.ts` (do not eyeball it); a **[J]** check needs a model and is applied by reading in Mode AUDIT step 2. This skill governs the inside of the `Streams/` zone; the five-zone layout itself (that `Streams/` exists and carries a same-name index) is the `ki-kb` rubric's `ZONE-*`, not repeated here. The `Streams` zone is resolved through any `ki-kb` zone alias.
+A criterion's tag is a contract with the checker: an **[M]** check is run by `audit.ts` (do not eyeball it); a **[J]** check needs a model and is applied by reading in Mode AUDIT step 2. This skill governs the inside of the `Streams/` zone; the five-zone layout itself (that `Streams/` exists and carries a same-name index) is the `ki-kb` rubric's `ZONE-*`, not repeated here. The `Streams` zone is resolved through any `ki-kb` zone alias.
 
 ## STREAM — Streams structure
 

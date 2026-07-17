@@ -37,6 +37,26 @@ An index, not a memory: one line per memory file, in this exact shape —
 
   If present, both markers must appear, in order, with the generated date line between them.
 
+## Repairing a regenerated cross-repo learned pattern
+
+Editing or clearing the rendered `headroom:learn` block is not a durable fix when a stale pattern remains in Headroom's memory database: the next learn sweep can render it again. Remove the source memory deliberately:
+
+1. Choose the database explicitly. Headroom defaults to `./.headroom/memory.db` when that project store exists and otherwise falls back to `~/.headroom/memory.db`, so a command run from the wrong directory can inspect or mutate the wrong store. Check the plausible project and global paths, then use `--db-path` on every command.
+2. Locate the USER-scope memory using distinctive text, then inspect the full record before deletion:
+
+   ```bash
+   headroom memory list --db-path /absolute/path/to/memory.db --scope USER --search 'distinctive text'
+   headroom memory show --db-path /absolute/path/to/memory.db <id>
+   ```
+
+3. Only after the ID, content, scope, and database are confirmed, delete that record:
+
+   ```bash
+   headroom memory delete --db-path /absolute/path/to/memory.db <id> --force
+   ```
+
+Use `--force` only after the preceding `show`; omitting it keeps Headroom's interactive confirmation. Repeat `memory show` and the scoped `memory list` query against the same explicit database to confirm the ID is absent, then use `ki-housekeeping` CONFORM to clear the already-rendered stale line. After the next configured learn sweep writes its output, rerun `ki-housekeeping` AUDIT and require IDX-6 not to recur. If that sweep is invoked manually with `headroom learn`, include `--project <repo> --apply` and confirm its target first — `headroom learn` without `--apply` is a dry run. Re-learning in the correct repository may be appropriate when the pattern itself is useful there, but it does not substitute for deleting a globally scoped stale source that keeps leaking elsewhere.
+
 ## `memory/*.md` frontmatter
 
 ```yaml

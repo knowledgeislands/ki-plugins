@@ -1,6 +1,6 @@
 # Feature Definitions — audit rubric
 
-Line-by-line pass/fail items for auditing a `docs/features/` corpus against the [format standard](feature-format.md). Run [`../scripts/audit-features.ts`](../scripts/audit-features.ts) for the mechanical items (marked **[M]**), then apply the judgment items (**[J]**) by reading. Findings grade on the unified severity ladder (FAIL / WARN / POLISH / ADVISORY / INFO / SKIP / PASS — see `ki-engineering`'s [checker-contract.md](../../ki-engineering/references/checker-contract.md)); the checker exits non-zero on any FAIL.
+Line-by-line pass/fail items for auditing a `docs/features/` corpus against the [format standard](feature-format.md). Run [`../scripts/audit.ts`](../scripts/audit.ts) for the mechanical items (marked **[M]**), then apply the judgment items (**[J]**) by reading. Findings grade on the unified severity ladder (FAIL / WARN / POLISH / ADVISORY / INFO / NA / PASS — see `ki-engineering`'s [checker-contract.md](../../../foundations/ki-engineering/references/checker-contract.md)); the checker exits non-zero on any FAIL.
 
 ## Mechanical [M]
 

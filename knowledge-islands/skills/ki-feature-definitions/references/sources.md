@@ -2,7 +2,7 @@
 
 **Refresh:** canonical · on-change
 
-The sources behind the [format standard](feature-format.md), the [rubric](audit-rubric.md), and [`../scripts/audit-features.ts`](../scripts/audit-features.ts). Mode REFRESH reads this file, re-examines each source, and confirms the standard still matches — then **bumps the `last reviewed` dates** and refreshes the `## Last review` block below (what changed is recorded in the commit, not a changelog). This is the skill's memory of where the standard comes from — keep it current.
+The sources behind the [format standard](feature-format.md), the [rubric](audit-rubric.md), and [`../scripts/audit.ts`](../scripts/audit.ts). Mode REFRESH reads this file, re-examines each source, and confirms the standard still matches — then **bumps the `last reviewed` dates** and refreshes the `## Last review` block below (what changed is recorded in the commit, not a changelog). This is the skill's memory of where the standard comes from — keep it current.
 
 | Source                                                                      | last reviewed |
 | --------------------------------------------------------------------------- | ------------- |

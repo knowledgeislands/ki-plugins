@@ -1,6 +1,6 @@
 # Audit Rubric — the checkable criteria
 
-Line-by-line pass/fail criteria for auditing a Claude Code subagent against the [Agent Definitions Standard](agent-definitions-standard.md). Each is tagged **[M] mechanical** (the bundled [linter](../scripts/lint-agents.ts) checks it) or **[J] judgment** (you assess it by reading). The **code** in bold (`NAME-1`, `DESC-2`, …) is the area's short code plus its number within that area — what the linter prints and what an audit should cite. Source abbreviations resolve in [the source list](sources.md); each area maps to the like-named standard section.
+Line-by-line pass/fail criteria for auditing a Claude Code subagent against the [Agent Definitions Standard](agent-definitions-standard.md). Each is tagged **[M] mechanical** (the bundled [linter](../scripts/audit.ts) checks it) or **[J] judgment** (you assess it by reading). The **code** in bold (`NAME-1`, `DESC-2`, …) is the area's short code plus its number within that area — what the linter prints and what an audit should cite. Source abbreviations resolve in [the source list](sources.md); each area maps to the like-named standard section.
 
 A criterion's tag is a contract with the linter: if you find yourself eyeballing an **[M]** check, run the linter; if the linter starts enforcing a **[J]** check, move its tag here.
 
@@ -53,7 +53,7 @@ A criterion's tag is a contract with the linter: if you find yourself eyeballing
 → [standard §5](agent-definitions-standard.md#5-frontmatter-optional-fields) · [§8](agent-definitions-standard.md#8-tools--model)
 
 - **FM-1 [J]** `tools` / `disallowedTools`, if set, is **least-privilege** — only what the role needs (omitting inherits all, the wrong default for a narrow role). An advisory agent carries no write/exec tools. (CC, BP)
-- **FM-2 [J]** `model` is deliberate: `inherit` by default, a pin (alias `sonnet` / `opus` / `haiku` / `fable`, not a rot-prone full id) only with a stated reason. (CC, BP)
+- **FM-2 [J]** `model` is deliberate: `inherit` by default, a pin (a Claude alias `sonnet` / `opus` / `haiku` / `fable`, not a rot-prone full id) only with a stated reason. The reason should trace to the portable model _type_ the role needs (`fast` / `standard` / `reasoning` / `frontier` — `ki-tokenomics`, ADR-KI-HARNESS-009), of which the alias is this runtime's resolution. (CC, BP)
 - **FM-3 [J]** Every frontmatter field is in the current subagents spec set — `name`, `description`, `tools`, `disallowedTools`, `model`, `permissionMode`, `maxTurns`, `skills`, `mcpServers`, `hooks`, `memory`, `background`, `effort`, `isolation`, `color`, `initialPrompt`. A field outside this set is flagged as a portability risk. (CC)
 - **FM-4 [J]** `permissionMode`, if set, is deliberate, and `bypassPermissions` (which skips permission prompts) carries a stated reason. (CC)
 - **FM-5 [J]** `skills`, if set, preloads a named skill's full content at startup — use only when the role must always have that standard before acting and runtime discovery would be fragile. For optional or situational context, prefer grounding-at-runtime (the agent reads the skill on demand). (CC)
@@ -62,6 +62,7 @@ A criterion's tag is a contract with the linter: if you find yourself eyeballing
 - **FM-8 [J]** `effort`, if set, pins reasoning effort for this agent — `low` for mechanical/high-volume roles where full reasoning is wasted; `high`+ for deep-analysis roles where the extra reasoning is load-bearing. Prefer inheriting (omit) when the session effort is appropriate. (CC)
 - **FM-9 [J]** `isolation: worktree`, if set, runs the agent in a fresh git worktree — use only when the role makes file edits that could conflict with the caller's working tree. The overhead is real; do not use for read-only or advisory roles. (CC)
 - **FM-10 [J]** `background: true`, if set, always runs the agent as a non-blocking background task — use when the caller does not need to wait for the result. For roles where the caller needs the result, omit. (CC)
+- **FM-11 [M]** `model` is **tier-agnostic** — the mechanical floor under FM-2, per the §5 `model` guidance. `inherit` (or omitted) passes; a Claude alias (`sonnet` / `opus` / `haiku` / `fable`) is an advisory **WARN** (a portable pin, acceptable only with a stated reason the linter cannot see — see FM-2); any other value is a rot-prone **full model id** and **FAILs** (e.g. `claude-opus-4-8` — prefer an alias or `inherit`). The model-tier analogue of a skill hardcoding a runtime. (BP, HOUSE)
 
 ## PROMPT — System-prompt quality
 

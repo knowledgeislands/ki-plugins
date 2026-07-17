@@ -2,7 +2,7 @@
 
 Used by Mode AUDIT. Each criterion is tagged **[M]** (mechanical — the checker runs it) or **[J]** (judgment — you assess by reading). Run the checker first; do not eyeball what the script validates better. Each criterion cites the [handoffs standard](handoffs-standard.md) section it verifies.
 
-Scope: only artifacts that opt in with `handoff: true` frontmatter are targets. Run the host artifact's audit first — `ki-plans` in a code repo, `ki-kb-streams` in a KB — this rubric adds the delegation-readiness delta only, and never re-checks plan/proposal structure.
+Scope: only artifacts that opt in with `handoff: true` frontmatter are targets. Run the host artifact's audit first — `ki-project-roadmap` in a non-KB repository, `ki-kb-streams` in a KB — this rubric adds the delegation-readiness delta only, and never re-checks plan/proposal structure.
 
 ## Marker checks (opt-in contract)
 

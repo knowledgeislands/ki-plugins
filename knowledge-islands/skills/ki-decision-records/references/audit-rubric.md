@@ -6,7 +6,7 @@ Used by Mode AUDIT. Each criterion is tagged **[M]** (mechanical — the checker
 
 - **[M] FILENAME-1** — filename matches `^(SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*-(XXX|\d{3,})(-[a-z0-9-]+)?\.md$` (`XXX` is the reserved serial for a pending DR not yet assigned a real number)
 - **[M] FILENAME-2** — NNN is unique **per prefix within its `<SCOPE>` namespace**; two files may share the same integer if they carry different prefixes (e.g. `GDR-KI-ARCADIA-001` and `SDR-KI-ARCADIA-001` are both valid); no two files share the same prefix+scope+serial combination. `XXX` files are exempt from uniqueness.
-- **[M] FILENAME-3** — NNN is monotonically increasing per prefix within its scope; no gaps introduced by deletion. `XXX` files are exempt.
+- **[M] FILENAME-3** — within each prefix+scope series the serials start at `001` and are contiguous — no gaps, whatever the cause (a deletion, or a reclassification that changes a record's prefix and vacates its serial). A gap is a drafting issue fixed by **renumbering the series to close it** — and sweeping every citation of the shifted codes in the same change — not by leaving the hole open. `XXX` pending files are exempt.
 
 ## Frontmatter checks (KB repos only)
 
@@ -34,16 +34,16 @@ A DR is a **living present-state record**: it states the decision as it stands n
 ## Index checks
 
 - **[M] INDEX-1** — the index file exists (`Decisions.md` in a KB, `README.md` in a code repo)
-- **[M] INDEX-2** — every DR file has exactly one row in the index (ID cell linked or bare)
-- **[M] INDEX-3** — no row in the index references a file that does not exist
-- **[M] INDEX-5** — if the index carries a Date column and the DR carries a date, they match (Date column located by header label)
-- **[J] INDEX-6** — rows are in a sensible reveal order (dependency chain: roots first, then dependents) — reader-assessed
-- **[J] INDEX-7** — row Title in the index matches the DR's heading title (excluding the ID prefix)
+- **[M] INDEX-2** — every DR file has exactly one entry in the index list (linked by ID)
+- **[M] INDEX-3** — no index entry references a file that does not exist
+- **[J] INDEX-6** — entries are in a sensible reveal order (a from-scratch build narrative: roots first, then dependents, weaving the sub-scopes in) — reader-assessed
+- **[J] INDEX-7** — an entry's gloss matches the DR's heading title (excluding the ID prefix)
+- **[M] INDEX-8** — within each prefix, serials ascend in reveal order (a `PREFIX-NNN` entry never precedes a lower-numbered `PREFIX-MMM` entry); a violation is a drafting issue, fixed by renumbering rather than reordering out of sequence
 
 ## Severity mapping
 
 | Criterion                                                                                    | Severity |
 | -------------------------------------------------------------------------------------------- | -------- |
 | FILENAME-1, FM-0, FM-3, FM-4, FM-5, PREFIX-TYPE-1, BODY-1, BODY-4, INDEX-1, INDEX-2, INDEX-3 | FAIL     |
-| FILENAME-2, FILENAME-3, BODY-3, INDEX-5, INDEX-6, BODY-5, BODY-6, BODY-7                     | WARN     |
+| FILENAME-2, FILENAME-3, BODY-3, INDEX-6, INDEX-8, BODY-5, BODY-6, BODY-7                     | WARN     |
 | FM-6, BODY-8, BODY-9, BODY-10, INDEX-7                                                       | POLISH   |

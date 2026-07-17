@@ -2,7 +2,9 @@
 
 The normative, quotable reference for the Knowledge Islands 11ty website standard — what a good site looks like, and why. The audit rubric ([audit-rubric.md](audit-rubric.md)) turns each section into checkable items; the procedure is in the [SKILL.md](../SKILL.md). See [the source list](sources.md) for provenance.
 
-This skill owns the **site-build delta**. The toolchain it sits on (Bun mandate, `ki:lint:*`/`ki:deps:*` families, `tsconfig`/`biome`, the `tsc --noEmit` type-check) is `ki-engineering`'s and is referenced here, not restated.
+This skill owns the **site-build delta**. The toolchain it sits on (Bun mandate, aggregate/scoped audit wiring, direct code-tool execution, `tsconfig`/`biome`, and TypeScript checking) is `ki-engineering`'s and is referenced here, not restated.
+
+The standard applies when a repository either declares `[ki-website]` in `.ki-config.toml` or carries an `eleventy.config.{ts,js,mjs,cjs}` structural marker at the repository root or under `site/`. Neither signal produces one `NA` and stops the checker; either signal activates the complete site audit, so a declared but incomplete site and an undeclared Eleventy site still surface their existing findings.
 
 ## Contents
 
@@ -21,7 +23,7 @@ This skill owns the **site-build delta**. The toolchain it sits on (Bun mandate,
 - **Eleventy 3** (`@11ty/eleventy` `^3.x`) is the generator — a static-site generator, **not** a JS framework. **Not** Astro, Next, Vite, or a SPA. The output is HTML + CSS + a little progressive-enhancement JS.
 - **Nunjucks** (`.njk`) is the template engine for both HTML templates and Markdown (`htmlTemplateEngine: 'njk'`, `markdownTemplateEngine: 'njk'`). **Markdown** (`.md`) carries prose content; `.njk` carries logic/layout.
 - **TypeScript runs natively on Bun — no transpile step.** `eleventy.config.ts` and `_data/*.ts` are executed directly (Bun, or plain `node` on Node ≥ 24 — type stripping is stable and unflagged since v24.3 / v22.18; the older `--experimental-strip-types` flag is now a no-op). `tsc` is used only for `--noEmit` type-checking, which is the `ki-engineering` layer.
-- **Bun is mandated** as the package manager and runtime. The Bun-install / Node-run split, the `packageManager: bun@…` pin, `engines`, and the `ki:lint:*`/`ki:deps:*` families are `ki-engineering`'s — this standard assumes them.
+- **Bun is mandated** as the package manager and runtime. The Bun-install / Node-run split, the `packageManager: bun@…` pin, `engines`, aggregate/scoped audit wiring, and internal code-tool checks are `ki-engineering`'s — this standard assumes them.
 - **Lucide** provides icons, copied from `node_modules` as a passthrough and initialised client-side (no build-time icon framework).
 
 ## 2. Repo layout — the `site/` workspace
@@ -96,11 +98,11 @@ The config is `export default function (eleventyConfig) { … return { dir, … 
 
 ## 8. Dev-workflow delta
 
-The site-specific scripts (the rest of the script families are engineering's):
+The site-specific scripts (aggregate/scoped governance and direct code-tool checks are engineering's):
 
 - **`ki:site:dev`** — `concurrently` runs the Tailwind `--watch` (`ki:site:dev:css`) and the Eleventy `--serve --port 3000` (`ki:site:dev:serve`) in parallel, named `css`,`11ty`.
 - **`ki:site:build`** — `bun …/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts` (the `eleventy.before` hook compiles Tailwind with `--minify`).
-- **`ki:site:clean`** — removes `dist/` (and `.wrangler/` where present). **`ki:site:types`** — `tsc --noEmit -p site`. **`ki:site:verify`** — types + build.
+- **`ki:site:clean`** — removes `dist/` (and `.wrangler/` where present). TypeScript checking runs inside `ki:engineering:audit`; the aggregate gate is `ki:audit`, so the site does not add parallel `types` or `verify` scripts.
 
 All site scripts take the `site:` prefix — the site is always the `site/` workspace of a monorepo (§2).
 

@@ -1,18 +1,19 @@
 ---
 name: ki-mcp
 implies: []
+vendors: [educate, audit, conform, help]
 description: >
   Codify and audit Knowledge Islands MCP servers against the canonical "workspace MCP" standard. Use when scaffolding a new MCP server, bringing an existing one up to standard, or reviewing one for compliance: project layout, config injection (no module-level singleton), the `<app>_<resource>_<action>` tool-naming scheme, the annotation-driven access-level gate, audit logging, the security invariants, the common build/lint/test toolchain (now `ki-engineering`'s, which this builds on). Also refreshes the standard itself against the latest published MCP specification. Triggers: "audit this MCP", "does this MCP follow our standards", "scaffold a new MCP", "bring this MCP up to standard", "review the MCP layout / tool surface / package.json", "refresh the MCP standard", "is our MCP standard up to date". Operates on the sibling `mcp-*` repos under `knowledgeislands/`. Audits MCP **server code** — not a repo's GitHub configuration, nor a `SKILL.md`'s prose (for that, use `ki-skills`).
-argument-hint: 'audit <repo> | conform <repo> | init <repo> | refresh'
+argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 ---
 
 # Knowledge Islands MCP standards
 
-You are helping audit, conform, or scaffold a **workspace MCP server** — one of the stdio MCP servers in the `knowledgeislands/` workspace (`mcp-git-audit`, `mcp-ki-kb-fs`, `mcp-gsuite`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-kb-notion-mirror`). They all share one canonical shape, so a new one should be scaffolded to it and an existing one should be auditable against it. This skill carries that standard and the audit procedure.
+You are helping audit, conform, or scaffold a **workspace MCP server** — one of the stdio MCP servers in the `knowledgeislands/` workspace (`mcp-git-audit`, `mcp-ki-kb-fs`, `mcp-gsuite`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-ki-kb-notion-mirror`). They all share one canonical shape, so a new one should be scaffolded to it and an existing one should be auditable against it. This skill carries that standard and the audit procedure.
 
 This skill audits the **server code** — `src/` layout, config injection, tool surface, security invariants, tooling. A repo's GitHub configuration and standard files, and a `SKILL.md`'s prose, are out of scope (other skills own those). How the skills divide the work is documented once in the ki-agentic-harness `README.md`.
 
-The full, quotable standard lives in [Workspace MCP Standard](references/workspace-mcp-standard.md); the line-by-line pass/fail items live in [Audit Rubric](references/audit-rubric.md). A mechanical structural checker is [`scripts/audit-mcp.ts`](scripts/audit-mcp.ts). Read those when you need detail; this file is the operating procedure.
+The full, quotable standard lives in [Workspace MCP Standard](references/workspace-mcp-standard.md); the line-by-line pass/fail items live in [Audit Rubric](references/audit-rubric.md). A mechanical structural checker is [`scripts/audit.ts`](scripts/audit.ts). Read those when you need detail; this file is the operating procedure.
 
 ## The canonical shape at a glance
 
@@ -59,7 +60,7 @@ Every tool MUST set `annotations` to a preset from `utils/annotations.ts` (`READ
 
 ## Operating modes
 
-Every governance skill carries the universal four **AUDIT · CONFORM · INIT · REFRESH**; INIT here scaffolds a new server. If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too.
+Every governance skill carries the universal four **AUDIT · CONFORM · EDUCATE · REFRESH**; EDUCATE here scaffolds a new server. Invoked as `help` / `-h` / `?`, it explains itself and stops — the generated HELP block (name, purpose, invocation, modes, off-ramps), taking no action. With no mode it does the same, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows.
 
 ### Mode AUDIT
 
@@ -69,9 +70,9 @@ Every governance skill carries the universal four **AUDIT · CONFORM · INIT · 
 
 → Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
 
-### Mode INIT
+### Mode EDUCATE
 
-→ Read [references/mode-init.md](references/mode-init.md)
+→ Read [references/mode-educate.md](references/mode-educate.md)
 
 ### Mode REFRESH
 
@@ -88,4 +89,4 @@ The Bun-install / Node-run split, the **`bun test` trap**, and the `process.load
 - The standard sits on top of a moving spec. When citing a requirement, know whether it is **spec-driven** (traces to the official MCP spec in [the source list](references/sources.md)) or **house style** — never present a workspace preference as a protocol "MUST". Run Mode REFRESH when in doubt.
 - Full detail: [Workspace MCP Standard](references/workspace-mcp-standard.md), [Audit Rubric](references/audit-rubric.md), and the tracked [source list](references/sources.md).
 - **Operating** an MCP surface (not auditing server code) — how MCP connectors added through claude.ai are governed across the web UI, org admin console, and Claude Code's `managed-mcp.json` allow/deny layer — is in [claude-ai-connector-control.md](references/claude-ai-connector-control.md). Out of this skill's code-audit scope, but the natural home for the reference. The sibling [cross-surface-enablement.md](references/cross-surface-enablement.md) records how a single source fans the KI servers, skills, and agents out across Claude Code, Desktop, Cowork, and claude.ai — the per-surface targeting and the per-project binding-skill decision.
-- Checker output conforms to the severity ladder, JSON shape, and exit-code contract in `ki-engineering`'s [checker-contract.md](../ki-engineering/references/checker-contract.md).
+- Checker output conforms to the severity ladder, JSON shape, and exit-code contract in `ki-engineering`'s [checker-contract.md](../../foundations/ki-engineering/references/checker-contract.md).

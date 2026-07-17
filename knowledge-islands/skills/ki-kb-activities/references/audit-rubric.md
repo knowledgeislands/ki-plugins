@@ -1,6 +1,6 @@
 # Activities audit rubric
 
-**[M]** = mechanical (checked by `scripts/audit-activities.ts`). **[J]** = judgment (reader applies during AUDIT).
+**[M]** = mechanical (checked by `scripts/audit.ts`). **[J]** = judgment (reader applies during AUDIT).
 
 ## Structural
 

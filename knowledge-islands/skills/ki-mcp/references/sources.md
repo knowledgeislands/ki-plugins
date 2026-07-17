@@ -2,7 +2,7 @@
 
 **Refresh:** external-spec · monthly
 
-The authoritative and community sources behind the [Workspace MCP Standard](workspace-mcp-standard.md) and [Audit Rubric](audit-rubric.md). Mode REFRESH reads this file, re-fetches each source, diffs it against the standard + rubric + [`scripts/audit-mcp.ts`](../scripts/audit-mcp.ts), then **bumps the `last reviewed` dates** and refreshes the `## Last review` block below (what changed is recorded in the commit, not a changelog). This is the skill's memory of where the standard comes from — keep it current.
+The authoritative and community sources behind the [Workspace MCP Standard](workspace-mcp-standard.md) and [Audit Rubric](audit-rubric.md). Mode REFRESH reads this file, re-fetches each source, diffs it against the standard + rubric + [`scripts/audit.ts`](../scripts/audit.ts), then **bumps the `last reviewed` dates** and refreshes the `## Last review` block below (what changed is recorded in the commit, not a changelog). This is the skill's memory of where the standard comes from — keep it current.
 
 Two layers feed the standard: the **official MCP specification** (what every conformant server must do) and the **in-house workspace convention** (the opinionated shape the six sibling repos share on top of the spec). A finding is only "spec-driven" if it traces to the Authoritative table; everything else is house style and should be labelled as such so it is not mistaken for a protocol requirement.
 
@@ -48,7 +48,7 @@ The standard is defined as the **majority shape** across the six sibling repos u
 | REPOS  | The six sibling repos †     | Layout, config, tool naming, shared `utils/`, the toolchain ‡ | 2026-06-21    |
 | CLAUDE | Each repo's own `CLAUDE.md` | Per-repo invariants ※                                         | 2026-06-21    |
 
-† `mcp-git-audit`, `mcp-ki-kb-fs`, `mcp-gsuite`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-kb-notion-mirror`.
+† `mcp-git-audit`, `mcp-ki-kb-fs`, `mcp-gsuite`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-ki-kb-notion-mirror`.
 
 ‡ Layout, config injection, tool naming, the shared `utils/` helpers, the package/tsconfig/vitest/biome toolchain.
 
@@ -58,7 +58,7 @@ The standard is defined as the **majority shape** across the six sibling repos u
 
 REFRESH last run **2026-07-04**. Pinned spec revision: **2025-11-25** (latest released); **2026-07-28** is still a Release Candidate (locked 2026-05-21, final publication targeted 2026-07-28 — not yet shipped as of this review, ~24 days out).
 
-**Confirmed current** — the live spec index (SPEC) still names **2025-11-25** as the authoritative dated revision, and the 2026-07-28 changelog (CHANGELOG) confirms RC-not-final status. Nothing the standard depends on (annotation-driven gate hints + untrusted-hint warning; isError Tool Execution Errors vs protocol errors; tool names 1–128 chars `[A-Za-z0-9_.-]`; `outputSchema`/`structuredContent` pairing; JSON Schema 2020-12 default; `taskSupport`/`icons`/`title` metadata; §13 auth scoped to roles no stdio repo occupies) has moved. **No change to standard §1–13, the rubric, or audit-mcp.ts.** TOOLS/SEC/AUTH and the Community/In-house rows were not re-fetched this pass (fixed dated artifacts, verbatim-confirmed 2026-06-21); their `last reviewed` cells are unchanged. Only SPEC and CHANGELOG were re-verified live and bumped to 2026-07-04.
+**Confirmed current** — the live spec index (SPEC) still names **2025-11-25** as the authoritative dated revision, and the 2026-07-28 changelog (CHANGELOG) confirms RC-not-final status. Nothing the standard depends on (annotation-driven gate hints + untrusted-hint warning; isError Tool Execution Errors vs protocol errors; tool names 1–128 chars `[A-Za-z0-9_.-]`; `outputSchema`/`structuredContent` pairing; JSON Schema 2020-12 default; `taskSupport`/`icons`/`title` metadata; §13 auth scoped to roles no stdio repo occupies) has moved. **No change to standard §1–13, the rubric, or audit.ts.** TOOLS/SEC/AUTH and the Community/In-house rows were not re-fetched this pass (fixed dated artifacts, verbatim-confirmed 2026-06-21); their `last reviewed` cells are unchanged. Only SPEC and CHANGELOG were re-verified live and bumped to 2026-07-04.
 
 **New this pass** — beta SDKs for the 2026-07-28 RC are now published (Python v2, TypeScript, Go, C#), with Python v2 stable targeted 2026-07-27 alongside the spec. The final spec publication is imminent, so the staged §12–13 + §4 re-anchor below should be executed at the **first REFRESH after 2026-07-28**.
 
@@ -69,7 +69,7 @@ REFRESH last run **2026-07-04**. Pinned spec revision: **2025-11-25** (latest re
 - No repo yet declares `outputSchema` for structured output.
 - Five proposed annotation SEPs (`unsafeOutputHint`, `secretHint`, `trustedHint`, trust/sensitivity, governance/UX) still Draft — gate's four-hint vocabulary stable, no action; watch for any landing in a released spec.
 
-(What past reviews changed in the standard / checklist / `audit-mcp.ts` — structured output, the OAuth security invariants, tool-name charset bounds, output sanitization, the relaxed tool-name regex — is in git.)
+(What past reviews changed in the standard / checklist / `audit.ts` — structured output, the OAuth security invariants, tool-name charset bounds, output sanitization, the relaxed tool-name regex — is in git.)
 
 [spec]: https://modelcontextprotocol.io/specification
 [changelog]: https://modelcontextprotocol.io/specification/2025-11-25/changelog

@@ -8,14 +8,14 @@ Abbreviations match the `(SOURCE)` tags in [the standard](agent-skills-standard.
 
 ## Authoritative
 
-| Tag | Source | Governs | Last reviewed |
-| --- | --- | --- | --- |
-| SPEC | [Agent Skills specification][spec] | Frontmatter fields, layout, hard caps, progressive-disclosure budget | 2026-07-04 |
-| — | [Agent Skills home][home] | The standard's overview, examples, ecosystem | 2026-07-04 |
-| BP | [Skill authoring best practices][bp] | Description writing, conciseness, scripts, anti-patterns, the checklist | 2026-07-04 |
-| CC | [Claude Code — skills][cc] | CC frontmatter, runtime listing/compaction budgets, commands→skills | 2026-07-04 |
-| ENG | [Equipping agents with Agent Skills][eng] ※ | Rationale, progressive disclosure, evaluation-first, under-triggering | 2026-07-04 |
-| — | [`skills-ref validate`][skills-ref] | Mechanical baseline for frontmatter + naming (criteria B, C, D) | 2026-07-04 |
+| Tag  | Source                                      | Governs                                                                 | Last reviewed |
+| ---- | ------------------------------------------- | ----------------------------------------------------------------------- | ------------- |
+| SPEC | [Agent Skills specification][spec]          | Frontmatter fields, layout, hard caps, progressive-disclosure budget    | 2026-07-04    |
+| —    | [Agent Skills home][home]                   | The standard's overview, examples, ecosystem                            | 2026-07-04    |
+| BP   | [Skill authoring best practices][bp]        | Description writing, conciseness, scripts, anti-patterns, the checklist | 2026-07-04    |
+| CC   | [Claude Code — skills][cc]                  | CC frontmatter, runtime listing/compaction budgets, commands→skills     | 2026-07-04    |
+| ENG  | [Equipping agents with Agent Skills][eng] ※ | Rationale, progressive disclosure, evaluation-first, under-triggering   | 2026-07-04    |
+| —    | [`skills-ref validate`][skills-ref]         | Mechanical baseline for frontmatter + naming (criteria B, C, D)         | 2026-07-04    |
 
 ※ Anthropic Engineering, 2025-12-18.
 
@@ -51,7 +51,7 @@ REFRESH last run **2026-07-04** against the tracked sources above. The four prim
 - **ENG (Anthropic Engineering blog):** accessible. Confirms the two required fields, three-level progressive-disclosure model, evaluation-first authoring, and name/description as the trigger signal. No numeric caps — cited for rationale only.
 - **COMMUNITY (generativeprogrammer.com Skill Authoring Patterns):** accessible; page dated 2026-04-19, unchanged since last run. 14 named patterns incl. Known Gotchas, Autonomy Calibration, Exclusion Clause; confirms the 1024 / 1536 caps, < 500 lines, third-person "pushy" descriptions. Repeats the soft ~300-line split trigger — compatible with (and below) our 500-line WARN; still not adopted as a separate cap.
 - **`skills-ref` validator:** `validate` CLI documented but internals not fetchable; the frontmatter + naming rules it enforces are fully specified on the SPEC page (which links skills-ref as the validator), so the mechanical baseline (NAME / DESC / OPT) is confirmed there.
-- **In-house scan:** `bun run ki:skills:lint` — all **eighteen** `ki-*` skills PASS, 0 fail, 0 warn (including `ki-skills` itself).
+- **In-house scan:** `bun run ki:skills:audit` — all **eighteen** `ki-*` skills PASS, 0 fail, 0 warn (including `ki-skills` itself).
 - **No standard, rubric, or linter change this run.**
 - **Open watch-items:** (1) re-fetch `superpowers` directly next run (carried forward). (2) The canonical dependency order in `ADR-KI-HARNESS-SKILLS-003` (mirrored in SKILL.md line 27) still lists 12 skills and omits `activities`, `bootstrap`, `decision-records`, `handoffs`, `live-artifacts`, `plans` — flag for the ADR owner; SKILL.md re-mirrors once the ADR is refreshed. (3) Confirm the `skills-ref` validator source if its repo layout becomes fetchable.
 

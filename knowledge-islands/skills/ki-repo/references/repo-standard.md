@@ -1,6 +1,6 @@
 # Knowledge Islands repo standard
 
-The canonical configuration a Knowledge Islands repo should carry, so repos present and behave consistently and that consistency is _checkable_ rather than folklore. A Knowledge Islands repo is a git repo that carries a `.ki-config.toml` (its presence is the compliance marker); the standard applies to any such repo — the [`knowledgeislands`](https://github.com/knowledgeislands) org is the reference set it was derived from, not its boundary. Three layers — local files, core GitHub settings, deeper GitHub (security & Actions). Derived and applied 2026-05-31 from an audit of all 10 `knowledgeislands` repos. The mechanical checker is [`../scripts/audit-repo.ts`](../scripts/audit-repo.ts); keep this doc and the script's constants in sync.
+The canonical configuration a Knowledge Islands repo should carry, so repos present and behave consistently and that consistency is _checkable_ rather than folklore. A Knowledge Islands repo is a git repo that carries a `.ki-config.toml` (its presence is the compliance marker); the standard applies to any such repo — the [`knowledgeislands`](https://github.com/knowledgeislands) org is the reference set it was derived from, not its boundary. Three layers — local files, core GitHub settings, deeper GitHub (security & Actions). Derived and applied 2026-05-31 from an audit of all 10 `knowledgeislands` repos. The mechanical checker is [`../scripts/audit.ts`](../scripts/audit.ts); keep this doc and the script's constants in sync.
 
 ## Contents
 
@@ -29,12 +29,21 @@ Every repo carries these at the root. Presence is checked **on the default branc
 
 † The values it carries: `visibility`, the declared `license` (SPDX id, default MIT), and any per-repo check overrides.
 
+**Baseline governance is declared, not assumed.** Every Knowledge Islands repo is governed by `ki-repo` **and** `ki-authoring`; both are required declarations — a `.ki-config.toml` missing `[ki-authoring]` is a FAIL (`authoring-baseline`). Authoring is no longer an implicit universal hidden in the tooling ([ADR-KI-HARNESS-005](../../../../docs/decisions/ADR-KI-HARNESS-005-validate-down-ki-config-contract.md)); the config shows the full governance set. Machine/user-surface standards (`ki-tokenomics`, `ki-housekeeping`) stay opt-in, never baseline.
+
+**Foundation scaffolding is owner-controlled and append-only.** `ki-repo` owns the file-level contract and writes its `[ki-repo]` block plus the required bare `[ki-authoring]` foundation marker. Its EDUCATE and CONFORM create a missing file with both, or append only a missing exact root marker to a partial file; a dotted `[ki-repo.checks]` sub-table alone does not satisfy `[ki-repo]`. They preserve all existing bytes, are idempotent, and make no write in dry-run. Sibling skills may conform their own tables under the validate-down/conform-down boundary. CONFORM completes this local repair before any live GitHub work. Bootstrap may subprocess the owner's scaffold-only EDUCATE when `ki-repo` is seeded or resolved, but carries no TOML template and never edits the config directly.
+
+**Self-check capability is required.** A confirmed ki-repo must carry a way to run its checks with zero skills installed: `.ki-meta/bin/ki-audit` or `.ki-meta/bin/aggregate.ts` must be present. A marker-only repo with neither is a FAIL (`self-check`) — re-bootstrap to write the runner.
+
 `ROADMAP.md` is **expected but not required** — a warn, not a fail: most repos carry one, but a base that keeps its forward view elsewhere (a KB base's `Streams/Future`) may omit it.
+
+**Root orientation for a multi-runtime repo.** When a repo's declared [`target_runtimes`](ki-config-standard.md#table-per-skill) includes a runtime other than `claude-code` (e.g. `codex`), the repo's orientation should live in a literal root `AGENTS.md` — not an `@`-import index, since a non-Claude-Code runtime can't resolve that syntax — with `CLAUDE.md` `@AGENTS.md`-importing it and staying a thin, Claude-only appendix. A repo whose `target_runtimes` is absent or `["claude-code"]` only has no reason to split: `CLAUDE.md` alone, with its own topic-file imports, is sufficient.
 
 ### `.ki-meta/` — the working-artifacts area
 
 `.ki-meta/` is the working area for Knowledge Islands governance tooling — the artifacts-_out_ counterpart to `.ki-config.toml`'s config-_in_. It is an **extensible namespace**: subdirs are added as tooling grows, each declaring whether it is **derived** (regenerated, gitignored) or **durable** (kept, tracked). Defined subdirs today:
 
+- `.ki-meta/skills/<skill>/audit.ts` + `.ki-meta/bin/aggregate.ts` — **durable** (tracked): the vendored checker copies and the runner that `ki-bootstrap`'s EDUCATE writes so the repo self-governs with zero skills installed ([ADR-KI-HARNESS-006](../../../../docs/decisions/ADR-KI-HARNESS-006-bootstrapping-and-self-sufficiency.md)). The paired `.ki-meta/bin/ki-audit` wrapper is the `package.json`-free entry point.
 - `.ki-meta/audits/<concern>.{md,json}` — the latest audit report per concern (`engineering`, `skills`, `repo`, …), written by a checker run with `--report` and overwritten each run (latest-only, no history). The `.json` is the machine-readable substrate a composed audit merges; the `.md` is the human report.
 - `.ki-meta/conform/<concern>.md` — the latest record of what a CONFORM changed.
 
@@ -44,18 +53,18 @@ Presence is **not required** — the directory appears the first time a checker 
 
 For every repo on github.com:
 
-| Setting | Value | Why |
-| --- | --- | --- |
-| Default branch | `main` | Uniform; what tooling and docs assume. |
-| License | Live GitHub license matches the declared `license` SPDX id (default MIT) | Decoupled from visibility. |
-| Package license | `package.json` `"license"` matches the declared id (`UNLICENSED` if proprietary) | Matches the declared license. |
-| Description | Present, one sentence; synced with `package.json` where one exists | One-line identity on GitHub. |
-| Merge methods | **Squash only** — merge-commit off, rebase off | One commit per PR; clean, linear `main`. |
-| Auto-delete branch | On | No stale merged branches. |
-| Issues | On | The tracker. |
-| Wiki | Off | Docs live in-repo. |
-| Projects | Off | Unused. |
-| Discussions | Off | Unused. |
+| Setting            | Value                                                                            | Why                                      |
+| ------------------ | -------------------------------------------------------------------------------- | ---------------------------------------- |
+| Default branch     | `main`                                                                           | Uniform; what tooling and docs assume.   |
+| License            | Live GitHub license matches the declared `license` SPDX id (default MIT)         | Decoupled from visibility.               |
+| Package license    | `package.json` `"license"` matches the declared id (`UNLICENSED` if proprietary) | Matches the declared license.            |
+| Description        | Present, one sentence; synced with `package.json` where one exists               | One-line identity on GitHub.             |
+| Merge methods      | **Squash only** — merge-commit off, rebase off                                   | One commit per PR; clean, linear `main`. |
+| Auto-delete branch | On                                                                               | No stale merged branches.                |
+| Issues             | On                                                                               | The tracker.                             |
+| Wiki               | Off                                                                              | Docs live in-repo.                       |
+| Projects           | Off                                                                              | Unused.                                  |
+| Discussions        | Off                                                                              | Unused.                                  |
 
 Public repos (`mcp-*`) additionally:
 
@@ -97,17 +106,21 @@ The engineering coverage manifest assigns the `package.json` **identity & metada
 
 Each repo **declares** its expected visibility in `.ki-config.toml` (`visibility = "public"` or `"private"`); the auditor checks that declaration against the live GitHub visibility. It is a deliberate per-repo choice, **not inferred from the name**. (In practice the `arcadia-*` repos are private bases / internal skills and the `mcp-*` repos are public servers — a pattern, not the rule.)
 
-`.ki-config.toml` is a shared per-repo file; each skill reads its own `[table]`, and a skill with only implicit/default behaviour needs no table. The full cross-skill contract — its presence as the compliance marker, the table-per-skill model, and the validate-your-own-table protocol — is in [the `.ki-config.toml` contract](ki-config-standard.md). This skill owns `[ki-repo]`. Scaffold the default keys with `bun scripts/audit-repo.ts --init >> .ki-config.toml`, then edit the values:
+`.ki-config.toml` is a shared per-repo file; each skill reads and may conform the schema of its own `[table]`, while `ki-repo` owns the file-level contract and required foundation markers. The full cross-skill contract — its presence as the compliance marker, the table-per-skill model, and the validate-your-own-table protocol — is in [the `.ki-config.toml` contract](ki-config-standard.md). Run `bun scripts/educate.ts <target-repo>` to establish the canonical foundations and self-check surface in one operation (or its internal `--scaffold-config-only` leg when only the append-only config repair is required), then edit the values:
 
 ```toml
 # .ki-config.toml — one [table] per skill that needs per-repo options
 [ki-repo]
 visibility = "public"   # "public" | "private"
+license = "MIT"         # SPDX id; use "UNLICENSED" for proprietary
 
 # Optional. One boolean per overridable check; omit any to take the org default.
 # A repo that fully conforms needs nothing here.
 [ki-repo.checks]
 branch-protection = true   # default off — protect `main` on this repo
+
+# Required foundation marker — declared, never injected.
+[ki-authoring]
 ```
 
 ## Per-repo overrides
@@ -123,8 +136,11 @@ The rubric carries the **org default** for every check. Most are bedrock — fil
 | `topics`            | on          | _(public)_ carries the standard topic set.          |
 | `secret-scanning`   | on          | _(public)_ secret scanning enabled.                 |
 | `push-protection`   | on          | _(public)_ secret-scanning push protection enabled. |
+| `structure`         | on          | Declares at least one repo-structure table §.       |
 
 ‡ When enforced, `branch-protection` requires: a PR (0 approvals), the `build` status check, linear history; no force-push/deletion; admins not enforced.
+
+§ `structure` WARNs (never FAILs) — see the cardinality rule below. Set `structure = false` for a repo that genuinely carries no repo-structure table (e.g. a dotfiles/config repo).
 
 - "Org default **on**" means the check fails unless satisfied — the standard's normal behaviour — and a repo sets the key `false` to step out of it (e.g. `wiki = false` to keep a Wiki). `branch-protection` is the one check that's **off** by default; a repo sets it `true` to protect `main`.
 - The required status check for `branch-protection` is **`build`** — the single job in each repo's `.github/workflows/ci.yml` (workflow "CI"). A repo that turns it on but lacks that job can't satisfy the check; add the CI job first.
@@ -135,21 +151,23 @@ The rubric carries the **org default** for every check. Most are bedrock — fil
 
 ## Coverage cascade
 
-`.ki-config.toml`'s presence is the **gate** (Layer 1): once it confirms the repo is a ki-repo, the auditor checks the repo **declares an opt-in `[ki-<skill>]` table for every governance skill whose applicability it can detect** — a `Streams/` zone ⇒ `[ki-kb-streams]`, an `eleventy.config` ⇒ `[ki-website]`, an `@modelcontextprotocol/sdk` dependency ⇒ `[ki-mcp]`, a `.claude-plugin/marketplace.json` ⇒ `[ki-plugins]`, `skills/*/SKILL.md` ⇒ `[ki-skills]`, and so on. Detected-but-undeclared WARNs; a declared table with no matching artifact WARNs as possibly stale.
+`.ki-config.toml`'s presence is the **gate** (Layer 1): once it confirms the repo is a ki-repo, the auditor checks the repo **declares an opt-in `[ki-<skill>]` table for every governance skill whose applicability it can detect** — a `Streams/` zone ⇒ `[ki-kb-streams]`, an `eleventy.config` ⇒ `[ki-website]`, an `@modelcontextprotocol/sdk` dependency ⇒ `[ki-mcp]`, a `.claude-plugin/marketplace.json` ⇒ `[ki-plugins]`, an `install.sh` + a `bin/<exe>` ⇒ `[ki-tools]`, a `Formula/*.rb` ⇒ `[ki-homebrew-tap]`, `skills/*/SKILL.md` ⇒ `[ki-skills]`, and so on. Detected-but-undeclared WARNs; a declared table with no matching artifact WARNs as possibly stale.
 
 A repo that is **not** a ki-repo (no `.ki-config.toml`) is never coverage-checked — it just takes the `ki-config` FAIL, so a lookalike repo (an `eleventy.config` but no marker) is not falsely told to opt in. This is `ki-repo`'s single cross-table read, and it reads only table **presence**, never another skill's keys. The full signal list and the marker-vs-config model live in [the `.ki-config.toml` contract](ki-config-standard.md#coverage-enforcement). Silence one signal with `coverage-<skill> = false` under `[ki-repo.checks]`.
+
+The cascade's companion is a **cardinality** rule: a repo declares **at most one** repo-structure table — `[ki-harness]`, `[ki-kb]`, `[ki-website]`, `[ki-mcp]`, `[ki-plugins]`, `[ki-tools]`, `[ki-homebrew-tap]` — because exactly one skill governs a repo's on-disk shape ([ADR-KI-HARNESS-SKILLS-006](../../../../docs/decisions/ADR-KI-HARNESS-SKILLS-006-skill-taxonomy-and-implication-graph.md)). Declaring two or more FAILs (`repo-structure`, bedrock — not overridable). Implied family members (`ki-website-cloudflare` under website, `ki-kb-streams` under kb) are not distinct structures and do not count. Declaring **zero** WARNs (`structure`, overridable — see the table above): silence usually means nobody declared it, not that none applies, so a genuinely structureless repo (dotfiles/config) says so explicitly via `structure = false`.
 
 ## Applying it
 
 `gh` CLI, authenticated with repo-admin scope. (zsh: use an array, not a bare string — unquoted `$var` does not word-split.)
 
 ```zsh
-all=(ki-arcadia-principal ki-agentic-harness ki-website mcp-claude-housekeeping mcp-git-audit mcp-gsuite mcp-kb-fs mcp-kb-notion-mirror mcp-m365)
-public=(mcp-claude-housekeeping mcp-git-audit mcp-gsuite mcp-kb-fs mcp-kb-notion-mirror mcp-m365)
+all=(ki-arcadia-principal ki-agentic-harness ki-website mcp-claude-housekeeping mcp-git-audit mcp-gsuite mcp-kb-fs mcp-ki-kb-notion-mirror mcp-m365)
+public=(mcp-claude-housekeeping mcp-git-audit mcp-gsuite mcp-kb-fs mcp-ki-kb-notion-mirror mcp-m365)
 
 # Layer 1 — each repo declares its config in .ki-config.toml (committed via PR like any file).
-#   Scaffold the [ki-repo] defaults, then edit:
-#     bun scripts/audit-repo.ts --init >> .ki-config.toml
+#   Scaffold/repair [ki-repo] + [ki-authoring], vendor their self-checks, then edit:
+#     bun skills/keystone/ki-repo/scripts/educate.ts <target-repo>
 # Visibility is verified (declared vs live), not set here; change actual visibility deliberately:
 #   gh repo edit knowledgeislands/<name> --visibility public|private --accept-visibility-change-consequences
 
@@ -190,12 +208,12 @@ Layer 1 files are added with a normal commit, pushed straight to `main` (it is u
 ## Verifying it
 
 ```zsh
-bun ../scripts/audit-repo.ts ~/kis/knowledgeislands      # enumerate from a local tree (origins)
-bun ../scripts/audit-repo.ts --org knowledgeislands      # enumerate the whole org
+bun ../scripts/audit.ts ~/kis/knowledgeislands      # enumerate from a local tree (origins)
+bun ../scripts/audit.ts --org knowledgeislands      # enumerate the whole org
 ```
 
 Both check every layer against GitHub; the path / `--org` only decides which repos.
 
 ## Conformance
 
-As of **2026-05-31**, all 9 `knowledgeislands` repos conform on layers 2–3. Outstanding layer-1 work: every repo still needs a `.ki-config.toml` (declaring its visibility + any check overrides), and `mcp-kb-notion-mirror` needs `.editorconfig` — each a direct commit to `main`.
+As of **2026-05-31**, all 9 `knowledgeislands` repos conform on layers 2–3. Outstanding layer-1 work: every repo still needs a `.ki-config.toml` (declaring its visibility + any check overrides), and `mcp-ki-kb-notion-mirror` needs `.editorconfig` — each a direct commit to `main`.

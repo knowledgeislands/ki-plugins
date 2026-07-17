@@ -1,6 +1,6 @@
 # The Feature Definitions format
 
-The quotable standard behind [`../SKILL.md`](../SKILL.md). It defines how a Feature Definition corpus is laid out, how a single requirement is written, and the rules the checker ([`../scripts/audit-features.ts`](../scripts/audit-features.ts)) enforces. The line-by-line criteria are in [audit-rubric.md](audit-rubric.md); worked examples are in [exemplars.md](exemplars.md).
+The quotable standard behind [`../SKILL.md`](../SKILL.md). It defines how a Feature Definition corpus is laid out, how a single requirement is written, and the rules the checker ([`../scripts/audit.ts`](../scripts/audit.ts)) enforces. The line-by-line criteria are in [audit-rubric.md](audit-rubric.md); worked examples are in [exemplars.md](exemplars.md).
 
 ## The three-doc split
 

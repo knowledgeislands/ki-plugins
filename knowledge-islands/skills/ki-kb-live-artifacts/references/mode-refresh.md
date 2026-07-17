@@ -1,5 +1,7 @@
 # Mode REFRESH — keep the artifact model current
 
+**Precondition:** REFRESH edits this skill's own canonical files, which exist only in `ki-agentic-harness`. Invoked from a repo where the skill is vendored, it stops here and names the harness as where to run it — or, for a pattern recurring across bases, routes it through `ki-kb`'s IMPROVE mode instead.
+
 _On-demand procedure for live-artifacts' REFRESH mode. The cadence marker (`canonical · on-change`) is declared in [`sources.md`](sources.md)._
 
 The pairing convention and required frontmatter are canonical to this skill. Run REFRESH when the artifact model changes — a new render type is added, a new required field is declared, or the artifacts directory convention moves.

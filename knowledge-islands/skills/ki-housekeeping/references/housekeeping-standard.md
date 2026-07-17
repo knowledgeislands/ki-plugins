@@ -14,20 +14,20 @@ The state spans three surfaces on macOS:
 
 ## 2. The areas
 
-| Area | What it covers | Mechanical arm |
-| --- | --- | --- |
-| **Sessions** | Stored session transcripts; obsolete / superseded sessions | Server |
-| **Artifacts / outputs** | Generated artifacts, uploads, downloaded outputs; orphaned or oversized | Server |
-| **Backups** | Automatic backups that multiply without bound | Server |
-| **Plugins** | Installed-plugin inventory and staleness | Server |
-| **Project cache** | Per-project caches and debug info | Server |
-| **Auto-memory** | The per-project `memory/*.md` + `MEMORY.md` Headroom writes | **Local** (`audit-memory.ts`) + memory-format.md |
+| Area                    | What it covers                                                          | Mechanical arm                            |
+| ----------------------- | ----------------------------------------------------------------------- | ----------------------------------------- |
+| **Sessions**            | Stored session transcripts; obsolete / superseded sessions              | Server                                    |
+| **Artifacts / outputs** | Generated artifacts, uploads, downloaded outputs; orphaned or oversized | Server                                    |
+| **Backups**             | Automatic backups that multiply without bound                           | Server                                    |
+| **Plugins**             | Installed-plugin inventory and staleness                                | Server                                    |
+| **Project cache**       | Per-project caches and debug info                                       | Server                                    |
+| **Auto-memory**         | The per-project `memory/*.md` + `MEMORY.md` Headroom writes             | **Local** (`audit.ts`) + memory-format.md |
 
 ## 3. The skill↔server pairing
 
 The mechanical arm is split by area, on one principle: **the skill is the standard and the judgment; the server is the tools.**
 
-- For **memory**, the skill governs the area in full — the format is a file convention the skill fully specifies ([memory-format.md](memory-format.md)) and checks with its own [`audit-memory.ts`](../scripts/audit-memory.ts). No server tool is needed to read a `memory/` directory a repo points at.
+- For **memory**, the skill governs the area in full — the format is a file convention the skill fully specifies ([memory-format.md](memory-format.md)) and checks with its own [`audit.ts`](../scripts/audit.ts). No server tool is needed to read a `memory/` directory a repo points at.
 - For **every other area**, the state lives in macOS application-support paths that need dedicated, access-gated filesystem tools to inspect and clean safely. Those tools are the paired **`mcp-claude-housekeeping`** server (`@knowledgeislands/mcp-claude-housekeeping`) — codified per-surface audits plus read/`destructive` access-gated tools under the `<app>_<resource>_<action>` naming scheme. The skill reads the server's audit findings and applies judgment (is this session obsolete? is this backup safe to drop?); it never re-implements the tools.
 
 The server is governed as an MCP server by `ki-mcp`; this skill is its standard-and-judgment counterpart. Neither owns the other: the server ships tools with no opinion on when to use them; the skill holds the opinion and no tools beyond the memory checker.

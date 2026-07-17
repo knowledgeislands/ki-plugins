@@ -9,13 +9,13 @@ Concrete patterns showing what good context hygiene looks like in practice: how 
 
 ## Collections
 
-| Source | URL | What it covers |
-| --- | --- | --- |
-| Effective context engineering for AI agents | [anthropic.com][ctx-eng] | The finite-resource framing and high-signal-token principle† |
-| Claude Code context window | [code.claude.com][cc-ctxwin] | Startup composition, what survives compaction, tool search |
-| Claude Code settings | [code.claude.com][cc-settings] | `autoCompactEnabled`, `DISABLE_AUTO_COMPACT`, compaction config |
-| Headroom (chopratejas/headroom) | [github.com][hr] | MCP install, detection signals, `headroom wrap` agent mode |
-| Headroom app | [extraheadroom.com][hra] | Menu-bar proxy variant, detection |
+| Source                                      | URL                            | What it covers                                                  |
+| ------------------------------------------- | ------------------------------ | --------------------------------------------------------------- |
+| Effective context engineering for AI agents | [anthropic.com][ctx-eng]       | The finite-resource framing and high-signal-token principle†    |
+| Claude Code context window                  | [code.claude.com][cc-ctxwin]   | Startup composition, what survives compaction, tool search      |
+| Claude Code settings                        | [code.claude.com][cc-settings] | `autoCompactEnabled`, `DISABLE_AUTO_COMPACT`, compaction config |
+| Headroom (chopratejas/headroom)             | [github.com][hr]               | MCP install, detection signals, `headroom wrap` agent mode      |
+| Headroom app                                | [extraheadroom.com][hra]       | Menu-bar proxy variant, detection                               |
 
 † The finite-resource framing and the "smallest set of high-signal tokens" principle.
 
@@ -23,18 +23,18 @@ Concrete patterns showing what good context hygiene looks like in practice: how 
 
 ### The `[ki-tokenomics]` config table
 
-A repo opts into tokenomics governance with a `[ki-tokenomics]` table in its `.ki-config.toml`. All keys are optional; `headroom` and `preferred_model` are the most impactful defaults to set. From `ki-arcadia-principal/.ki-config.toml`:
+A repo opts into tokenomics governance with a `[ki-tokenomics]` table in its `.ki-config.toml`. All keys are optional; `headroom` and `preferred_model_type` are the most impactful defaults to set. From `ki-arcadia-principal/.ki-config.toml`:
 
 ```toml
 [ki-tokenomics]
 headroom = "recommended"
-preferred_model = "sonnet"
+preferred_model_type = "standard"
 
 [ki-tokenomics.budgets]
 mcp_servers = 20   # 19 user-scoped at time of first audit (2026-06-22); revisit when scoped
 ```
 
-`headroom = "recommended"` sets the expectation that a compression layer is present but does not hard-fail if absent. Use `"required"` in environments where tool-result bloat is a known problem and the absence of Headroom is a genuine defect. `preferred_model = "sonnet"` sets the ambient default tier; individual steps that need more reasoning override it explicitly. The `mcp_servers` budget override here documents an acknowledged overage with a comment explaining why — a budget override without a comment is a WARN.
+`headroom = "recommended"` sets the expectation that a compression layer is present but does not hard-fail if absent. Use `"required"` in environments where tool-result bloat is a known problem and the absence of Headroom is a genuine defect. `preferred_model_type = "standard"` sets the ambient default type (portable — resolves to Claude's `sonnet` or Codex's `gpt-5.6-terra` per runtime; ADR-KI-HARNESS-009); individual steps that need more reasoning override it explicitly. A repo whose runtime is not Claude Code adds a `[ki-tokenomics.model_tier_bindings]` table to rebind each type to its own models. The `mcp_servers` budget override here documents an acknowledged overage with a comment explaining why — a budget override without a comment is a WARN.
 
 ### Headroom proxy configuration pattern
 
@@ -56,6 +56,18 @@ Headroom is detected by any of three signals. The MCP install (`headroom mcp ins
 ```
 
 Placed in `settings.json` (user-scoped) or `.mcp.json` (project-scoped). The `HEADROOM_OUTPUT_SHAPER` and `HEADROOM_OUTPUT_HOLDOUT` env keys are the documented shaping controls; set them deliberately rather than leaving them at an unexamined default. The checker confirms the server is wired; the correctness of the shaper and holdout values is a judgment item (the upstream config surface is not yet fully documented — see `sources.md` watch-items).
+
+For Claude Code proxy mode, scope an existing project-local override to the repository name so Headroom's `/stats` response attributes savings per project:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8787/p/ki-agentic-harness"
+  }
+}
+```
+
+Do this only when the project already uses the loopback Headroom proxy. An `X-Headroom-Project: ki-agentic-harness` entry in `ANTHROPIC_CUSTOM_HEADERS` is equivalent and takes precedence over the path. The audit evaluates the effective project value (`settings.local.json` overrides `settings.json`); CONFORM repairs only an unambiguous tracked `settings.json` URL, never a local override or explicit header. The convention does not add a proxy dependency to a repository, rewrite remote Anthropic-compatible gateways, or reserialize unrelated settings.
 
 ### Compaction and what survives it
 

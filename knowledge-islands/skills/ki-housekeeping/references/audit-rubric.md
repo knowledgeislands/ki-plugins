@@ -2,7 +2,7 @@
 
 Used by Mode AUDIT. These are the criteria for the **memory area**, the one area governed locally in full (see [housekeeping-standard.md](housekeeping-standard.md) §2). The **other areas** (sessions, artifacts / outputs, backups, plugins, project cache) are audited through the paired `mcp-claude-housekeeping` server's codified per-surface audits, not by these criteria; the skill applies judgment over the server's findings.
 
-**[M]** = mechanical, checker-enforced (see [`scripts/audit-memory.ts`](../scripts/audit-memory.ts)). **[J]** = judgment, applied by reading; the checker may surface these as ADVISORY but never FAILs or WARNs on them.
+**[M]** = mechanical, checker-enforced (see [`scripts/audit.ts`](../scripts/audit.ts)). **[J]** = judgment, applied by reading; the checker may surface these as ADVISORY but never FAILs or WARNs on them.
 
 ## Index/file agreement
 
@@ -11,6 +11,7 @@ Used by Mode AUDIT. These are the criteria for the **memory area**, the one area
 - **[M] IDX-3** Every `memory/*.md` file (other than `MEMORY.md` itself) appears as an entry in the index. An unindexed file is a WARN (it's invisible to future recall until indexed).
 - **[M] IDX-4** Each index line stays at or under 150 characters. Over is a POLISH.
 - **[M] IDX-5** The Headroom auto-generated block, if present, has both `<!-- headroom:learn:start -->` and `<!-- headroom:learn:end -->` markers, in order. A malformed pair is a WARN.
+- **[M] IDX-6** Entries _inside_ the `headroom:learn` block are not rooted in another repo. `headroom learn` captures patterns from whatever island the session ran in, so an absolute `knowledgeislands/<repo>` path whose `<repo>` differs from the audited repo is a stale cross-repo capture — dead weight in the always-on prefix. Any such line is a WARN and routes to CONFORM. Do not treat a hand-edit of the generated block as durable: select the Headroom database explicitly, locate the USER-scope record with `headroom memory list --db-path`, verify it with `memory show`, then remove the confirmed source with `memory delete`; re-learn in the correct repo when the pattern remains useful. The full show-before-delete procedure is in [memory-format.md](memory-format.md#repairing-a-regenerated-cross-repo-learned-pattern). Scoped to inside the markers, the heuristic keys on absolute KI-sibling roots and deliberately leaves relative `../sibling` refs alone, because a cross-repo governance repo uses those legitimately.
 
 ## Frontmatter
 

@@ -5,7 +5,7 @@
 - [Collections](#collections)
 - [Selected patterns](#selected-patterns)
 
-Curated illustrations of the Knowledge Islands authoring conventions in practice. Use these when writing or conforming a document, checking whether a table should spill to footnotes, choosing between link styles, or formatting a `.ki-config.toml` entry. The exemplars show the judgment layer — the choices no formatter makes — annotated to make the reasoning visible. Mechanical rules (line width, prose wrap, heading hierarchy) are owned by Prettier + markdownlint-cli2; run `bun run ki:lint:md` for those.
+Curated illustrations of the Knowledge Islands authoring conventions in practice. Use these when writing or conforming a document, checking whether a table should spill to footnotes, choosing between link styles, or formatting a `.ki-config.toml` entry. The exemplars show the judgment layer — the choices no formatter makes — annotated to make the reasoning visible. Mechanical rules (line width, prose wrap, heading hierarchy) are owned by Prettier + markdownlint-cli2; run `ki:authoring:conform` for the write pass and `ki:authoring:audit` for the read-only gate.
 
 ## Collections
 
@@ -78,7 +78,7 @@ See [[audit-rubric|the rubric]].
 
 <!-- Wrong: file path reference for a skill -->
 
-See `skills/ki-kb/SKILL.md` for KB conventions.
+See `skills/repo-structure/ki-kb/SKILL.md` for KB conventions.
 ```
 
 ### Well-formed `.ki-config.toml` table

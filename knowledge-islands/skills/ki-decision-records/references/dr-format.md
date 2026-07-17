@@ -13,7 +13,7 @@
 
 **Contents:** [Naming convention](#naming-convention) · [Prefix table](#prefix-table) · [Placement](#placement) · [Frontmatter](#frontmatter) · [Sections](#sections) · [Templates](#templates) · [Index](#index) · [Writing guidance](#writing-guidance)
 
-The quotable standard behind [the rubric](audit-rubric.md) and [`../scripts/audit-drs.ts`](../scripts/audit-drs.ts). Grounded in Michael Nygard's original 2011 ADR format (see [sources](sources.md)) with house additions: type-specific prefixes, a `decision_type` frontmatter field (KB repos), and `## References`. Unified from the former `ki-adrs` and `ki-kdrs` instruments. A DR is a **living present-state record** — it states the decision as it stands now and is edited in place; it carries no status lifecycle, mutability marker, supersession chain, or changelog (see [Writing guidance](#writing-guidance)). Mode REFRESH re-reads the sources and proposes diffs here.
+The quotable standard behind [the rubric](audit-rubric.md) and [`../scripts/audit.ts`](../scripts/audit.ts). Grounded in Michael Nygard's original 2011 ADR format (see [sources](sources.md)) with house additions: type-specific prefixes, a `decision_type` frontmatter field (KB repos), and `## References`. Unified from the former `ki-adrs` and `ki-kdrs` instruments. A DR is a **living present-state record** — it states the decision as it stands now and is edited in place; it carries no status lifecycle, mutability marker, supersession chain, or changelog (see [Writing guidance](#writing-guidance)). Mode REFRESH re-reads the sources and proposes diffs here.
 
 ## Naming convention
 
@@ -23,10 +23,10 @@ The quotable standard behind [the rubric](audit-rubric.md) and [`../scripts/audi
 
 - **`<PREFIX>`** is one of nine type-specific prefixes (see the prefix table below). The prefix encodes `decision_type` at the filename level.
 - **`<SCOPE>`** is one or more uppercase alpha-leading segments separated by `-`. KB island repos use the island's identifier as the first segment (e.g. `ARCADIA`). A scope segment matches `[A-Z][A-Z0-9]*`; a digit-only segment is invalid. Multi-level scopes are valid for sub-domain decisions (e.g. `ARCADIA-TOOLS`).
-- **`NNN`** is a zero-padded decimal serial (≥ 3 digits). Monotonically increasing **per prefix within the `<SCOPE>` namespace** — `GDR-KI-ARCADIA-001` and `SDR-KI-ARCADIA-001` may share the integer `001` because they carry different prefixes. The full DR code (prefix + scope + serial) is the globally unique identifier. A pending DR not yet assigned a real serial uses the literal string `XXX` in place of `NNN` (e.g. `GDR-KI-ARCADIA-XXX-pending-decision.md`); it is renamed to the next available per-prefix serial once it is numbered.
+- **`NNN`** is a zero-padded decimal serial (≥ 3 digits). Serials in each prefix+scope series **start at `001` and are contiguous** — no gaps, whatever the cause. Numbering is **per prefix within the `<SCOPE>` namespace** — `GDR-KI-ARCADIA-001` and `SDR-KI-ARCADIA-001` may share the integer `001` because they carry different prefixes, and each prefix runs its own unbroken `001…NNN` sequence. The full DR code (prefix + scope + serial) is the globally unique identifier. A pending DR not yet assigned a real serial uses the literal string `XXX` in place of `NNN` (e.g. `GDR-KI-ARCADIA-XXX-pending-decision.md`); it is renamed to the next available per-prefix serial once it is numbered. If a record is **reclassified** to a different prefix (e.g. an ADR that is really a governance decision becomes a GDR), it takes the next serial in its new series and its old serial is **not** left vacant: the remaining records in the old series renumber to close the gap, and every citation of the shifted codes is swept in the same change. Git history and commit messages that mention the old codes are accepted staleness.
 - **`<slug>`** (optional, preferable) is a short lowercase hyphenated title summary. Makes the file self-describing when referenced by ID from other records or tools.
 
-Examples: `GDR-KI-ARCADIA-001-adopting-decision-records`, `SDR-KI-ARCADIA-001-knowledge-islands-strategy`, `ADR-KI-HARNESS-003-adopting-adrs`.
+Examples: `GDR-KI-ARCADIA-001-adopting-decision-records`, `SDR-KI-ARCADIA-001-knowledge-islands-strategy`, `ADR-KI-HARNESS-001-repository-structure`.
 
 ## Prefix table
 
@@ -116,10 +116,10 @@ The resulting context after the decision is applied — positive outcomes, trade
 ```markdown
 ## References
 
-- [Title](../path/to/note.md) -- one-line note on why it is cited.
+- [DR-CODE](DR-CODE-slug.md) -- the foundational decision this record builds on.
 ```
 
-Expected when the decision codifies an existing standard or cites a prior source. Relative Markdown links only. Omit entirely if there are genuinely no relevant references.
+The `## References` section is a list of **followable links only**, of exactly two kinds: **sibling DRs in the same decisions set** (backward in the reading-order layering — the foundations a decision builds on) and **external URLs** (a tool's homepage, a spec, a source). It is not a place for prose or for named internal artefacts. Skills, guides, feature definitions, workflows, KB notes, and the standards a decision grounds in are **named in the body**, where the reader meets them — never listed here — so the record stays self-contained and nothing depends on chasing a link that rots. External links are supplementary: the record must read completely without following them. Omit the section entirely when a record has no such links.
 
 ## Templates
 
@@ -176,15 +176,14 @@ author: Written with Claude
 
 ## Index
 
-The index file — `Decisions.md` in a KB, `README.md` in a code repo (GitHub renders it as the folder landing) — must carry a Markdown table with one row per DR. The first column holds the DR ID, as a relative link or bare; the checker locates an optional **Date** column by its header label, so extra columns (e.g. **Type**) are fine. Order rows by **reveal order** — the logical reading sequence derived from the `decision_depends_on` dependency graph (roots first, then dependents), filename within a level. This surfaces the story the DRs collectively tell rather than an arbitrary filename sort (a judgment item — the checker does not enforce a mechanical sort):
+The index file — `Decisions.md` in a KB, `README.md` in a code repo (GitHub renders it as the folder landing) — must carry an **ordered list**, one item per DR, each item linking the record by its ID. A list, not a table: a table earns its overhead only for tabular data or comparison across columns, and an index is neither — it is a single ordered sequence, so a list carries it with less markup. Order the items by **reveal order** — a curated **build narrative**: the records read as if written from scratch, before anything was created, each building on the ones before it, so a concept is introduced at its record and later records may name it explicitly. Weave the sub-scopes into this one sequence where they belong rather than grouping them apart. The order is authorial — a record's dependence on earlier ones is often stated in prose, not only in the `decision_depends_on` field, so the sequence is not mechanically derived. Two constraints hold: roots precede dependents across the whole set (judgment — INDEX-6), and **within any one prefix the serials ascend in reveal order** — a `PREFIX-NNN` never appears before a lower-numbered `PREFIX-MMM`. If the build narrative wants a record earlier than its serial allows, that is a drafting issue fixed by renumbering, not by placing it out of sequence (mechanical — INDEX-8):
 
 ```markdown
-| DR ID           | Title                                                                     | Type       | Date       |
-| --------------- | ------------------------------------------------------------------------- | ---------- | ---------- |
-| GDR-ARCADIA-001 | [Adopting Decision Records](GDR-ARCADIA-001-adopting-decision-records.md) | governance | 2026-06-25 |
+1. [GDR-ARCADIA-001](GDR-ARCADIA-001-adopting-decision-records.md) — adopting Decision Records (the format these records follow).
+2. [GDR-ARCADIA-002](GDR-ARCADIA-002-...) — the next decision in the build sequence.
 ```
 
-The Title cell is a relative link. A **Date** column (if present) must match the DR's own `**Date:**` field. There is no **Status** column — records are living and present-state, not lifecycle-tracked.
+Each item links the record by its ID and gives a short gloss of what it decides. Per-record dates live in each record's own `**Date:**` field, not in the index. There is no status or lifecycle marker — records are living and present-state.
 
 ## Writing guidance
 
@@ -193,6 +192,7 @@ The Title cell is a relative link. A **Date** column (if present) must match the
 - **Scope**: one decision per DR. If a decision has multiple independently-reconsidered parts, split them.
 - **Edit in place**: a DR is a living record — clarifications, realignments, and changes of direction all **edit the existing record** so it always reads as written today. There is no supersession chain and no changelog; superseded wording simply goes. A significant change of direction is worth flagging to the human before applying, but it still lands as an in-place edit, not a new superseding record.
 - **No roadmap or TODO inside a DR**: a record states the decision as it currently stands. Forward-looking, still-to-do, or "revisit later" work is lifted to the repo's ROADMAP (code repo) or a stream (KB) — never narrated in the record as an "open roadmap item", "parked", or "not yet started".
+- **State the decision, not the enforcement detail**: a DR records what was decided and names the concept or standard that carries it — never the volatile identifiers the enforcing skill owns. Do not cite rubric or checker criterion IDs (a `SHAPE-N`, `SCRIPT-N`, `MEM-N` tag) or a standard's section numbers (`§4`): the enforcing skill renumbers them without the decision changing, silently staling the record. Say "the skills rubric enforces this" or "the ki-tokenomics standard covers model-tier selection", and let the skill own the specifics.
 - **Chaining**: the Consequences of one DR become the Context of the next. Write each as if handing off to a future author.
 - **Language**: follow the island's language convention (British English for KI islands).
 - **Prefix choice**: if you are uncertain which `decision_type` fits, prefer the broader category. A governance DR is about how the island is run; an architecture DR is about how it is structured.

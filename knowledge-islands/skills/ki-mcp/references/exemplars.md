@@ -116,9 +116,9 @@ The canonical registration block for Claude Code (`.mcp.json` at the repo root) 
 
 The access level defaults to `read` when the env var is absent; set it explicitly so the registration is self-documenting.
 
-### Vitest coverage config — excluding the server wiring layer
+### Conditional Vitest coverage config — excluding the server wiring layer
 
-Coverage is 100 % line/function/branch/statement — but only over `main/` and `utils/` (excluding annotation constants). The entry point, tool-registration shells, and any generated code are explicitly excluded because they contain no testable logic: they are wiring, not behaviour. The environment block neutralises git global/system config so tests are isolated from the developer's real git config.
+This example applies only when the repository selects the Vitest profile by carrying `vitest.config.*`. Under that profile, coverage is 100 % line/function/branch/statement — but only over `main/` and `utils/` (excluding annotation constants). The entry point, tool-registration shells, and any generated code are explicitly excluded because they contain no testable logic: they are wiring, not behaviour. The environment block neutralises git global/system config so tests are isolated from the developer's real git config.
 
 ```typescript
 import { defineConfig } from 'vitest/config'

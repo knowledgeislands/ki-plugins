@@ -2,6 +2,8 @@
 
 The quotable standard for a Knowledge Islands **plugin-marketplace repo** — a generated Claude plugin marketplace that projects the harness's skills and agents onto the Claude Cowork surface. The reference instance is `knowledgeislands/ki-plugins`. The [SKILL.md](../SKILL.md) is the operating procedure and carries the canonical shape; this file is the standard it audits against.
 
+The standard applies when a repository either declares `[ki-plugins]` in `.ki-config.toml` or carries `.claude-plugin/marketplace.json`. With neither, the checker reports one `NA` and stops. Either signal activates the complete projection audit, so a declared but incomplete marketplace still fails and a marketplace manifest without a declaration still surfaces the missing marker.
+
 ## Contents
 
 - [The projection model](#the-projection-model)
@@ -15,7 +17,7 @@ The quotable standard for a Knowledge Islands **plugin-marketplace repo** — a 
 
 ## The projection model
 
-The marketplace repo is a **lossy, per-surface projection** of the `ki-agentic-harness` (`ADR-KI-HARNESS-005`). The harness `skills/` and `agents/governance/` are the single source of truth. The marketplace is **generated** from them by `ki-binding`'s `bun run ki:binding:build-plugin <repo>` and is **never hand-maintained** — re-running the generator reproduces `.claude-plugin/` and `knowledge-islands/` byte-for-byte. Content changes are made at the harness source and then regenerated; the repo scaffold (below) is the repo's own and is left untouched by regeneration.
+The marketplace repo is a **lossy, per-surface projection** of the `ki-agentic-harness` (`ADR-KI-HARNESS-002`). The harness `skills/` and `agents/governance/` are the single source of truth. The marketplace is **generated** from them by `ki-binding`'s `bun run ki:binding:build-plugin <repo>` and is **never hand-maintained** — re-running the generator reproduces `.claude-plugin/` and `knowledge-islands/` byte-for-byte. Content changes are made at the harness source and then regenerated; the repo scaffold (below) is the repo's own and is left untouched by regeneration.
 
 ## Repository layout
 
@@ -65,4 +67,4 @@ Owned by the repo, not the generator: `LICENSE`, `README.md`, `.gitignore`, `.ed
 
 ## Boundary with ki-binding
 
-`ki-binding` owns **generation** (`build-plugin.ts`) and **cross-surface enablement** (BIND-4 checks the machine's `cowork_settings.json` points at the repo and enables the plugin). `ki-plugins` owns the **repo's on-disk shape**. The two do not re-check each other's half. This is composition — each skill runs its own lane and declares the edge (`ADR-KI-HARNESS-001`).
+`ki-binding` owns **generation** (`build-plugin.ts`) and **cross-surface enablement** (BIND-4 checks the machine's `cowork_settings.json` points at the repo and enables the plugin). `ki-plugins` owns the **repo's on-disk shape**. The two do not re-check each other's half. This is composition — each skill runs its own lane and declares the edge (`ADR-KI-HARNESS-004`).

@@ -11,13 +11,13 @@ For the full upstream pin list and in-house sources, see [sources.md](sources.md
 
 ## Collections
 
-| Source                        | URL                               | What it covers                                               |
-| ----------------------------- | --------------------------------- | ------------------------------------------------------------ |
-| mcp-gsuite                    | [github][mcp-gsuite]              | Canonical flat-repo compiled-TS profile with env config      |
-| mcp-kb-fs                     | [github][mcp-kb-fs]               | Canonical flat-repo compiled-TS profile, no CLI binary       |
-| ki-agentic-harness            | [github][harness]                 | Scripts-only profile (no `src/`, no tests); the harness repo |
-| Biome configuration reference | [biomejs.dev][biome-config]       | The schema the `$schema` pin tracks                          |
-| TypeScript compiler options   | [typescriptlang.org][ts-tsconfig] | The invariants and the compiled-TS profile options           |
+| Source                        | URL                               | What it covers                                             |
+| ----------------------------- | --------------------------------- | ---------------------------------------------------------- |
+| mcp-gsuite                    | [github][mcp-gsuite]              | Canonical flat-repo compiled-TS profile with env config    |
+| mcp-kb-fs                     | [github][mcp-kb-fs]               | Canonical flat-repo compiled-TS profile, no CLI binary     |
+| ki-agentic-harness            | [github][harness]                 | Scripts-only profile; runner-neutral standalone self-tests |
+| Biome configuration reference | [biomejs.dev][biome-config]       | The schema the `$schema` pin tracks                        |
+| TypeScript compiler options   | [typescriptlang.org][ts-tsconfig] | The invariants and the compiled-TS profile options         |
 
 ## Selected patterns
 
@@ -44,7 +44,7 @@ All 10 KI TS/Bun repos carry this config verbatim. The `$schema` pins the Biome 
 
 ### `tsconfig.json` — compiled-TS profile (the `mcp-*` base)
 
-Used by every `mcp-*` repo. The universal invariants (`strict`, `nodenext`, `noEmit`, `isolatedModules`, `esModuleInterop`, `skipLibCheck`, `forceConsistentCasingInFileNames`) must hold in every KI repo, including those that do not compile. The additional fields (`target es2024`, `moduleDetection: force`, `types: ["node", "vitest/globals"]`, full `noUnused*` / `noImplicit*`) form the compiled-TS profile shared across all repos that ship a `dist/`. A `tsconfig.build.json` that extends this adds `noEmit: false`, `outDir: ./dist`, and `rootDir: ./src` — the `include`/`exclude` on the base already match.
+Used by every `mcp-*` repo. The universal invariants (`strict`, `nodenext`, `noEmit`, `isolatedModules`, `esModuleInterop`, `skipLibCheck`, `forceConsistentCasingInFileNames`) must hold in every KI repo, including those that do not compile. The additional fields (`target es2024`, `moduleDetection: force`, `types: ["node"]`, full `noUnused*` / `noImplicit*`) form the compiled-TS profile shared across all repos that ship a `dist/`. A repository that selects Vitest by carrying `vitest.config.*` adds `vitest/globals` to `types`. A `tsconfig.build.json` that extends this adds `noEmit: false`, `outDir: ./dist`, and `rootDir: ./src` — the `include`/`exclude` on the base already match.
 
 ```json
 {
@@ -55,7 +55,7 @@ Used by every `mcp-*` repo. The universal invariants (`strict`, `nodenext`, `noE
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "moduleDetection": "force",
-    "types": ["node", "vitest/globals"],
+    "types": ["node"],
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "sourceMap": true,
@@ -77,25 +77,19 @@ Used by every `mcp-*` repo. The universal invariants (`strict`, `nodenext`, `noE
 }
 ```
 
-### Required script families in `package.json`
+### Aggregate/scoped entrypoints and the conditional Vitest profile
 
-The two families (`ki:lint:*` and `ki:deps:*`) are byte-identical across all 10 repos — the checker exact-matches them. Extras (`ki:skills:*`, `ki:repo:audit`, `ki:engineering:audit`, repo-specific dev scripts) are never drift. The critical trap: the test script is `vitest run`, never `bun test` — `bun test` silently invokes Bun's own runner. Note that `ki:lint:md` is the local-fix variant (writes) and `ki:lint:md:check` is what CI runs (`--check` exits non-zero on violations without writing).
+Every governed repo exposes aggregate `ki:audit`/`ki:conform`; vendoring derives the skill-scoped audit/conform entrypoints. The engineering modes run Biome, TypeScript, syncpack, and knip internally, while `ki-authoring` owns the Markdown tool pass. The critical trap is the literal command `bun test`: it bypasses the governed package script and invokes Bun's own runner. Use `bun run test`; a Vitest-configured repo maps that idiom to `vitest run`, while another profile may map it to a different whole-suite command.
 
 ```jsonc
 {
   "scripts": {
-    "ki:lint:check": "bunx @biomejs/biome check",
-    "ki:lint:fix": "bunx @biomejs/biome check --write --unsafe",
-    "ki:lint:format": "bunx @biomejs/biome format --write",
-    "ki:lint:md": "bunx prettier --write \"**/*.md\" --ignore-path .gitignore && bunx markdownlint-cli2",
-    "ki:lint:md:check": "bunx prettier --check \"**/*.md\" --ignore-path .gitignore && bunx markdownlint-cli2",
-    "ki:lint:package": "bunx syncpack format",
-    "ki:lint:types": "tsc --noEmit",
-    "ki:deps:check": "bunx knip --dependencies --no-config-hints",
-    "ki:deps:fix": "bunx knip --dependencies --fix --no-config-hints",
-    "ki:deps:refresh": "bun update --force",
-    "ki:deps:update": "bun update --latest && bun install",
-    "ki:knip": "bunx knip --no-config-hints",
+    "ki:audit": "bun .ki-meta/bin/aggregate.ts audit",
+    "ki:conform": "bun .ki-meta/bin/aggregate.ts conform",
+    "ki:engineering:audit": "bun .ki-meta/skills/ki-engineering/audit.ts .",
+    "ki:engineering:conform": "bun .ki-meta/skills/ki-engineering/conform.ts .",
+    "ki:authoring:audit": "bun .ki-meta/skills/ki-authoring/audit.ts .",
+    "ki:authoring:conform": "bun .ki-meta/skills/ki-authoring/conform.ts .",
     "clean": "rm -rf {dist,node_modules}",
     "prepare": "husky",
     "test": "vitest run",
@@ -104,6 +98,20 @@ The two families (`ki:lint:*` and `ki:deps:*`) are byte-identical across all 10 
   }
 }
 ```
+
+The three Vitest scripts above apply only when the repository carries `vitest.config.*`. A runner-neutral repository keeps the same aggregate/scoped entrypoints and supplies only its appropriate bare `test` script.
+
+The harness's [actual package manifest](../../../../package.json) uses the same bare idiom without a Vitest configuration; each standalone test program remains explicit and the complete entry chains the whole suite. An abbreviated shape:
+
+```jsonc
+{
+  "scripts": {
+    "test": "bun hooks/plan-stamp.test.ts && bun hooks/plan-sync.test.ts && bun skills/keystone/ki-bootstrap/scripts/resolve.test.ts"
+  }
+}
+```
+
+This runner-neutral profile does not opt into `test:coverage`, `test:watch`, or the Vitest threshold checks. It still must not contain the literal `bun test`.
 
 ### Monorepo: workspace-scoped vitest coverage (§0, §6)
 

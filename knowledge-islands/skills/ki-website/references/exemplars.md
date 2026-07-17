@@ -142,8 +142,6 @@ Scripts for the `site/` workspace of a monorepo. All site scripts take the `site
     "ki:site:dev:serve": "cd site && node --experimental-strip-types ../node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve --port 3000",
     "ki:site:build": "cd site && node --experimental-strip-types ../node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts",
     "ki:site:clean": "rm -rf dist site/.wrangler",
-    "ki:site:types": "bunx tsc --noEmit -p site",
-    "ki:site:verify": "bun run ki:site:types && bun run ki:site:build",
     "ki:site:deploy": "cd site && bunx wrangler deploy",
     "ki:site:preview": "bun run ki:site:build && cd site && bunx wrangler dev"
   }

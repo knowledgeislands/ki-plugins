@@ -7,7 +7,7 @@ The doctrine this skill governs is an in-house methodology, not a tracked extern
 | Source | Tag | Governs | Last reviewed |
 | --- | --- | --- | --- |
 | [Prompting Claude Fable 5](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5) | BP | The reasoning-layer split; self-verification; tiered execution | 2026-07-02 |
-| `ki-plans` — plan format & lifecycle | IN-HOUSE | The host artifact in a code repo; the base quality bar | 2026-07-04 |
+| `ki-project-roadmap` — non-KB roadmaps and plan format | IN-HOUSE | The host artifact in a non-KB repository; the base quality bar | 2026-07-16 |
 | `ki-kb-streams` — Enactment Process & proposal Checklist | IN-HOUSE | The host artifact in a KB | 2026-07-04 |
 | `ki-tokenomics` — model-tier lever (standard §4, §8) | IN-HOUSE | Tier cost and selection (the boundary this skill defers to) | 2026-07-04 |
 
@@ -16,7 +16,7 @@ The doctrine this skill governs is an in-house methodology, not a tracked extern
 - **Pinned:** initial authoring, 2026-07-02.
 - **REFRESH last run 2026-07-04** — internal-model pass (no web research), skill audited against itself.
   - _Confirmed_ `ki-tokenomics`: standard §4 (runtime levers + mode→tier table), §8 (multi-model flows), and §3 `preferred_model` all still present and cited correctly; the composition boundary (this skill owns delegability, `ki-tokenomics` owns tier cost/selection) is still clean.
-  - _Confirmed_ `ki-plans`: a plan is still the dependency-ordered record that survives context resets and handoffs — host-artifact role in a code repo unchanged.
+  - _Confirmed_ `ki-project-roadmap`: a thematic plan is still the dependency-ordered record that survives context resets and handoffs — host-artifact role in a non-KB repository unchanged.
   - _Confirmed_ `ki-kb-streams`: the stream proposal's `## Checklist` is still the KB host artifact this skill's delta rides on.
   - _Not re-verified_ the Fable-5 BP source — external, and this REFRESH ran internal-only. Left at 2026-07-02.
 - **Confirmed (standing):** the split owns _how to make work delegable_; `ki-tokenomics` owns _which tier costs what_. Tiers are named semantically; concrete model ids defer to `claude-api`.

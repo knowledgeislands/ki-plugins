@@ -195,7 +195,7 @@ If the repo runs a GitHub Action that commits to `main` before deploy (e.g. a co
 Run the mechanical checker to confirm the hosting config is conformant:
 
 ```bash
-bun /path/to/skills/ki-website-cloudflare/scripts/audit-cloudflare-hosting.ts <repo-root>
+bun /path/to/skills/implied-families/ki-website-cloudflare/scripts/audit.ts <repo-root>
 ```
 
 All items should be `PASS`. The two most common first-run findings:

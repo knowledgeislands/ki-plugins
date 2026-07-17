@@ -10,12 +10,12 @@ So "control" is really four layers at three different persistence scopes.
 
 ## The layers
 
-| Layer | Where | Scope | Persists beyond one chat? |
-| --- | --- | --- | --- |
-| Per-conversation toggles | Composer **+** / `/` → Connectors | This chat only | No |
-| Per-tool permission mode | Tool menu (Always allow / Needs approval / Blocked) | Account default | Yes |
-| Account connectors | [claude.ai/settings/connectors](https://claude.ai/settings/connectors) | Whole account, all clients | Yes |
-| Org admin governance | Admin Console → Policies; Organization settings → Connectors | Every member | Yes |
+| Layer                    | Where                                                                  | Scope                      | Persists beyond one chat? |
+| ------------------------ | ---------------------------------------------------------------------- | -------------------------- | ------------------------- |
+| Per-conversation toggles | Composer **+** / `/` → Connectors                                      | This chat only             | No                        |
+| Per-tool permission mode | Tool menu (Always allow / Needs approval / Blocked)                    | Account default            | Yes                       |
+| Account connectors       | [claude.ai/settings/connectors](https://claude.ai/settings/connectors) | Whole account, all clients | Yes                       |
+| Org admin governance     | Admin Console → Policies; Organization settings → Connectors           | Every member               | Yes                       |
 
 Only the first row is "just this session." Everything that is actual _control_ — what is installed, what is blocked, what an org may use — lives in persistent state (account UI, admin console, or on-disk config), never in a single conversation.
 

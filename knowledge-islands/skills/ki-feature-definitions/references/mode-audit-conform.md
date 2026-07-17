@@ -4,7 +4,7 @@ On-demand procedure for this skill's AUDIT and CONFORM modes (CONFORM runs AUDIT
 
 ## Mode AUDIT — check a repo's Feature Definitions
 
-1. **Run the checker.** `bun <skill>/scripts/audit-features.ts [docs/features]` (or `bun run ki:feature-definitions:audit` if wired). It reports the **[M]** items on the severity ladder: index and areas-table presence (INDEX-1/2), file↔table agreement (AREA-1/2), requirement IDs (ID-1/2/3), and the RFC-2119 statement and `_Verify:_` line per requirement (REQ-1, VERIFY-1). It exits non-zero on any FAIL. Capture the output verbatim.
+1. **Run the checker.** `bun <skill>/scripts/audit.ts [docs/features]` (or `bun run ki:feature-definitions:audit` if wired). It reports the **[M]** items on the severity ladder: index and areas-table presence (INDEX-1/2), file↔table agreement (AREA-1/2), requirement IDs (ID-1/2/3), and the RFC-2119 statement and `_Verify:_` line per requirement (REQ-1, VERIFY-1). It exits non-zero on any FAIL. Capture the output verbatim.
 2. **Apply the judgment layer by reading** — the **[J]** criteria the checker cannot judge: behaviour-not-rationale (BEHAVIOUR-1), as-built-not-aspirational (AS-BUILT-1), concrete verify hooks (VERIFY-2), over-bundled requirements (SPLIT-1), decision links (DR-LINK-1), and area fit (AREA-FIT-1).
 3. **Report** by criterion, most-severe first. A missing index or malformed ID is a FAIL and blocks; a missing `_Verify:_`, an unregistered area file, or a duplicate ID is a WARN.
 

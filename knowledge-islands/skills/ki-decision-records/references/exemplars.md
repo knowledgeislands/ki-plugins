@@ -98,15 +98,13 @@ Each island is introduced independently when its time comes.
 - The strategy is long-horizon and directional.
 ```
 
-### Decisions index table
+### Decisions index list
 
-The index — `Decisions.md` in a KB, `README.md` in a code repo — carries one row per DR ordered by **reveal order** (the logical reading sequence derived from the `decision_depends_on` dependency graph, roots first). The KB style below links the ID cell; a code repo may instead keep a bare ID in column 0 and link the Title (as the harness `docs/decisions/README.md` does) — the checker accepts either and finds an optional Date column by its header label. A Date column (if present) must match the DR body. There is no Status column — records are living and present-state. Do not use wikilinks in table cells: the `|` in `[[target|Display text]]` breaks the column boundary.
+The index — `Decisions.md` in a KB, `README.md` in a code repo — is an **ordered list**, one item per DR, each linking the record by its ID and glossing what it decides, in **reveal order** (a from-scratch build narrative: roots first, then dependents, weaving the sub-scopes in). It is a list, not a table: an index is a single ordered sequence, not tabular or comparison data, so a list carries it with less markup. Per-record dates live in each record's own `**Date:**` field, not the index; there is no status or lifecycle marker — records are living and present-state.
 
 ```markdown
-| DR ID                                                                  | Title                            | Date       |
-| ---------------------------------------------------------------------- | -------------------------------- | ---------- |
-| [SDR-KI-ARCADIA-001](SDR-KI-ARCADIA-001-knowledge-islands-strategy.md) | Knowledge Islands — The Strategy | 2026-06-25 |
-| [GDR-KI-ARCADIA-001](GDR-KI-ARCADIA-001-adopting-decision-records.md)  | Adopting Decision Records        | 2026-06-25 |
+1. [GDR-KI-ARCADIA-001](GDR-KI-ARCADIA-001-adopting-decision-records.md) — adopting Decision Records (the format these records follow).
+2. [SDR-KI-ARCADIA-001](SDR-KI-ARCADIA-001-knowledge-islands-strategy.md) — Knowledge Islands, the strategy the model serves.
 ```
 
 ### Code-repo ADR (bare Markdown, no frontmatter)
@@ -130,7 +128,7 @@ We adopt Bun as the sole package manager and script runner for this repo. `bun i
 
 - Contributors need Bun installed; the README documents the install step.
 - `bun.lockb` is committed and binary-diffed in PRs.
-- The husky pre-commit hook wires through `bun run ki:lint:check`.
+- The husky pre-commit hook invokes the relevant governance audits for staged content.
 
 ## References
 

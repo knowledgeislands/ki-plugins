@@ -4,7 +4,7 @@ _On-demand procedure for decision-records' AUDIT and CONFORM modes (CONFORM runs
 
 ## Mode AUDIT — check DRs against the standard
 
-1. **Run the mechanical checker**: `bun <skill>/scripts/audit-drs.ts <dir>` where `<dir>` is the decisions directory (`docs/decisions/` for code repos; `Admin/Governance/Decisions/` for KB repos). It auto-detects KB vs code mode from `.ki-config.toml`. Findings graded on the unified severity ladder (FAIL / WARN / POLISH / ADVISORY / INFO / SKIP / PASS — see `ki-engineering`'s [checker-contract.md](../../ki-engineering/references/checker-contract.md)); exits non-zero on any FAIL. Capture its output verbatim.
+1. **Run the mechanical checker**: `bun <skill>/scripts/audit.ts <dir>` where `<dir>` is the decisions directory (`docs/decisions/` for code repos; `Admin/Governance/Decisions/` for KB repos). It auto-detects KB vs code mode from `.ki-config.toml`. Findings graded on the unified severity ladder (FAIL / WARN / POLISH / ADVISORY / INFO / NA / PASS — see `ki-engineering`'s [checker-contract.md](../../../foundations/ki-engineering/references/checker-contract.md)); exits non-zero on any FAIL. Capture its output verbatim.
 2. **Apply the judgment items** in [the rubric](audit-rubric.md): sections have real substance, Context is value-neutral forces, Decision is in active voice, each DR is one to two pages, prefix correctly reflects the decision type.
 3. **Report** by `DR · check · fix`, lead with FAILs.
 
@@ -13,6 +13,6 @@ _On-demand procedure for decision-records' AUDIT and CONFORM modes (CONFORM runs
 1. Run **AUDIT** first.
 2. **File renames** — if a filename or prefix does not match, confirm with the user before renaming (a rename changes the canonical ID).
 3. **Section repairs** — add missing section stubs; leave content for the author.
-4. **Index repair** — add missing rows, correct stale dates, restore reveal-order ordering, drop any leftover Status column.
+4. **Index repair** — add missing entries, restore reveal-order ordering, and convert any leftover table to the ordered-list form.
 5. **Present-state migration** — flag any record still carrying old-format lifecycle cruft (`**Status:**`, `**Mutability:**`, `## Changelog`, `Superseded by`/`Supersedes` lines) and rewrite it to the living-record form.
 6. Re-run **AUDIT** to confirm convergence.

@@ -76,13 +76,13 @@ Why the suffix: it marks every stream as a proposal under the Enactment Process 
 
 The zone uses the machine-readable `type:` key (the canonical scheme; see the skill's bindings) to mark each note's role:
 
-| `type` | Where | Purpose |
-| --- | --- | --- |
-| `stream-zone` | `Streams/Streams.md` | Zone root index; carries the cross-Focus proposals index |
-| `stream-focus` | `Streams/<Focus>/<Focus>.md` | Focus dashboard; carries prose + the status/priority table |
-| `stream-index` | `Streams/<Focus>/<Name>/<Name>.md` ※ | Slim index for a **parent** stream folder; not used for leaf streams |
-| `stream-proposal` | The `<Name> Proposal.md` note (leaf or parent) | The proposal and status tracker; in a leaf, also the folder index |
-| `stream-note` | `Streams/<Focus>/<Name>/<Sub>/<Sub>.md` | A sub-proposal or working note within a stream |
+| `type`            | Where                                          | Purpose                                                              |
+| ----------------- | ---------------------------------------------- | -------------------------------------------------------------------- |
+| `stream-zone`     | `Streams/Streams.md`                           | Zone root index; carries the cross-Focus proposals index             |
+| `stream-focus`    | `Streams/<Focus>/<Focus>.md`                   | Focus dashboard; carries prose + the status/priority table           |
+| `stream-index`    | `Streams/<Focus>/<Name>/<Name>.md` ※           | Slim index for a **parent** stream folder; not used for leaf streams |
+| `stream-proposal` | The `<Name> Proposal.md` note (leaf or parent) | The proposal and status tracker; in a leaf, also the folder index    |
+| `stream-note`     | `Streams/<Focus>/<Name>/<Sub>/<Sub>.md`        | A sub-proposal or working note within a stream                       |
 
 ※ And `Pass N/` sub-folders.
 

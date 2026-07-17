@@ -1,31 +1,75 @@
 /**
- * Shared package.json / .gitignore helpers for ki-bootstrap's linkers.
+ * Shared `.gitignore` helpers for ki-bootstrap's linkers.
  *
- * Scripts are added by text splice (never JSON.parse -> JSON.stringify), so untouched parts
- * of package.json — formatting, key order, whether an array is inlined or multi-line — are
- * never rewritten as a side effect. An existing entry for the same key is never overwritten
- * (a repo may have deliberately customized the command).
+ * The linkers create relative symlinks under `.claude/skills/` / `.claude/agents/`
+ * and keep those generated paths gitignored; these helpers are the gitignore side.
+ * ki-bootstrap writes no `package.json` — the `ki:*` convenience keys are
+ * ki-engineering's to wire, as sugar over the vendored `.ki-meta/bin/*` wrappers.
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-const YELLOW = '\x1b[33m'
 const GREEN = '\x1b[32m'
 const DIM = '\x1b[2m'
 const RESET = '\x1b[0m'
+const TOML = (globalThis as unknown as { Bun: { TOML: { parse(text: string): unknown } } }).Bun.TOML
 
 export function readText(path: string): string {
   return existsSync(path) ? readFileSync(path, 'utf8') : ''
 }
 
-export function hasScript(pkgText: string, name: string): boolean {
+// ── Multi-runtime target resolution ──────────────────────────────────────────
+// A repo declares which agent runtimes it installs skills/agents for via
+// `[ki-repo] target_runtimes = [...]` — a repo-wide fact, not a harness-structure
+// detail. Absent → the historical default ["claude-code"], so every repo predating
+// multi-runtime support is unchanged. Parsing is table-aware so a lookalike key
+// in another table or a multiline string cannot redirect runtime installation.
+// Discovery paths differ per runtime: Claude Code reads `.claude/`, OpenAI Codex
+// CLI reads `.agents/` (the runtime feature-coverage matrix, SDR-KI-HARNESS-002).
+export function targetRuntimes(kiConfigText: string): string[] {
+  let document: Record<string, unknown>
   try {
-    const pkg = JSON.parse(pkgText) as { scripts?: Record<string, unknown> }
-    return !!pkg.scripts && name in pkg.scripts
+    document = TOML.parse(kiConfigText) as Record<string, unknown>
   } catch {
-    return false
+    return ['claude-code']
   }
+  const repo = document['ki-repo']
+  if (!repo || typeof repo !== 'object' || Array.isArray(repo)) return ['claude-code']
+  const runtimes = (repo as Record<string, unknown>).target_runtimes
+  if (!Array.isArray(runtimes)) return ['claude-code']
+  const list = runtimes.filter((runtime): runtime is string => typeof runtime === 'string')
+  return list.length ? list : ['claude-code']
+}
+
+// Where each runtime discovers project-local SKILLS. Unknown runtime → throw
+// (fail loud rather than silently install into a guessed path).
+export function runtimeSkillsDir(runtime: string): string {
+  const map: Record<string, string> = {
+    'claude-code': join('.claude', 'skills'),
+    codex: join('.agents', 'skills')
+  }
+  const dir = map[runtime]
+  if (!dir) throw new Error(`unknown target_runtime "${runtime}" — no known skills path (expected one of: ${Object.keys(map).join(', ')})`)
+  return dir
+}
+
+// Where each runtime discovers project-local AGENTS. Claude Code uses Markdown+YAML
+// under `.claude/agents/`; Codex uses TOML under `~/.codex/agents/` with a different
+// field shape (name/description/developer_instructions) — a generator, not a symlink,
+// and not yet built (the open subagent-format item in SDR-KI-HARNESS-002). Codex is
+// therefore intentionally absent here: link-agents surfaces a clear "unsupported
+// pending format spike" message for it rather than guess a path.
+export function runtimeAgentsDir(runtime: string): string {
+  const map: Record<string, string> = {
+    'claude-code': join('.claude', 'agents')
+  }
+  const dir = map[runtime]
+  if (!dir)
+    throw new Error(
+      `target_runtime "${runtime}" has no supported project-local agents path yet — Codex subagents are TOML under ~/.codex/agents/ (a generator, not a symlink), pending the format spike (SDR-KI-HARNESS-002)`
+    )
+  return dir
 }
 
 export function gitignoresPath(gitignore: string, path: string): boolean {
@@ -33,53 +77,17 @@ export function gitignoresPath(gitignore: string, path: string): boolean {
   return gitignore.split(/\r?\n/).some((l) => pattern.test(l.trim()))
 }
 
-// Splice one or more `"key": "command"` entries into package.json's "scripts" block.
-export function ensureScripts(target: string, additions: Array<[string, string]>, dryRun: boolean): void {
-  const pkgPath = join(target, 'package.json')
-  if (!existsSync(pkgPath)) return
-
-  const pkgText = readFileSync(pkgPath, 'utf8')
-  let pkg: { scripts?: Record<string, string> }
-  try {
-    pkg = JSON.parse(pkgText)
-  } catch {
-    console.log(`${YELLOW}skip  ${RESET}package.json ${DIM}(not valid JSON — leaving scripts untouched)${RESET}`)
-    return
-  }
-
-  const pending = additions.filter(([key]) => !pkg.scripts?.[key])
-  if (pending.length === 0) return
-
-  for (const [key, command] of pending) console.log(`${GREEN}script${RESET} ${key} -> ${DIM}${command}${RESET}`)
+// Append a generated-links ignore for `path` (e.g. `.claude/skills`) if the .gitignore
+// does not already cover it. Writes the trailing-slash form the checker (gitignoresPath)
+// recognises, so a natural leading-slash guess never leaves BOOT-3/8 unsatisfied. Creates
+// .gitignore if absent; leaves existing content untouched otherwise.
+export function ensureGitignore(target: string, path: string, dryRun: boolean): void {
+  const gitignorePath = join(target, '.gitignore')
+  const existing = readText(gitignorePath)
+  if (gitignoresPath(existing, path)) return
+  const line = `${path}/`
+  console.log(`${GREEN}ignore${RESET} ${line} ${DIM}(generated links)${RESET}`)
   if (dryRun) return
-
-  // Locate the `"scripts": {` opener, then brace-count to its matching close so
-  // an empty (`{}`) or single-line block is handled as well as a multi-line one.
-  const openMatch = pkgText.match(/^([ \t]*)"scripts"\s*:\s*\{/m)
-  if (!openMatch || openMatch.index === undefined) {
-    console.log(`${YELLOW}skip  ${RESET}package.json ${DIM}(no "scripts" block to extend — add one by hand first)${RESET}`)
-    return
-  }
-  const baseIndent = openMatch[1]
-  const innerStart = openMatch.index + openMatch[0].length
-  let depth = 1
-  let i = innerStart
-  for (; i < pkgText.length && depth > 0; i++) {
-    if (pkgText[i] === '{') depth++
-    else if (pkgText[i] === '}') depth--
-    if (depth === 0) break
-  }
-  const closeIdx = i // index of the matching `}`
-  const inner = pkgText.slice(innerStart, closeIdx)
-  const entryIndent = `${baseIndent}  `
-  const newLines = pending.map(([key, command]) => `${entryIndent}"${key}": ${JSON.stringify(command)}`).join(',\n')
-  const existing = inner.replace(/\s+$/, '').replace(/,\s*$/, '') // keep entries; drop trailing ws/comma
-  const newBlock = existing.trim() ? `${existing},\n${newLines}\n${baseIndent}` : `\n${newLines}\n${baseIndent}`
-  const rebuilt = pkgText.slice(0, innerStart) + newBlock + pkgText.slice(closeIdx)
-  writeFileSync(pkgPath, rebuilt)
-}
-
-// Single-script convenience wrapper.
-export function ensureScript(target: string, key: string, command: string, dryRun: boolean): void {
-  ensureScripts(target, [[key, command]], dryRun)
+  const lead = existing === '' ? '' : existing.endsWith('\n') ? '\n' : '\n\n'
+  writeFileSync(gitignorePath, `${existing}${lead}# Generated project-local links (ki-bootstrap) — never committed\n${line}\n`)
 }

@@ -1,9 +1,10 @@
 ---
 name: ki-kb-live-artifacts
 implies: []
+vendors: [educate, audit, conform, help]
 description: >
   Author, audit, and manage Live Artifact pairs in a Knowledge Islands base — dynamic operational documents that reflect the current state of the island (dashboards, status boards, queues, trackers). Governs the pairing convention between a Markdown source (.md) and its rendered HTML output (.html), the Live Artifacts index in Admin/Operations/Live Artifacts/, and the sync rules between the two halves of each pair. Triggers: "add a live artifact", "audit live artifacts", "check artifact sync", "what live artifacts does this base have", "create a dashboard", "update the artifact index". For the KB zone structure use `ki-kb`; for Markdown or TOML style use `ki-authoring`.
-argument-hint: 'audit | conform | new <name> | refresh'
+argument-hint: 'audit | conform | help | educate | new <name> | refresh'
 ---
 
 # Knowledge Islands Live Artifacts
@@ -41,21 +42,25 @@ Both halves live under `Admin/Operations/Live Artifacts/` (or a configured path)
 
 ## Operating modes
 
-Modes: **AUDIT · CONFORM · NEW · REFRESH** (named, alphabetical). If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description.
+Modes: **AUDIT · CONFORM · EDUCATE · NEW · REFRESH** (named, alphabetical). Invoked as `help` / `-h` / `?`, it explains itself and stops — the generated HELP block (name, purpose, invocation, modes, off-ramps), taking no action. With no mode it does the same, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows.
 
-### AUDIT
-
-→ Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
-
-### CONFORM
+### Mode AUDIT
 
 → Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
 
-### NEW
+### Mode CONFORM
+
+→ Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
+
+### Mode EDUCATE
+
+→ Reached through the bootstrap chain — `ki-bootstrap` vendors this skill's checker and wires `ki:kb-live-artifacts:audit`. To establish the collection itself, scaffold `Admin/Operations/Live Artifacts/` with its `Live Artifacts.md` index; **NEW** then authors individual artifact pairs into it.
+
+### Mode NEW
 
 → Read [references/mode-new.md](references/mode-new.md)
 
-### REFRESH
+### Mode REFRESH
 
 → Read [references/mode-refresh.md](references/mode-refresh.md)
 

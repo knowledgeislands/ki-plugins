@@ -1,6 +1,6 @@
 # Agent Definitions Standard
 
-The normative reference behind `ki-agents`: what a _good_ Claude Code subagent definition looks like, and why. The [Audit Rubric](audit-rubric.md) is the line-by-line checklist derived from this — each rubric criterion (`NAME-1`, `DESC-2`, …) verifies a convention stated here. Read the standard to understand or quote a convention; run the rubric (and its [linter](../scripts/lint-agents.ts)) to check an agent against it.
+The normative reference behind `ki-agents`: what a _good_ Claude Code subagent definition looks like, and why. The [Audit Rubric](audit-rubric.md) is the line-by-line checklist derived from this — each rubric criterion (`NAME-1`, `DESC-2`, …) verifies a convention stated here. Read the standard to understand or quote a convention; run the rubric (and its [linter](../scripts/audit.ts)) to check an agent against it.
 
 A subagent is a single Markdown file — YAML frontmatter + a system-prompt body — installed into a Claude agents directory (`~/.claude/agents` or a project's `.claude/agents`). Source abbreviations (CC, HOUSE, BP) resolve in [the source list](sources.md).
 
@@ -22,7 +22,7 @@ A subagent is a single Markdown file — YAML frontmatter + a system-prompt body
 
 ## 1. Two-layer model
 
-Every convention is one of two kinds, and the distinction is a contract with the [linter](../scripts/lint-agents.ts):
+Every convention is one of two kinds, and the distinction is a contract with the [linter](../scripts/audit.ts):
 
 - **Mechanical** — deterministically checkable (frontmatter parses, a name is unique, a length cap holds, a link resolves). The bundled linter owns these.
 - **Judgment** — needs a model reading the agent (is the description a strong delegation signal, is the prompt a focused role, is the lane clear). The linter cannot assess these.
@@ -47,7 +47,7 @@ The `description` is the **delegation signal**: the orchestrating agent reads it
 
 Validated when present, per the Claude Code subagents spec. Only `name` and `description` are required; everything below is optional:
 
-- **`model`** — `inherit` (use the main thread's model — a sensible default), an alias (`sonnet`, `opus`, `haiku`, `fable`), or a pinned model id. Defaults to `inherit` when omitted. Pin only with a reason (a cheap model for a mechanical role, a stronger one for hard reasoning); otherwise prefer `inherit` — a pinned full model id is a longevity risk (it rots), so prefer the alias or `inherit`.
+- **`model`** — `inherit` (use the main thread's model — a sensible default), an alias (`sonnet`, `opus`, `haiku`, `fable`), or a pinned model id. This is a Claude Code-specific field (the subagents spec); the alias is that runtime's **resolution** of a portable model _type_ (`fast`/`standard`/`reasoning`/`frontier`), which is where the pin's rationale should come from — see `ki-tokenomics`' taxonomy (ADR-KI-HARNESS-009). Defaults to `inherit` when omitted. Pin only with a reason (a `fast` type for a mechanical role, a `reasoning` type for hard reasoning); otherwise prefer `inherit` — a pinned full model id is a longevity risk (it rots), so prefer the alias or `inherit`. This `inherit` preference is slated to be **promoted from convention to an enforced `ki-agents` rubric criterion**: an agent that hard-pins a model tier without a stated reason will be flagged — the model-tier analogue of a skill that hardcodes a runtime. (A later change adds the mechanical enforcement; today this is prose guidance only.)
 - **`tools`** — an allow-list of tool names. **Omitting it inherits all tools**; specifying it restricts the agent to exactly those. Grant **least privilege**: a read/advise agent does not need write or execution tools.
 - **`disallowedTools`** — a deny-list: tools removed from the inherited (or `tools`-specified) set. Applied **first**, then `tools` is resolved against what remains; a tool named in both is removed. Either field can express least privilege — an allow-list when the role needs a few tools, a deny-list when it needs all-but-a-few.
 - **`color`** — a display hint only; cosmetic.
@@ -62,6 +62,19 @@ When-to-use guidance for the fields the house has not yet codified in most agent
 - **`effort`** — overrides the session's reasoning effort for this agent. Pin `low` for mechanical or high-volume roles where full reasoning is wasted cost; pin `high` or above for deep-analysis roles where the extra reasoning is load-bearing. Prefer inheriting (omit the field) when the session effort is appropriate. (CC)
 - **`isolation: worktree`** — runs the agent in a fresh git worktree (~200–500 ms setup + disk). Use only when the role makes file edits that would conflict with the caller's working tree (e.g., a parallel refactor or migration agent). Do not use for read-only or advisory roles; the overhead is real and the worktree is auto-removed only if the agent makes no changes. (CC)
 - **`background: true`** — always runs the agent as a non-blocking background task. Use when the caller genuinely does not need to wait for the result (a logging agent, an async notification). For roles where the caller synthesises the result, omit or keep false. (CC)
+
+### Portable core (provisional)
+
+The harness intends to become multi-runtime (Claude Code today; OpenAI Codex CLI a stated direction — see [SDR-KI-HARNESS-002](../../../../docs/decisions/SDR-KI-HARNESS-002-runtime-portable-contracts.md)). As a **first hypothesis**, the fields any runtime's agent concept plausibly shares — the **provisional portable core** — are:
+
+- **`name`** — a stable identifier for the agent.
+- **`description`** — the delegation signal an orchestrator reads to route to the agent (§4).
+- the **system-prompt body** — the role, lane, grounding, and procedure (§§6–7).
+- **coarse tool-scoping** — the _idea_ that an agent runs with a restricted tool surface (least privilege), independent of how any one runtime spells it.
+
+This portable core is a **hypothesis pending a Codex CLI subagent-format research spike**, not a validated field-by-field mapping between runtimes. Treat it as a framing to test, not a settled contract. Note the sharp asymmetry with skills: skills have an **external anchor** (the [Agent Skills standard](https://agentskills.io/)) that pins their portable shape, whereas **there is no external subagent specification** — no cross-runtime standard defines what a subagent is — so this core rests on nothing firmer than the observed overlap plus the pending spike. Do not read it as an existing external standard. (HOUSE)
+
+**Everything else is Claude Code-only** — validated against the Claude Code subagents spec, not portable, and expected to differ or be absent under another runtime: `model`, `tools`, `disallowedTools`, `permissionMode`, `skills`, `mcpServers`, `hooks`, `memory`, `isolation`, `background`, `effort`, `color`, `initialPrompt`, and `maxTurns`. (The `tools` / `disallowedTools` fields are the CC-specific _spelling_ of coarse tool-scoping; the scoping concept is in the portable core, the fields are not.) (CC)
 
 ## 6. System prompt: size & focus
 
@@ -84,7 +97,7 @@ Use **consistent terminology** (one term per concept). (BP, HOUSE)
 Three levers shape an agent's cost and blast radius:
 
 - **Tools** — restrict to least privilege. An advisory agent (reads, recommends) should not carry write/exec tools; an authoring agent needs write but rarely shell. Omitting `tools` inherits everything, which is the wrong default for a narrow role. Express the restriction with **either** `tools` (an allow-list) **or** `disallowedTools` (a deny-list applied first) — whichever is shorter for the role. Both accept MCP server-level patterns (`mcp__<server>`, `mcp__<server>__*`, and `mcp__*` to remove all MCP tools), and `tools` accepts the `Agent(type)` spawn-allow-list that restricts which subagents this agent may itself spawn.
-- **Model** — `inherit` unless the role justifies a pin: a high-volume mechanical role can use a cheaper model; a deep-reasoning role a stronger one. Pin via an alias (`sonnet`, `opus`, `haiku`, `fable`) rather than a full model id, which rots. State the reason where it is not obvious.
+- **Model** — `inherit` unless the role justifies a pin: a high-volume mechanical role wants a `fast` type; a deep-reasoning role a `reasoning`/`frontier` type. Reason from the portable _type_ the role needs (`ki-tokenomics`), then pin its resolution via a Claude alias (`sonnet`, `opus`, `haiku`, `fable`) rather than a full model id, which rots. State the reason where it is not obvious.
 - **Permission mode** — `permissionMode` is the third lever: it sets how the agent handles permission prompts (`default` / `acceptEdits` / `auto` / `dontAsk` / `bypassPermissions` / `plan`). Leave it unset (inherit) unless the role needs a specific posture; `bypassPermissions` widens blast radius and needs a stated reason. (CC, BP)
 
 ## 9. Lane & delegation

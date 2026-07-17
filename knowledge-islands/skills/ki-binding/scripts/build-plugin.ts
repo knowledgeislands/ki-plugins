@@ -3,7 +3,7 @@
  * ki-binding — generate the KI Cowork plugin marketplace repo from this harness.
  *
  * The harness (skills/ + agents/) is the single source; a Claude plugin/marketplace is a
- * lossy per-surface projection of it (ADR-KI-HARNESS-005). This generator mirrors the
+ * lossy per-surface projection of it (ADR-KI-HARNESS-002). This generator mirrors the
  * harness's skills + governance agents into a marketplace-repo tree so the plugin content
  * is never hand-maintained — re-running reproduces it byte-for-byte.
  *
@@ -28,8 +28,8 @@ import { fileURLToPath } from 'node:url'
 
 // ── Self-location: resolve the harness root from this script's path ──
 const SELF = fileURLToPath(import.meta.url)
-// .../skills/ki-binding/scripts/build-plugin.ts → up to the harness root
-const HARNESS_ROOT = resolve(dirname(SELF), '..', '..', '..')
+// .../skills/environment/ki-binding/scripts/build-plugin.ts → up to the harness root
+const HARNESS_ROOT = resolve(dirname(SELF), '..', '..', '..', '..')
 const SKILLS_DIR = join(HARNESS_ROOT, 'skills')
 const AGENTS_DIR = join(HARNESS_ROOT, 'agents', 'governance')
 
@@ -55,11 +55,15 @@ const PLUGIN_DESCRIPTION =
 
 // ── Discover source content ──
 const skillDirs = readdirSync(SKILLS_DIR)
-  .filter((name) => {
-    const p = join(SKILLS_DIR, name)
-    return statSync(p).isDirectory() && existsSync(join(p, 'SKILL.md'))
+  .flatMap((group) => {
+    const groupPath = join(SKILLS_DIR, group)
+    if (!statSync(groupPath).isDirectory()) return []
+
+    return readdirSync(groupPath)
+      .map((name) => ({ name, path: join(groupPath, name) }))
+      .filter(({ path }) => statSync(path).isDirectory() && existsSync(join(path, 'SKILL.md')))
   })
-  .sort()
+  .sort(({ name: a }, { name: b }) => a.localeCompare(b))
 
 const agentFiles = existsSync(AGENTS_DIR)
   ? readdirSync(AGENTS_DIR)
@@ -90,7 +94,7 @@ const plugin = { name: PLUGIN, version: VERSION, description: PLUGIN_DESCRIPTION
 writeFileSync(join(pluginRoot, '.claude-plugin', 'plugin.json'), `${JSON.stringify(plugin, null, 2)}\n`)
 
 // ── Copy skills verbatim (whole dir incl. references/ and scripts/) ──
-for (const name of skillDirs) cpSync(join(SKILLS_DIR, name), join(pluginRoot, 'skills', name), { recursive: true })
+for (const { name, path } of skillDirs) cpSync(path, join(pluginRoot, 'skills', name), { recursive: true })
 
 // ── Copy governance agents (flatten agents/governance/*.md → agents/*.md) ──
 for (const f of agentFiles) cpSync(join(AGENTS_DIR, f), join(pluginRoot, 'agents', f))

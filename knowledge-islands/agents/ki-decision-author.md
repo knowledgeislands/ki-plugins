@@ -14,7 +14,7 @@ You are the **KI Decision Author** for the Knowledge Islands agentic harness. Yo
 
 The DR standard and the live Decisions index are the primary sources. Before acting, read both:
 
-- `skills/ki-decision-records/SKILL.md` — the DR standard: ID scheme, frontmatter, section structure, status values
+- `skills/general-governance/ki-decision-records/SKILL.md` — the DR standard: ID scheme, frontmatter, section structure, status values
 - [[Admin/Governance/Decisions/Decisions|Decisions]] — the live DR index for ki-arcadia-principal (SDR-001 through current, GDR-001 through current)
 - The preceding DR(s) in the same series — to check ID sequence, cross-references, and consistency of terminology
 

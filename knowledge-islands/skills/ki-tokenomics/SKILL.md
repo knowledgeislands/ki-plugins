@@ -1,16 +1,17 @@
 ---
 name: ki-tokenomics
 implies: []
+vendors: [educate, audit, conform, help]
 description: >
   Audit, codify, and optimise the tokenomics of a Claude Code environment — the standing context surface paid on every turn, composed across the user-wide (`~/.claude`) and project-local layers and any Knowledge Islands base, plus the runtime levers (caching, model tier, compaction, sub-agent fan-out, verbosity). Measures each layer's CLAUDE.md (+`@imports`), memory, installed-skill descriptions, MCP tool definitions, and settings against budgets, and checks context-compression tooling such as Headroom is set up optimally. Use when context feels heavy or token costs climb. Triggers: "audit my token usage", "why is my context so big", "reduce my token costs", "trim my context", "too many MCP tools", "is Headroom set up right". For the volatile numbers (model ids, prices, cache TTLs, window sizes) use `claude-api`; for a base's structure/content use `ki-kb`; for one skill's quality use `ki-skills`; for an MCP server's code use `ki-mcp`.
-argument-hint: 'audit | conform | init | refresh'
+argument-hint: 'audit | conform | help | educate | refresh'
 ---
 
 # Knowledge Islands tokenomics
 
 You are helping hold a Claude Code working environment to one budget for its **tokenomics** — the cost of the context the model carries, paid not once but on **every turn**, and re-paid by every sub-agent. The premise of this skill is that this cost is rarely one file's fault: it is the **composition** of two configuration layers — the **user-wide** `~/.claude` and the **project-local** `.claude` / `CLAUDE.md` — over any **Knowledge Islands base** in play. You measure that composed surface, attribute it to its layers, hold it to a budget, and tune the runtime levers that multiply it.
 
-This is a **standard, base-agnostic Process skill**: it hard-codes no single environment, resolving the user layer from `~/.claude` at runtime and taking the project or base as its target. Its quotable standard is [the standard](references/tokenomics-standard.md); the line-by-line criteria (each tagged mechanical/judgment) are [the rubric](references/audit-rubric.md); the mechanical checker is [`scripts/audit-tokenomics.ts`](scripts/audit-tokenomics.ts). How it sits beside the other skills is documented once in the ki-agentic-harness `README.md`, not repeated here.
+This is a **standard, base-agnostic Process skill**: it hard-codes no single environment, resolving the user layer from `~/.claude` at runtime and taking the project or base as its target. Its quotable standard is [the standard](references/tokenomics-standard.md); the line-by-line criteria (each tagged mechanical/judgment) are [the rubric](references/audit-rubric.md); the mechanical checker is [`scripts/audit.ts`](scripts/audit.ts). How it sits beside the other skills is documented once in the ki-agentic-harness `README.md`, not repeated here.
 
 ## What it governs — two halves
 
@@ -25,7 +26,7 @@ This is a **standard, base-agnostic Process skill**: it hard-codes no single env
 **2. The runtime levers** — what each turn and each sub-agent then costs:
 
 - **Prompt caching** — is the stable prefix actually cacheable, and being hit?
-- **Model tier** — is the work on the right-cost model?
+- **Model type** — is the work on the right-cost model _type_ (`frontier` / `reasoning` / `standard` / `fast`), whatever concrete model each resolves to per runtime?
 - **Compaction** — is a long conversation compacted before it bloats?
 - **Sub-agent fan-out** — each sub-agent re-pays the standing surface; is the fan-out worth it? Whether a given unit of work is delegation-ready in the first place is `ki-handoffs`'s concern, not this skill's.
 - **Tool-result verbosity** — raw logs / JSON dumps re-read every turn; this is where context-**compression** tooling earns its place.
@@ -36,13 +37,15 @@ The full catalogue, the budget table, and the rationale (curate context as a fin
 
 Tool-result bloat is the runtime cost a **context-compression layer** attacks. The house default treats one such layer as a **recommended** best practice and checks that, where configured, it is set up well. The seeded entry is **Headroom** (the chopratejas / extraheadroom compression proxy / MCP server): the checker detects it across both layers — an `mcpServers` `headroom` entry exposing `headroom_compress` / `headroom_retrieve` / `headroom_stats`, a `headroom proxy`, or `HEADROOM_*` env — and reports whether its reversible store and cache-aligned prefixes look sound. The registry is **extensible**: add other projects alongside it. Whether the layer is `required`, `recommended`, or `off` is declared per environment (below).
 
+Headroom's savings ledger, performance logs, live counters, and durable proxy history are separate operational surfaces with different reset mechanics. Use the version-pinned [operational maintenance procedure](references/headroom-operations.md); do not treat `headroom savings --reset` as a universal dashboard reset.
+
 ## The config table — overridable budgets
 
-A target opts in (and tunes) via a `[ki-tokenomics]` table in its `.ki-config.toml`, read **validate-down** (warn on a key it does not recognise; never read another skill's table). It carries the per-component and total token budgets (a `[…budgets]` sub-table), the `headroom` expectation, and an optional `context_window_tokens` to express headroom as a percentage. Omit any to take the default; `init` scaffolds the keys. A budget overage is a **WARN**, never a FAIL — these are guide-rails, not gates.
+A target opts in (and tunes) via a `[ki-tokenomics]` table in its `.ki-config.toml`, read **validate-down** (warn on a key it does not recognise; never read another skill's table). It carries the per-component and total token budgets (a `[…budgets]` sub-table), the `headroom` expectation, and an optional `context_window_tokens` to express headroom as a percentage. Omit any to take the default; `educate` scaffolds the keys. A budget overage is a **WARN**, never a FAIL — these are guide-rails, not gates.
 
 ## Operating modes
 
-Every governance skill carries the universal four **AUDIT · CONFORM · INIT · REFRESH**. If invoked without a mode, use `AskUserQuestion` to list each mode with a one-line description; if the chosen mode shows a target in the `argument-hint`, prompt for that too.
+Every governance skill carries the universal four **AUDIT · CONFORM · EDUCATE · REFRESH**. Invoked as `help` / `-h` / `?`, it explains itself and stops — the generated HELP block (name, purpose, invocation, modes, off-ramps), taking no action. With no mode it does the same, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows.
 
 ### Mode AUDIT
 
@@ -52,9 +55,9 @@ Every governance skill carries the universal four **AUDIT · CONFORM · INIT · 
 
 → Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
 
-### Mode INIT
+### Mode EDUCATE
 
-→ Read [references/mode-init.md](references/mode-init.md)
+→ Read [references/mode-educate.md](references/mode-educate.md)
 
 ### Mode REFRESH
 

@@ -1,6 +1,10 @@
 # Workspace MCP Standard
 
-The canonical shape shared by every stdio MCP server in the `knowledgeislands/` workspace: `mcp-git-audit`, `mcp-ki-kb-fs`, `mcp-gsuite`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-kb-notion-mirror`. This is the reference the `ki-mcp` skill codifies and audits against. Where repos disagree, the majority shape is the standard; documented per-repo exceptions are noted inline.
+The canonical shape shared by every stdio MCP server in the `knowledgeislands/` workspace: `mcp-git-audit`, `mcp-ki-kb-fs`, `mcp-gsuite`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-ki-kb-notion-mirror`. This is the reference the `ki-mcp` skill codifies and audits against. Where repos disagree, the majority shape is the standard; documented per-repo exceptions are noted inline.
+
+## Applicability
+
+The standard applies when a repository either declares `[ki-mcp]` in `.ki-config.toml` or carries the structural marker `src/mcp-server/`. Neither signal means the standard is not applicable and the checker reports one `NA`; either signal activates the complete audit. A declaration with missing structure remains an applicable, failing MCP repository, and MCP structure without a declaration remains applicable and is audited for the missing marker.
 
 ## Contents
 
@@ -67,7 +71,7 @@ Top-level `src/` folders are identical across all six repos: `config`, `main`, `
 | mcp-gsuite              | `gsuite`                                  |
 | mcp-m365                | `m365`                                    |
 | mcp-claude-housekeeping | `claude_code`, `claude_desktop`, `vscode` |
-| mcp-kb-notion-mirror    | `notion_mirror`                           |
+| mcp-ki-kb-notion-mirror | `notion_mirror`                           |
 
 - **Plural** resource for collection ops (`git_repos_scan`, `gsuite_email_messages_search`, `kb_notes_list`).
 - **Singular** for single-item ops (`kb_note_read`, `git_repo_commit`, `gsuite_email_message_get`).
@@ -89,7 +93,7 @@ These four hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorl
 
 Levels nest `read ⊂ write ⊂ destructive`; env `MCP_<APP>_ACCESS_LEVEL` (default `read`). Every tool sets `annotations` to a preset from `utils/annotations.ts`: `READ_ONLY`, `WRITE`, `WRITE_IDEMPOTENT`, `WRITE_IDEMPOTENT_REMOTE`, `DESTRUCTIVE`, `DESTRUCTIVE_REMOTE`, `DESTRUCTIVE_ONESHOT`, plus `_REMOTE`/read variants per repo. `DESTRUCTIVE_ONESHOT` = effect depends on current FS/index state. Never bypass the register proxy; never derive the level from the tool name.
 
-**Divergence:** default access level is `read` everywhere except `mcp-kb-notion-mirror`, which defaults to `write` (it ships no read-only tools) — intentional, do not flag.
+**Divergence:** default access level is `read` everywhere except `mcp-ki-kb-notion-mirror`, which defaults to `write` (it ships no read-only tools) — intentional, do not flag.
 
 ## 5. Audit logging
 
@@ -111,22 +115,22 @@ Levels nest `read ⊂ write ⊂ destructive`; env `MCP_<APP>_ACCESS_LEVEL` (defa
 
 ## 7. Bun vs Node
 
-The Bun-install / Node-run split, the **`bun test` trap**, the `process.loadEnvFile()` parity call, and `NODE_ENV`-only-in-dev are the **common engineering standard**, owned by `ki-engineering` (its [engineering-standard.md](../../ki-engineering/references/engineering-standard.md) §3). Run `ki:engineering:audit` for this layer — it is not re-checked here. The MCP-specific consequence: `ki:server:mcp:dev` / `:inspect` set `NODE_ENV=development`, so production ignores `.env.*` and config must come from the client's `env` block.
+The Bun-install / Node-run split, the **`bun test` trap**, the `process.loadEnvFile()` parity call, and `NODE_ENV`-only-in-dev are the **common engineering standard**, owned by `ki-engineering` (its [engineering-standard.md](../../../foundations/ki-engineering/references/engineering-standard.md) §3). Run `ki:engineering:audit` for this layer — it is not re-checked here. The MCP-specific consequence: `ki:server:mcp:dev` / `:inspect` set `NODE_ENV=development`, so production ignores `.env.*` and config must come from the client's `env` block.
 
 ## 8. package.json
 
-`type` / `packageManager` / `engines` / `files`, the `ki:lint:*` / `ki:deps:*` / `build` / `clean` / `test*` / `prepare` script families, and the `build`/cli-chmod rule are the **common engineering standard** (`ki-engineering`) — copy them from a healthy sibling and let `ki:engineering:audit` check them; not re-checked here. This section is the **MCP delta** on top:
+`type` / `packageManager` / `engines` / `files`, aggregate/scoped audit wiring, lifecycle scripts, and the `build`/cli-chmod rule are the **common engineering standard** (`ki-engineering`) — copy them from a healthy sibling and let `ki:engineering:audit` check them; not re-checked here. This section is the **MCP delta** on top:
 
 - **`main` / `bin`** — `"main": "dist/mcp-server/index.js"`; `"bin": { "mcp-<name>": "dist/mcp-server/index.js" }`, plus a second entry for a CLI (`"mcp-<name>-<verb>": "dist/cli/cli.js"`) or auth server (`"mcp-<name>-auth"`) where present.
 - **`exports`** — always `"."` (→ `dist/mcp-server`), `"./config"`, and `"./package.json"`; plus one entry per reusable `main/<concern>`.
 - **`ki:server:mcp:*` scripts** — `ki:server:mcp:dev` / `ki:server:mcp:inspect` (both `NODE_ENV=development bun …`) / `ki:server:mcp:start` (`bun run build && node dist/mcp-server/index.js`); OAuth repos with an `src/auth-server/` add the `ki:server:auth:*` pair (`ki:server:auth:dev` / `ki:server:auth:start`), and a repo with a CLI/smoke harness adds `ki:test:smoke`.
-- **`ki:test:record` / `ki:test:replay` (record/replay harness).** A repo with mcporter integration recordings ships the pair together — `ki:test:record` captures a live run into `fixtures/recordings/`, `ki:test:replay` runs against the committed fixture. Defining one without the other is drift (asserted by `audit-mcp.ts`).
-- **CI — the smoke delta.** The common CI shape (`jdx/mise-action` + `bun run ki:lint:check` / `ki:lint:types` / `ki:lint:md:check` / `test:coverage`) is `ki-engineering`'s, asserted by `audit-engineering.ts`. An MCP repo with a smoke harness **appends `bun run ki:test:smoke`** to `.github/workflows/ci.yml` after those steps — the MCP delta on the CI shape, asserted here by `audit-mcp.ts`.
-- **Typed client — `ki:generate:client` script.** Every repo ships a `ki:generate:client` script that emits a typed TypeScript client via `mcporter emit-ts <server-name> --mode client --out src/generated/client.ts --types-out src/generated/types.d.ts`. The emitted `src/generated/client.ts` is committed (it is the deliverable, not build output); it is excluded from vitest coverage. **Re-run `bun run ki:generate:client` after any tool surface change** — adding, removing, or renaming a tool, or changing its input schema or return shape — otherwise callers compile against a stale contract. The `<server-name>` must match a registered mcporter instance (`mcporter list`). When adding a new server to the workspace, also register it in `ki-agentic-harness/scripts/generate-clients.ts` so that `bun run ki:codegen` from the harness root regenerates all repos at once.
+- **`ki:test:record` / `ki:test:replay` (record/replay harness).** A repo with mcporter integration recordings ships the pair together — `ki:test:record` captures a live run into `fixtures/recordings/`, `ki:test:replay` runs against the committed fixture. Defining one without the other is drift (asserted by `audit.ts`).
+- **CI — the smoke delta.** The common CI shape (`jdx/mise-action` + aggregate `bun run ki:audit` + runner-neutral `bun run test`) is `ki-engineering`'s, asserted by `audit.ts`. An MCP repo with a smoke harness also includes `bun run ki:test:smoke` in `.github/workflows/ci.yml` — the MCP delta on the CI shape, asserted here by `audit.ts`.
+- **Typed client — `ki:generate:client` script.** Every repo ships a `ki:generate:client` script that emits a typed TypeScript client via `mcporter emit-ts <server-name> --mode client --out src/generated/client.ts --types-out src/generated/types.d.ts`. The emitted `src/generated/client.ts` is committed (it is the deliverable, not build output); it is excluded from vitest coverage. **`conform.ts` runs this automatically** whenever the script is defined — no mcporter daemon required, since ki-mcp servers are ephemeral by default and `mcporter emit-ts` spawns its own short-lived process to introspect the tool schema. A regen failure (server not registered, `dist/` stale) is surfaced as a manual TODO rather than failing the run; fix the cause and re-run `bun run ki:generate:client` by hand. The `<server-name>` must match a registered mcporter instance (`mcporter list`).
 
 ## 9. tsconfig / vitest / biome
 
-`tsconfig.json` (the shared compiled-TS base), `tsconfig.build.json`, `biome.json`, and `vitest.config.ts` with **100% coverage on all four metrics** are the **common engineering standard** (`ki-engineering` §4–§7); not re-checked here. The **MCP delta** is only the vitest coverage `exclude` list — beyond the common `src/**/*.test.ts`, an MCP excludes its pure-wiring layers: `src/mcp-server/index.ts`, `src/tools/**/index.ts`, `src/utils/annotations.ts`, plus `src/auth-server/**`, `src/cli/cli.ts`, and pure-data modules (`src/utils/notion-args.ts`) where present.
+`tsconfig.json` (the shared compiled-TS base), `tsconfig.build.json`, and `biome.json` are the **common engineering standard** (`ki-engineering` §4–§7); when the repository selects Vitest by carrying `vitest.config.*`, that common layer also requires 100% coverage on all four metrics. Only under that selected profile does the **MCP delta** add its coverage `exclude` list — beyond the common `src/**/*.test.ts`, an MCP excludes its pure-wiring layers: `src/mcp-server/index.ts`, `src/tools/**/index.ts`, `src/utils/annotations.ts`, plus `src/auth-server/**`, `src/cli/cli.ts`, and pure-data modules (`src/utils/notion-args.ts`) where present.
 
 ## 10. .env.example & env vars
 

@@ -1,8 +1,10 @@
 # Audit Rubric — the checkable criteria
 
-Line-by-line pass/fail criteria for auditing a **Knowledge Islands base** against the structure model carried in [the SKILL body](../SKILL.md) and [the reference](<Knowledge Islands KB Reference.md>). Each is tagged **[M] mechanical** (the bundled [checker](../scripts/audit-kb.ts) enforces it) or **[J] judgment** (you assess it by reading). The **code** in bold (`ZONE-1`, `CONFIG-2`, …) is the area's short code plus its number within that area — it is what an audit should cite.
+Line-by-line pass/fail criteria for auditing a **Knowledge Islands base** against the structure model carried in [the SKILL body](../SKILL.md) and [the reference](<Knowledge Islands KB Reference.md>). Each is tagged **[M] mechanical** (the bundled [checker](../scripts/audit.ts) enforces it) or **[J] judgment** (you assess it by reading). The **code** in bold (`ZONE-1`, `CONFIG-2`, …) is the area's short code plus its number within that area — it is what an audit should cite.
 
-A criterion's tag is a contract with the checker: an **[M]** check is run by `audit-kb.ts` (do not eyeball it); a **[J]** check needs a model and is applied by reading in Mode AUDIT step 2. This is the kb half of the shared governance-skill shape (`<standard>` + `audit-rubric.md` + `references/sources.md` + a checker); its standard is the zone model itself, not a separate `*-standard.md`.
+A criterion's tag is a contract with the checker: an **[M]** check is run by `audit.ts` (do not eyeball it); a **[J]** check needs a model and is applied by reading in Mode AUDIT step 2. This is the kb half of the shared governance-skill shape (`<standard>` + `audit-rubric.md` + `references/sources.md` + a checker); its standard is the zone model itself, not a separate `*-standard.md`.
+
+Applicability: `[ki-kb]` / `[ki-kb.zones]` or any canonical zone directory activates the complete audit. With neither, **ZONE-1 [M]** emits exactly one `NA` and stops; either signal retains the zone, config, and note checks below.
 
 ## ZONE — zone layout
 
@@ -22,6 +24,15 @@ A criterion's tag is a contract with the checker: an **[M]** check is run by `au
 - **CONFIG-2 [M]** A zone alias mapping a zone to its **own canonical name** (`Pillars = "Pillars"`) is redundant — advise dropping it.
 - **CONFIG-3 [M]** A key under `[ki-kb.zones]` that is **not a canonical zone name** (a typo, a stale entry) warns.
 - **CONFIG-4 [M]** Only this skill's own table is read; another skill's `[table]` is never inspected. (A declared alias whose folder is absent surfaces via **ZONE-1**, since zones resolve through the alias.)
+- **CONFIG-5 [M]** A recognised `preflight = [...]` array (note paths/globs to read before drafting) resolves under the base — a literal (non-glob) entry that names no existing path warns; glob entries are left to runtime.
+
+## ADMIN — Admin-zone subdivisions
+
+→ [SKILL: The Admin zone](../SKILL.md)
+
+- **ADMIN-1 [M]** The canonical Admin subdivisions `Governance/` and `Operations/` are opt-in: each is checked only advisorily — an absent subdivision, or one present but missing its same-name index note, warns (create when that concern becomes active).
+- **ADMIN-2 [M]** When `Admin/Governance/` is present, it carries `Charter.md` (the base's scope, purpose, owner); absent warns.
+- **ADMIN-3 [M]** When `Admin/Governance/` is present, it carries `Conformance.md` (the active skills and their adoption date); absent warns.
 
 ## ROUTE — routing & placement
 
