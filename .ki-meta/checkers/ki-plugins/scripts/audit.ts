@@ -11,32 +11,46 @@
  * its CROSS-SURFACE ENABLEMENT are the `ki-binding` layer (build-plugin.ts + BIND-4) — not
  * re-checked here. This script also does NOT judge whether the projected set is up to date
  * against the harness (a stale projection needs a human/agent read + regenerate — see
- * references/audit-rubric.md). Output is grouped pass/warn/fail; exit non-zero if any FAIL.
+ * references/rubric.md). Emits canonical checker-reporter JSONL and exits non-zero
+ * if any mechanical FAIL finding exists.
  *
  * No dependencies — Node/Bun builtins only.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import {
+  type CheckerFinding,
+  checkerReporterExitCode,
+  emitCheckerReporter,
+  judgmentFindingsFromRubric
+} from './vendored/ki-skills/checker-reporter.ts'
 
-// Unified severity ladder — shared by every KI checker (enforcement-framework §2).
-// `area` is the rubric code (PLUG-N, references/audit-rubric.md); `ref` the reference-doc
-// pointer for that criterion; `file` the repo-relative path a file-scoped finding concerns.
 type Level = 'FAIL' | 'WARN' | 'POLISH' | 'ADVISORY' | 'INFO' | 'NA' | 'PASS'
-type Finding = { level: Level; area: string; msg: string; ref?: string; file?: string }
-const ORDER: Level[] = ['FAIL', 'WARN', 'POLISH', 'ADVISORY', 'INFO', 'NA', 'PASS']
-const ICON: Record<Level, string> = { FAIL: '❌', WARN: '⚠️', POLISH: '✨', ADVISORY: '🧭', INFO: 'ℹ️', NA: '🚫', PASS: '✅' }
-const findings: Finding[] = []
-const add = (level: Level, area: string, msg: string, ref?: string, file?: string) => findings.push({ level, area, msg, ref, file })
-
-// Reference-doc pointers, minted per-criterion in references/audit-rubric.md (PLUG-N codes).
-const STD = 'references/plugins-standard.md'
-const RUB = 'references/audit-rubric.md'
-
-const repo = process.argv[2]
-if (!repo || !existsSync(repo)) {
-  console.error('usage: audit.ts <repo-path>   (path must exist)')
-  process.exit(2)
+const findings: CheckerFinding[] = []
+const add = (level: Level, code: string, message: string, ref?: string, file?: string) => {
+  const basename = file?.split('/').filter(Boolean).at(-1)
+  const leadingPath = file && message.toLowerCase().startsWith(file.toLowerCase()) ? file : basename
+  const conciseMessage = leadingPath ? message.slice(leadingPath.length).trimStart() : message
+  findings.push({ type: 'M', level, code, message: conciseMessage, ...(ref ? { ref } : {}), ...(file ? { file } : {}) })
 }
+
+// Reference-doc pointers, minted per-criterion in references/rubric.md (PLUG-N codes).
+const STD = 'references/standards.md'
+const RUB = 'references/rubric.md'
+const LOCAL_RUBRIC = join(dirname(fileURLToPath(import.meta.url)), '..', 'references', 'rubric.md')
+
+const rawRepo = process.argv[2]
+if (!rawRepo || !existsSync(rawRepo) || !statSync(rawRepo).isDirectory()) {
+  const target = rawRepo ? resolve(rawRepo) : resolve('.')
+  const invalidInput: CheckerFinding[] = [
+    { type: 'M', level: 'FAIL', code: 'PLUG-1', message: 'Audit target must be an existing directory.', ref: STD }
+  ]
+  invalidInput.push(...judgmentFindingsFromRubric(LOCAL_RUBRIC, RUB))
+  emitCheckerReporter({ mode: 'audit', concern: 'plugins', target, findings: invalidInput })
+  process.exit(checkerReporterExitCode(invalidInput))
+}
+const repo = resolve(rawRepo)
 const at = (...p: string[]) => join(repo, ...p)
 const has = (...p: string[]) => existsSync(at(...p))
 const read = (...p: string[]): string => {
@@ -68,7 +82,9 @@ const declaresPlugins = kiPluginsTable !== null
 const hasPluginStructure = has('.claude-plugin', 'marketplace.json')
 if (!declaresPlugins && !parsedKiPlugins.malformed && !hasPluginStructure) {
   add('NA', 'PLUG-15', 'ki-plugins not applicable: no [ki-plugins] declaration or marketplace.json structural marker', STD)
-  emit(findings, repo, 'plugins', `Plugin-marketplace audit — ${basename(repo)}  (${repo})`, '')
+  findings.push(...judgmentFindingsFromRubric(LOCAL_RUBRIC, RUB))
+  emitCheckerReporter({ mode: 'audit', concern: 'plugins', target: repo, findings })
+  process.exit(checkerReporterExitCode(findings))
 }
 
 // ── marketplace manifest ──────────────────────────────────────────────────────
@@ -265,77 +281,6 @@ function jsonFormat(code: string, rel: string, raw: string): void {
     : add('POLISH', code, `${rel} not in canonical 2-space-JSON + trailing-newline form — regenerate`, STD, rel)
 }
 
-// ── report ────────────────────────────────────────────────────────────────────
-function emit(items: Finding[], target: string, concern: string, title: string, footer: string): never {
-  const argv = process.argv.slice(2)
-  const json = argv.includes('--json')
-  const ri = argv.indexOf('--report')
-  const report = ri !== -1
-  const reportDir = report && argv[ri + 1] && !argv[ri + 1].startsWith('-') ? argv[ri + 1] : join(target, '.ki-meta', 'audits')
-
-  const n = (l: Level): number => items.filter((f) => f.level === l).length
-  const summary = {
-    fail: n('FAIL'),
-    warn: n('WARN'),
-    polish: n('POLISH'),
-    advisory: n('ADVISORY'),
-    info: n('INFO'),
-    na: n('NA'),
-    pass: n('PASS')
-  }
-  const tally = `FAIL=${summary.fail} WARN=${summary.warn} POLISH=${summary.polish} PASS=${summary.pass} ADVISORY=${summary.advisory} NA=${summary.na}`
-  const stamp = new Date().toISOString()
-
-  if (report) {
-    mkdirSync(reportDir, { recursive: true })
-    const body = ORDER.flatMap((l) => {
-      const rows = items.filter((f) => f.level === l)
-      return rows.length
-        ? [
-            '',
-            `## ${ICON[l]} ${l} (${rows.length})`,
-            ...rows.map((r) => `- [${r.area}]${r.file ? ` ${r.file}` : ''} ${r.msg}${r.ref ? ` (${r.ref})` : ''}`)
-          ]
-        : []
-    })
-    writeFileSync(join(reportDir, `${concern}.md`), [`# ${concern} audit — ${target}`, '', `_${stamp}_`, '', tally, ...body, ''].join('\n'))
-    writeFileSync(
-      join(reportDir, `${concern}.json`),
-      `${JSON.stringify({ concern, target, generatedAt: stamp, summary, findings: items }, null, 2)}\n`
-    )
-  }
-
-  if (json) {
-    process.stdout.write(`${JSON.stringify({ concern, target, generatedAt: stamp, summary, findings: items }, null, 2)}\n`)
-  } else {
-    console.log(`\n${title}\n${'─'.repeat(60)}`)
-    for (const l of ORDER) {
-      const rows = items.filter((f) => f.level === l)
-      if (!rows.length) continue
-      console.log(`\n${ICON[l]} ${l} (${rows.length})`)
-      for (const r of rows) console.log(`   [${r.area}]${r.file ? ` ${r.file}` : ''} ${r.msg}${r.ref ? ` (${r.ref})` : ''}`)
-    }
-    console.log(`\n${'─'.repeat(60)}\n${tally}`)
-    if (footer) console.log(footer)
-    if (summary.fail + summary.warn + summary.polish > 0)
-      console.log('→ to address: run /ki-plugins CONFORM   (judgment criteria: references/audit-rubric.md)')
-    if (report) console.log(`report → ${join(reportDir, `${concern}.{md,json}`)}`)
-    console.log('')
-  }
-  process.exit(summary.fail ? 1 : 0)
-}
-
-add('INFO', 'scope', 'projection shape only — generation + Cowork enablement are the ki-binding layer (BIND-4)', RUB)
-add(
-  'ADVISORY',
-  'PLUG-11',
-  'mechanical layer only — apply the [J] criteria (stale projection PLUG-11, reproducibility PLUG-12, prose drift PLUG-16) by reading',
-  RUB
-)
-emit(
-  findings,
-  repo,
-  'plugins',
-  `Plugin-marketplace audit — ${basename(repo)}  (${repo})`,
-  'Projection shape only — also confirm the projected set is not stale vs the harness (references/audit-rubric.md).'
-)
+findings.push(...judgmentFindingsFromRubric(LOCAL_RUBRIC, RUB))
+emitCheckerReporter({ mode: 'audit', concern: 'plugins', target: repo, findings })
+process.exit(checkerReporterExitCode(findings))
