@@ -10,4 +10,4 @@
 
 ## Last review
 
-The project-roadmap boundary was established when the former plans-first standard was replaced: non-KB projects use simple or thematic roadmaps, while KB streams remain their complete thematic planning instrument. The chezmoi roadmap's five horizon blurbs were promoted into the shared standard because they make that model legible at the point of use. Refresh on a normative change to either model or when real repositories expose friction the current profiles cannot represent cleanly.
+The repo-roadmap boundary was established when the former plans-first standard was replaced: non-KB projects use simple or thematic roadmaps, while KB streams remain their complete thematic planning instrument. The chezmoi roadmap's five horizon blurbs were promoted into the shared standard because they make that model legible at the point of use. Refresh on a normative change to either model or when real repositories expose friction the current profiles cannot represent cleanly.

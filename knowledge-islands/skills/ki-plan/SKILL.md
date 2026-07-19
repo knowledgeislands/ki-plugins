@@ -2,7 +2,7 @@
 name: ki-plan
 implies: []
 description: >
-  Drives the lifecycle of an individual governed plan in a non-KB repository — done / execute / new / promote / status — as an installable process skill (kind: process, ADR-KI-HARNESS-SKILLS-006). It creates and executes plans in a thematic project roadmap, closes them with canonical theme and generated-root sync, and can deliberately promote the current Claude Code Plan Mode scratch plan. The profiles, format, and methodology belong to the governance skill `ki-repo-roadmap`, which this skill composes on and never restates. Triggers: "close this plan", "execute plan", "new plan", "promote this Plan Mode plan", "plan status", "/ki-plan". Not for Knowledge Islands KB repos (`repo_type = "kb"`), where planning is a `ki-kb-streams` proposal Checklist.
+  Drives the lifecycle of an individual governed plan in a non-KB repository — done / execute / new / promote / status — as an installable process skill (kind: process, ADR-KI-HARNESS-SKILLS-006). It creates and executes plans in a thematic repo roadmap, closes them with canonical theme and generated-root sync, and can deliberately promote the current Claude Code Plan Mode scratch plan. The profiles, format, and methodology belong to the governance skill `ki-repo-roadmap`, which this skill composes on and never restates. Triggers: "close this plan", "execute plan", "new plan", "promote this Plan Mode plan", "plan status", "/ki-plan". Not for Knowledge Islands KB repos (`repo_type = "kb"`), where planning is a `ki-kb-streams` proposal Checklist.
 argument-hint: 'done <theme>/<id> | execute <theme>/<id> | new <theme> <title> | promote | status [theme] | help'
 ---
 

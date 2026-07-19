@@ -6,14 +6,16 @@ The rubric ([`audit-rubric.md`](audit-rubric.md)) is the line-by-line checkable 
 
 ## Contents
 
-- [What a harness is](#what-a-harness-is)
-- [§Layout — the five-part directory requirement](#layout--the-five-part-directory-requirement)
-- [§Skills directory — the naming convention](#skills-directory--the-naming-convention)
-- [§CLAUDE.md required sections](#claudemd-required-sections)
-- [§ROADMAP.md](#roadmapmd)
-- [§package.json required scripts](#packagejson-required-scripts)
-- [§.ki-config.toml tables](#ki-configtoml-tables)
-- [§Boundary declarations](#boundary-declarations)
+- [Harness Standard](#harness-standard)
+  - [Contents](#contents)
+  - [What a harness is](#what-a-harness-is)
+  - [§Layout — the five-part directory requirement](#layout--the-five-part-directory-requirement)
+  - [§Skills directory — the naming convention](#skills-directory--the-naming-convention)
+  - [§CLAUDE.md required sections](#claudemd-required-sections)
+  - [§ROADMAP.md](#roadmapmd)
+  - [§package.json required scripts](#packagejson-required-scripts)
+  - [§.ki-config.toml tables](#ki-configtoml-tables)
+  - [§Boundary declarations](#boundary-declarations)
 
 ---
 
@@ -98,7 +100,7 @@ Optional but encouraged:
 
 ## §ROADMAP.md
 
-A harness carries `ROADMAP.md` as part of its root layout (LAY-4). `ki-repo-roadmap` owns the non-KB roadmap profiles, content discipline, and horizon vocabulary; see its [project-roadmap standard](../../../general-governance/ki-repo-roadmap/references/project-roadmap-standard.md). This skill does not govern the file beyond its existence.
+A harness carries `ROADMAP.md` as part of its root layout (LAY-4). `ki-repo-roadmap` owns the non-KB roadmap profiles, content discipline, and horizon vocabulary; see its [repo-roadmap standard](../../../general-governance/ki-repo-roadmap/references/repo-roadmap-standard.md). This skill does not govern the file beyond its existence.
 
 ---
 
@@ -149,7 +151,7 @@ This standard governs the container. The parts inside it each have a governing s
 | `mcp/*/src/` server code                    | `ki-mcp`                            |
 | `evals/` test harness                       | No dedicated skill today — advisory |
 | `hooks/` scripts + settings wiring          | No dedicated skill today — advisory |
-| Project roadmap content and profiles        | `ki-repo-roadmap`                   |
+| Repo roadmap content and profiles           | `ki-repo-roadmap`                   |
 | Engineering toolchain                       | `ki-engineering`                    |
 | GitHub settings, `.ki-config.toml` contract | `ki-repo`                           |
 

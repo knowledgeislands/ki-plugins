@@ -4,15 +4,15 @@ implies: []
 vendors: [educate, audit, conform, help]
 owns: ['ROADMAP.md', 'docs/roadmap/README.md']
 description: >
-  Governs project roadmaps and execution plans in non-KB repositories. Use for "audit the roadmap", "split this roadmap by theme", "expand the roadmap", "audit plans", roadmap horizons, thematic roadmaps, qualified roadmap locators, plan dependencies, or generated portfolio drift. Supports a simple root-only ROADMAP and a thematic docs/roadmap tree with plans. Knowledge Bases are out of scope: use ki-kb-streams, where streams and proposal checklists replace project roadmaps and plans. The ki-plan process skill drives individual plan lifecycle operations; ki-decision-records owns durable decisions.
+  Governs repo roadmaps and execution plans in non-KB repositories. Use for "audit the roadmap", "split this roadmap by theme", "expand the roadmap", "audit plans", roadmap horizons, thematic roadmaps, qualified roadmap locators, plan dependencies, or generated portfolio drift. Supports a simple root-only ROADMAP and a thematic docs/roadmap tree with plans. Knowledge Bases are out of scope: use ki-kb-streams, where streams and proposal checklists replace repo roadmaps and plans. The ki-plan process skill drives individual plan lifecycle operations; ki-decision-records owns durable decisions.
 argument-hint: 'audit <repo> | conform <repo> | expand <theme> | help | educate <repo> | refresh'
 ---
 
-# Knowledge Islands project roadmap standard
+# Knowledge Islands repo roadmap standard
 
 This governance skill owns the forward-work model for **non-KB projects**. Small projects use one root roadmap; projects needing focused workstreams use canonical thematic roadmaps and colocated plans. Knowledge Bases use the `ki-kb-streams` skill instead: a stream is the thematic roadmap, its proposals are roadmap items, and proposal checklists are plans.
 
-Read [the project-roadmap standard](references/project-roadmap-standard.md) before changing a roadmap profile or plan structure. Read [the audit rubric](references/audit-rubric.md) for the mechanical and judgment criteria. Plan file details live in [the plan format](references/plan-format.md). Tracked methodology sources and the REFRESH cadence live in [the source list](references/sources.md).
+Read [the repo-roadmap standard](references/repo-roadmap-standard.md) before changing a roadmap profile or plan structure. Read [the audit rubric](references/audit-rubric.md) for the mechanical and judgment criteria. Plan file details live in [the plan format](references/plan-format.md). Tracked methodology sources and the REFRESH cadence live in [the source list](references/sources.md).
 
 ## Shared model
 
@@ -29,11 +29,11 @@ Carries the universal **AUDIT · CONFORM · EDUCATE · REFRESH** plus judgment-l
 
 ### Mode AUDIT
 
-Run [`scripts/audit.ts`](scripts/audit.ts) against the repository root. It detects the profile and applies the mechanical criteria in [the rubric](references/audit-rubric.md): horizon structure and exact blurbs; theme and item identity; qualified plan linkage; frontmatter, placement, theme-local ids, qualified references, and dependency integrity; exact generated projection and index. It reports KB scope as NA, or FAIL when a KB carries project-roadmap artifacts, and makes no changes.
+Run [`scripts/audit.ts`](scripts/audit.ts) against the repository root. It detects the profile and applies the mechanical criteria in [the rubric](references/audit-rubric.md): horizon structure and exact blurbs; theme and item identity; qualified plan linkage; frontmatter, placement, theme-local ids, qualified references, and dependency integrity; exact generated projection and index. It reports KB scope as NA, or FAIL when a KB carries repo-roadmap artifacts, and makes no changes.
 
 Then apply the rubric's judgment criteria by reading: item quality and horizon choice, plan quality, honest in-progress state, whether simple still fits, and whether theme boundaries are coherent. Iterate until mechanical findings are clean and judgment findings are resolved.
 
-After changing the scripts, run [`scripts/project-roadmap.test.ts`](scripts/project-roadmap.test.ts) for the focused profile, projection, locator, dependency, KB, and safe-write fixtures.
+After changing the scripts, run [`scripts/repo-roadmap.test.ts`](scripts/repo-roadmap.test.ts) for the focused profile, projection, locator, dependency, KB, and safe-write fixtures.
 
 ### Mode CONFORM
 
@@ -59,12 +59,12 @@ Run [`scripts/educate.ts`](scripts/educate.ts) against a non-KB repository. It c
 
 **Precondition:** REFRESH writes only the canonical skill files in `ki-agentic-harness`. If invoked from a repo where the skill is vendored, stop and redirect to that harness; route recurring base-specific pressure through the `ki-kb` IMPROVE mode.
 
-On the cadence in [the source list](references/sources.md), compare actual project-roadmap usage with [the standard](references/project-roadmap-standard.md) and [rubric](references/audit-rubric.md). Revisit the horizon model, simple-to-thematic threshold, locator stability, projection usefulness, and plan quality bar. Update the source review dates and explain normative changes in the commit.
+On the cadence in [the source list](references/sources.md), compare actual repo-roadmap usage with [the standard](references/repo-roadmap-standard.md) and [rubric](references/audit-rubric.md). Revisit the horizon model, simple-to-thematic threshold, locator stability, projection usefulness, and plan quality bar. Update the source review dates and explain normative changes in the commit.
 
 ## Notes
 
 - Not every change needs a plan. A focused single-file or one-step fix can execute directly.
 - Exploration needs no plan; multi-file or multi-step implementation does.
 - A plan answers “how”; a Decision Record answers “why”. Use `ki-decision-records` for the latter.
-- The `ki-plan` process skill operates plan instances. This skill owns their standard and project-roadmap representation.
+- The `ki-plan` process skill operates plan instances. This skill owns their standard and repo-roadmap representation.
 - Checker output follows the severity ladder and JSON/report contract in `ki-engineering`.

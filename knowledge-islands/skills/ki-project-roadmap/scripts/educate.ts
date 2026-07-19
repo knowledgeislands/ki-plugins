@@ -1,11 +1,11 @@
 #!/usr/bin/env bun
-/** Scaffold the non-KB simple project-roadmap profile without clobbering. */
+/** Scaffold the non-KB simple repo-roadmap profile without clobbering. */
 import { closeSync, existsSync, fsyncSync, linkSync, lstatSync, openSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 
 type Level = 'FAIL' | 'WARN' | 'POLISH' | 'ADVISORY' | 'INFO' | 'NA' | 'PASS'
 type Finding = { level: Level; area: string; msg: string; ref?: string; file?: string }
-const STANDARD_REF = 'references/project-roadmap-standard.md'
+const STANDARD_REF = 'references/repo-roadmap-standard.md'
 const TOML = (globalThis as unknown as { Bun: { TOML: { parse(text: string): unknown } } }).Bun.TOML
 const argv = process.argv.slice(2)
 const dryRun = argv.includes('--dry-run')
@@ -15,7 +15,7 @@ const roadmap = join(target, 'ROADMAP.md')
 const thematic = join(target, 'docs', 'roadmap')
 const findings: Finding[] = []
 
-const TEMPLATE = `# Project roadmap
+const TEMPLATE = `# Repo roadmap
 
 ## Blocking
 
@@ -91,7 +91,7 @@ function emit(): never {
     na: count('NA'),
     pass: count('PASS')
   }
-  const payload = { concern: 'project-roadmap', target, generatedAt: new Date().toISOString(), summary, findings }
+  const payload = { concern: 'repo-roadmap', target, generatedAt: new Date().toISOString(), summary, findings }
   if (json) process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`)
   else {
     for (const finding of findings)
@@ -111,7 +111,7 @@ if (isKb()) {
   findings.push({
     level: 'NA',
     area: 'SCOPE-1',
-    msg: 'KB repository: use ki-kb-streams; no project-roadmap artifact created',
+    msg: 'KB repository: use ki-kb-streams; no repo-roadmap artifact created',
     ref: STANDARD_REF
   })
   emit()

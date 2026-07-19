@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/** Mechanical auditor for the non-KB project-roadmap standard. */
+/** Mechanical auditor for the non-KB repo-roadmap standard. */
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 
@@ -42,7 +42,7 @@ const PLAN_REF_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*\/\d{3,}$/
 const REQUIRED = ['id', 'title', 'status', 'roadmap', 'blocks', 'blocked-by']
 const OPTIONAL = ['handoff', 'tier', 'readiness']
 const VALID_STATUS = new Set(['open', 'in-progress', 'done'])
-const STANDARD_REF = 'references/project-roadmap-standard.md'
+const STANDARD_REF = 'references/repo-roadmap-standard.md'
 const FORMAT_REF = 'references/plan-format.md'
 const RUBRIC_REF = 'references/audit-rubric.md'
 const TOML = (globalThis as unknown as { Bun: { TOML: { parse(text: string): unknown } } }).Bun.TOML
@@ -217,7 +217,7 @@ function validatePlanBody(body: string, display: string): void {
 
 function projection(items: Item[]): string {
   const lines = [
-    '# Project roadmap',
+    '# Repo roadmap',
     '',
     'This portfolio view is generated from the canonical theme roadmaps under `docs/roadmap/`. Edit those files, then run `ki-repo-roadmap` CONFORM.',
     ''
@@ -242,7 +242,7 @@ function projection(items: Item[]): string {
 }
 
 function planIndex(themes: string[], plans: Plan[]): string {
-  const lines = ['# Project roadmap index', '', 'Canonical themes and active execution plans.', '', '## Themes', '']
+  const lines = ['# Repo roadmap index', '', 'Canonical themes and active execution plans.', '', '## Themes', '']
   for (const theme of themes) lines.push(`- [${theme}](${theme}/ROADMAP.md)`)
   lines.push('', '## Active plans', '')
   for (const plan of [...plans].sort((a, b) => planRef(a).localeCompare(planRef(b)))) {
@@ -376,7 +376,7 @@ const thematicDir = join(root, 'docs', 'roadmap')
 if (isKb(root)) {
   const artifacts = [rootRoadmap, thematicDir].filter(existsSync).map((path) => relative(root, path))
   if (artifacts.length)
-    add('FAIL', 'SCOPE-1', `KB repositories use ki-kb-streams; remove project-roadmap artifacts: ${artifacts.join(', ')}`, STANDARD_REF)
+    add('FAIL', 'SCOPE-1', `KB repositories use ki-kb-streams; remove repo-roadmap artifacts: ${artifacts.join(', ')}`, STANDARD_REF)
   else add('NA', 'SCOPE-1', 'KB repository: streams and proposal checklists are governed by ki-kb-streams', STANDARD_REF)
   emit()
 }
@@ -509,7 +509,7 @@ if (!existsSync(thematicDir)) {
 }
 
 if (!findings.some((finding) => ['FAIL', 'WARN', 'POLISH'].includes(finding.level))) {
-  add('PASS', 'PROFILE-1', 'project-roadmap mechanics conform', STANDARD_REF)
+  add('PASS', 'PROFILE-1', 'repo-roadmap mechanics conform', STANDARD_REF)
 }
 emit()
 
@@ -526,22 +526,22 @@ function emit(): never {
     na: n('NA'),
     pass: n('PASS')
   }
-  const payload = { concern: 'project-roadmap', target: root, generatedAt: new Date().toISOString(), summary, findings }
+  const payload = { concern: 'repo-roadmap', target: root, generatedAt: new Date().toISOString(), summary, findings }
   const json = argv.includes('--json')
   const reportAt = argv.indexOf('--report')
   if (reportAt >= 0) {
     const reportDir =
       argv[reportAt + 1] && !argv[reportAt + 1].startsWith('-') ? resolve(argv[reportAt + 1]) : join(root, '.ki-meta', 'audits')
     mkdirSync(reportDir, { recursive: true })
-    writeFileSync(join(reportDir, 'project-roadmap.json'), `${JSON.stringify(payload, null, 2)}\n`)
+    writeFileSync(join(reportDir, 'repo-roadmap.json'), `${JSON.stringify(payload, null, 2)}\n`)
     const rows = findings
       .map((finding) => `- ${finding.level} [${finding.area}]${finding.file ? ` ${finding.file}` : ''} ${finding.msg}`)
       .join('\n')
-    writeFileSync(join(reportDir, 'project-roadmap.md'), `# Project roadmap audit\n\n${rows}\n`)
+    writeFileSync(join(reportDir, 'repo-roadmap.md'), `# Repo roadmap audit\n\n${rows}\n`)
   }
   if (json) process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`)
   else {
-    console.log(`\nProject roadmap audit — ${positional}\n${'─'.repeat(60)}`)
+    console.log(`\nRepo roadmap audit — ${positional}\n${'─'.repeat(60)}`)
     for (const level of order) {
       const rows = findings.filter((finding) => finding.level === level)
       if (!rows.length) continue

@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/** Normalize only derivable project-roadmap projections. */
+/** Normalize only derivable repo-roadmap projections. */
 import { spawnSync } from 'node:child_process'
 import {
   closeSync,
@@ -35,7 +35,7 @@ const HORIZON_BLURBS: Record<Horizon, string> = {
   Future:
     "Speculative or not yet scoped — items marked _(candidate)_ need a scoping pass (or a decision to drop them) before they're actionable."
 }
-const STANDARD_REF = 'references/project-roadmap-standard.md'
+const STANDARD_REF = 'references/repo-roadmap-standard.md'
 const TOML = (globalThis as unknown as { Bun: { TOML: { parse(text: string): unknown } } }).Bun.TOML
 const findings: Finding[] = []
 const argv = process.argv.slice(2)
@@ -148,7 +148,7 @@ function discover(): { themes: string[]; items: Item[]; plans: Plan[] } {
 
 function projection(items: Item[]): string {
   const lines = [
-    '# Project roadmap',
+    '# Repo roadmap',
     '',
     'This portfolio view is generated from the canonical theme roadmaps under `docs/roadmap/`. Edit those files, then run `ki-repo-roadmap` CONFORM.',
     ''
@@ -198,7 +198,7 @@ function withHorizonBlurbs(text: string): string {
 }
 
 function index(themes: string[], plans: Plan[]): string {
-  const lines = ['# Project roadmap index', '', 'Canonical themes and active execution plans.', '', '## Themes', '']
+  const lines = ['# Repo roadmap index', '', 'Canonical themes and active execution plans.', '', '## Themes', '']
   for (const theme of themes) lines.push(`- [${theme}](${theme}/ROADMAP.md)`)
   lines.push('', '## Active plans', '')
   for (const plan of [...plans].sort((a, b) => planRef(a).localeCompare(planRef(b)))) {
@@ -285,7 +285,7 @@ function emit(exitCode = 0): never {
     na: n('NA'),
     pass: n('PASS')
   }
-  const payload = { concern: 'project-roadmap', target: root, generatedAt: new Date().toISOString(), summary, findings }
+  const payload = { concern: 'repo-roadmap', target: root, generatedAt: new Date().toISOString(), summary, findings }
   if (json) process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`)
   else {
     for (const finding of findings)
@@ -305,7 +305,7 @@ if (isKb()) {
   findings.push({
     level: 'NA',
     area: 'SCOPE-1',
-    msg: 'KB repository: use ki-kb-streams; no project-roadmap files changed',
+    msg: 'KB repository: use ki-kb-streams; no repo-roadmap files changed',
     ref: STANDARD_REF
   })
   emit()

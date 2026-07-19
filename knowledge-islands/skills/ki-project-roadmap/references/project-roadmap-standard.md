@@ -1,4 +1,4 @@
-# Project roadmap standard
+# Repo roadmap standard
 
 ## Scope
 
