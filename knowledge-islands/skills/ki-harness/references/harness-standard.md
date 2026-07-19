@@ -149,7 +149,7 @@ This standard governs the container. The parts inside it each have a governing s
 | `mcp/*/src/` server code                    | `ki-mcp`                            |
 | `evals/` test harness                       | No dedicated skill today — advisory |
 | `hooks/` scripts + settings wiring          | No dedicated skill today — advisory |
-| Project roadmap content and profiles        | `ki-repo-roadmap`                |
+| Project roadmap content and profiles        | `ki-repo-roadmap`                   |
 | Engineering toolchain                       | `ki-engineering`                    |
 | GitHub settings, `.ki-config.toml` contract | `ki-repo`                           |
 
