@@ -1,6 +1,7 @@
 # Knowledge Islands repo config — read by the ki-repo skill.
 # One [table] per skill that needs per-repo options.
 [ki-repo]
+supported_runtimes = ["claude-code", "codex"]
 visibility = "public"   # public so Cowork's extraKnownMarketplaces github source can reach it
 
 # The authoring standard (Markdown/TOML house style) is baseline for every KI repo —
