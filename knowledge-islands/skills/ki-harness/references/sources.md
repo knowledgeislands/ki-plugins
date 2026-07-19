@@ -37,7 +37,7 @@ _REFRESH last run **2026-07-04** (previous: 2026-06-21)._
 
 **Drift resolved this pass:**
 
-- [AH] the previous note recorded **thirteen** skills with the eval suite covering twelve of thirteen. The harness now holds **18** skills under `skills/` (`ki-website`, `ki-kb-activities`, `ki-agents`, `ki-authoring`, `ki-bootstrap`, `ki-website-cloudflare`, `ki-decision-records`, `ki-engineering`, `ki-handoffs`, `ki-harness`, `ki-kb`, `ki-kb-live-artifacts`, `ki-mcp`, `ki-project-roadmap`, `ki-repo`, `ki-skills`, `ki-kb-streams`, `ki-tokenomics`). The `agents/` shelf is populated (governance agents); `mcp/` and `evals/` remain valid shelves. The `harness-standard.md` body is deliberately **count-agnostic** and needs no edit for this growth — the container it describes still matches current reality.
+- [AH] the previous note recorded **thirteen** skills with the eval suite covering twelve of thirteen. The harness now holds **18** skills under `skills/` (`ki-website`, `ki-kb-activities`, `ki-agents`, `ki-authoring`, `ki-bootstrap`, `ki-website-cloudflare`, `ki-decision-records`, `ki-engineering`, `ki-handoffs`, `ki-harness`, `ki-kb`, `ki-kb-live-artifacts`, `ki-mcp`, `ki-repo-roadmap`, `ki-repo`, `ki-skills`, `ki-kb-streams`, `ki-tokenomics`). The `agents/` shelf is populated (governance agents); `mcp/` and `evals/` remain valid shelves. The `harness-standard.md` body is deliberately **count-agnostic** and needs no edit for this growth — the container it describes still matches current reality.
 
 **Open watch-items:**
 

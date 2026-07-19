@@ -219,7 +219,7 @@ function projection(items: Item[]): string {
   const lines = [
     '# Project roadmap',
     '',
-    'This portfolio view is generated from the canonical theme roadmaps under `docs/roadmap/`. Edit those files, then run `ki-project-roadmap` CONFORM.',
+    'This portfolio view is generated from the canonical theme roadmaps under `docs/roadmap/`. Edit those files, then run `ki-repo-roadmap` CONFORM.',
     ''
   ]
   for (const horizon of HORIZONS) {
@@ -553,7 +553,7 @@ function emit(): never {
       `\n${'─'.repeat(60)}\nFAIL=${summary.fail} WARN=${summary.warn} POLISH=${summary.polish} PASS=${summary.pass} ADVISORY=${summary.advisory} NA=${summary.na}`
     )
     if (summary.fail + summary.warn + summary.polish > 0) {
-      console.log('→ to address: run /ki-project-roadmap CONFORM   (judgment criteria: references/audit-rubric.md)')
+      console.log('→ to address: run /ki-repo-roadmap CONFORM   (judgment criteria: references/audit-rubric.md)')
     }
     console.log('')
   }

@@ -32,7 +32,7 @@ function check(label: string, condition: boolean): void {
 }
 
 function fixture(): string {
-  return mkdtempSync(join(tmpdir(), 'ki-project-roadmap-test-'))
+  return mkdtempSync(join(tmpdir(), 'ki-repo-roadmap-test-'))
 }
 
 function run(script: string, root: string, args: string[] = []): { code: number; out: string } {

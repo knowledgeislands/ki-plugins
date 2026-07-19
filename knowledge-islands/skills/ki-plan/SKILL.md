@@ -2,19 +2,19 @@
 name: ki-plan
 implies: []
 description: >
-  Drives the lifecycle of an individual governed plan in a non-KB repository — done / execute / new / promote / status — as an installable process skill (kind: process, ADR-KI-HARNESS-SKILLS-006). It creates and executes plans in a thematic project roadmap, closes them with canonical theme and generated-root sync, and can deliberately promote the current Claude Code Plan Mode scratch plan. The profiles, format, and methodology belong to the governance skill `ki-project-roadmap`, which this skill composes on and never restates. Triggers: "close this plan", "execute plan", "new plan", "promote this Plan Mode plan", "plan status", "/ki-plan". Not for Knowledge Islands KB repos (`repo_type = "kb"`), where planning is a `ki-kb-streams` proposal Checklist.
+  Drives the lifecycle of an individual governed plan in a non-KB repository — done / execute / new / promote / status — as an installable process skill (kind: process, ADR-KI-HARNESS-SKILLS-006). It creates and executes plans in a thematic project roadmap, closes them with canonical theme and generated-root sync, and can deliberately promote the current Claude Code Plan Mode scratch plan. The profiles, format, and methodology belong to the governance skill `ki-repo-roadmap`, which this skill composes on and never restates. Triggers: "close this plan", "execute plan", "new plan", "promote this Plan Mode plan", "plan status", "/ki-plan". Not for Knowledge Islands KB repos (`repo_type = "kb"`), where planning is a `ki-kb-streams` proposal Checklist.
 argument-hint: 'done <theme>/<id> | execute <theme>/<id> | new <theme> <title> | promote | status [theme] | help'
 ---
 
 # ki-plan
 
-**Kind:** process. Drives one plan's lifecycle; the class-level standard (profiles, format, and methodology) is owned by `ki-project-roadmap` — see [references/lifecycle.md](references/lifecycle.md) for the full procedure this skill carries out.
+**Kind:** process. Drives one plan's lifecycle; the class-level standard (profiles, format, and methodology) is owned by `ki-repo-roadmap` — see [references/lifecycle.md](references/lifecycle.md) for the full procedure this skill carries out.
 
 ## What this skill does
 
-Runs the individual-plan lifecycle for a **non-KB repository**: `done` (close a plan, remove its canonical theme item, and regenerate the root projection), `execute` (work its Steps), `new` (write a plan file), `promote` (turn the current Claude Code Plan Mode scratch plan into a governed plan), and `status` (show all active plans or one theme's focused view). It is the process counterpart to `ki-project-roadmap`. It reads the plan format and quality bar from that governance skill rather than restating them.
+Runs the individual-plan lifecycle for a **non-KB repository**: `done` (close a plan, remove its canonical theme item, and regenerate the root projection), `execute` (work its Steps), `new` (write a plan file), `promote` (turn the current Claude Code Plan Mode scratch plan into a governed plan), and `status` (show all active plans or one theme's focused view). It is the process counterpart to `ki-repo-roadmap`. It reads the plan format and quality bar from that governance skill rather than restating them.
 
-`ki-plan` operates only on the **thematic profile**. The simple profile deliberately has no plan collection. `new` and `promote` in a simple repository stop without writing and give the concrete expansion route `/ki-project-roadmap expand <theme>`; the user runs `ki-plan` again after expansion.
+`ki-plan` operates only on the **thematic profile**. The simple profile deliberately has no plan collection. `new` and `promote` in a simple repository stop without writing and give the concrete expansion route `/ki-repo-roadmap expand <theme>`; the user runs `ki-plan` again after expansion.
 
 ## Planning is repo-first
 
@@ -30,7 +30,7 @@ In a KI code repo the plan is a governed file under `docs/roadmap/<theme>/plans/
 
 1. Run `git rev-parse --show-toplevel` to find the git root, then physically resolve it.
 2. If `.ki-config.toml` at the git root has `repo_type = "kb"`: **stop** — in a KB, planning is a stream proposal's `## Checklist`, governed by `ki-kb-streams`. This skill creates no KB artifact.
-3. Ask `ki-project-roadmap` to identify and validate the repository profile. In the simple profile, `status` reports that profile from the root `ROADMAP.md`; `done` and `execute` report that no governed plan collection exists; `new` and `promote` stop with `/ki-project-roadmap expand <theme>`. In the thematic profile, use only `docs/roadmap/README.md`, `docs/roadmap/<theme>/ROADMAP.md`, and `docs/roadmap/<theme>/plans/`.
+3. Ask `ki-repo-roadmap` to identify and validate the repository profile. In the simple profile, `status` reports that profile from the root `ROADMAP.md`; `done` and `execute` report that no governed plan collection exists; `new` and `promote` stop with `/ki-repo-roadmap expand <theme>`. In the thematic profile, use only `docs/roadmap/README.md`, `docs/roadmap/<theme>/ROADMAP.md`, and `docs/roadmap/<theme>/plans/`.
 4. Resolve and validate every existing path component physically before reading or writing it. Never follow a symlink outside the physical git root, infer an alternative plan tree, or repair governance state as a side effect of a lifecycle command.
 
 ## Notes

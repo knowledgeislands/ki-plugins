@@ -3,7 +3,7 @@ name: ki-handoffs
 implies: []
 vendors: [educate, audit, conform, help]
 description: >
-  Govern the Knowledge Islands handoff doctrine: plan work once at the top reasoning tier, then write it as an implementation-ready spec a cheaper tier or a cold agent can execute without re-reasoning. Owns the reasoning-layer split, the handoff-spec quality bar (definition-of-done, decisions-locked vs escalate, ordered steps, acceptance criteria, a recommended implementer tier per unit), and the cold-model readiness test. AUDIT checks handoff-opted-in plans/proposals for the required markers; CONFORM fixes them; REFRESH revisits the doctrine. Does not own model-tier cost or selection — that is ki-tokenomics. Triggers: "is this ready to hand off", "make this delegable", "implementation-ready spec", "plan once execute cheap", "which tier should run this". Off-ramps: ki-tokenomics (tier cost/selection), ki-project-roadmap (non-KB roadmap and plan standard), ki-kb-streams (KB proposal Checklist), ki-agents (subagent definitions).
+  Govern the Knowledge Islands handoff doctrine: plan work once at the top reasoning tier, then write it as an implementation-ready spec a cheaper tier or a cold agent can execute without re-reasoning. Owns the reasoning-layer split, the handoff-spec quality bar (definition-of-done, decisions-locked vs escalate, ordered steps, acceptance criteria, a recommended implementer tier per unit), and the cold-model readiness test. AUDIT checks handoff-opted-in plans/proposals for the required markers; CONFORM fixes them; REFRESH revisits the doctrine. Does not own model-tier cost or selection — that is ki-tokenomics. Triggers: "is this ready to hand off", "make this delegable", "implementation-ready spec", "plan once execute cheap", "which tier should run this". Off-ramps: ki-tokenomics (tier cost/selection), ki-repo-roadmap (non-KB roadmap and plan standard), ki-kb-streams (KB proposal Checklist), ki-agents (subagent definitions).
 argument-hint: 'audit [dir] | conform [dir] | help | educate <target> | refresh'
 ---
 
@@ -11,7 +11,7 @@ argument-hint: 'audit [dir] | conform [dir] | help | educate <target> | refresh'
 
 You are applying the **Knowledge Islands handoff doctrine** — how to split expensive reasoning from cheap execution so that work planned once at the top tier can be handed to a cheaper tier, a cold agent, or another person and executed without re-reasoning. This skill owns the _doctrine_. The normative spec — the opt-in marker contract, the quality bar in full, and the tier-assignment rules — lives in [references/handoffs-standard.md](references/handoffs-standard.md) as its single source of truth; the line-by-line criteria live in [references/audit-rubric.md](references/audit-rubric.md). Neither restates the other.
 
-Handoffs are a **cross-tier instrument** that rides on an existing artifact — it owns no artifact of its own. In a non-KB repository the spec is a thematic plan file, governed by `ki-project-roadmap`; in a Knowledge Base it is a stream proposal's `## Checklist`, governed by `ki-kb-streams`. This skill adds the **delegation-readiness delta** on top of whichever host artifact carries the work. Run where there is no such artifact, it points at `ki-project-roadmap` / `ki-kb-streams` and stops.
+Handoffs are a **cross-tier instrument** that rides on an existing artifact — it owns no artifact of its own. In a non-KB repository the spec is a thematic plan file, governed by `ki-repo-roadmap`; in a Knowledge Base it is a stream proposal's `## Checklist`, governed by `ki-kb-streams`. This skill adds the **delegation-readiness delta** on top of whichever host artifact carries the work. Run where there is no such artifact, it points at `ki-repo-roadmap` / `ki-kb-streams` and stops.
 
 ## What this skill owns
 
@@ -23,7 +23,7 @@ Handoffs are a **cross-tier instrument** that rides on an existing artifact — 
 
 ## Handoff quality bar
 
-A spec is ready to hand down a tier when it passes these checks (they extend, not replace, the host artifact's own quality bar — `ki-project-roadmap` for a plan, `ki-kb-streams` for a proposal):
+A spec is ready to hand down a tier when it passes these checks (they extend, not replace, the host artifact's own quality bar — `ki-repo-roadmap` for a plan, `ki-kb-streams` for a proposal):
 
 **Decisions are locked or escalated, explicitly** — every judgement the planner has already made is stated as locked so the executor does not re-open it; every judgement that genuinely needs the owner is flagged as an escalation, separately. An unmarked open question is the failure mode.
 
@@ -39,7 +39,7 @@ Carries the universal **AUDIT · CONFORM · EDUCATE · REFRESH**. Invoked as `he
 
 ### Mode AUDIT
 
-Check that handoff-opted-in artifacts are delegable. **Run the host artifact's audit first, then add this delta** — `ki-project-roadmap` AUDIT in a non-KB repository, `ki-kb-streams` AUDIT in a KB; this skill does not re-check plan/proposal structure.
+Check that handoff-opted-in artifacts are delegable. **Run the host artifact's audit first, then add this delta** — `ki-repo-roadmap` AUDIT in a non-KB repository, `ki-kb-streams` AUDIT in a KB; this skill does not re-check plan/proposal structure.
 
 The mechanical half is [`scripts/audit.ts`](scripts/audit.ts) — run `bun run ki:handoffs:audit <dir>` (default `.`). It scans for `handoff: true` artifacts and checks: `tier` present and one of the semantic values; a decisions-locked-vs-escalate section present; a readiness marker present. It reports on the severity ladder in `ki-engineering`'s [checker-contract.md](../../foundations/ki-engineering/references/checker-contract.md) and exits non-zero on any FAIL.
 
@@ -47,7 +47,7 @@ Then apply the judgment half by reading, per [references/audit-rubric.md](refere
 
 ### Mode CONFORM
 
-Fix what AUDIT found, in place: add a missing `tier`, split an open question into locked-vs-escalate, add or run the readiness marker. Touch only the handoff delta — plan/proposal structure belongs to `ki-project-roadmap` / `ki-kb-streams`. Re-run AUDIT until clean.
+Fix what AUDIT found, in place: add a missing `tier`, split an open question into locked-vs-escalate, add or run the readiness marker. Touch only the handoff delta — plan/proposal structure belongs to `ki-repo-roadmap` / `ki-kb-streams`. Re-run AUDIT until clean.
 
 ### Mode EDUCATE
 
@@ -62,7 +62,7 @@ Revisit the doctrine against practice: does the reasoning-layer split still matc
 ## Composition
 
 - `ki-tokenomics` — owns _which tier costs what and how to pick it_ (`preferred_model`, the mode→tier table, standard §4/§8). This skill owns _how to decompose and write work so a cheaper tier can execute it_ and points at `ki-tokenomics` for the cost/selection question, never restating the tier table.
-- `ki-project-roadmap` — owns non-KB project roadmaps and the thematic plan **format**. A handoff spec **is** a plan under `docs/roadmap/<theme>/plans/`; this skill adds the delegation-readiness delta and owns no roadmap artifact.
+- `ki-repo-roadmap` — owns repo roadmaps and the thematic plan **format**. A handoff spec **is** a plan under `docs/roadmap/<theme>/plans/`; this skill adds the delegation-readiness delta and owns no roadmap artifact.
 - `ki-kb-streams` — owns KB planning: a stream proposal's `## Checklist` is the handoff spec. Run in a KB, this skill adds the delta and defers the artifact and its lifecycle to `ki-kb-streams`.
 - `ki-agents` — owns subagent **definitions**. This skill is about the _work spec_ handed to any executor — a cheaper model, a cold agent, or a person — not the agent definition. When the question is how to define the subagent, go there.
 - `ki-delegate` — owns the runtime orchestration of a multi-agent run: classify, assign, sequence, and gate the work. A handoff that will be executed in parallel uses `ki-delegate`; this skill remains the quality bar for the artifact handed over.

@@ -181,7 +181,7 @@ const CLUSTER_ORDER = [
   'ki-mcp',
   'ki-plugins',
   'ki-handoffs',
-  'ki-project-roadmap',
+  'ki-repo-roadmap',
   'ki-feature-definitions',
   'ki-binding',
   'ki-housekeeping',

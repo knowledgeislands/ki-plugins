@@ -4,12 +4,12 @@
  *
  *   bun scripts/audit.ts <dir>      (default: .)
  *
- * Handoffs ride on a host artifact — a thematic plan file (ki-project-roadmap)
+ * Handoffs ride on a host artifact — a thematic plan file (ki-repo-roadmap)
  * in a non-KB repository, or a stream proposal's Checklist (ki-kb-streams) in a
  * KB. This checker adds only the delegation-readiness delta: it scans the target
  * for artifacts that opt in with
  * `handoff: true` frontmatter and checks the opt-in marker contract. Run the host
- * artifact's audit (ki-project-roadmap / ki-kb-streams) separately for structure.
+ * artifact's audit (ki-repo-roadmap / ki-kb-streams) separately for structure.
  *
  * Mechanical half (opt-in contract): a valid `tier`, a decisions-locked-vs-escalate
  * section, and a readiness marker. Judgment half (doctrine): surfaced as ADVISORY.

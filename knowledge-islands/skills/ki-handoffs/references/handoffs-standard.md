@@ -2,7 +2,7 @@
 
 This is the single source of truth for the handoff doctrine: the reasoning-layer split, the opt-in marker contract, the quality bar in full, and the tier-assignment rules. The `ki-handoffs` `SKILL.md` governs the _doctrine_ (why to split reasoning from execution, when to opt in, how the modes run); this file holds the _spec_ that AUDIT and CONFORM check against. Neither restates the other.
 
-Handoffs are a **cross-tier instrument** that rides on a host artifact — a thematic plan file (`ki-project-roadmap`) in a non-KB repository, or a stream proposal's `## Checklist` (`ki-kb-streams`) in a Knowledge Base. This standard governs only the delegation-readiness delta laid on top; the host artifact's own format and lifecycle are owned by its skill.
+Handoffs are a **cross-tier instrument** that rides on a host artifact — a thematic plan file (`ki-repo-roadmap`) in a non-KB repository, or a stream proposal's `## Checklist` (`ki-kb-streams`) in a Knowledge Base. This standard governs only the delegation-readiness delta laid on top; the host artifact's own format and lifecycle are owned by its skill.
 
 **Contents:**
 
@@ -40,7 +40,7 @@ The `tier` value is **semantic** — the house `haiku` / `sonnet` / `opus` class
 
 ## The quality bar
 
-A handoff spec is delegable when it passes all four. These **extend** the host artifact's quality bar (`ki-project-roadmap`: concrete Steps, checkable Verify, honest Current state, minimal Files touched — or the `ki-kb-streams` proposal equivalents); they do not replace it.
+A handoff spec is delegable when it passes all four. These **extend** the host artifact's quality bar (`ki-repo-roadmap`: concrete Steps, checkable Verify, honest Current state, minimal Files touched — or the `ki-kb-streams` proposal equivalents); they do not replace it.
 
 | Check                  | Ready                                                            | Failure mode                                             |
 | ---------------------- | ---------------------------------------------------------------- | -------------------------------------------------------- |

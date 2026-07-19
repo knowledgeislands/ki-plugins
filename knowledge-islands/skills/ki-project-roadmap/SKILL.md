@@ -1,5 +1,5 @@
 ---
-name: ki-project-roadmap
+name: ki-repo-roadmap
 implies: []
 vendors: [educate, audit, conform, help]
 owns: ['ROADMAP.md', 'docs/roadmap/README.md']

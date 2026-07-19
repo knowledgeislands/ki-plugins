@@ -98,7 +98,7 @@ Optional but encouraged:
 
 ## §ROADMAP.md
 
-A harness carries `ROADMAP.md` as part of its root layout (LAY-4). `ki-project-roadmap` owns the non-KB roadmap profiles, content discipline, and horizon vocabulary; see its [project-roadmap standard](../../../general-governance/ki-project-roadmap/references/project-roadmap-standard.md). This skill does not govern the file beyond its existence.
+A harness carries `ROADMAP.md` as part of its root layout (LAY-4). `ki-repo-roadmap` owns the non-KB roadmap profiles, content discipline, and horizon vocabulary; see its [project-roadmap standard](../../../general-governance/ki-repo-roadmap/references/project-roadmap-standard.md). This skill does not govern the file beyond its existence.
 
 ---
 
@@ -149,7 +149,7 @@ This standard governs the container. The parts inside it each have a governing s
 | `mcp/*/src/` server code                    | `ki-mcp`                            |
 | `evals/` test harness                       | No dedicated skill today — advisory |
 | `hooks/` scripts + settings wiring          | No dedicated skill today — advisory |
-| Project roadmap content and profiles        | `ki-project-roadmap`                |
+| Project roadmap content and profiles        | `ki-repo-roadmap`                |
 | Engineering toolchain                       | `ki-engineering`                    |
 | GitHub settings, `.ki-config.toml` contract | `ki-repo`                           |
 
