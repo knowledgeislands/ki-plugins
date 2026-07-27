@@ -28,3 +28,11 @@ topics = false
 # LICENSE (public-but-not-open). The audit will report one [license] FAIL until this is
 # resolved — either relicense the projected content, or make the repo private if Cowork can
 # reach a private marketplace source. Left for a deliberate decision, not silently flipped to MIT.
+
+[ki-tokenomics]
+
+[ki-housekeeping-claude]
+
+[ki-tokenomics-claude]
+
+[ki-tokenomics-codex]
