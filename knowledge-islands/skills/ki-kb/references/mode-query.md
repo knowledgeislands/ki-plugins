@@ -6,4 +6,4 @@ _On-demand procedure for kb's QUERY mode. The shared model — the five-zone str
 2. Answer, citing the path to the source note or paired source document.
 3. If the base cannot answer it, capture the researched answer as a new note (fall through to Mode SAVE).
 
-**Special query: `?templates`** — list the available note templates for this base. Read `references/templates/` in the skill, then any overrides declared in `[ki-kb.templates]` in the base's config. Return the zone, template name, and a one-line description of what each template is for. Do not create any files.
+**Special query: `?templates`** — list the available note templates for this base. Read `assets/templates/` in the skill, then any overrides declared in `[ki-kb.templates]` in the base's config. Return the zone, template name, and a one-line description of what each template is for. Do not create any files.

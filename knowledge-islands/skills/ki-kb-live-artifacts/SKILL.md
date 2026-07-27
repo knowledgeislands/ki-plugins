@@ -1,15 +1,17 @@
 ---
 name: ki-kb-live-artifacts
-implies: []
-vendors: [educate, audit, conform, help]
+ki-shared-dependencies: [ki-skills:rubric]
+ki-depends-on: []
 description: >
-  Author, audit, and manage Live Artifact pairs in a Knowledge Islands base — dynamic operational documents that reflect the current state of the island (dashboards, status boards, queues, trackers). Governs the pairing convention between a Markdown source (.md) and its rendered HTML output (.html), the Live Artifacts index in Admin/Operations/Live Artifacts/, and the sync rules between the two halves of each pair. Triggers: "add a live artifact", "audit live artifacts", "check artifact sync", "what live artifacts does this base have", "create a dashboard", "update the artifact index". For the KB zone structure use `ki-kb`; for Markdown or TOML style use `ki-authoring`.
+  Authors, audits, and manages Live Artifact pairs in a Knowledge Islands base — dynamic operational documents that reflect the current state of the island (dashboards, status boards, queues, trackers). Governs the pairing convention between a Markdown source (.md) and its rendered HTML output (.html), the Live Artifacts index in Admin/Operations/Live Artifacts/, and the sync rules between the two halves of each pair. Triggers: "add a live artifact", "audit live artifacts", "check artifact sync", "what live artifacts does this base have", "create a dashboard", "update the artifact index". For the KB zone structure use `ki-kb`; for Markdown or TOML style use `ki-authoring`.
 argument-hint: 'audit | conform | help | educate | new <name> | refresh'
 ---
 
 # Knowledge Islands Live Artifacts
 
 You are helping the user author, audit, and manage **Live Artifacts** in a Knowledge Islands base. A Live Artifact is a named, intentional operational document that reflects the current state of the island — a dashboard, status board, queue, or tracker. Unlike notes in `Pillars/`, live artifacts are **intentionally mutable**: they are updated in place as the island's state changes.
+
+The normative model lives in [the Live Artifact standard](references/standards-live-artifacts.md), with concrete shapes in [the exemplars](references/exemplars.md). The checkable publication lives in [the rubric](references/rubric.md).
 
 ## The Live Artifact model
 
@@ -46,15 +48,15 @@ Modes: **AUDIT · CONFORM · EDUCATE · NEW · REFRESH** (named, alphabetical). 
 
 ### Mode AUDIT
 
-→ Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
+→ Read [references/mode-audit.md](references/mode-audit.md)
 
 ### Mode CONFORM
 
-→ Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
+→ Read [references/mode-conform.md](references/mode-conform.md)
 
 ### Mode EDUCATE
 
-→ Reached through the bootstrap chain — `ki-bootstrap` vendors this skill's checker and wires `ki:kb-live-artifacts:audit`. To establish the collection itself, scaffold `Admin/Operations/Live Artifacts/` with its `Live Artifacts.md` index; **NEW** then authors individual artifact pairs into it.
+→ Explain the pairing, frontmatter, index, and sync model. Creation of the parent `Admin/Operations/` structure belongs to `ki-kb`; this skill ships no standalone scaffold or runner. **NEW** authors individual artifact sources once the collection location exists.
 
 ### Mode NEW
 
@@ -86,4 +88,4 @@ Declare in the base's `.ki-config.toml` `[ki-kb-live-artifacts]` table:
 
 ## Audit rubric
 
-See [references/audit-rubric.md](references/audit-rubric.md) for the full rubric (mechanical + judgment).
+See [references/rubric.md](references/rubric.md) for the full rubric (mechanical + judgment), enforced mechanically by `ki repo audit --skill ki-kb-live-artifacts`. After changing the family definitions under `scripts/rubric/items/`, regenerate the published catalogue with `ki skill rubric ki-kb-live-artifacts --write`.

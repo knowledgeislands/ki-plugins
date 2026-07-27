@@ -5,7 +5,7 @@
 - [Collections](#collections)
 - [Selected patterns](#selected-patterns)
 
-Curated patterns worth reading when authoring or auditing a Knowledge Islands Cloudflare hosting configuration. Use these as concrete references — what a correct `wrangler.jsonc` looks like for a Workers + Static Assets deployment, what the script family looks like in the monorepo shape, and how the build and deploy steps chain in CI. Do not copy them wholesale; adapt to the specific site's `name`, `compatibility_date`, and domain. For the full standard, see [cloudflare-hosting-standard.md](cloudflare-hosting-standard.md); for source provenance, see [sources.md](sources.md).
+These examples are kept separate because they combine several governed artifacts and dashboard choices rather than defining another rule. Load them when a standards clause needs a concrete `wrangler.jsonc`, script-family, or CI/CD illustration. Do not copy them wholesale; adapt the site's `name`, `compatibility_date`, and domain. For the normative contract, see [the Cloudflare hosting standard](standards-cloudflare-hosting.md); for provenance, see [the source list](sources.md).
 
 ## Collections
 
@@ -24,7 +24,7 @@ Curated patterns worth reading when authoring or auditing a Knowledge Islands Cl
 
 ### `wrangler.jsonc` — the conformant site Worker config
 
-The site Worker config lives at `site/wrangler.jsonc` in the monorepo layout (the `site/` workspace of `ki-website`). Four fields are always present: `name` (kebab-case, matches the Worker name in the Cloudflare dashboard), `compatibility_date` (pinned `YYYY-MM-DD`), `assets.directory` pointing at the `dist/` seam, and `observability.enabled: true` so `console.*` / request logs are queryable in the dashboard. `routes` with `custom_domain: true` is expected for a site with a domain. The `assets.directory` value is **relative to the `wrangler.jsonc` file** — `"../dist"` from `site/wrangler.jsonc` because `dist/` lives at the repo root (one level up from `site/`).
+The site Worker config lives at `site/wrangler.jsonc` in the monorepo layout (the `site/` workspace of `ki-website`). Four fields are always present: `name` (kebab-case, matches the Worker name in the Cloudflare dashboard), `compatibility_date` (pinned `YYYY-MM-DD`), `assets.directory` pointing at the `dist/` seam, and `observability.enabled: true` so `console.*` / request logs are queryable in the dashboard. `routes` with `custom_domain: true` is expected for a site with a domain. The `assets.directory` value is **relative to the `wrangler.jsonc` file** — `"dist"` from `site/wrangler.jsonc` because the site build emits `site/dist/`.
 
 ```jsonc
 {
@@ -33,9 +33,8 @@ The site Worker config lives at `site/wrangler.jsonc` in the monorepo layout (th
   "name": "ki-website",
   "compatibility_date": "2026-06-19",
 
-  // Eleventy builds dist/ at the repo root; path is relative to THIS file.
-  // "../dist" because wrangler.jsonc lives under site/.
-  "assets": { "directory": "../dist" },
+  // Eleventy builds dist/ in this workspace; path is relative to THIS file.
+  "assets": { "directory": "dist" },
 
   // Custom domains — canonical apex + www (www → apex via a Cloudflare redirect rule).
   "routes": [
@@ -59,7 +58,7 @@ The hosting scripts in the root `package.json` of the monorepo. They take the `s
   "scripts": {
     "ki:site:deploy": "cd site && bunx wrangler deploy",
     "ki:site:preview": "bun run ki:site:build && cd site && bunx wrangler dev",
-    "ki:site:clean": "rm -rf dist site/.wrangler"
+    "ki:site:clean": "rm -rf site/dist site/.wrangler"
   }
 }
 ```

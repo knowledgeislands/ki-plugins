@@ -1,7 +1,7 @@
 ---
 name: ki-tools
-implies: []
-vendors: [educate, audit, conform, help]
+ki-depends-on: []
+ki-shared-dependencies: [ki-skills:rubric]
 description: >
   Audit, conform, or scaffold a Knowledge Islands `tools-*` repo — ONE standalone command-line tool per repo, distributed by a `curl | bash` installer AND a companion Homebrew tap formula. Governs the container SHAPE language-agnostically (bash today, a future Python/Go tool fits): the `bin/<tool>` executable + its exec bit, `install.sh`, versioning + `--version` + `vX.Y.Z` tags, `CHANGELOG.md`, a CI workflow, and capability conditionals (a shell entrypoint needs shellcheck + a bats suite; a `package.json` defers to `ki-engineering`). Triggers: "audit this tool repo", "scaffold a CLI tool", "release a command-line tool", "does this tools- repo follow our standard", "check my tools- repo". Off-ramps: the Homebrew tap + its formula → `ki-homebrew-tap`; GitHub settings and standard files (README, LICENSE) → `ki-repo`; a TS/Bun toolchain (`package.json`) → `ki-engineering`. Container, not contents — it does not judge the tool's internal code quality.
 argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
@@ -13,7 +13,7 @@ You are helping audit, conform, or scaffold a **`tools-*` repo** — a repo hold
 
 This skill rides on `ki-repo` (local files, GitHub settings) but **not** `ki-engineering` — a bash tool has no TypeScript/Bun toolchain to govern, so no `[ki-engineering]` is assumed (the same pattern `ki-kb` follows). If the tool grows a `package.json`, that changes: it then declares `[ki-engineering]` too and defers its lint/test there (see the capability rule below).
 
-The full, quotable standard lives in [tools-standard.md](references/tools-standard.md); the line-by-line pass/fail items live in [audit-rubric.md](references/audit-rubric.md). The mechanical checker is [`scripts/audit.ts`](scripts/audit.ts). Read those when you need detail; this file is the operating procedure.
+The full, quotable standard lives in [the tool-repository standard](references/standards-tool-repositories.md); the line-by-line pass/fail items live in [the generated rubric](references/rubric.md). `ki repo audit` and `ki repo conform` execute the structured mechanical contract directly through the host.
 
 ## Container, not contents
 
@@ -48,19 +48,21 @@ Mirrors `ki-engineering`'s capability-conditional pattern: what the repo _is_ de
 
 ## The `[ki-tools]` marker
 
-A `tools-*` repo opts into this standard by declaring a **keyless** `[ki-tools]` table in its `.ki-config.toml` — a bare marker, exactly like `[ki-mcp]`. The table is validated **down** (this skill reads only its own table and warns on any unknown key inside it). Run `bun scripts/audit.ts --educate` to print the default block.
+A `tools-*` repo opts into this standard by declaring a **keyless** `[ki-tools]` table in its `.ki-config.toml` — a bare marker, exactly like `[ki-mcp]`. The table is validated **down** (this skill reads only its own table and warns on any unknown key inside it). `ki repo conform --skill ki-tools` may add the marker to an existing physical, parseable configuration. It may also set executable bits on verified physical `bin/*` files and `install.sh`; missing content, malformed or unsafe paths, external releases, and Homebrew operations remain report-only.
 
 ## Operating modes
 
 Every governance skill carries the universal four **AUDIT · CONFORM · EDUCATE · REFRESH**; EDUCATE here scaffolds a new tool repo. Invoked as `help` / `-h` / `?`, it explains itself and stops — the generated HELP block (name, purpose, invocation, modes, off-ramps), taking no action. With no mode it does the same, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows.
 
+The four procedures remain on demand because each coordinates work outside the hosted catalogue: AUDIT and CONFORM sequence `ki-repo`, the conditional `ki-engineering` layer, and explicit release checks; EDUCATE scaffolds a new repository; REFRESH reconciles moving external specifications. Each file owns one mode so invoking one never loads an unrelated procedure.
+
 ### Mode AUDIT
 
-→ Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
+→ Read [references/mode-audit.md](references/mode-audit.md)
 
 ### Mode CONFORM
 
-→ Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
+→ Read [references/mode-conform.md](references/mode-conform.md)
 
 ### Mode EDUCATE
 
@@ -70,8 +72,13 @@ Every governance skill carries the universal four **AUDIT · CONFORM · EDUCATE 
 
 → Read [references/mode-refresh.md](references/mode-refresh.md)
 
+### Mode HELP
+
+Invoked as `help`, `-h`, or `?`, explain the skill, invocation, modes, capability conditionals, and off-ramps, then stop. With no recognisable mode, provide the same explanation and only offer a mode choice in an interactive session.
+
 ## Notes
 
 - The standard is anchored to `tools-mgit` as the reference shape and to external specs (shellcheck, bats, keep-a-changelog, semver, XDG) — the tracked [source list](references/sources.md) records them; Mode REFRESH re-fetches on the declared cadence.
 - Refer to another skill by its `name` (`ki-repo`, `ki-engineering`, `ki-homebrew-tap`), never a file path — skills are relocatable.
-- Checker output conforms to the severity ladder, JSON shape, and exit-code contract in `ki-engineering`'s [checker-contract.md](../../foundations/ki-engineering/references/checker-contract.md).
+- Hosted execution carries no private checker, reporter, or compatibility wrapper. The skill intentionally has no top-level public script; its executable governance surface is `scripts/rubric/items/index.ts`, loaded directly by `ki`.
+- No `exemplars.md` is bundled: the canonical tree and capability table above, plus the complete installer and release guidance in the standard, already illustrate the reusable shapes; a separate exemplar would duplicate them.

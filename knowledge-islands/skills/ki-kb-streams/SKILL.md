@@ -1,9 +1,9 @@
 ---
 name: ki-kb-streams
-implies: []
-vendors: [educate, audit, conform, help]
+ki-shared-dependencies: [ki-skills:rubric]
+ki-depends-on: []
 description: >
-  Operate and govern the Streams zone of a Knowledge Islands base — the working copy of work in motion, run as the Enactment Process (the canonical change process: a proposal goes draft → ready → ratify → roll out → review → settle, and nothing reaches stable knowledge except through that gate). Use to start a stream, iterate a proposal, mark one ready, roll out an approved change, run a post-change review, and settle or reject a stream — and to audit a base's Streams structure (Focus lifecycle, the `Proposal` suffix, leaf/parent layout, proposal frontmatter) or conform it. Triggers: "start a stream", "create a proposal", "mark this ready", "roll out this proposal", "settle this stream", "what's the enactment process", "plan mode for my knowledge base", "does this change need a proposal", "audit my streams". For the five-zone model and note CRUD / routing use the `ki-kb` skill, which delegates the Streams zone here; for Markdown / TOML house style use `ki-authoring`.
+  Operates and governs the Streams zone of a Knowledge Islands base — the working copy of work in motion, run as the Enactment Process (the canonical change process: a proposal goes draft → ready → ratify → roll out → review → settle, and nothing reaches stable knowledge except through that gate). Use to start a stream, iterate a proposal, mark one ready, roll out an approved change, run a post-change review, and settle or reject a stream — and to audit a base's Streams structure (Focus lifecycle, the `Proposal` suffix, leaf/parent layout, proposal frontmatter) or conform it. Triggers: "start a stream", "create a proposal", "mark this ready", "roll out this proposal", "settle this stream", "what's the enactment process", "plan mode for my knowledge base", "does this change need a proposal", "audit my streams". For the five-zone model and note CRUD / routing use the `ki-kb` skill, which delegates the Streams zone here; for Markdown / TOML house style use `ki-authoring`.
 argument-hint: 'audit | conform | help | educate | iterate | propose | ready | refresh | reject | review | rollout | settle'
 ---
 
@@ -13,7 +13,7 @@ You are operating the **`Streams` zone** of a Knowledge Islands base. `Streams/`
 
 The companion `ki-kb` skill owns the five-zone model and note CRUD / routing, and **delegates the inside of `Streams/` here**; load it for anything outside this zone. This skill carries the structure and process as fixed knowledge; only a couple of store-level **bindings** come from the host base.
 
-The full detail lives in the references (progressive disclosure): the structure in [the Streams structure reference](<references/Streams Structure Reference.md>), the process in [the Enactment Process reference](<references/Enactment Process Reference.md>). The line-by-line checkable items live in [the rubric](references/audit-rubric.md); the mechanical checker is [`scripts/audit.ts`](scripts/audit.ts).
+The full detail lives in the references (progressive disclosure): the structure in [the Streams structure standard](references/standards-streams-structure.md), the process in [the Enactment Process standard](references/standards-enactment-process.md), and worked shapes in [the exemplars](references/exemplars.md). The line-by-line checkable items live in [the rubric](references/rubric.md); `ki repo audit --skill ki-kb-streams` runs their mechanical evidence and `ki repo conform --skill ki-kb-streams` applies its safe declared repairs.
 
 ## The Streams zone at a glance
 
@@ -29,7 +29,7 @@ A stream lives at `Streams/$Focus/$Category?/$Name…`. **Focus** is mandatory �
 
 Each Focus folder carries a **same-name index note** whose `## Streams` table lists each stream by Topic / Status / Priority, ordered by status then priority (grouped by category where used). The base also keeps a cross-Focus **proposals index** in the `Streams/` zone index note.
 
-**A full proposal carries the `Proposal` suffix** (filename, `# H1`, `title:`); a **lightweight stream** is a plain tracker note under a Focus folder and carries none (see the Enactment Process reference for the two weights). Folder layout for a full proposal:
+**A full proposal carries the `Proposal` suffix** (filename, `# H1`, `title:`); a **lightweight stream** is a plain tracker note under a Focus folder and carries none (see the Enactment Process standard for the two weights). Folder layout for a full proposal:
 
 ```text
 Leaf:    Streams/<Focus>/<Category?>/<Name> Proposal/<Name> Proposal.md
@@ -37,7 +37,7 @@ Parent:  Streams/<Focus>/<Category?>/<Name>/<Name> Proposal.md          (+ slim 
 Multi:   Streams/<Focus>/<Category?>/<Name>/<ProposalName>/<ProposalName> Proposal.md
 ```
 
-Full structure — Category patterns, leaf/parent/multi, index ordering — in [the structure reference](<references/Streams Structure Reference.md>).
+Full structure — Category patterns, leaf/parent/multi, index ordering — in [the Streams structure standard](references/standards-streams-structure.md).
 
 ## Status lifecycle and priority
 
@@ -81,21 +81,21 @@ Almost everything is fixed above. Only these come from the host base — take de
 
 ## Operating modes
 
-Invoked as `help` / `-h` / `?`, it explains itself and stops — the generated HELP block (name, purpose, invocation, modes, off-ramps), taking no action. With no mode it does the same, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows. The shared model above — the zone-at-a-glance, the status lifecycle, the proposal anatomy, the bindings, Step 1, and the **Working rules** and **Enactment gate** below — is what every mode needs and stays loaded; each mode's _procedure_ lives in its own on-demand file, so read only the one the request selects. This carries the universal **AUDIT · CONFORM · EDUCATE · REFRESH** — EDUCATE scaffolds no standalone artifact here: it vendors the skill's declared mechanical unit (the frontmatter `vendors:` declaration) into the target's `.ki-meta/` via the central bootstrap chain, [`scripts/educate.ts`](scripts/educate.ts) being a thin delegator into the `ki-bootstrap` engine. Its enactment-lifecycle modes are **ITERATE · PROPOSE · READY · REJECT · REVIEW · ROLLOUT · SETTLE**. Modes are named and alphabetical.
+Invoked as `help` / `-h` / `?`, it explains itself and stops — the generated HELP block (name, purpose, invocation, modes, off-ramps), taking no action. With no mode it does the same, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows. The shared model above — the zone-at-a-glance, the status lifecycle, the proposal anatomy, the bindings, Step 1, and the **Working rules** and **Enactment gate** below — is what every mode needs and stays loaded; each mode's _procedure_ lives in its own on-demand file, so read only the one the request selects. This carries the universal **AUDIT · CONFORM · EDUCATE · REFRESH**. EDUCATE explains the canonical Streams model and routes creation of the parent zone to `ki-kb`; it ships no standalone scaffold or runner. Its enactment-lifecycle modes are **ITERATE · PROPOSE · READY · REJECT · REVIEW · ROLLOUT · SETTLE**. Modes are named and alphabetical.
 
-| Mode    | Fires on                                                       | Read before acting                                        |
-| ------- | -------------------------------------------------------------- | --------------------------------------------------------- |
-| AUDIT   | "audit my streams"                                             | [mode-audit-conform.md](references/mode-audit-conform.md) |
-| CONFORM | "conform my streams / bring them into line"                    | [mode-audit-conform.md](references/mode-audit-conform.md) |
-| EDUCATE | "bootstrap streams governance" (via the `ki-bootstrap` chain)  | the EDUCATE sentence above — no procedure file            |
-| ITERATE | "iterate / develop this proposal"                              | [mode-iterate.md](references/mode-iterate.md)             |
-| PROPOSE | "start a stream / create a proposal"                           | [mode-propose.md](references/mode-propose.md)             |
-| READY   | "mark this ready"                                              | [mode-ready.md](references/mode-ready.md)                 |
-| REFRESH | "is the Streams model still current" (on its declared cadence) | [mode-refresh.md](references/mode-refresh.md)             |
-| REJECT  | "reject this stream"                                           | [mode-reject.md](references/mode-reject.md)               |
-| REVIEW  | "run the post-change review"                                   | [mode-review.md](references/mode-review.md)               |
-| ROLLOUT | "roll out this proposal" (needs explicit authorisation)        | [mode-rollout.md](references/mode-rollout.md)             |
-| SETTLE  | "settle this stream"                                           | [mode-settle.md](references/mode-settle.md)               |
+| Mode    | Fires on                                                       | Read before acting                             |
+| ------- | -------------------------------------------------------------- | ---------------------------------------------- |
+| AUDIT   | "audit my streams"                                             | [mode-audit.md](references/mode-audit.md)      |
+| CONFORM | "conform my streams / bring them into line"                    | [mode-conform.md](references/mode-conform.md)  |
+| EDUCATE | "bootstrap streams governance" (via the `ki-bootstrap` chain)  | the EDUCATE sentence above — no procedure file |
+| ITERATE | "iterate / develop this proposal"                              | [mode-iterate.md](references/mode-iterate.md)  |
+| PROPOSE | "start a stream / create a proposal"                           | [mode-propose.md](references/mode-propose.md)  |
+| READY   | "mark this ready"                                              | [mode-ready.md](references/mode-ready.md)      |
+| REFRESH | "is the Streams model still current" (on its declared cadence) | [mode-refresh.md](references/mode-refresh.md)  |
+| REJECT  | "reject this stream"                                           | [mode-reject.md](references/mode-reject.md)    |
+| REVIEW  | "run the post-change review"                                   | [mode-review.md](references/mode-review.md)    |
+| ROLLOUT | "roll out this proposal" (needs explicit authorisation)        | [mode-rollout.md](references/mode-rollout.md)  |
+| SETTLE  | "settle this stream"                                           | [mode-settle.md](references/mode-settle.md)    |
 
 The Enactment gate (`## Installing the gate` below) and the Working rules apply on every fire, before any mode procedure loads — ROLLOUT in particular must not begin without explicit user authorisation.
 

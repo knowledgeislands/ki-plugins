@@ -1,6 +1,6 @@
 # Exemplars
 
-Shapes to copy when authoring a Feature Definitions corpus. Adapt names and prefixes to the repo; do not copy wholesale. The full standard is [feature-format.md](feature-format.md).
+Shapes to adapt when authoring a Feature Definitions corpus. They illustrate the [Feature Definitions standard](standards-feature-definitions.md) but do not add requirements.
 
 ## An `index.md` skeleton
 

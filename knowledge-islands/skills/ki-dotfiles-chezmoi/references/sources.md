@@ -2,7 +2,7 @@
 
 **Refresh:** external-spec · quarterly
 
-The authoritative sources behind [the standard](dotfiles-standard.md), [the rubric](audit-rubric.md), and [`../scripts/audit.ts`](../scripts/audit.ts). Mode REFRESH reads this file, re-fetches each source, diffs it against the standard and script, then **bumps the `last reviewed` dates** and refreshes the `## Last review` block below (what changed is recorded in the commit, not a changelog).
+The authoritative sources behind [the standard](standards-chezmoi-dotfiles.md), [the generated rubric](rubric.md), and its structured [rubric catalogue](../scripts/rubric/items/index.ts). Mode REFRESH reads this file, re-fetches each source, diffs it against the standard and catalogue, then **bumps the `last reviewed` dates** and refreshes the `## Last review` block below (what changed is recorded in the commit, not a changelog).
 
 Two different kinds of claim live in this standard, and they carry different confidence:
 

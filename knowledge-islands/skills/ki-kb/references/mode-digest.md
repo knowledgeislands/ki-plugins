@@ -19,7 +19,7 @@ Once the content it holds is extracted, a digest can be deleted. Test: if you de
 
 ## Handoff
 
-A handoff is a digest directed at a specific recipient or base. The recipient routes it through their `+/` inbox.
+A handoff is a digest directed at a specific recipient or base. The recipient routes it through their `+/` inbox. When the recipient is another KI repository, use the shared `+/_HANDOFFS/` and `-/_HANDOFFS/` direction and ownership convention defined by `ki-repo`; this skill continues to own the KB note's routing and frontmatter.
 
 1. Write the handoff to `-/_HANDOFFS/<UTC timestamp> <Recipient or Topic>.md` (same timestamp format).
 2. Carry `type: handoff`, `intended_for: <base or person>`, and `retain_until: YYYY-MM-DD` (default 30 days out).

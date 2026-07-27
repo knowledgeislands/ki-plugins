@@ -1,7 +1,7 @@
 ---
 name: ki-feature-definitions
-implies: []
-vendors: [educate, audit, conform, help]
+ki-depends-on: []
+ki-shared-dependencies: [ki-skills:rubric]
 description: >
   Codify, audit, and maintain Feature Definitions — the behaviour-level specification of what a system does — in any Knowledge Islands repo. Definitions live in `docs/features/`, flat one-file-per-area, with an `index.md` that defines the ID scheme and the areas table. Each requirement is a `### <PREFIX>-NNN — title` heading carrying one RFC-2119 (MUST / SHOULD / MAY) statement and a `_Verify:_` test hook; IDs are append-only and never reused; an unnumbered `## Gaps` section holds the backlog. Decisions capture the why (`ki-decision-records`), features capture the what, guides capture the how. Use when writing, auditing, or conforming a feature spec, or seeding one for a repo. Triggers: "write a feature definition", "spec this behaviour", "audit the features", "add a requirement", "what does the system do". Off-ramps: ki-decision-records (the governing decisions a requirement cites), ki-authoring (Markdown/TOML style).
 argument-hint: 'audit [dir] | conform [dir] | help | educate [dir] | new <area> "<title>" | refresh'
@@ -9,7 +9,7 @@ argument-hint: 'audit [dir] | conform [dir] | help | educate [dir] | new <area> 
 
 # Knowledge Islands Feature Definitions standard
 
-You are applying the **Knowledge Islands Feature Definitions standard** — how a system's behaviour is written down as a testable, append-only contract. A Feature Definition is the **what**: the behaviour a built system exhibits, stated normatively and paired with a verification hook, so a test suite (or a reader) can check the system against it. It sits between the **why** (Decision Records, `ki-decision-records`) and the **how** (guides). The full format with rationale lives in [the format standard](references/feature-format.md); the line-by-line checkable criteria live in [the rubric](references/audit-rubric.md); worked examples are in [exemplars](references/exemplars.md); the canonical sources are in [sources](references/sources.md).
+You are applying the **Knowledge Islands Feature Definitions standard** — how a system's behaviour is written down as a testable, append-only contract. A Feature Definition is the **what**: the behaviour a built system exhibits, stated normatively and paired with a verification hook, so a test suite or reader can check the system against it. It sits between the **why** (Decision Records, `ki-decision-records`) and the **how** (guides). Read the [Feature Definitions standard](references/standards-feature-definitions.md) before authoring, auditing, or conforming a corpus; the [rubric](references/rubric.md) publishes its checkable criteria, [exemplars](references/exemplars.md) illustrate representative shapes, and [sources](references/sources.md) records provenance.
 
 ## What this skill owns
 
@@ -19,23 +19,23 @@ You are applying the **Knowledge Islands Feature Definitions standard** — how 
 4. **The requirement shape** — under each heading, one **RFC-2119** normative statement (`MUST` / `MUST NOT` / `SHOULD` / `SHOULD NOT` / `MAY`, uppercase) describing the behaviour, then a `_Verify:_` line naming the built-output assertion, test, or source symbol that confirms it.
 5. **The Gaps backlog** — each area file may end with a `## Gaps` section (heading may extend, e.g. `## Gaps & candidate behaviours`) of **unnumbered** bullets: known divergences or desirable-but-unbuilt behaviours, deliberately ID-less so they sit outside the as-built contract. Promote a gap to a numbered requirement only once it is built and true.
 6. **The decision link** — Decision Records capture the why; the spec follows. A requirement governed by a recorded decision **cites its DR** (a link into `../decisions/`). This is judgment, not mechanical — the checker does not force it.
-7. **The mechanical checker** — [`scripts/audit.ts`](scripts/audit.ts) validates the index and areas table, requirement heading IDs (format, registered prefix, append-only uniqueness), the presence of an RFC-2119 keyword and a `_Verify:_` line per requirement, and exempts the Gaps backlog and deprecated entries.
+7. **The mechanical checker** — `ki repo audit --skill ki-feature-definitions` validates the index and areas table, requirement heading IDs, registered prefixes, append-only uniqueness, normative keywords, and `_Verify:_` lines while exempting Gaps and deprecated entries.
 
 ## Operating modes
 
-Carries the universal **EDUCATE · AUDIT · CONFORM · REFRESH**, plus **NEW** (draft a new requirement or area). Invoked as `help` / `-h` / `?`, it explains itself and stops — the generated HELP block (name, purpose, invocation, modes, off-ramps), taking no action. With no mode it does the same, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows.
+Carries the universal **AUDIT · CONFORM · EDUCATE · REFRESH**, plus **NEW** (draft a new requirement or area). Invoked as `help` / `-h` / `?`, it explains itself and stops — the generated HELP block (name, purpose, invocation, modes, off-ramps), taking no action. With no mode it does the same, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows.
 
 ### Mode EDUCATE
 
-→ Reached through the bootstrap chain — `ki-bootstrap` vendors this skill's checker and wires `ki:feature-definitions:audit`. To scaffold the spec itself in a repo, run **CONFORM** on an empty `docs/features/` (it writes the `index.md` skeleton and the first area file).
+→ Activate this skill with `ki skill repo add ki-feature-definitions`; the hosted EDUCATE mode renders its concern and rubric. Use [NEW](references/mode-new.md) to author the first area and index from the exemplars.
 
 ### Mode AUDIT
 
-→ Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
+→ Read [references/mode-audit.md](references/mode-audit.md)
 
 ### Mode CONFORM
 
-→ Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
+→ Read [references/mode-conform.md](references/mode-conform.md)
 
 ### Mode NEW
 
@@ -51,4 +51,4 @@ Carries the universal **EDUCATE · AUDIT · CONFORM · REFRESH**, plus **NEW** (
 - **As-built, not aspirational** — the numbered contract describes what the system **does** today; anything not yet true belongs in `## Gaps` until it is built. This keeps the spec a baseline a test suite can hold the system to.
 - **One normative clause per requirement, ideally** — a requirement may carry a `MUST` and a paired `MUST NOT`, but a heading that bundles several unrelated behaviours should split into separate IDs so each verifies independently.
 - **Serials are per prefix** — `AUTH-001` and `SITE-001` are both valid; a serial is unique within its prefix. Never reuse a retired number.
-- Checker output conforms to the severity ladder, JSON shape, and exit-code contract in `ki-engineering`'s [checker-contract.md](../../foundations/ki-engineering/references/checker-contract.md).
+- The `ki` host owns findings, dry-run publication, rollback, reporting, and post-conform verification; judgment aspects are counted as unevaluated rather than emitted as synthetic findings.

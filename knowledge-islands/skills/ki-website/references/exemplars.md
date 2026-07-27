@@ -5,7 +5,7 @@
 - [Collections](#collections)
 - [Selected patterns](#selected-patterns)
 
-Curated patterns worth reading when authoring or auditing a Knowledge Islands Eleventy site. Use these as concrete references — what an `eleventy.config.ts` looks like with the required transforms wired, how the Tailwind entry point is structured, what the `package.json` script family looks like for a monorepo site, and how a `base.njk` layout composes its partials. Do not copy them wholesale; adapt to the specific site's content model, tokens, and nav shape. For the full standard, see [eleventy-site-standard.md](eleventy-site-standard.md); for source provenance, see [sources.md](sources.md).
+Curated patterns worth reading when authoring or auditing a Knowledge Islands Eleventy site. Use these as concrete references — what an `eleventy.config.ts` looks like with the required transforms wired, how the Tailwind entry point is structured, what the `package.json` script family looks like for a monorepo site, and how a `base.njk` layout composes its partials. These complete shapes remain separate because embedding them in the normative standard would make that reference unwieldy. Do not copy them wholesale; adapt to the specific site's content model, tokens, and nav shape. For the full standard, see [the Eleventy site standard](standards-eleventy-site.md); for source provenance, see [sources.md](sources.md).
 
 ## Collections
 
@@ -20,7 +20,7 @@ Curated patterns worth reading when authoring or auditing a Knowledge Islands El
 
 ### `eleventy.config.ts` — the two required transforms and the Tailwind lifecycle hook
 
-The config exports a default function. Two transforms are always present: `explicit-index-links` rewrites absolute internal `href`/`src` attributes to relative paths (making `dist/` portable — this is standard invariant 2), and `external-link-icons` appends a Lucide icon to prose external links. The `eleventy.before` hook compiles Tailwind with `--minify` on a one-shot build; in serve/watch mode the CLI runs in parallel and `addWatchTarget` reloads the browser when it writes a new CSS file (standard invariant 4). The `dir` block always emits to `../dist` so output lands at the repo root, not inside `site/`.
+The config exports a default function. Two transforms are always present: `explicit-index-links` rewrites absolute internal `href`/`src` attributes to relative paths (making `dist/` portable — this is standard invariant 2), and `external-link-icons` appends a Lucide icon to prose external links. The `eleventy.before` hook compiles Tailwind with `--minify` on a one-shot build; in serve/watch mode the CLI runs in parallel and `addWatchTarget` reloads the browser when it writes a new CSS file (standard invariant 4). The `dir` block emits to `./dist`, inside the `site/` workspace.
 
 ```typescript
 import { execSync } from 'node:child_process'
@@ -30,7 +30,7 @@ import type { UserConfig } from '@11ty/eleventy'
 import JSON5 from 'json5'
 
 export default function (eleventyConfig: UserConfig) {
-  const outputRoot = resolve(process.cwd(), '../dist')
+  const outputRoot = resolve(process.cwd(), './dist')
 
   const toRelativeOutputUrl = (url: string, outputPath: string): string => {
     if (!url.startsWith('/') || url.startsWith('//')) return url
@@ -76,13 +76,13 @@ export default function (eleventyConfig: UserConfig) {
 
   eleventyConfig.on('eleventy.before', ({ runMode }: { runMode: string }) => {
     if (runMode !== 'serve' && runMode !== 'watch') {
-      execSync('bunx tailwindcss -i src/assets/css/main.css -o ../dist/assets/css/main.css --minify', { stdio: 'inherit' })
+      execSync('bunx tailwindcss -i src/assets/css/main.css -o ./dist/assets/css/main.css --minify', { stdio: 'inherit' })
     }
   })
-  eleventyConfig.addWatchTarget('../dist/assets/css/main.css')
+  eleventyConfig.addWatchTarget('./dist/assets/css/main.css')
 
   return {
-    dir: { input: 'src', output: '../dist', includes: '_includes', data: '_data' },
+    dir: { input: 'src', output: './dist', includes: '_includes', data: '_data' },
     htmlTemplateEngine: 'njk',
     markdownTemplateEngine: 'njk',
     templateFormats: ['njk', 'md', 'html']
@@ -132,16 +132,16 @@ No `tailwind.config.*` file anywhere — Tailwind 4 is configured entirely in CS
 
 ### `package.json` — the site script family
 
-Scripts for the `site/` workspace of a monorepo. All site scripts take the `site:` prefix. `ki:site:dev` uses `concurrently` to run the Tailwind `--watch` process (`ki:site:dev:css`) and the Eleventy dev server (`ki:site:dev:serve`) in parallel, named `css`,`11ty`. `ki:site:build` invokes the Eleventy CLI via `node --experimental-strip-types` (or plain `bun`) directly — the `eleventy.before` hook handles Tailwind minification inside the same process. `ki:site:deploy` and `ki:site:preview` are the hosting scripts (governed by `ki-website-cloudflare`); they appear here because they live in the same root `package.json` in the monorepo shape.
+Scripts for the `site/` workspace of a monorepo. All site scripts take the `site:` prefix. `ki:site:dev` uses `concurrently` to run the Tailwind `--watch` process (`ki:site:dev:css`) and the Eleventy dev server (`ki:site:dev:serve`) in parallel, named `css`,`11ty`. `ki:site:build` invokes the Eleventy CLI directly through Bun — the `eleventy.before` hook handles Tailwind minification inside the same process. `ki:site:deploy` and `ki:site:preview` are the hosting scripts (governed by `ki-website-cloudflare`); they appear here because they live in the same root `package.json` in the monorepo shape.
 
 ```json
 {
   "scripts": {
     "ki:site:dev": "concurrently --names css,11ty --prefix-colors cyan,yellow \"bun run ki:site:dev:css\" \"bun run ki:site:dev:serve\"",
-    "ki:site:dev:css": "cd site && bunx tailwindcss -i src/assets/css/main.css -o ../dist/assets/css/main.css --watch",
-    "ki:site:dev:serve": "cd site && node --experimental-strip-types ../node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve --port 3000",
-    "ki:site:build": "cd site && node --experimental-strip-types ../node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts",
-    "ki:site:clean": "rm -rf dist site/.wrangler",
+    "ki:site:dev:css": "cd site && bunx tailwindcss -i src/assets/css/main.css -o ./dist/assets/css/main.css --watch",
+    "ki:site:dev:serve": "cd site && bun ../node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve --port 3000",
+    "ki:site:build": "cd site && bun ../node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts",
+    "ki:site:clean": "rm -rf site/dist site/.wrangler",
     "ki:site:deploy": "cd site && bunx wrangler deploy",
     "ki:site:preview": "bun run ki:site:build && cd site && bunx wrangler dev"
   }

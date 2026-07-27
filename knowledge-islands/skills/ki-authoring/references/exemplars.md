@@ -2,24 +2,9 @@
 
 ## Contents
 
-- [Collections](#collections)
 - [Selected patterns](#selected-patterns)
 
-Curated illustrations of the Knowledge Islands authoring conventions in practice. Use these when writing or conforming a document, checking whether a table should spill to footnotes, choosing between link styles, or formatting a `.ki-config.toml` entry. The exemplars show the judgment layer — the choices no formatter makes — annotated to make the reasoning visible. Mechanical rules (line width, prose wrap, heading hierarchy) are owned by Prettier + markdownlint-cli2; run `ki:authoring:conform` for the write pass and `ki:authoring:audit` for the read-only gate.
-
-## Collections
-
-| Source                   | Covers                                                             | Last reviewed |
-| ------------------------ | ------------------------------------------------------------------ | ------------- |
-| [CommonMark spec][cm]    | The Markdown syntax baseline                                       | 2026-06-21    |
-| [Prettier options][pr]   | What the formatter normalises — `proseWrap`, `printWidth` (140)    | 2026-06-21    |
-| [markdownlint rules][ml] | The `MDxxx` rules enforced (`MD013` off, `MD060`, `MD051`/`MD052`) | 2026-06-21    |
-| [TOML spec][toml]        | TOML syntax for the shared `.ki-config.toml`                       | 2026-06-21    |
-
-[cm]: https://spec.commonmark.org/
-[pr]: https://prettier.io/docs/options
-[ml]: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
-[toml]: https://toml.io/en/v1.1.0
+Curated illustrations of the Knowledge Islands authoring conventions in practice. Use these when writing or conforming a document, checking whether a table should spill to footnotes, choosing between link styles, or formatting a `.ki-config.toml` entry. The exemplars show the judgment layer — the choices no formatter makes — annotated to make the reasoning visible. Mechanical rules (line width, prose wrap, heading hierarchy) are owned by Prettier + markdownlint-cli2; run `ki repo conform --skill ki-authoring` for the write pass and `ki repo audit --skill ki-authoring` for the read-only gate.
 
 ## Selected patterns
 
@@ -62,7 +47,7 @@ In `SKILL.md` files and all harness documents, use standard relative Markdown li
 ```markdown
 <!-- Correct: relative Markdown link -->
 
-See [the rubric](references/audit-rubric.md) for the line-by-line criteria.
+See [the rubric](references/rubric.md) for the line-by-line criteria.
 
 <!-- Correct: path with spaces uses angle-bracket form -->
 
@@ -78,12 +63,12 @@ See [[audit-rubric|the rubric]].
 
 <!-- Wrong: file path reference for a skill -->
 
-See `skills/repo-structure/ki-kb/SKILL.md` for KB conventions.
+See `skills/knowledge-bases/ki-kb/SKILL.md` for KB conventions.
 ```
 
 ### Well-formed `.ki-config.toml` table
 
-Keys are lowercase `snake_case`. Strings are double-quoted. Arrays use the inline `["a", "b"]` form for short lists. One table per skill, named for the skill (`[ki-repo]`), with sub-tables nested under it. Comment non-obvious keys with a `#` line above them — the _why_, not the _what_. The contract behind what each table means (the one-table-per-skill model, validate-your-own-table protocol) lives in `ki-repo`'s `ki-config-standard.md`; this pattern covers formatting only.
+Keys are lowercase `snake_case`. Strings are double-quoted. Arrays use the inline `["a", "b"]` form for short lists. One table per skill, named for the skill (`[ki-repo]`), with sub-tables nested under it. Comment non-obvious keys with a `#` line above them — the _why_, not the _what_. The contract behind what each table means (the one-table-per-skill model, validate-your-own-table protocol) belongs to the `ki-repo` skill; this pattern covers formatting only.
 
 ```toml
 [ki-repo]

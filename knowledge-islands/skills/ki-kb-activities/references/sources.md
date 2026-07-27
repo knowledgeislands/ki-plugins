@@ -2,7 +2,7 @@
 
 **Refresh:** canonical · on-change
 
-This skill's standard is canonical to the Knowledge Islands harness — it has no external specification. Run REFRESH when the realization model changes (new environment type, new required field) or when the Activities pattern diverges from this document across bases.
+The [Activity standard](standards-activities.md) is canonical to the Knowledge Islands harness and has no external specification. Run REFRESH when the realization model changes or when the Activities pattern diverges across bases.
 
 | Source | What it governs | Last reviewed |
 | --- | --- | --- |

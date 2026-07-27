@@ -1,6 +1,6 @@
 # Mode NEW — author a new activity note
 
-_On-demand procedure for activities' NEW mode. The activity model — required frontmatter, realization types, and realization-specific fields — lives in [`SKILL.md`](../SKILL.md) and is already loaded; this file is the procedure only._
+Read the [Activity standard](standards-activities.md) first; this file contains only the NEW procedure.
 
 1. Prompt for **Name** (becomes the filename and the `# Heading`).
 2. Prompt for **Realization type** — offer the known list (`slash-command`, `scheduled-task`, `conversational`, `manual`, `workflow`); accept free text for new types.

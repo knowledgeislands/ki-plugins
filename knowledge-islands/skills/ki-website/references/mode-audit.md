@@ -1,0 +1,10 @@
+# Mode AUDIT — check a site against the standard
+
+_On-demand procedure for ki-website's AUDIT mode. The hosted rubric inspects the site-build delta; separate skills and explicit build or hosting checks remain distinct._
+
+1. **Run the common layer first.** Run `ki repo audit --repo <repo> --skill ki-engineering` for the shared toolchain rather than re-deriving it here.
+2. **Run the mechanical rubric.** Run `ki repo audit --repo <repo> --skill ki-website`. It inspects the Eleventy dependency and configuration, config-less Tailwind entry, site source layout, script family, SEO partial, portable output seam, generated-output ignore, and `[ki-website]` opt-in. Capture its output verbatim.
+3. **Apply the judgment items.** Read the judgment criteria in [the rubric](rubric.md): verify that semantic tokens drive the palette, `_data` is the single source of structure, content uses Markdown and cascade data appropriately, SEO metadata is wired site-wide, and public sites ship their discovery assets.
+4. **Check the generated boundary explicitly.** Build the site through its declared script, inspect representative HTML in `site/dist/` for portable relative links, and confirm generated output is not hand-maintained. The hosted audit does not run the build.
+5. **Name the hosting audit when applicable.** If the site is deployed to Cloudflare, run `ki repo audit --repo <repo> --skill ki-website-cloudflare` separately.
+6. **Report by location, criterion, and fix.** Group findings by FAIL, WARN, and POLISH and cite `file:line` where available. Record explicit build and hosting results separately from hosted rubric findings.

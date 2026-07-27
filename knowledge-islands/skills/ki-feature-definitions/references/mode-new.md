@@ -1,6 +1,6 @@
 # Mode NEW — draft a new requirement or area
 
-On-demand procedure for adding to a Feature Definitions corpus. The standard is in [feature-format.md](feature-format.md); shapes to copy are in [exemplars.md](exemplars.md).
+Read the [Feature Definitions standard](standards-feature-definitions.md) first; the [exemplars](exemplars.md) show shapes to adapt.
 
 ## Adding a requirement to an existing area
 
@@ -9,7 +9,7 @@ On-demand procedure for adding to a Feature Definitions corpus. The standard is 
 3. **Write the heading** — `### <PREFIX>-NNN — <short title>` under the appropriate `## <sub-area>` H2.
 4. **Write one normative statement** — behaviour only, an uppercase RFC-2119 keyword (`MUST` / `SHOULD` / `MAY`), no rationale. If the behaviour follows from a decision, cite the DR inline.
 5. **Write the `_Verify:_` line** — a concrete, checkable hook: a built-output assertion, a named test, or a linked source symbol. If you cannot state a truthful verification, the behaviour is probably not as-built yet — put it in `## Gaps` instead.
-6. **Run the checker** — `bun run ki:feature-definitions:audit` (or the script directly) and confirm clean.
+6. **Run the checker** — `ki repo audit --skill ki-feature-definitions` and confirm clean.
 
 ## Adding a new area
 

@@ -68,7 +68,7 @@ One paragraph: what this repo is and who works in it.
 
 ### `AGENTS.md`-literal orientation for a multi-runtime repo
 
-A repo whose `[ki-repo]` `target_runtimes` names a runtime besides `claude-code` (e.g. `codex`) keeps its root orientation in a literal `AGENTS.md` — Codex reads `AGENTS.md` but cannot resolve Claude Code's `@`-import syntax, so the orientation content itself has to live there, not behind an import. `CLAUDE.md` then stays a thin appendix: one line naming it as the Claude Code supplement, then a single `@AGENTS.md` import, then any topic-file imports Claude Code alone needs. A personal chezmoi dotfiles repo (outside the `knowledgeislands` org, but the same pattern) is a working example: its `AGENTS.md` carries the literal orientation and core rules, and its `CLAUDE.md` opens with `@AGENTS.md` before adding Claude-only topic imports.
+A repo whose `[ki-repo]` `supported_runtimes` names a runtime besides `claude-code` (e.g. `codex`) keeps its root orientation in a literal `AGENTS.md` — Codex reads `AGENTS.md` but cannot resolve Claude Code's `@`-import syntax, so the orientation content itself has to live there, not behind an import. `CLAUDE.md` then stays a thin appendix: one line naming it as the Claude Code supplement, then a single `@AGENTS.md` import, then any topic-file imports Claude Code alone needs. A personal chezmoi dotfiles repo (outside the `knowledgeislands` org, but the same pattern) is a working example: its `AGENTS.md` carries the literal orientation and core rules, and its `CLAUDE.md` opens with `@AGENTS.md` before adding Claude-only topic imports.
 
 ```markdown
 <!-- AGENTS.md — literal, runtime-neutral orientation -->
@@ -96,7 +96,7 @@ The shared orientation lives in AGENTS.md, imported above. The following topic f
 
 ### Five-part harness layout with coverage declarations
 
-When a repo carries a five-part agentic harness layout (`skills/`, `agents/`, `mcp/`, `evals/`, `hooks/`), its `.ki-config.toml` must declare all four relevant tables so `ki-repo`'s coverage cascade does not warn on detected-but-undeclared artifacts. The harness repo (`ki-agentic-harness`) is the canonical example — it opts into every applicable governance skill and documents why each table is present.
+When a repo carries a five-part agentic harness layout (`skills/`, `subagents/`, `mcp/`, `evals/`, `hooks/`), its `.ki-config.toml` must declare all four relevant tables so `ki-repo`'s coverage cascade does not warn on detected-but-undeclared artifacts. The harness repo (`ki-agentic-harness`) is the canonical example — it opts into every applicable governance skill and documents why each table is present.
 
 ```toml
 [ki-repo]
@@ -114,6 +114,21 @@ visibility = "private"
 
 [ki-decision-records]
 # This repo authors and maintains decision records.
+```
+
+### Optional `+` / `-` working areas
+
+A repository creates working areas only when it has material to triage or send. Inbound and outbound handoffs are kept distinct, and an outgoing handoff is grouped by its receiving repository. The handoff remains an originating brief; the receiver independently adopts work into its own roadmap and plan.
+
+```text
+my-repo/
+├── +/
+│   └── _HANDOFFS/
+│       └── partner-repo.md
+└── -/
+    └── _HANDOFFS/
+        └── receiving-repo/
+            └── implement-feature.md
 ```
 
 [harness]: https://github.com/knowledgeislands/ki-agentic-harness

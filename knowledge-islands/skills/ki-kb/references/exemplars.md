@@ -19,19 +19,20 @@ Curated patterns showing what well-formed Knowledge Islands KB notes, folder str
 
 ### Correct note frontmatter
 
-Every KB note that is not a pure index carries `type`, `status`, `tags`, and `author`. The `type` field drives routing; `status` signals currency; `tags` carry the topic and zone-arm context; `author` records provenance for curation. The following is taken from `Admin/Admin.md` in `ki-arcadia-principal` — a zone-root index note:
+Every KB note carries `type`; the current exemplar also uses `status`, `tags`, and `author`. The `type` field drives routing; `status` carries a type-specific state where one exists; `tags` carry the topic context; `author` records provenance for curation. The following is the canonical shape for `Admin/Admin.md`, a zone-root index note:
 
 ```yaml
 ---
+type: admin/zone
 tags:
   - card/note
   - topic/knowledge-islands
 status: draft - May 2026
-author: Written with Claude
+author: AI-assisted
 ---
 ```
 
-Key points: `tags` is a YAML list, never an inline string; the `status` field uses a freeform date suffix so the age of a status assessment is visible without opening the note body; `author` distinguishes human-authored, AI-authored, and collaborative notes (`Written with Claude` / `Manual` / `Mixed`).
+Key points: `type` is the sole kind classifier and is constrained by the note's location; `tags` is a YAML list, never an inline string; the `status` field uses a freeform date suffix so the age of a status assessment is visible without opening the note body; `author` distinguishes human-authored, AI-authored, and collaborative notes (`AI-assisted` / `Manual` / `Mixed`).
 
 ### Folder-note structure (zone root)
 
@@ -53,14 +54,14 @@ Each index-carrying zone has a same-name index note at its root. The note body l
 
 ## Contents
 
-- [MEMORY](MEMORY.md) — root memory index: the island's active Admin content.
-- [Charter](Governance/Charter.md) — island identity and adoption position.
-- [Governance](Governance/Governance.md) — governance arm index.
-- [Operations](Operations/Operations.md) — operations arm index.
-- [Decisions](Governance/Decisions/Decisions.md) — the island's Decision Records.
+- [[Admin/MEMORY|MEMORY]] — root memory index: the island's active Admin content.
+- [[Admin/Governance/Charter|Charter]] — island identity and adoption position.
+- [[Admin/Governance/Governance|Governance]] — governance arm index.
+- [[Admin/Operations/Operations|Operations]] — operations arm index.
+- [[Admin/Governance/Decisions/Decisions|Decisions]] — the island's Decision Records.
 ```
 
-The index note uses relative markdown links — never wikilinks — so it is valid outside Obsidian. Each sub-folder that has a named arm (`Governance/`, `Operations/`) gets its own same-name index note, creating a navigable tree one level at a time.
+The index note's `## Contents` list uses full-path Obsidian wikilinks with readable aliases. Each sub-folder that has a named arm (`Governance/`, `Operations/`) gets its own same-name index note, creating a navigable tree one level at a time.
 
 ### Well-structured zone layout
 
@@ -93,20 +94,20 @@ The staging areas (`+/`, `-/`) have no zone index note; only the five canonical 
 
 ### Internal vs external link style
 
-Internal links (within the same KB) use relative markdown paths — shortest unique path to the target file. External links use inline markdown with descriptive anchor text; bare URLs are not written into note bodies.
+Internal links use the shortest unique Obsidian wikilink path, while contents lists use full paths with aliases. External links use inline markdown with descriptive anchor text; bare URLs are not written into note bodies.
 
 ```markdown
-<!-- Internal — relative path, no wikilink syntax -->
+<!-- Internal — shortest unique wikilink or full path with an alias -->
 
-See [Charter](Governance/Charter.md) for the island identity. See [Knowledge Islands](../Philosophy/Knowledge Islands.md) for the portable model.
+See [[Charter]] for the island identity. See [[Pillars/Philosophy/Knowledge Islands|Knowledge Islands]] for the portable model.
 
 <!-- External — descriptive anchor text -->
 
 See the [Agent Skills standard](https://agentskills.io/) for the published spec.
 
-<!-- Wrong — wikilinks are Obsidian-only and break outside that tool -->
+<!-- Wrong — relative markdown paths are not the base's internal-note convention -->
 
-See [[Charter]] for the island identity. See [[Knowledge Islands]] for the portable model.
+See [Charter](Governance/Charter.md) for the island identity.
 ```
 
-The `ki-kb` skill works with relative markdown paths throughout; wikilinks in existing notes are read and understood, but never written by the skill.
+The `ki-kb` skill writes Obsidian wikilinks inside the base while keeping its own skill documentation on relative Markdown links.

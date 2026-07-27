@@ -1,10 +1,11 @@
 ---
 name: ki-mcp
-implies: []
-vendors: [educate, audit, conform, help]
+ki-runtime-binding: true
+ki-shared-dependencies: [ki-skills:rubric]
+ki-depends-on: []
 description: >
   Codify and audit Knowledge Islands MCP servers against the canonical "workspace MCP" standard. Use when scaffolding a new MCP server, bringing an existing one up to standard, or reviewing one for compliance: project layout, config injection (no module-level singleton), the `<app>_<resource>_<action>` tool-naming scheme, the annotation-driven access-level gate, audit logging, the security invariants, the common build/lint/test toolchain (now `ki-engineering`'s, which this builds on). Also refreshes the standard itself against the latest published MCP specification. Triggers: "audit this MCP", "does this MCP follow our standards", "scaffold a new MCP", "bring this MCP up to standard", "review the MCP layout / tool surface / package.json", "refresh the MCP standard", "is our MCP standard up to date". Operates on the sibling `mcp-*` repos under `knowledgeislands/`. Audits MCP **server code** — not a repo's GitHub configuration, nor a `SKILL.md`'s prose (for that, use `ki-skills`).
-argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
+argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
 ---
 
 # Knowledge Islands MCP standards
@@ -13,7 +14,7 @@ You are helping audit, conform, or scaffold a **workspace MCP server** — one o
 
 This skill audits the **server code** — `src/` layout, config injection, tool surface, security invariants, tooling. A repo's GitHub configuration and standard files, and a `SKILL.md`'s prose, are out of scope (other skills own those). How the skills divide the work is documented once in the ki-agentic-harness `README.md`.
 
-The full, quotable standard lives in [Workspace MCP Standard](references/workspace-mcp-standard.md); the line-by-line pass/fail items live in [Audit Rubric](references/audit-rubric.md). A mechanical structural checker is [`scripts/audit.ts`](scripts/audit.ts). Read those when you need detail; this file is the operating procedure.
+The full, quotable standard lives in [Workspace MCP Standard](references/standards-mcp-servers.md); the line-by-line pass/fail items live in [Audit Rubric](references/rubric.md). The hosted rubric contract is [`scripts/rubric/items/index.ts`](scripts/rubric/items/index.ts), enforced by `ki repo audit --skill ki-mcp`. Read those when you need detail; this file is the operating procedure.
 
 ## The canonical shape at a glance
 
@@ -64,11 +65,11 @@ Every governance skill carries the universal four **AUDIT · CONFORM · EDUCATE 
 
 ### Mode AUDIT
 
-→ Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
+→ Read [references/mode-audit.md](references/mode-audit.md)
 
 ### Mode CONFORM
 
-→ Read [references/mode-audit-conform.md](references/mode-audit-conform.md)
+→ Read [references/mode-conform.md](references/mode-conform.md)
 
 ### Mode EDUCATE
 
@@ -80,13 +81,20 @@ Every governance skill carries the universal four **AUDIT · CONFORM · EDUCATE 
 
 ## Bun vs Node — the common layer
 
-The Bun-install / Node-run split, the **`bun test` trap**, and the `process.loadEnvFile()` parity call are the **common engineering standard** — `ki-engineering` owns and checks them (run `ki:engineering:audit`). The one MCP-relevant consequence to keep in mind: `NODE_ENV=development` is set only by the `ki:server:mcp:dev` / `:inspect` scripts, so in production `.env.*` is ignored and config must come from the MCP client's `env` block.
+The Bun-install / Node-run split, the **`bun test` trap**, and the `process.loadEnvFile()` parity call are the **common engineering standard**—`ki-engineering` owns and checks them through `ki repo audit --skill ki-engineering`. The one MCP-relevant consequence to keep in mind: `NODE_ENV=development` is set only by the `ki:server:mcp:dev` / `:inspect` scripts, so in production `.env.*` is ignored and config must come from the MCP client's `env` block.
+
+## Runtime binding — MCP operating surfaces
+
+Server-code governance and surface operation are separate. Two standards remain here because they capture MCP-specific runtime semantics that the server standard must route to, while `ki-binding` owns actual cross-surface agreement and safe file-backed binding:
+
+- [Cross-surface MCP enablement](references/standards-cross-surface-enablement.md) defines the canonical source, per-surface control boundary, Cowork sandbox constraint, and binding sequence.
+- [claude.ai connector control](references/standards-claude-ai-connectors.md) defines the manual account, organization, and managed Claude Code policy layers for connectors with no local conform surface.
+
+Both are report-only from ki-mcp. Client registration, web/admin changes, remote deployment, generated clients, and repository-defined commands are never hidden conform operations.
 
 ## Notes
 
 - This skill targets the standard documented in the sibling repos' own `CLAUDE.md` files; when they disagree, the **majority shape** is the standard and the outlier is a finding (unless the outlier is a deliberate, documented exception). When unsure whether a divergence is intentional, ask rather than "fix" it.
 - Keep the shared `utils/` helpers (`access-level.ts`, `annotations.ts`, `audit-log.ts`) in sync across repos — a fix to one usually applies to all.
 - The standard sits on top of a moving spec. When citing a requirement, know whether it is **spec-driven** (traces to the official MCP spec in [the source list](references/sources.md)) or **house style** — never present a workspace preference as a protocol "MUST". Run Mode REFRESH when in doubt.
-- Full detail: [Workspace MCP Standard](references/workspace-mcp-standard.md), [Audit Rubric](references/audit-rubric.md), and the tracked [source list](references/sources.md).
-- **Operating** an MCP surface (not auditing server code) — how MCP connectors added through claude.ai are governed across the web UI, org admin console, and Claude Code's `managed-mcp.json` allow/deny layer — is in [claude-ai-connector-control.md](references/claude-ai-connector-control.md). Out of this skill's code-audit scope, but the natural home for the reference. The sibling [cross-surface-enablement.md](references/cross-surface-enablement.md) records how a single source fans the KI servers, skills, and agents out across Claude Code, Desktop, Cowork, and claude.ai — the per-surface targeting and the per-project binding-skill decision.
-- Checker output conforms to the severity ladder, JSON shape, and exit-code contract in `ki-engineering`'s [checker-contract.md](../../foundations/ki-engineering/references/checker-contract.md).
+- Full detail: [Workspace MCP Standard](references/standards-mcp-servers.md), [Audit Rubric](references/rubric.md), and the tracked [source list](references/sources.md).

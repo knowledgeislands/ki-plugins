@@ -5,7 +5,7 @@
 - [Collections](#collections)
 - [Selected patterns](#selected-patterns)
 
-Curated patterns worth reading when authoring or auditing a Knowledge Islands MCP server. Use these as concrete references — what a well-formed `package.json` looks like, how the entry point wires up, how to register a server with a client, how to configure coverage. Do not copy them wholesale; adapt to the specific server's tool surface and env-var namespace. For the full standard, see [workspace-mcp-standard.md](workspace-mcp-standard.md); for source provenance, see [sources.md](sources.md).
+Curated patterns worth reading when authoring or auditing a Knowledge Islands MCP server. Use these as concrete references—what a well-formed `package.json` looks like, how the entry point wires up, how to register a server with a client, how to configure coverage. Do not copy them wholesale; adapt to the specific server's tool surface and env-var namespace. For the full standard, see [standards-mcp-servers.md](standards-mcp-servers.md); for source provenance, see [sources.md](sources.md).
 
 ## Collections
 

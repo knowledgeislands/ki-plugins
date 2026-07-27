@@ -23,4 +23,3 @@ No model drift: render types (`html`), required frontmatter (`status`, `renders`
 Open watch-items:
 
 - Reference base still has zero real artifact pairs — the LA-S-2/3/4 sync checks and the 24h `sync_threshold_hours` binding are unvalidated end-to-end. Re-anchor once the first live pair lands.
-- SKILL.md modes line omits the shipped NEW mode (see AUDIT finding) — fold into the same commit as this REFRESH.

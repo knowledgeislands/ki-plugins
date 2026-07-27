@@ -11,9 +11,9 @@ Mode REFRESH therefore keeps this definition coherent and current **against prac
 The canonical definition lives in this skill itself:
 
 - [the SKILL body](../SKILL.md) — the framing, lifecycle, anatomy, modes, bindings, and working rules.
-- [the Streams structure reference](<Streams Structure Reference.md>) — Focus, Category, the `Proposal` suffix, leaf/parent/multi layout, note types.
-- [the Enactment Process reference](<Enactment Process Reference.md>) — the model, proposal documents, the cycle, rollout, review, rejection.
-- [the rubric](audit-rubric.md) + [`scripts/audit.ts`](../scripts/audit.ts) — the checkable criteria.
+- [the Streams structure standard](standards-streams-structure.md) — Focus, Category, the `Proposal` suffix, leaf/parent/multi layout, note types.
+- [the Enactment Process standard](standards-enactment-process.md) — the model, proposal documents, the cycle, rollout, review, rejection.
+- [the rubric](rubric.md) + its native `scripts/rubric/items/index.ts` contract — the checkable criteria.
 
 ## Living (how the model is used in practice)
 

@@ -77,19 +77,13 @@ Used by every `mcp-*` repo. The universal invariants (`strict`, `nodenext`, `noE
 }
 ```
 
-### Aggregate/scoped entrypoints and the conditional Vitest profile
+### Native governance commands and the conditional Vitest profile
 
-Every governed repo exposes aggregate `ki:audit`/`ki:conform`; vendoring derives the skill-scoped audit/conform entrypoints. The engineering modes run Biome, TypeScript, syncpack, and knip internally, while `ki-authoring` owns the Markdown tool pass. The critical trap is the literal command `bun test`: it bypasses the governed package script and invokes Bun's own runner. Use `bun run test`; a Vitest-configured repo maps that idiom to `vitest run`, while another profile may map it to a different whole-suite command.
+The governance surface is direct native `ki repo audit` / `ki repo conform` commands after CI or the user has acquired the verified active skill collection. Repositories do not expose `ki:audit`, `ki:conform`, or derived scoped package-script aliases to local runners. The registered `ki-engineering` rubric runs Biome, TypeScript, syncpack, and knip internally, while `ki-authoring` owns the Markdown tool pass. The critical trap is a non-`test` script calling `bun test`: it bypasses the governed package script and invokes Bun's own runner. Use `bun run test` outside the bare `test` entrypoint; that entrypoint may select a runner, whether `vitest run`, `bun test`, or another whole-suite command.
 
 ```jsonc
 {
   "scripts": {
-    "ki:audit": "bun .ki-meta/bin/aggregate.ts audit",
-    "ki:conform": "bun .ki-meta/bin/aggregate.ts conform",
-    "ki:engineering:audit": "bun .ki-meta/skills/ki-engineering/audit.ts .",
-    "ki:engineering:conform": "bun .ki-meta/skills/ki-engineering/conform.ts .",
-    "ki:authoring:audit": "bun .ki-meta/skills/ki-authoring/audit.ts .",
-    "ki:authoring:conform": "bun .ki-meta/skills/ki-authoring/conform.ts .",
     "clean": "rm -rf {dist,node_modules}",
     "prepare": "husky",
     "test": "vitest run",
@@ -99,19 +93,19 @@ Every governed repo exposes aggregate `ki:audit`/`ki:conform`; vendoring derives
 }
 ```
 
-The three Vitest scripts above apply only when the repository carries `vitest.config.*`. A runner-neutral repository keeps the same aggregate/scoped entrypoints and supplies only its appropriate bare `test` script.
+The three Vitest scripts above apply only when the repository carries `vitest.config.*`. A runner-neutral repository supplies only its appropriate bare `test` script; it does not restore aggregate or scoped governance-script aliases.
 
 The harness's [actual package manifest](../../../../package.json) uses the same bare idiom without a Vitest configuration; each standalone test program remains explicit and the complete entry chains the whole suite. An abbreviated shape:
 
 ```jsonc
 {
   "scripts": {
-    "test": "bun hooks/plan-stamp.test.ts && bun hooks/plan-sync.test.ts && bun skills/keystone/ki-bootstrap/scripts/resolve.test.ts"
+    "test": "bun hooks/plan-stamp.test.ts && bun hooks/plan-sync.test.ts && bun skills/keystone/ki-bootstrap/scripts/internal/repo-bootstrap/resolve.test.ts"
   }
 }
 ```
 
-This runner-neutral profile does not opt into `test:coverage`, `test:watch`, or the Vitest threshold checks. It still must not contain the literal `bun test`.
+This runner-neutral profile does not opt into `test:coverage`, `test:watch`, or the Vitest threshold checks. Its bare `test` entrypoint may use `bun test` to glob its suite; other scripts continue to delegate through `bun run test`.
 
 ### Monorepo: workspace-scoped vitest coverage (§0, §6)
 

@@ -1,143 +1,150 @@
 #!/usr/bin/env bun
-/**
- * Run-based behavioural test for `recap-grounding.ts`.
- *
- * ki-engineering §6 scopes unit-test coverage to `src/**` and names the harness as the
- * "run, not unit-tested" case for skill `scripts/`. So this spawns the real helper
- * against a throwaway repo + transcript fixture — matching the convention
- * `audit.test.ts` set.
- */
+import { describe, expect, test } from 'bun:test'
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const HELPER = join(dirname(fileURLToPath(import.meta.url)), 'recap-grounding.ts')
+const helper = join(dirname(fileURLToPath(import.meta.url)), 'recap-grounding.ts')
+const fixture = () => mkdtempSync(join(tmpdir(), 'ki-recap-'))
+const claudeToolUse = (name: string, input: unknown) => JSON.stringify({ message: { content: [{ type: 'tool_use', name, input }] } })
+const codexMeta = (cwd: string) => JSON.stringify({ type: 'session_meta', payload: { cwd } })
+const codexFunction = (name: string, arguments_: unknown) =>
+  JSON.stringify({ type: 'response_item', payload: { type: 'function_call', name, arguments: JSON.stringify(arguments_) } })
+const codexCustom = (name: string, input: unknown) =>
+  JSON.stringify({ type: 'response_item', payload: { type: 'custom_tool_call', name, input } })
 
-let failed = false
-function check(label: string, cond: boolean): void {
-  if (cond) {
-    console.log(`  \x1b[32mok\x1b[0m   ${label}`)
-  } else {
-    failed = true
-    console.log(`  \x1b[31mFAIL\x1b[0m ${label}`)
-  }
+const run = (repo: string, transcripts: string, args: readonly string[] = []) => {
+  const result = spawnSync('bun', [helper, repo, '--json', '--transcripts-dir', transcripts, ...args], { encoding: 'utf8' })
+  return { status: result.status ?? 1, stdout: result.stdout ?? '', output: `${result.stdout ?? ''}${result.stderr ?? ''}` }
 }
 
-function toolUseLine(name: string, input: unknown): string {
-  return JSON.stringify({ message: { content: [{ type: 'tool_use', name, input }] } })
-}
+describe('recap grounding runtime selection', () => {
+  test('detect chooses the newest eligible Claude or Codex transcript and normalizes Codex calls', () => {
+    const root = fixture()
+    const repo = join(root, 'repo')
+    const otherRepo = join(root, 'other-repo')
+    const transcripts = join(root, 'transcripts')
+    const claude = join(transcripts, 'claude.jsonl')
+    const codex = join(transcripts, '2026', '07', 'codex.jsonl')
+    const irrelevant = join(transcripts, '2026', '07', 'other.jsonl')
+    try {
+      mkdirSync(repo, { recursive: true })
+      mkdirSync(otherRepo, { recursive: true })
+      mkdirSync(dirname(codex), { recursive: true })
+      writeFileSync(claude, `${claudeToolUse('Read', { file_path: '/x/claude.md' })}\n`)
+      writeFileSync(
+        codex,
+        `${codexMeta(repo)}\nmalformed JSON\n${codexFunction('Bash', { command: 'pwd' })}\n${codexCustom('Read', { file_path: '/x/codex.md' })}\n`
+      )
+      writeFileSync(irrelevant, `${codexMeta(otherRepo)}\n${codexFunction('Edit', { file_path: '/x/other.md' })}\n`)
+      const now = Date.now() / 1000
+      utimesSync(claude, now - 20, now - 20)
+      utimesSync(codex, now, now)
+      utimesSync(irrelevant, now + 20, now + 20)
 
-const repoDir = mkdtempSync(join(tmpdir(), 'ki-recap-repo-'))
-spawnSync('git', ['init', '-q'], { cwd: repoDir })
-writeFileSync(join(repoDir, 'tracked.txt'), 'hello\n')
-spawnSync('git', ['add', 'tracked.txt'], { cwd: repoDir })
-spawnSync('git', ['commit', '-q', '-m', 'educate'], { cwd: repoDir })
-writeFileSync(join(repoDir, 'tracked.txt'), 'hello again\n')
-writeFileSync(join(repoDir, 'new-file.txt'), 'new\n')
-
-const transcriptsDir = mkdtempSync(join(tmpdir(), 'ki-recap-transcripts-'))
-const lines = [
-  toolUseLine('Read', { file_path: '/x/big.ts' }),
-  toolUseLine('Read', { file_path: '/x/big.ts' }),
-  toolUseLine('Edit', { file_path: '/x/big.ts', old_string: 'a', new_string: 'b' }),
-  toolUseLine('Bash', { command: 'ls' }),
-  toolUseLine('Bash', { command: 'ls' }),
-  toolUseLine('Bash', { command: 'ls' })
-]
-const olderTranscript = join(transcriptsDir, 'session1.jsonl')
-const newerTranscript = join(transcriptsDir, 'session2.jsonl')
-writeFileSync(olderTranscript, lines.join('\n'))
-writeFileSync(newerTranscript, toolUseLine('Task', { description: 'concurrent session' }))
-const now = Date.now() / 1000
-utimesSync(olderTranscript, now - 10, now - 10)
-utimesSync(newerTranscript, now, now)
-
-function run(...args: string[]): { code: number; out: string } {
-  const res = spawnSync('bun', [HELPER, repoDir, '--json', '--transcripts-dir', transcriptsDir, ...args], {
-    encoding: 'utf8'
+      const result = run(repo, transcripts)
+      const grounded = JSON.parse(result.stdout) as { runtime: string; transcript: string; toolTally: Record<string, number> }
+      expect(result.status).toBe(0)
+      expect(grounded.runtime).toBe('codex')
+      expect(grounded.transcript).toBe(codex)
+      expect(grounded.toolTally).toEqual({ Bash: 1, Read: 1 })
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
-  return { code: res.status ?? 1, out: `${res.stdout ?? ''}${res.stderr ?? ''}` }
-}
 
-try {
-  const { code, out } = run()
-  check('exits 0', code === 0)
-  const parsed = JSON.parse(out)
-  check('defaults to the newest transcript', parsed.transcript === newerTranscript)
+  test('forced runtime selects only that runtime and explicit basename selects only eligible candidates', () => {
+    const root = fixture()
+    const repo = join(root, 'repo')
+    const transcripts = join(root, 'transcripts')
+    const claude = join(transcripts, 'claude.jsonl')
+    const codexOld = join(transcripts, 'sessions', 'codex-old.jsonl')
+    const codexNew = join(transcripts, 'sessions', 'codex-new.jsonl')
+    try {
+      mkdirSync(repo, { recursive: true })
+      mkdirSync(dirname(codexOld), { recursive: true })
+      writeFileSync(claude, `${claudeToolUse('Read', { file_path: '/x/claude.md' })}\n`)
+      writeFileSync(codexOld, `${codexMeta(repo)}\n${codexFunction('Bash', { command: 'old' })}\n`)
+      writeFileSync(codexNew, `${codexMeta(repo)}\n${codexFunction('Bash', { command: 'new' })}\n`)
+      const now = Date.now() / 1000
+      utimesSync(claude, now - 30, now - 30)
+      utimesSync(codexOld, now - 20, now - 20)
+      utimesSync(codexNew, now, now)
 
-  const selected = run('--transcript', 'session1.jsonl')
-  check('explicitly selects an older concurrent transcript', selected.code === 0)
-  const selectedParsed = JSON.parse(selected.out)
-  check('uses the requested transcript basename', selectedParsed.transcript === olderTranscript)
-  check('reports files touched', Array.isArray(parsed.filesTouched) && parsed.filesTouched.length >= 2)
-  check('tallies selected transcript tool calls', selectedParsed.toolTally.Bash === 3 && selectedParsed.toolTally.Read === 2)
-  check(
-    'flags repeated identical Bash call',
-    selectedParsed.highCostCandidates.some((c: string) => c.includes('repeated identical Bash'))
-  )
-  check(
-    'flags re-read of big.ts',
-    selectedParsed.highCostCandidates.some((c: string) => c.includes('re-read of /x/big.ts'))
-  )
+      const forcedClaude = JSON.parse(run(repo, transcripts, ['--runtime', 'claude']).stdout) as { runtime: string; transcript: string }
+      expect(forcedClaude.runtime).toBe('claude')
+      expect(forcedClaude.transcript).toBe(claude)
 
-  mkdirSync(join(transcriptsDir, 'directory.jsonl'))
-  symlinkSync(olderTranscript, join(transcriptsDir, 'linked.jsonl'))
-  for (const [label, selector] of [
-    ['missing selector value', undefined],
-    ['path traversal', '../session1.jsonl'],
-    ['absolute path', olderTranscript],
-    ['wrong extension', 'session1.txt'],
-    ['missing file', 'missing.jsonl'],
-    ['directory', 'directory.jsonl'],
-    ['symlink', 'linked.jsonl']
-  ] as const) {
-    const rejected = selector === undefined ? run('--transcript') : run('--transcript', selector)
-    check(`rejects ${label}`, rejected.code !== 0)
-  }
-} finally {
-  rmSync(repoDir, { recursive: true, force: true })
-  rmSync(transcriptsDir, { recursive: true, force: true })
-}
-
-// ── No transcript present → still succeeds, transcript null, no crash ──
-const emptyTranscriptsDir = mkdtempSync(join(tmpdir(), 'ki-recap-empty-'))
-const bareRepo = mkdtempSync(join(tmpdir(), 'ki-recap-bare-'))
-spawnSync('git', ['init', '-q'], { cwd: bareRepo })
-try {
-  const res = spawnSync('bun', [HELPER, bareRepo, '--json', '--transcripts-dir', emptyTranscriptsDir], { encoding: 'utf8' })
-  const parsed = JSON.parse(res.stdout ?? '{}')
-  check('no transcript → null, exit 0', res.status === 0 && parsed.transcript === null)
-} finally {
-  rmSync(emptyTranscriptsDir, { recursive: true, force: true })
-  rmSync(bareRepo, { recursive: true, force: true })
-}
-
-// ── Dotted repo path → resolves Claude's matching project-directory slug ──
-const dottedFixtureRoot = mkdtempSync(join(tmpdir(), 'ki.recap-dotted-fixture-'))
-const dottedRepo = join(dottedFixtureRoot, '.local', 'share', 'chezmoi')
-const fixtureHome = join(dottedFixtureRoot, 'home')
-const projectSlug = dottedRepo.replace(/[/.]/g, '-')
-const dottedProjectDir = join(fixtureHome, '.claude', 'projects', projectSlug)
-const dottedTranscript = join(dottedProjectDir, 'dotted-session.jsonl')
-mkdirSync(dottedRepo, { recursive: true })
-mkdirSync(dottedProjectDir, { recursive: true })
-spawnSync('git', ['init', '-q'], { cwd: dottedRepo })
-writeFileSync(dottedTranscript, toolUseLine('Read', { file_path: '/x/dotted.ts' }))
-try {
-  const res = spawnSync('bun', [HELPER, dottedRepo, '--json'], {
-    encoding: 'utf8',
-    env: { ...process.env, HOME: fixtureHome }
+      const explicitCodex = run(repo, transcripts, ['--runtime', 'codex', '--transcript', 'codex-old.jsonl'])
+      const grounded = JSON.parse(explicitCodex.stdout) as { runtime: string; transcript: string }
+      expect(explicitCodex.status).toBe(0)
+      expect(grounded.runtime).toBe('codex')
+      expect(grounded.transcript).toBe(codexOld)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
-  const parsed = JSON.parse(res.stdout ?? '{}')
-  check('dotted repo path resolves its Claude project transcript', res.status === 0 && parsed.transcript === dottedTranscript)
-} finally {
-  rmSync(dottedFixtureRoot, { recursive: true, force: true })
-}
 
-if (failed) {
-  console.log('\n\x1b[31mrecap-grounding.test.ts: failures\x1b[0m')
-  process.exit(1)
-}
-console.log('\n\x1b[32mrecap-grounding.test.ts: all checks passed\x1b[0m')
+  test('Codex filtering selects only transcripts whose session metadata names the requested repository', () => {
+    const root = fixture()
+    const repo = join(root, 'repo')
+    const otherRepo = join(root, 'other-repo')
+    const transcripts = join(root, 'transcripts')
+    const matching = join(transcripts, 'matching.jsonl')
+    const other = join(transcripts, 'other.jsonl')
+    try {
+      mkdirSync(repo, { recursive: true })
+      mkdirSync(otherRepo, { recursive: true })
+      mkdirSync(transcripts, { recursive: true })
+      writeFileSync(matching, `${codexMeta(repo)}\n${codexFunction('Read', { file_path: '/x/matching.md' })}\n`)
+      writeFileSync(other, `${codexMeta(otherRepo)}\n${codexFunction('Read', { file_path: '/x/other.md' })}\n`)
+      const result = run(repo, transcripts, ['--runtime', 'codex'])
+      const grounded = JSON.parse(result.stdout) as { runtime: string; transcript: string }
+      expect(result.status).toBe(0)
+      expect(grounded.runtime).toBe('codex')
+      expect(grounded.transcript).toBe(matching)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test('rejects unsafe or ineligible explicit selectors', () => {
+    const root = fixture()
+    const repo = join(root, 'repo')
+    const transcripts = join(root, 'transcripts')
+    const valid = join(transcripts, 'valid.jsonl')
+    try {
+      mkdirSync(repo, { recursive: true })
+      mkdirSync(transcripts, { recursive: true })
+      writeFileSync(valid, `${claudeToolUse('Read', { file_path: '/x/valid.md' })}\n`)
+      mkdirSync(join(transcripts, 'directory.jsonl'))
+      symlinkSync(valid, join(transcripts, 'linked.jsonl'))
+      for (const selector of ['../valid.jsonl', valid, 'valid.txt', 'missing.jsonl', 'directory.jsonl', 'linked.jsonl'])
+        expect(run(repo, transcripts, ['--transcript', selector]).status).not.toBe(0)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test('help and no-transcript paths remain successful', () => {
+    const root = fixture()
+    const repo = join(root, 'repo')
+    const transcripts = join(root, 'transcripts')
+    try {
+      mkdirSync(repo, { recursive: true })
+      mkdirSync(transcripts, { recursive: true })
+      const help = spawnSync('bun', [helper, '--help'], { encoding: 'utf8' })
+      expect(help.status).toBe(0)
+      expect(help.stdout).toContain('--runtime detect|claude|codex')
+      const result = run(repo, transcripts)
+      const grounded = JSON.parse(result.stdout) as { runtime: null; transcript: null }
+      expect(result.status).toBe(0)
+      expect(grounded.runtime).toBeNull()
+      expect(grounded.transcript).toBeNull()
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+})

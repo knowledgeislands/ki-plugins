@@ -100,7 +100,7 @@ type: stream-focus
 tags:
   - topic/streams
 status: current - April 2026
-author: Written with Claude
+author: AI-assisted
 ---
 ```
 

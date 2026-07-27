@@ -1,32 +1,40 @@
 #!/usr/bin/env bun
 
 /**
- * Grounding helper for ki-recap (not a checker — no severity ladder, no FAIL/exit-1 contract).
+ * Grounding helper for ki-recap (not a checker — no severity ladder or exit-1 contract).
  *
- * Usage: bun skills/process/ki-recap/scripts/recap-grounding.ts [repo-path] [--json] [--transcripts-dir <dir>] [--transcript <session-file>]
+ * Usage: bun skills/process/ki-recap/scripts/recap-grounding.ts [repo-path] [--json]
+ *   [--runtime detect|claude|codex] [--transcripts-dir <dir>] [--transcript <session-file>]
  *
- * Resolves the Claude Code project directory for a repo
- * (~/.claude/projects/<slug>, slug = repo's absolute path with "/" and "." -> "-" — the same
- * convention ki-housekeeping's audit.ts uses for the memory/ subdirectory),
- * reads the newest session .jsonl, and emits JSON grounding data: files touched
- * (git status / git diff --stat), a tool-call tally, and high-cost candidates
- * (repeated identical calls, large-file re-reads, clarification round-trips).
- * The recap procedure (skills/process/ki-recap/references/recap.md) combines this output
- * with warm in-session context — it does not replace judgment, it grounds it.
+ * The helper selects the newest eligible transcript for the resolved repository. Claude
+ * candidates live directly in its derived project directory; Codex candidates are regular
+ * JSONL files discovered recursively below its sessions directory whose session metadata
+ * names the same working directory. It emits files touched, a tool-call tally, and
+ * high-cost candidates for the warm recap procedure to interpret.
  */
 
 import { execFileSync } from 'node:child_process'
-import { lstatSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { type Dirent, readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, isAbsolute, join, resolve } from 'node:path'
 
-interface ToolCall {
+type Runtime = 'claude' | 'codex'
+type RuntimeSelector = Runtime | 'detect'
+
+type ToolCall = {
   name: string
   input: unknown
 }
 
-interface Grounding {
+type TranscriptCandidate = {
+  runtime: Runtime
+  path: string
+  mtime: number
+}
+
+type Grounding = {
   repo: string
+  runtime: Runtime | null
   transcript: string | null
   filesTouched: string[]
   diffStat: string
@@ -34,122 +42,207 @@ interface Grounding {
   highCostCandidates: string[]
 }
 
-function slugifyRepoPath(absPath: string): string {
-  return absPath.replace(/[/.]/g, '-')
+type Arguments = {
+  jsonMode: boolean
+  repoArg: string | undefined
+  runtime: RuntimeSelector
+  transcriptsDir: string | undefined
+  transcriptSelector: string | undefined
 }
 
-function resolveProjectDir(repoArg: string | undefined): string {
-  const repoAbs = resolve(repoArg ?? process.cwd())
-  const slug = slugifyRepoPath(repoAbs)
-  return join(homedir(), '.claude', 'projects', slug)
-}
+const slugifyRepoPath = (absolutePath: string): string => absolutePath.replace(/[/.]/g, '-')
 
-function newestTranscript(projectDir: string): string | null {
-  let entries: string[]
+const resolveClaudeProjectDir = (repo: string): string => join(homedir(), '.claude', 'projects', slugifyRepoPath(repo))
+
+const resolveCodexSessionsDir = (): string => join(homedir(), '.codex', 'sessions')
+
+const readJsonl = (path: string): unknown[] => {
+  let text: string
   try {
-    entries = readdirSync(projectDir).filter((f) => f.endsWith('.jsonl'))
+    text = readFileSync(path, 'utf8')
   } catch {
-    return null
+    return []
   }
-  if (entries.length === 0) return null
-  const withTimes = entries.map((f) => {
-    const full = join(projectDir, f)
-    return { full, mtime: statSync(full).mtimeMs }
-  })
-  withTimes.sort((a, b) => b.mtime - a.mtime)
-  return withTimes[0].full
+
+  const records: unknown[] = []
+  for (const line of text.split(/\r?\n/)) {
+    if (!line.trim()) continue
+    try {
+      records.push(JSON.parse(line) as unknown)
+    } catch {
+      // Malformed transcript lines are not evidence and must not stop grounding.
+    }
+  }
+  return records
 }
 
-function explicitTranscript(projectDir: string, selector: string): string {
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+
+const codexTranscriptCwd = (records: readonly unknown[]): string | null => {
+  for (const record of records) {
+    const event = asRecord(record)
+    if (event?.type !== 'session_meta') continue
+    const payload = asRecord(event.payload)
+    if (typeof payload?.cwd === 'string') return resolve(payload.cwd)
+  }
+  return null
+}
+
+const regularJsonlFiles = (directory: string, recursive: boolean): string[] => {
+  let entries: Dirent[]
+  try {
+    entries = readdirSync(directory, { withFileTypes: true })
+  } catch {
+    return []
+  }
+
+  const files: string[] = []
+  for (const entry of entries) {
+    const path = join(directory, entry.name)
+    if (entry.isFile() && entry.name.endsWith('.jsonl')) files.push(path)
+    else if (recursive && entry.isDirectory()) files.push(...regularJsonlFiles(path, true))
+  }
+  return files
+}
+
+const candidate = (runtime: Runtime, path: string): TranscriptCandidate => ({ runtime, path, mtime: statSync(path).mtimeMs })
+
+const claudeCandidates = (directory: string): TranscriptCandidate[] =>
+  regularJsonlFiles(directory, false)
+    .filter((path) => codexTranscriptCwd(readJsonl(path)) === null)
+    .map((path) => candidate('claude', path))
+
+const codexCandidates = (directory: string, repo: string): TranscriptCandidate[] =>
+  regularJsonlFiles(directory, true)
+    .filter((path) => codexTranscriptCwd(readJsonl(path)) === repo)
+    .map((path) => candidate('codex', path))
+
+const candidateDirectories = ({ repo, transcriptsDir }: Pick<Arguments, 'transcriptsDir'> & { repo: string }) => ({
+  claude: transcriptsDir ? resolve(transcriptsDir) : resolveClaudeProjectDir(repo),
+  codex: transcriptsDir ? resolve(transcriptsDir) : resolveCodexSessionsDir()
+})
+
+const discoverCandidates = ({
+  runtime,
+  repo,
+  transcriptsDir
+}: Pick<Arguments, 'runtime' | 'transcriptsDir'> & { repo: string }): TranscriptCandidate[] => {
+  const directories = candidateDirectories({ repo, transcriptsDir })
+  if (runtime === 'claude') return claudeCandidates(directories.claude)
+  if (runtime === 'codex') return codexCandidates(directories.codex, repo)
+  return [...claudeCandidates(directories.claude), ...codexCandidates(directories.codex, repo)]
+}
+
+const selectTranscript = (candidates: readonly TranscriptCandidate[], selector: string | undefined): TranscriptCandidate | null => {
+  if (!selector) return [...candidates].sort((left, right) => right.mtime - left.mtime)[0] ?? null
   if (
     selector.length <= '.jsonl'.length ||
     !selector.endsWith('.jsonl') ||
     isAbsolute(selector) ||
     basename(selector) !== selector ||
     selector.includes('\\')
-  ) {
-    throw new Error('`--transcript` must be a .jsonl filename in the repository transcript directory')
-  }
+  )
+    throw new Error('`--transcript` must be a basename ending in .jsonl from the eligible transcript candidates')
 
-  const transcript = join(projectDir, selector)
-  try {
-    if (!lstatSync(transcript).isFile()) {
-      throw new Error('not a regular file')
-    }
-  } catch {
-    throw new Error(`selected transcript is not an existing regular file: ${selector}`)
-  }
-  return transcript
+  const matches = candidates.filter((candidate_) => basename(candidate_.path) === selector)
+  if (matches.length === 0) throw new Error(`selected transcript is not an eligible regular file: ${selector}`)
+  if (matches.length > 1) throw new Error(`selected transcript basename is ambiguous across eligible candidates: ${selector}`)
+  return matches[0] ?? null
 }
 
-interface Arguments {
-  jsonMode: boolean
-  repoArg: string | undefined
-  transcriptsDir: string | undefined
-  transcriptSelector: string | undefined
+const printHelp = (): void => {
+  console.log(`Usage: recap-grounding.ts [repo-path] [--json] [--runtime detect|claude|codex] [--transcripts-dir <dir>] [--transcript <session-file>]
+
+Ground a live ki-recap with current repository and Claude or Codex transcript data.
+
+Arguments:
+  repo-path                  Repository to inspect (default: current directory)
+
+Options:
+  --json                     Emit machine-readable JSON
+  --runtime <value>          detect (default), claude, or codex
+  --transcripts-dir <dir>    Override the selected runtime transcript root
+  --transcript <file>        Select one eligible transcript by basename
+  -h, --help, ?              Show this help and exit`)
 }
 
-function parseArguments(args: string[]): Arguments {
+const parseArguments = (args: string[]): Arguments => {
   let jsonMode = false
   let repoArg: string | undefined
+  let runtime: RuntimeSelector = 'detect'
   let transcriptsDir: string | undefined
   let transcriptSelector: string | undefined
 
-  for (let i = 0; i < args.length; i += 1) {
-    const arg = args[i]
-    if (arg === '--json') {
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index] as string
+    if (argument === '--json') {
       jsonMode = true
       continue
     }
-    if (arg === '--transcripts-dir' || arg === '--transcript') {
-      const value = args[i + 1]
-      if (!value || value.startsWith('--')) {
-        throw new Error(`\`${arg}\` requires a value`)
-      }
-      if (arg === '--transcripts-dir') transcriptsDir = value
+    if (argument === '--runtime' || argument === '--transcripts-dir' || argument === '--transcript') {
+      const value = args[index + 1]
+      if (!value || value.startsWith('--')) throw new Error(`\`${argument}\` requires a value`)
+      if (argument === '--runtime') {
+        if (!['detect', 'claude', 'codex'].includes(value)) throw new Error('`--runtime` accepts detect, claude, or codex')
+        runtime = value as RuntimeSelector
+      } else if (argument === '--transcripts-dir') transcriptsDir = value
       else transcriptSelector = value
-      i += 1
+      index += 1
       continue
     }
-    if (arg.startsWith('--')) throw new Error(`unknown option: ${arg}`)
-    if (repoArg) throw new Error(`unexpected argument: ${arg}`)
-    repoArg = arg
+    if (argument.startsWith('--')) throw new Error(`unknown option: ${argument}`)
+    if (repoArg) throw new Error(`unexpected argument: ${argument}`)
+    repoArg = argument
   }
 
-  return { jsonMode, repoArg, transcriptsDir, transcriptSelector }
+  return { jsonMode, repoArg, runtime, transcriptsDir, transcriptSelector }
 }
 
-function readToolCalls(transcriptPath: string): ToolCall[] {
-  const lines = readFileSync(transcriptPath, 'utf8').split('\n').filter(Boolean)
+const toolInput = (value: unknown): unknown => {
+  if (typeof value !== 'string') return value
+  try {
+    return JSON.parse(value) as unknown
+  } catch {
+    return value
+  }
+}
+
+const readToolCalls = (transcriptPath: string, runtime: Runtime): ToolCall[] => {
   const calls: ToolCall[] = []
-  for (const line of lines) {
-    let event: unknown
-    try {
-      event = JSON.parse(line)
-    } catch {
+  for (const record of readJsonl(transcriptPath)) {
+    const event = asRecord(record)
+    if (!event) continue
+
+    if (runtime === 'claude') {
+      const message = asRecord(event.message)
+      const content = message?.content
+      if (!Array.isArray(content)) continue
+      for (const block of content) {
+        const tool = asRecord(block)
+        if (tool?.type === 'tool_use' && typeof tool.name === 'string') calls.push({ name: tool.name, input: tool.input })
+      }
       continue
     }
-    const content = (event as { message?: { content?: unknown[] } })?.message?.content
-    if (!Array.isArray(content)) continue
-    for (const block of content) {
-      const b = block as { type?: string; name?: string; input?: unknown }
-      if (b?.type === 'tool_use' && typeof b.name === 'string') {
-        calls.push({ name: b.name, input: b.input })
-      }
-    }
+
+    if (event.type !== 'response_item') continue
+    const item = asRecord(event.payload)
+    const payload = asRecord(item?.item) ?? item
+    if (!payload || (payload.type !== 'function_call' && payload.type !== 'custom_tool_call') || typeof payload.name !== 'string') continue
+    calls.push({ name: payload.name, input: toolInput(payload.arguments ?? payload.input) })
   }
   return calls
 }
 
-function gitOutput(repoAbs: string, args: string[]): string {
+const gitOutput = (repo: string, args: string[]): string => {
   try {
-    return execFileSync('git', args, { cwd: repoAbs, encoding: 'utf8' }).trim()
+    return execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
   } catch {
     return ''
   }
 }
 
-function findHighCostCandidates(calls: ToolCall[]): string[] {
+const findHighCostCandidates = (calls: readonly ToolCall[]): string[] => {
   const candidates: string[] = []
   const signatureTally = new Map<string, number>()
   for (const call of calls) {
@@ -157,66 +250,61 @@ function findHighCostCandidates(calls: ToolCall[]): string[] {
     signatureTally.set(signature, (signatureTally.get(signature) ?? 0) + 1)
   }
   for (const [signature, count] of signatureTally) {
-    if (count >= 3) {
-      const [name] = signature.split(':')
-      candidates.push(`repeated identical ${name} call (${count}x)`)
-    }
+    if (count >= 3) candidates.push(`repeated identical ${signature.split(':')[0]} call (${count}x)`)
   }
+
   const readTally = new Map<string, number>()
   for (const call of calls) {
     if (call.name !== 'Read') continue
-    const path = (call.input as { file_path?: string })?.file_path
-    if (typeof path !== 'string') continue
-    readTally.set(path, (readTally.get(path) ?? 0) + 1)
+    const input = asRecord(call.input)
+    if (typeof input?.file_path !== 'string') continue
+    readTally.set(input.file_path, (readTally.get(input.file_path) ?? 0) + 1)
   }
-  for (const [path, count] of readTally) {
-    if (count >= 2) candidates.push(`re-read of ${path} (${count}x)`)
-  }
+  for (const [path, count] of readTally) if (count >= 2) candidates.push(`re-read of ${path} (${count}x)`)
   return candidates
 }
 
-function main() {
-  const { jsonMode, repoArg, transcriptsDir, transcriptSelector } = parseArguments(process.argv.slice(2))
-
-  const repoAbs = resolve(repoArg ?? process.cwd())
-  const projectDir = transcriptsDir ? resolve(transcriptsDir) : resolveProjectDir(repoArg)
-  const transcript = transcriptSelector ? explicitTranscript(projectDir, transcriptSelector) : newestTranscript(projectDir)
-
-  const filesTouched = gitOutput(repoAbs, ['status', '--porcelain'])
-    .split('\n')
-    .filter(Boolean)
-    .map((l) => l.trim())
-  const diffStat = gitOutput(repoAbs, ['diff', '--stat'])
-
-  const toolTally: Record<string, number> = {}
-  let highCostCandidates: string[] = []
-  if (transcript) {
-    const calls = readToolCalls(transcript)
-    for (const call of calls) toolTally[call.name] = (toolTally[call.name] ?? 0) + 1
-    highCostCandidates = findHighCostCandidates(calls)
+const main = (): void => {
+  const rawArgs = process.argv.slice(2)
+  if (rawArgs.some((argument) => ['-h', '--help', '?'].includes(argument))) {
+    printHelp()
+    return
   }
 
+  const { jsonMode, repoArg, runtime, transcriptsDir, transcriptSelector } = parseArguments(rawArgs)
+  const repo = resolve(repoArg ?? process.cwd())
+  const selected = selectTranscript(discoverCandidates({ runtime, repo, transcriptsDir }), transcriptSelector)
+  const calls = selected ? readToolCalls(selected.path, selected.runtime) : []
+  const toolTally: Record<string, number> = {}
+  for (const call of calls) toolTally[call.name] = (toolTally[call.name] ?? 0) + 1
+
   const grounding: Grounding = {
-    repo: repoAbs,
-    transcript,
-    filesTouched,
-    diffStat,
+    repo,
+    runtime: selected?.runtime ?? null,
+    transcript: selected?.path ?? null,
+    filesTouched: gitOutput(repo, ['status', '--porcelain'])
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => line.trim()),
+    diffStat: gitOutput(repo, ['diff', '--stat']),
     toolTally,
-    highCostCandidates
+    highCostCandidates: findHighCostCandidates(calls)
   }
 
   if (jsonMode) {
     console.log(JSON.stringify(grounding, null, 2))
-  } else {
-    console.log(`repo: ${grounding.repo}`)
-    console.log(`transcript: ${grounding.transcript ?? '(none found)'}`)
-    console.log(`files touched: ${grounding.filesTouched.length}`)
-    console.log(grounding.diffStat || '(no diff)')
-    console.log(`tool tally: ${JSON.stringify(grounding.toolTally)}`)
-    if (grounding.highCostCandidates.length > 0) {
-      console.log('high-cost candidates:')
-      for (const c of grounding.highCostCandidates) console.log(`  - ${c}`)
-    }
+    return
+  }
+
+  console.log(`repo: ${grounding.repo}`)
+  console.log(`runtime: ${grounding.runtime ?? '(none found)'}`)
+  console.log(`transcript: ${grounding.transcript ?? '(none found)'}`)
+  console.log(`files touched: ${grounding.filesTouched.length}`)
+  console.log(grounding.diffStat || '(no diff)')
+  console.log(`tool tally: ${JSON.stringify(grounding.toolTally)}`)
+  if (grounding.highCostCandidates.length > 0) {
+    console.log('high-cost candidates:')
+    for (const candidate_ of grounding.highCostCandidates) console.log(`  - ${candidate_}`)
   }
 }
 

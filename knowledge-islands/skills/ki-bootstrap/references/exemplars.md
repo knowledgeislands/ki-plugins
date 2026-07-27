@@ -1,104 +1,77 @@
-# Bootstrap Exemplars
+# Bootstrap exemplars
 
-## Contents
+These examples illustrate the scope boundaries in [the bootstrap standard](standards-bootstrap.md). For the exact options supported by an installed release, use `ki help`.
 
-- [Collections](#collections)
-- [Selected patterns](#selected-patterns)
+## First-time setup
 
-Concrete patterns showing what a correctly bootstrapped Knowledge Islands repo looks like: the `.ki-config.toml` declaration, the `package.json` reproducibility contract, the `CLAUDE.md` import pattern, and the invocation that wires it all together. The bootstrap flow itself is the exemplar — the before/after of a repo acquiring its project-local skill set from a single command.
-
-## Collections
-
-| Source               | URL             | What it covers                                                                 |
-| -------------------- | --------------- | ------------------------------------------------------------------------------ |
-| ki-arcadia-principal | No public URL ※ | Live `.ki-config.toml`, `package.json` script, and post-link `.claude/skills/` |
-| ki-agentic-harness   | No public URL ※ | Links only its own declared coverage, same as any other repo †                 |
-
-† The harness is the authoring hub but is not a special case here: a structural skill (`ki-mcp`, `ki-website`, …) is exercised against a repo of its own type, not loaded in the harness itself, so it links what governs it, not the whole fleet.
-
-※ KI repos are the primary exemplars; they have no public URL.
-
-## Selected patterns
-
-### Correct `.ki-config.toml` bootstrap declaration
-
-A repo opts skills in by adding `[ki-<skill>]` tables. The keystone linker reads these tables and mirrors the matching skills from the harness into each declared runtime's project-local skills dir — `.claude/skills/` for Claude Code (the running example below), `.agents/skills/` for Codex, per `[ki-repo] target_runtimes`. Tables with no keys (bare `[ki-kb]`) are valid — presence alone is the opt-in signal. From `ki-arcadia-principal/.ki-config.toml`:
-
-```toml
-# Read by the ki-kb skill.
-# Presence opts this base into the kb standard; canonical zone names, no aliases.
-[ki-kb]
-
-# Read by the ki-kb-streams skill.
-# Presence opts the Streams zone into the Enactment Process; uses the defaults.
-[ki-kb-streams]
-
-# Tokenomics governance — audits the standing context surface.
-[ki-tokenomics]
-headroom = "recommended"
-preferred_model = "sonnet"
-
-[ki-tokenomics.budgets]
-mcp_servers = 20   # acknowledged overage; documented here for auditability
+```sh
+ki bootstrap
+ki doctor
+ki diag
 ```
 
-Every repo declares its own foundations (`[ki-repo]` + `[ki-authoring]`) as `[ki-*]` tables like any other coverage — there is no injected baseline, so the linker resolves purely from the declared set.
+The first command detects supported agent runtimes, establishes the user configuration, installs the canonical harness, and activates the five core user skills. `ki doctor` checks the resulting environment; `ki diag` reports the effective configuration, harness inventory, repository, and XDG paths.
 
-### The `ki:skills:link:project` invocation
+Running `ki bootstrap` again leaves correctly managed state in place. Use the refresh form after adding or removing a supported agent runtime or after reconciling installed state:
 
-The reproducibility contract requires a `ki:skills:link:project` script in `package.json`. Running it once after a fresh clone re-wires `.claude/skills/` from `.ki-config.toml` without any hard-coded paths:
-
-```json
-{
-  "scripts": {
-    "ki:skills:link:project": "bun $HOME/.claude/skills/ki-bootstrap/scripts/link-skills.ts"
-  }
-}
+```sh
+ki bootstrap --refresh
 ```
 
-Running it:
+## Additional compatible harness
 
-```bash
-bun run ki:skills:link:project
+```sh
+ki harness install example/operations
+ki harness list
+ki harness info example/operations
 ```
 
-The keystone linker self-locates the harness through its own real path — no harness location is hard-coded in the script. The harness uses the identical invocation, unmodified: it links only the skills its own `.ki-config.toml` declares, same as any other repo.
+Installation adds verified capability sources to the user-owned harness set. It does not make every skill in that harness discoverable and does not change a repository.
 
-### Before and after bootstrapping
+When exactly one installed harness provides `example-engineering`, activate it for the configured user runtimes:
 
-**Before** — a repo with a `.ki-config.toml` that has never been linked:
-
-```text
-.claude/
-└── (no skills/ directory)
+```sh
+ki skill user add example-engineering
 ```
 
-**After** `bun run ki:skills:link:project` — `.claude/skills/` contains relative symlinks for every declared skill plus the baseline:
+Remove that activation without uninstalling its harness:
 
-```text
-.claude/
-└── skills/
-    ├── ki-authoring  -> ../../../ki-agentic-harness/skills/foundations/ki-authoring
-    ├── ki-kb         -> ../../../ki-agentic-harness/skills/repo-structure/ki-kb
-    ├── ki-repo       -> ../../../ki-agentic-harness/skills/keystone/ki-repo
-    ├── ki-kb-streams    -> ../../../ki-agentic-harness/skills/implied-families/ki-kb-streams
-    └── ki-tokenomics -> ../../../ki-agentic-harness/skills/environment/ki-tokenomics
+```sh
+ki skill user remove example-engineering
 ```
 
-The `.claude/skills/` directory is gitignored — the committed artifact is the `ki:skills:link:project` script and a `.gitignore` line. The symlinks are regenerated, never committed.
+## Repository activation and maintenance
 
-### CLAUDE.md import pattern for skills
+Given an existing KI repository whose `.ki-config.toml` does not yet declare `ki-roadmap`, add the installed skill at repository scope:
 
-A repo's `CLAUDE.md` does not list available skills inline; Claude Code discovers them from `.claude/skills/` automatically. The only authoring convention needed is a one-line pointer to where the conventions live — the global `CLAUDE.md` carries this for all KI sessions:
-
-```markdown
-<!-- In ~/.claude/CLAUDE.md or a project CLAUDE.md -->
-
-The authoring conventions for Markdown and TOML live in the `ki-authoring` skill.
+```sh
+ki skill repo add ki-roadmap --repo .
 ```
 
-Skills are referenced by their `name` value (the directory name under `skills/`), never by file path. A project `CLAUDE.md` that needs to invoke a skill explicitly uses the slash-command form:
+The command adds the `[ki-roadmap]` declaration and managed runtime-discovery links only for that repository. It does not add the skill to user scope.
 
-```markdown
-For KB operations in this session, use the `ki-kb` skill.
+Native repository maintenance then resolves the repository's declared skills from verified installed harnesses:
+
+```sh
+ki repo educate --repo .
+ki repo audit --repo .
+ki repo conform --repo . --dry-run
 ```
+
+Remove the repository declaration and its managed repository links without changing user activation:
+
+```sh
+ki skill repo remove ki-roadmap --repo .
+```
+
+## Canonical harness development
+
+Use a checkout only through the explicit development switch:
+
+```sh
+ki dev on /absolute/path/to/ki-agentic-harness
+ki repo audit --repo /absolute/path/to/governed-repository
+ki dev off
+```
+
+The first command validates the checkout before switching the canonical installed payload. The last restores the verified archive; proximity to a checkout never changes resolution by itself.

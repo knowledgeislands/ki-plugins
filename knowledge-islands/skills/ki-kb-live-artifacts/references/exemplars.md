@@ -8,7 +8,7 @@
 ---
 status: active
 renders: html
-author: Written with Claude
+author: AI-assisted
 ---
 ```
 
@@ -39,6 +39,6 @@ status: archived
 renders: html
 archived: 2026-06-01
 archive_reason: Replaced by the consolidated Status Board.
-author: Written with Claude
+author: AI-assisted
 ---
 ```

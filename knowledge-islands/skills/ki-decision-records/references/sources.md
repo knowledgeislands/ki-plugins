@@ -21,10 +21,10 @@ Tracked sources for Mode REFRESH. Re-fetch before proposing changes to the forma
 
 REFRESH last run **2026-07-04**.
 
-- **Nygard ADR format** — confirmed unchanged upstream (page live, footer copyright 2025, Cognitect/Nu Holdings). Nygard's original carries five sections including a Status line; the house standard deliberately keeps only Title/Context/Decision/Consequences and **drops Status**, treating DRs as living present-state records (see [dr-format.md](dr-format.md)). An intentional divergence, not drift.
-- **ADR GitHub community (adr.github.io)** — confirmed unchanged for anything the standard depends on. MADR's optional "Considered Options + Pros/Cons" pattern is unchanged and still deliberately not adopted (the house standard keeps the Nygard five-section shape). Only new signal is a non-actionable JavaLand-2026 "ADR, MADR, eADR" talk (2026-03-10). No new multi-type naming or scoping convention has been published.
+- **Nygard ADR format** — confirmed unchanged upstream (page live, footer copyright 2025, Cognitect/Nu Holdings). Nygard's original carries five sections including a Status line; the house standard deliberately keeps only Title/Context/Decision/Consequences and **drops Status**, treating DRs as living present-state records (see [the Decision Records standard](standards-decision-records.md)). An intentional divergence, not drift.
+- **ADR GitHub community (adr.github.io)** — confirmed unchanged for anything the standard depends on. MADR's optional "Considered Options + Pros/Cons" pattern is unchanged and still deliberately not adopted (the house standard keeps Title, Context, Decision, and Consequences while omitting Nygard's Status section). Only new signal is a non-actionable JavaLand-2026 "ADR, MADR, eADR" talk (2026-03-10). No new multi-type naming or scoping convention has been published.
 
-External sources are current. **Internal note:** the house DR format moved to a **living present-state record** — the former Status lifecycle, Mutability axis, supersession chain, and `## Changelog` were dropped, and SKILL.md, dr-format.md, the rubric, and the checker were realigned together. Serial uniqueness remains per-prefix within scope.
+External sources are current. **Internal note:** the house DR format moved to a **living present-state record** — the former Status lifecycle, Mutability axis, supersession chain, and `## Changelog` were dropped, and `SKILL.md`, the Decision Records standard, the rubric, and the checker were realigned together. Serial uniqueness remains per-prefix within scope.
 
 Open watch-items:
 

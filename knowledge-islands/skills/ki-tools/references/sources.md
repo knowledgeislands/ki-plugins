@@ -2,7 +2,7 @@
 
 **Refresh:** external-spec · quarterly
 
-The authoritative and in-house sources behind the [tool-repo standard](tools-standard.md) and [audit-rubric.md](audit-rubric.md). Mode REFRESH reads this file, re-fetches each source, diffs it against the standard + rubric + [`scripts/audit.ts`](../scripts/audit.ts), then **bumps the `Last reviewed` dates** and refreshes the `## Last review` block below (what changed is recorded in the commit, not a changelog). This is the skill's memory of where the standard comes from — keep it current.
+The authoritative and in-house sources behind the [tool-repository standard](standards-tool-repositories.md) and [rubric](rubric.md). Mode REFRESH reads this file, re-fetches each source, and diffs it against the standard plus the structured catalogue under `scripts/rubric/items/`. It then **bumps the `Last reviewed` dates** and refreshes the `## Last review` block below; what changed belongs in the commit, not a changelog here.
 
 Two layers feed the standard: the **external specs** (shellcheck, bats, keep-a-changelog, semver, XDG) that a conformant tool repo builds on, and the **in-house reference repo** (`tools-mgit`) that fixes the opinionated shape. A finding is only "spec-driven" if it traces to an external spec; everything else is house style layered on top and should be labelled as such.
 
@@ -26,7 +26,7 @@ The opinionated shape is fixed by the reference tool repo under `knowledgeisland
 
 ## Last review
 
-REFRESH last run **2026-07-09** (initial authoring alongside ADR-KI-HARNESS-SKILLS-009). Standard, rubric, and `audit.ts` established against `tools-mgit` as the reference shape and the external specs above. No open watch-items yet.
+REFRESH last run **2026-07-09** (initial authoring alongside ADR-KI-HARNESS-SKILLS-009). Standard and rubric established against `tools-mgit` as the reference shape and the external specs above. No open watch-items yet.
 
 **Open watch-items:**
 
