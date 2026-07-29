@@ -434,7 +434,7 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
   if (!biome) add('FAIL', 'BIO-2', 'biome.json missing', STD, 'biome.json')
   else {
     const fields: [string, RegExp][] = [
-      ['formatter lineWidth 140', /"lineWidth"\s*:\s*140/],
+      ['formatter lineWidth 160', /"lineWidth"\s*:\s*160/],
       ['formatter indentWidth 2', /"indentWidth"\s*:\s*2/],
       ['js quoteStyle single', /"quoteStyle"\s*:\s*"single"/],
       ['js semicolons asNeeded', /"semicolons"\s*:\s*"asNeeded"/],

@@ -144,7 +144,7 @@ Install and dev use **Bun (≥ 1.3)**; the compiled `dist/` runs under **Node (�
 
 ## 5. biome.json & prettier config (core)
 
-**`biome.json`** present and matching the shared config: git VCS + `useIgnoreFile`; formatter `indentStyle: space`, `indentWidth: 2`, `lineWidth: 140`; JS formatter `quoteStyle: single`, `semicolons: asNeeded`, `trailingCommas: none`; linter `preset: recommended` with `suspicious.noExplicitAny: off`; `assist.source.organizeImports: on`. The `$schema` pins the Biome version — bump it on the house Biome upgrade.
+**`biome.json`** present and matching the shared config: git VCS + `useIgnoreFile`; formatter `indentStyle: space`, `indentWidth: 2`, `lineWidth: 160`; JS formatter `quoteStyle: single`, `semicolons: asNeeded`, `trailingCommas: none`; linter `preset: recommended` with `suspicious.noExplicitAny: off`; `assist.source.organizeImports: on`. The `$schema` pins the Biome version — bump it on the house Biome upgrade.
 
 **Generated and managed discovery surfaces stay out of every mechanical tool.** `src/generated/`, `.claude/skills/`, `.claude/agents/`, and `.agents/skills/` are copied or generated artifacts, not local source. Each must be excluded from Biome's `files.includes`, knip's `ignore`, and the Markdown gate's ignores. A parent exclusion such as `.claude/**` is valid for its generated children, but do not exclude the whole directory from Biome when it contains authored material such as `.claude/workflows/`. The Markdown configuration remains owned by `ki-authoring`; this standard owns the cross-tool agreement. See [ADR-KI-HARNESS-TOOLCHAIN-005](../../../../docs/decisions/ADR-KI-HARNESS-TOOLCHAIN-005-generated-and-vendored-code-is-excluded-from-linting-and-knip.md).
 

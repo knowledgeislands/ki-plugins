@@ -172,7 +172,7 @@ const defaults = {
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "lineWidth": 140,
+    "lineWidth": 160,
     "indentWidth": 2
   },
   "javascript": {
