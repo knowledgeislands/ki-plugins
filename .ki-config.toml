@@ -1,21 +1,23 @@
-[ki-repo]
+["knowledgeislands/ki-agentic-harness:ki-repo"]
 supported_runtimes = ["claude-code", "codex"]
 visibility = "public" # Cowork's extraKnownMarketplaces GitHub source must reach it.
 
-[ki-authoring]
+["knowledgeislands/ki-agentic-harness:ki-git"]
 
-[ki-plugins]
+["knowledgeislands/ki-agentic-harness:ki-authoring"]
+
+["knowledgeislands/ki-agentic-harness:ki-plugins"]
 
 # The projection's marketplace topics supersede the source-repository defaults.
-[ki-repo.checks]
+["knowledgeislands/ki-agentic-harness:ki-repo".checks]
 topics = false
 
 # The public proprietary projection intentionally retains its unresolved MIT-default license divergence.
 
-[ki-tokenomics]
+["knowledgeislands/ki-agentic-harness:ki-tokenomics"]
 
-[ki-housekeeping-claude]
+["knowledgeislands/ki-agentic-harness:ki-housekeeping-claude"]
 
-[ki-tokenomics-claude]
+["knowledgeislands/ki-agentic-harness:ki-tokenomics-claude"]
 
-[ki-tokenomics-codex]
+["knowledgeislands/ki-agentic-harness:ki-tokenomics-codex"]
