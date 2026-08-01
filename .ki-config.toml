@@ -1,7 +1,7 @@
 ["knowledgeislands/ki-agentic-harness:ki-repo"]
 title = "ki-plugins"
 description = "Knowledge Islands Claude plugin marketplace — the Cowork-surface projection of ki-agentic-harness (skills + agents)."
-supported_runtimes = ["claude-code", "codex"]
+supported_runtimes = ["claude-code", "chatgpt-codex"]
 visibility = "public" # Cowork's extraKnownMarketplaces GitHub source must reach it.
 
 ["knowledgeislands/ki-agentic-harness:ki-git"]
