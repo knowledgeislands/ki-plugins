@@ -1,4 +1,5 @@
 ["knowledgeislands/ki-agentic-harness:ki-repo"]
+repository = "https://github.com/knowledgeislands/ki-plugins"
 title = "ki-plugins"
 description = "Knowledge Islands Claude plugin marketplace — the Cowork-surface projection of ki-agentic-harness (skills + agents)."
 supported_runtimes = ["claude-code", "chatgpt-codex"]
