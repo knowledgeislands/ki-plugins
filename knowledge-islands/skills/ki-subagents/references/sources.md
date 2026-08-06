@@ -8,11 +8,11 @@ Abbreviations match the `(SOURCE)` tags in [the standard](standards-subagent-def
 
 ## Authoritative
 
-| Tag | Source                               | Governs                                                                 | Last reviewed |
-| --- | ------------------------------------ | ----------------------------------------------------------------------- | ------------- |
-| CC  | [Claude Code — subagents][cc]        | Subagent file format, the frontmatter spec set,[^cc] invocation control | 2026-07-04    |
-| BP  | [Skill authoring best practices][bp] | Description, conciseness, least-privilege, evaluation-first †           | 2026-07-04    |
-| A2A | [Agent2Agent protocol][a2a]          | Remote-agent discovery plus task lifecycle and status updates           | 2026-07-17    |
+| Tag | Source | Governs | Last reviewed |
+| --- | --- | --- | --- |
+| CC | [Claude Code — subagents][cc] | Subagent file format, the frontmatter spec set,[^cc] invocation control | 2026-07-04 |
+| BP | [Skill authoring best practices][bp] | Description, conciseness, least-privilege, evaluation-first † | 2026-07-04 |
+| A2A | [Agent2Agent protocol][a2a] | Remote-agent discovery plus task lifecycle and status updates | 2026-07-17 |
 
 [^cc]: Full set: `name`, `description`, `tools`, `disallowedTools`, `model`, `permissionMode`, `maxTurns`, `skills`, `mcpServers`, `hooks`, `memory`, `background`, `effort`, `isolation`, `color`, `initialPrompt`.
 
@@ -31,9 +31,9 @@ Abbreviations match the `(SOURCE)` tags in [the standard](standards-subagent-def
 
 ## In-house
 
-| Tag   | Source                                                    | Governs                                   | Last reviewed |
-| ----- | --------------------------------------------------------- | ----------------------------------------- | ------------- |
-| HOUSE | The harness `subagents/README.md` + the role-prompt shape | Layout and the role/lane prompt pattern ¶ | 2026-06-26    |
+| Tag | Source | Governs | Last reviewed |
+| --- | --- | --- | --- |
+| HOUSE | The harness `subagents/README.md` + the role-prompt shape | Layout and the role/lane prompt pattern ¶ | 2026-06-26 |
 
 ¶ Grounding, lane disambiguation, and KB-note wikilinks.
 

@@ -8,21 +8,21 @@ Two layers feed the standard: the **external specs** (shellcheck, bats, keep-a-c
 
 ## External specs
 
-| Tag        | Source                                  | Governs                                                    | Last reviewed |
-| ---------- | --------------------------------------- | ---------------------------------------------------------- | ------------- |
-| SHELLCHECK | [ShellCheck][shellcheck]                | Shell-tool lint gate (SHELL-LINT) — clean in CI            | 2026-07-09    |
-| BATS       | [bats-core][bats]                       | Shell-tool test framework (SHELL-TEST) — `*.bats` + CI run | 2026-07-09    |
-| CHANGELOG  | [Keep a Changelog][keepachangelog]      | `CHANGELOG.md` shape (Unreleased head, dated versions)     | 2026-07-09    |
-| SEMVER     | [Semantic Versioning 2.0.0][semver]     | `vX.Y.Z` version marker + release tags                     | 2026-07-09    |
-| XDG        | [XDG Base Directory Specification][xdg] | Where the tool writes config/state/cache                   | 2026-07-09    |
+| Tag | Source | Governs | Last reviewed |
+| --- | --- | --- | --- |
+| SHELLCHECK | [ShellCheck][shellcheck] | Shell-tool lint gate (SHELL-LINT) — clean in CI | 2026-07-09 |
+| BATS | [bats-core][bats] | Shell-tool test framework (SHELL-TEST) — `*.bats` + CI run | 2026-07-09 |
+| CHANGELOG | [Keep a Changelog][keepachangelog] | `CHANGELOG.md` shape (Unreleased head, dated versions) | 2026-07-09 |
+| SEMVER | [Semantic Versioning 2.0.0][semver] | `vX.Y.Z` version marker + release tags | 2026-07-09 |
+| XDG | [XDG Base Directory Specification][xdg] | Where the tool writes config/state/cache | 2026-07-09 |
 
 ## In-house (the reference repo)
 
 The opinionated shape is fixed by the reference tool repo under `knowledgeislands/`. It is the living source of truth for house style; when the standard and the repo diverge, decide which is right and reconcile.
 
-| Tag  | Source                            | Governs                                                                      | Last reviewed |
-| ---- | --------------------------------- | ---------------------------------------------------------------------------- | ------------- |
-| REPO | `tools-mgit` (the reference repo) | `bin/<tool>` + exec bit, `install.sh` overrides/verify/idempotence, CI shape | 2026-07-09    |
+| Tag | Source | Governs | Last reviewed |
+| --- | --- | --- | --- |
+| REPO | `tools-mgit` (the reference repo) | `bin/<tool>` + exec bit, `install.sh` overrides/verify/idempotence, CI shape | 2026-07-09 |
 
 ## Last review
 

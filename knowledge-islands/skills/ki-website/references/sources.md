@@ -8,11 +8,11 @@ Two layers feed the standard: the **upstream tools** (Eleventy, Tailwind, Lucide
 
 ## Authoritative (upstream tools)
 
-| Tag      | Source                     | Governs                                                                  | Last reviewed |
-| -------- | -------------------------- | ------------------------------------------------------------------------ | ------------- |
-| ELEVENTY | [Eleventy docs][11ty]      | Config API: `addTransform`, `addDataExtension`, `eleventy.before`, `dir` | 2026-07-04    |
-| TAILWIND | [Tailwind CSS v4 docs][tw] | Config-less `@import "tailwindcss"`, `@theme inline`, the CLI            | 2026-07-04    |
-| LUCIDE   | [Lucide docs][lucide]      | Icon delivery (UMD passthrough, client educate)                          | 2026-07-04    |
+| Tag | Source | Governs | Last reviewed |
+| --- | --- | --- | --- |
+| ELEVENTY | [Eleventy docs][11ty] | Config API: `addTransform`, `addDataExtension`, `eleventy.before`, `dir` | 2026-07-04 |
+| TAILWIND | [Tailwind CSS v4 docs][tw] | Config-less `@import "tailwindcss"`, `@theme inline`, the CLI | 2026-07-04 |
+| LUCIDE | [Lucide docs][lucide] | Icon delivery (UMD passthrough, client educate) | 2026-07-04 |
 
 ## In-house (the website convention)
 

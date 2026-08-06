@@ -212,7 +212,10 @@ type RubricItemBase = {
 }
 
 type RubricItem<Context> = RubricItemBase &
-  ({ mechanical: MechanicalRubric<Context>; judgment?: JudgmentRubric } | { mechanical?: never; judgment: JudgmentRubric })
+  (
+    | { mechanical: MechanicalRubric<Context>; judgment?: JudgmentRubric }
+    | { mechanical?: never; judgment: JudgmentRubric }
+  )
 ```
 
 Every item contains a mechanical aspect, a judgment aspect, or both; it MUST contain at least one.
@@ -232,9 +235,11 @@ AUDIT outcomes are always read-only; the checker derives `FIXED` from a verified
 ```ts
 type OutcomeStatus = 'PASS' | 'VIOLATION' | 'NOT_APPLICABLE' | 'INFO' | 'FIXED'
 
-type RubricOutcome<Status extends OutcomeStatus> = { status: Status; message: string; subject?: string } & (Status extends 'VIOLATION'
-  ? { level?: ViolationLevel }
-  : { level?: never })
+type RubricOutcome<Status extends OutcomeStatus> = {
+  status: Status
+  message: string
+  subject?: string
+} & (Status extends 'VIOLATION' ? { level?: ViolationLevel } : { level?: never })
 
 type AuditOutcome = RubricOutcome<Exclude<OutcomeStatus, 'FIXED'>>
 ```

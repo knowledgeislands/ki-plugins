@@ -50,10 +50,10 @@ The specific artefact types under these subdivisions are governed by sibling ski
 
 When `Admin/Governance/` is present, two documents are expected there:
 
-| File                              | Holds                                                                                        |
-| --------------------------------- | -------------------------------------------------------------------------------------------- |
-| `Admin/Governance/Charter.md`     | Scope, purpose, and owner of the base. Created on EDUCATE; kept current by the base's owner. |
-| `Admin/Governance/Conformance.md` | The active skill set governing this base, with adoption dates. Updated when skills change.   |
+| File | Holds |
+| --- | --- |
+| `Admin/Governance/Charter.md` | Scope, purpose, and owner of the base. Created on EDUCATE; kept current by the base's owner. |
+| `Admin/Governance/Conformance.md` | The active skill set governing this base, with adoption dates. Updated when skills change. |
 
 Both are checked by the mechanical audit and created as stubs by EDUCATE and CONFORM. Absence is a WARN (not FAIL) — a base that has no `Governance/` folder yet is not penalised for missing them.
 

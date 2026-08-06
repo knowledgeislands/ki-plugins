@@ -9,12 +9,12 @@ These examples are kept separate because they combine several governed artifacts
 
 ## Collections
 
-| Source                    | URL                               | What it covers                                                                |
-| ------------------------- | --------------------------------- | ----------------------------------------------------------------------------- |
-| Workers — Static Assets   | [Static Assets docs][assets]      | `assets` block: `directory`, `binding`, `html_handling`, `not_found_handling` |
-| wrangler configuration    | [wrangler config docs][wrangler]  | `name`, `compatibility_date`, `routes`/`custom_domain`, `observability`       |
-| Pages → Workers migration | [migrate-from-pages guide][pages] | Why new static sites use Workers + Static Assets †                            |
-| ki-website (in-house)     | [ki-website repo][arcadia]        | Reference implementation ‡                                                    |
+| Source | URL | What it covers |
+| --- | --- | --- |
+| Workers — Static Assets | [Static Assets docs][assets] | `assets` block: `directory`, `binding`, `html_handling`, `not_found_handling` |
+| wrangler configuration | [wrangler config docs][wrangler] | `name`, `compatibility_date`, `routes`/`custom_domain`, `observability` |
+| Pages → Workers migration | [migrate-from-pages guide][pages] | Why new static sites use Workers + Static Assets † |
+| ki-website (in-house) | [ki-website repo][arcadia] | Reference implementation ‡ |
 
 † Not `wrangler pages deploy`.
 

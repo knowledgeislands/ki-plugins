@@ -6,22 +6,22 @@ The tracked sources behind [the compatible harness standard](standards-compatibl
 
 ## Authoritative
 
-| Tag  | Source                                    | Governs                                                     | Last reviewed |
-| ---- | ----------------------------------------- | ----------------------------------------------------------- | ------------- |
-| [AS] | [Agent Skills specification][as-spec]     | The individual `SKILL.md` format the harness serves †       | 2026-07-04    |
-| [CC] | [Claude Code subagent docs][cc-subagents] | The subagent definition format the `subagents/` part serves | 2026-07-04    |
+| Tag | Source | Governs | Last reviewed |
+| --- | --- | --- | --- |
+| [AS] | [Agent Skills specification][as-spec] | The individual `SKILL.md` format the harness serves † | 2026-07-04 |
+| [CC] | [Claude Code subagent docs][cc-subagents] | The subagent definition format the `subagents/` part serves | 2026-07-04 |
 
 † Including the directory-name = `name:` constraint and the `references/`, `scripts/`, `assets/` layout.
 
 ## In-house
 
-| Tag  | Source                                    | Governs                                                                           | Last reviewed |
-| ---- | ----------------------------------------- | --------------------------------------------------------------------------------- | ------------- |
-| [AH] | [ki-agentic-harness README][ah-readme]    | The KI canonical source-harness implementation §                                  | 2026-07-27    |
-| [CH] | [Compatible harness contract][compatible] | Installed identity, direct payload, capability, host, and activation boundaries   | 2026-07-27    |
-| [KR] | `ki-repo` skill                           | The `.ki-config.toml` contract and what makes a KI-governed repository            | 2026-07-27    |
-| [KS] | `ki-skills` skill                         | The governed-rubric family, session, and host boundary ‡                          | 2026-07-27    |
-| [KE] | `ki-engineering` skill                    | Development toolchain ownership outside compatible-harness installation semantics | 2026-07-27    |
+| Tag | Source | Governs | Last reviewed |
+| --- | --- | --- | --- |
+| [AH] | [ki-agentic-harness README][ah-readme] | The KI canonical source-harness implementation § | 2026-07-27 |
+| [CH] | [Compatible harness contract][compatible] | Installed identity, direct payload, capability, host, and activation boundaries | 2026-07-27 |
+| [KR] | `ki-repo` skill | The `.ki-config.toml` contract and what makes a KI-governed repository | 2026-07-27 |
+| [KS] | `ki-skills` skill | The governed-rubric family, session, and host boundary ‡ | 2026-07-27 |
+| [KE] | `ki-engineering` skill | Development toolchain ownership outside compatible-harness installation semantics | 2026-07-27 |
 
 § Source layout and shelf practice are inferred from this repository; installed-payload policy comes from [CH].
 

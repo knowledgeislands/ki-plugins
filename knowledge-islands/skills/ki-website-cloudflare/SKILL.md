@@ -52,13 +52,13 @@ The hosting catalogue reads repository evidence only. Cloudflare account and dom
 
 ## Operating modes
 
-| Mode    | Procedure                                                                                                   |
-| ------- | ----------------------------------------------------------------------------------------------------------- |
-| AUDIT   | Read and follow [Mode AUDIT](references/mode-audit.md).                                                     |
-| CONFORM | Read and follow [Mode CONFORM](references/mode-conform.md).                                                 |
-| EDUCATE | Read and follow [Mode EDUCATE](references/mode-educate.md) for the one-time hosting scaffold.               |
-| REFRESH | Read and follow [Mode REFRESH](references/mode-refresh.md).                                                 |
-| HELP    | Explain the purpose, invocation, modes, and off-ramps, then stop without inspecting or changing repository. |
+| Mode | Procedure |
+| --- | --- |
+| AUDIT | Read and follow [Mode AUDIT](references/mode-audit.md). |
+| CONFORM | Read and follow [Mode CONFORM](references/mode-conform.md). |
+| EDUCATE | Read and follow [Mode EDUCATE](references/mode-educate.md) for the one-time hosting scaffold. |
+| REFRESH | Read and follow [Mode REFRESH](references/mode-refresh.md). |
+| HELP | Explain the purpose, invocation, modes, and off-ramps, then stop without inspecting or changing repository. |
 
 With no mode, show HELP and, in an interactive session only, offer the mode choice and request the target shown by `argument-hint`.
 

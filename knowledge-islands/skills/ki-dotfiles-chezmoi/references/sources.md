@@ -23,13 +23,13 @@ Two different kinds of claim live in this standard, and they carry different con
 
 ## Authoritative (format tooling)
 
-| Source                                                           | Governs                                                                   | Last reviewed |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------- |
-| [TOMLKit README and limitations][tomlkit]                        | style-preserving TOML document model and its known ordering limitation    | 2026-07-16    |
-| [ruamel.yaml round-trip details][ruamel-round-trip]              | comment, anchor, merge, and blank-line preservation in the round-trip API | 2026-07-16    |
-| [ruamel.yaml indentation details][ruamel-indentation]            | normalization limits for inconsistently indented YAML                     | 2026-07-16    |
-| [Microsoft `jsonc-parser` utilities][jsonc-parser]               | localized path edits, missing-property creation, and applying text edits  | 2026-07-16    |
-| [uv: running a script with dependencies][uv-script-dependencies] | `uv run --with` and `--no-project` dependency execution                   | 2026-07-16    |
+| Source | Governs | Last reviewed |
+| --- | --- | --- |
+| [TOMLKit README and limitations][tomlkit] | style-preserving TOML document model and its known ordering limitation | 2026-07-16 |
+| [ruamel.yaml round-trip details][ruamel-round-trip] | comment, anchor, merge, and blank-line preservation in the round-trip API | 2026-07-16 |
+| [ruamel.yaml indentation details][ruamel-indentation] | normalization limits for inconsistently indented YAML | 2026-07-16 |
+| [Microsoft `jsonc-parser` utilities][jsonc-parser] | localized path edits, missing-property creation, and applying text edits | 2026-07-16 |
+| [uv: running a script with dependencies][uv-script-dependencies] | `uv run --with` and `--no-project` dependency execution | 2026-07-16 |
 
 ## House convention (n=1 case study — not chezmoi.io-sourced)
 

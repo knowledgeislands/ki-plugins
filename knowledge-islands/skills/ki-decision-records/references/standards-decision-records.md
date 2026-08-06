@@ -29,17 +29,17 @@ The normative standard behind [the generated rubric](rubric.md). Grounded in Mic
 
 Each type maps to a fixed prefix, a human-readable record type, and a durable public specification URL. Required metadata must duplicate the canonical values encoded by the H1 prefix (FAIL check). Whether that prefix actually fits the decision is a human judgement, not a value the checker can derive.
 
-| Prefix | `type`                       | `decision_type` | `type_url` | Covers                                          |
-| ------ | ---------------------------- | --------------- | ---------- | ----------------------------------------------- |
-| `SDR-` | Strategy Decision Record     | `strategy`      | `.../sdr`  | Direction, goals, positioning, scope            |
-| `PDR-` | Product Decision Record      | `product`       | `.../pdr`  | Purpose, outputs, scope of the repo or island   |
-| `ADR-` | Architecture Decision Record | `architecture`  | `.../adr`  | Structure, topology, component relationships    |
-| `DDR-` | Data Decision Record         | `data`          | `.../ddr`  | Schemas, data governance, storage choices       |
-| `XDR-` | Security Decision Record     | `security`      | `.../xdr`  | Security posture, trust boundaries, access      |
-| `ODR-` | Operations Decision Record   | `operations`    | `.../odr`  | Operational procedures, deployment, maintenance |
-| `GDR-` | Governance Decision Record   | `governance`    | `.../gdr`  | Processes, authority, change mechanisms         |
-| `RDR-` | Research Decision Record     | `research`      | `.../rdr`  | Methodology choices, investigation frameworks   |
-| `KDR-` | Knowledge Decision Record    | `knowledge`     | `.../kdr`  | Taxonomy, naming, classification, vocabularies  |
+| Prefix | `type` | `decision_type` | `type_url` | Covers |
+| --- | --- | --- | --- | --- |
+| `SDR-` | Strategy Decision Record | `strategy` | `.../sdr` | Direction, goals, positioning, scope |
+| `PDR-` | Product Decision Record | `product` | `.../pdr` | Purpose, outputs, scope of the repo or island |
+| `ADR-` | Architecture Decision Record | `architecture` | `.../adr` | Structure, topology, component relationships |
+| `DDR-` | Data Decision Record | `data` | `.../ddr` | Schemas, data governance, storage choices |
+| `XDR-` | Security Decision Record | `security` | `.../xdr` | Security posture, trust boundaries, access |
+| `ODR-` | Operations Decision Record | `operations` | `.../odr` | Operational procedures, deployment, maintenance |
+| `GDR-` | Governance Decision Record | `governance` | `.../gdr` | Processes, authority, change mechanisms |
+| `RDR-` | Research Decision Record | `research` | `.../rdr` | Methodology choices, investigation frameworks |
+| `KDR-` | Knowledge Decision Record | `knowledge` | `.../kdr` | Taxonomy, naming, classification, vocabularies |
 
 Each `type_url` expands from `https://knowledgeislands.info/specifications/decision-records/{prefix-lowercase}`. The URLs are stable metadata now, so the future public pages do not require a repository migration. `ADR-` aligns with the established ADR ecosystem (Nygard, adr.github.io). `KDR-` reclaims the former Knowledge Decision Records prefix with a precise `knowledge` scope.
 

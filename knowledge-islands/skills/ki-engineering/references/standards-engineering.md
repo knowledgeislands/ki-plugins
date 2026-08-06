@@ -31,12 +31,12 @@ The standard applies to any repo carrying a `[ki-engineering]` table in its `.ki
 
 The capability markers, and what each unlocks:
 
-| Capability     | Marker in the repo                                              | Adds (this standard)                                        |
-| -------------- | --------------------------------------------------------------- | ----------------------------------------------------------- |
-| Tests          | `vitest.config.*` present, or a `test` script                   | §6 — bare entrypoint; strict Vitest profile when configured |
-| Compiled build | `tsconfig.build.json` present, or `build` is a `tsc` invocation | §7 — `build`/`files`/`tsconfig.build.json`                  |
-| Env config     | `.env*.example` present, or `process.loadEnvFile` used          | §8 — `.env` discipline + `NODE_ENV`-in-dev                  |
-| CLI binary     | `src/cli/` present                                              | §7 — `build` chmods `dist/cli/cli.js`                       |
+| Capability | Marker in the repo | Adds (this standard) |
+| --- | --- | --- |
+| Tests | `vitest.config.*` present, or a `test` script | §6 — bare entrypoint; strict Vitest profile when configured |
+| Compiled build | `tsconfig.build.json` present, or `build` is a `tsc` invocation | §7 — `build`/`files`/`tsconfig.build.json` |
+| Env config | `.env*.example` present, or `process.loadEnvFile` used | §8 — `.env` discipline + `NODE_ENV`-in-dev |
+| CLI binary | `src/cli/` present | §7 — `build` chmods `dist/cli/cli.js` |
 
 ## 0. Repo shapes — flat vs monorepo (core)
 

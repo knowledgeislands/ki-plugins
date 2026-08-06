@@ -9,13 +9,13 @@ Concrete patterns showing what good context hygiene looks like in practice: how 
 
 ## Collections
 
-| Source                                      | URL                            | What it covers                                                  |
-| ------------------------------------------- | ------------------------------ | --------------------------------------------------------------- |
-| Effective context engineering for AI agents | [anthropic.com][ctx-eng]       | The finite-resource framing and high-signal-token principle†    |
-| Claude Code context window                  | [code.claude.com][cc-ctxwin]   | Startup composition, what survives compaction, tool search      |
-| Claude Code settings                        | [code.claude.com][cc-settings] | `autoCompactEnabled`, `DISABLE_AUTO_COMPACT`, compaction config |
-| Headroom (chopratejas/headroom)             | [github.com][hr]               | MCP install, detection signals, `headroom wrap` agent mode      |
-| Headroom app                                | [extraheadroom.com][hra]       | Menu-bar proxy variant, detection                               |
+| Source | URL | What it covers |
+| --- | --- | --- |
+| Effective context engineering for AI agents | [anthropic.com][ctx-eng] | The finite-resource framing and high-signal-token principle† |
+| Claude Code context window | [code.claude.com][cc-ctxwin] | Startup composition, what survives compaction, tool search |
+| Claude Code settings | [code.claude.com][cc-settings] | `autoCompactEnabled`, `DISABLE_AUTO_COMPACT`, compaction config |
+| Headroom (chopratejas/headroom) | [github.com][hr] | MCP install, detection signals, `headroom wrap` agent mode |
+| Headroom app | [extraheadroom.com][hra] | Menu-bar proxy variant, detection |
 
 † The finite-resource framing and the "smallest set of high-signal tokens" principle.
 

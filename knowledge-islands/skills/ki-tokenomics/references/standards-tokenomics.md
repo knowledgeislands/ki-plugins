@@ -91,15 +91,15 @@ Once the standing surface is lean, these govern what each turn and each sub-agen
 
 **Recommended mode → type assignments.** These are defaults; override where the work demands it. Type names are portable and purpose-based (`frontier`, `reasoning`, `standard`, `fast`); the concrete model each resolves to is runtime-specific and lives in [`docs/guides/prompting/`](../../../../docs/guides/prompting/) (Claude aliases, GPT-5.6 tiers), not here.
 
-| Mode / task type                                     | Recommended type | Reasoning                                                                   |
-| ---------------------------------------------------- | ---------------- | --------------------------------------------------------------------------- |
-| EDUCATE — scaffolding a new config from scratch      | reasoning        | One-off creative/architectural step; investment is bounded                  |
-| AUDIT — reading and classifying findings             | standard         | Analytical but bounded; context is the bottleneck, not reasoning depth      |
-| CONFORM — applying a known fix list                  | standard         | Mostly mechanical edits; `fast` may suffice for very small targets          |
-| REFRESH — re-anchoring to updated sources            | standard         | Web-research + diff; rarely needs the top type                              |
-| Mechanical sub-agent (bulk, uniform steps)           | fast             | Low reasoning depth; primary lever is fan-out count, not per-step quality   |
-| Hard synthesise / adversarial verify / judge         | reasoning        | Pay the premium only for the irreducible reasoning step                     |
-| Long-horizon autonomous run / subagent orchestration | frontier         | Multi-hour, minimally-supervised work that plans, executes, and self-checks |
+| Mode / task type | Recommended type | Reasoning |
+| --- | --- | --- |
+| EDUCATE — scaffolding a new config from scratch | reasoning | One-off creative/architectural step; investment is bounded |
+| AUDIT — reading and classifying findings | standard | Analytical but bounded; context is the bottleneck, not reasoning depth |
+| CONFORM — applying a known fix list | standard | Mostly mechanical edits; `fast` may suffice for very small targets |
+| REFRESH — re-anchoring to updated sources | standard | Web-research + diff; rarely needs the top type |
+| Mechanical sub-agent (bulk, uniform steps) | fast | Low reasoning depth; primary lever is fan-out count, not per-step quality |
+| Hard synthesise / adversarial verify / judge | reasoning | Pay the premium only for the irreducible reasoning step |
+| Long-horizon autonomous run / subagent orchestration | frontier | Multi-hour, minimally-supervised work that plans, executes, and self-checks |
 
 ## 5. Context-compression tooling (Headroom) and the registry
 

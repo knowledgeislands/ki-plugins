@@ -12,15 +12,15 @@ The authoritative definition of frontmatter fields for all notes in a Knowledge 
 
 ## Universal fields
 
-| Field      | Required (KB repos) | Description                                                                                                        |
-| ---------- | ------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `type`     | Yes                 | The note's **kind** (sole classifier); location-constrained — see taxonomy below                                   |
-| `updated`  | Recommended         | Timestamp of the last substantive change, `YYYY-MM-DDTHH:MM:SSZ`                                                   |
-| `reviewed` | Recommended         | Timestamp of the last human review; a note is **stale** when `reviewed` is absent or earlier than `updated`        |
-| `created`  | Optional            | Timestamp set once on creation; never changed                                                                      |
-| `status`   | Type-specific       | Set by the note's `type` where it has a lifecycle/state, not universal†                                            |
-| `tags`     | Optional            | Topical / temporal / source labels (`topic/*`, `date/*`, `source/*`) — retained, but never the **kind** classifier |
-| `author`   | Recommended         | `AI-assisted` / `Manual` / `Mixed`                                                                                 |
+| Field | Required (KB repos) | Description |
+| --- | --- | --- |
+| `type` | Yes | The note's **kind** (sole classifier); location-constrained — see taxonomy below |
+| `updated` | Recommended | Timestamp of the last substantive change, `YYYY-MM-DDTHH:MM:SSZ` |
+| `reviewed` | Recommended | Timestamp of the last human review; a note is **stale** when `reviewed` is absent or earlier than `updated` |
+| `created` | Optional | Timestamp set once on creation; never changed |
+| `status` | Type-specific | Set by the note's `type` where it has a lifecycle/state, not universal† |
+| `tags` | Optional | Topical / temporal / source labels (`topic/*`, `date/*`, `source/*`) — retained, but never the **kind** classifier |
+| `author` | Recommended | `AI-assisted` / `Manual` / `Mixed` |
 
 † For example, `ki-kb-activities` uses `active` / `inactive`.
 
@@ -52,10 +52,10 @@ The slugs use slash-hierarchical notation: `<zone>/<arm>/<leaf>`. The zone prefi
 
 These types are only valid under `-/`. Files carrying them elsewhere are a ZONE-5 FAIL (see audit rubric).
 
-| Type             | Path context       | Lifecycle                                                                | Defined by |
-| ---------------- | ------------------ | ------------------------------------------------------------------------ | ---------- |
-| `session-digest` | `-/_DIGESTS/*.md`  | Ephemeral. Delete once content is extracted into Pillars/Streams/handoff | `ki-kb`    |
-| `handoff`        | `-/_HANDOFFS/*.md` | Ephemeral. Delete once recipient has routed it through their `+/`        | `ki-kb`    |
+| Type | Path context | Lifecycle | Defined by |
+| --- | --- | --- | --- |
+| `session-digest` | `-/_DIGESTS/*.md` | Ephemeral. Delete once content is extracted into Pillars/Streams/handoff | `ki-kb` |
+| `handoff` | `-/_HANDOFFS/*.md` | Ephemeral. Delete once recipient has routed it through their `+/` | `ki-kb` |
 
 ### Calendar branch (`calendar/`)
 
@@ -106,12 +106,12 @@ Settled internal knowledge. Governed by `ki-kb`.
 
 Some `type` values require additional fields, defined by the skill that owns that type:
 
-| `type`                      | Additional required field | Valid values                                                        | Defined by            |
-| --------------------------- | ------------------------- | ------------------------------------------------------------------- | --------------------- |
-| `admin/governance/decision` | `decision_type`           | nine decision domains‡                                              | `ki-decision-records` |
-| `calendar/daily`            | `day_type`                | work-day / weekend / bank-holiday / annual-leave (open enumeration) | `ki-kb`               |
-| `streams/proposal`          | `status`                  | the Streams proposal lifecycle (values owned by `ki-kb-streams`)    | `ki-kb-streams`       |
-| `streams/proposal`          | `priority`                | `urgent` / `high` / `medium` / `low`                                | `ki-kb-streams`       |
-| `streams/proposal`          | `dependencies`            | list of blocking stream names (`[]` when none)                      | `ki-kb-streams`       |
+| `type` | Additional required field | Valid values | Defined by |
+| --- | --- | --- | --- |
+| `admin/governance/decision` | `decision_type` | nine decision domains‡ | `ki-decision-records` |
+| `calendar/daily` | `day_type` | work-day / weekend / bank-holiday / annual-leave (open enumeration) | `ki-kb` |
+| `streams/proposal` | `status` | the Streams proposal lifecycle (values owned by `ki-kb-streams`) | `ki-kb-streams` |
+| `streams/proposal` | `priority` | `urgent` / `high` / `medium` / `low` | `ki-kb-streams` |
+| `streams/proposal` | `dependencies` | list of blocking stream names (`[]` when none) | `ki-kb-streams` |
 
 ‡ strategy, product, architecture, data, security, operations, governance, research, knowledge.

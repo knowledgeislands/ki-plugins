@@ -25,11 +25,11 @@ The volatile **numbers** themselves (model ids, prices, cache TTLs, context-wind
 
 ## Community / tooling
 
-| Source                                         | Governs                                                             | Last reviewed |
-| ---------------------------------------------- | ------------------------------------------------------------------- | ------------- |
-| [Headroom — chopratejas/headroom][hr]          | the seeded compression-layer registry entry; detection + setup (§5) | 2026-07-04    |
-| [Headroom app — extraheadroom.com][hra]        | the menu-bar proxy variant of the same engine (§5)                  | 2026-06-21    |
-| Installed Headroom 0.31.0 CLI + package source | reset and per-project proxy contracts (§5)                          | 2026-07-16    |
+| Source | Governs | Last reviewed |
+| --- | --- | --- |
+| [Headroom — chopratejas/headroom][hr] | the seeded compression-layer registry entry; detection + setup (§5) | 2026-07-04 |
+| [Headroom app — extraheadroom.com][hra] | the menu-bar proxy variant of the same engine (§5) | 2026-06-21 |
+| Installed Headroom 0.31.0 CLI + package source | reset and per-project proxy contracts (§5) | 2026-07-16 |
 
 ## Last review
 

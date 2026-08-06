@@ -4,11 +4,11 @@
 
 This skill's standard is canonical to the Knowledge Islands harness — the live artifact pattern has no external specification. Run REFRESH when the pairing convention, required frontmatter, or the artifacts directory changes across bases.
 
-| Source                                                  | What it governs                                       | Last reviewed |
-| ------------------------------------------------------- | ----------------------------------------------------- | ------------- |
-| ki-arcadia-principal `Admin/Operations/Live Artifacts/` | Reference implementation of the live artifact pattern | 2026-07-04    |
-| `ki-kb` SKILL.md                                        | Admin/Operations/ zone that hosts live artifacts      | 2026-07-04    |
-| `ki-authoring` SKILL.md                                 | Markdown style for the .md source files               | 2026-07-04    |
+| Source | What it governs | Last reviewed |
+| --- | --- | --- |
+| ki-arcadia-principal `Admin/Operations/Live Artifacts/` | Reference implementation of the live artifact pattern | 2026-07-04 |
+| `ki-kb` SKILL.md | Admin/Operations/ zone that hosts live artifacts | 2026-07-04 |
+| `ki-authoring` SKILL.md | Markdown style for the .md source files | 2026-07-04 |
 
 ## Last review
 

@@ -9,14 +9,14 @@ Curated illustrations of well-formed `SKILL.md` files. Use these when writing a 
 
 ## Collections
 
-| Source                               | Covers                                                                   | Last reviewed |
-| ------------------------------------ | ------------------------------------------------------------------------ | ------------- |
-| [Agent Skills specification][spec]   | Frontmatter fields, hard caps, layout                                    | 2026-06-21    |
-| [Agent Skills best practices][bp]    | Description writing, progressive disclosure, scripts, authoring rubric   | 2026-06-21    |
-| [Claude Code — skills docs][cc]      | CC-only frontmatter fields including `argument-hint`, `allowed-tools`    | 2026-06-21    |
-| [Skill Authoring Patterns][patterns] | Terminology discipline, feedback loops, gotchas sections                 | 2026-06-21    |
-| `ki-subagents` SKILL.md †            | Reference implementation: full frontmatter + skill-specific EDUCATE mode | 2026-06-21    |
-| `ki-repo` SKILL.md ‡                 | Reference implementation: argument-hint, standard-skill mode structure   | 2026-06-21    |
+| Source | Covers | Last reviewed |
+| --- | --- | --- |
+| [Agent Skills specification][spec] | Frontmatter fields, hard caps, layout | 2026-06-21 |
+| [Agent Skills best practices][bp] | Description writing, progressive disclosure, scripts, authoring rubric | 2026-06-21 |
+| [Claude Code — skills docs][cc] | CC-only frontmatter fields including `argument-hint`, `allowed-tools` | 2026-06-21 |
+| [Skill Authoring Patterns][patterns] | Terminology discipline, feedback loops, gotchas sections | 2026-06-21 |
+| `ki-subagents` SKILL.md † | Reference implementation: full frontmatter + skill-specific EDUCATE mode | 2026-06-21 |
+| `ki-repo` SKILL.md ‡ | Reference implementation: argument-hint, standard-skill mode structure | 2026-06-21 |
 
 † Located at `skills/agentic-systems/ki-subagents/SKILL.md` in the harness.
 

@@ -9,11 +9,11 @@ Curated illustrations of well-formed Decision Records. Use these when authoring 
 
 ## Collections
 
-| Source                                                 | Covers                                                      | Last reviewed |
-| ------------------------------------------------------ | ----------------------------------------------------------- | ------------- |
-| [Nygard (original)][nygard]                            | The section format and rationale style                      | 2026-06-25    |
-| [ADR GitHub community resources][adr-gh]               | Community patterns: Options, Pros/Cons, multi-type variants | 2026-06-25    |
-| `ki-arcadia-principal` `Admin/Governance/Decisions/` † | The canonical KI KB-repo implementation of the DR format    | 2026-06-25    |
+| Source | Covers | Last reviewed |
+| --- | --- | --- |
+| [Nygard (original)][nygard] | The section format and rationale style | 2026-06-25 |
+| [ADR GitHub community resources][adr-gh] | Community patterns: Options, Pros/Cons, multi-type variants | 2026-06-25 |
+| `ki-arcadia-principal` `Admin/Governance/Decisions/` † | The canonical KI KB-repo implementation of the DR format | 2026-06-25 |
 
 † The `ki-arcadia-principal` base is not publicly hosted; the DRs are the primary exemplars for the KB-repo shape.
 

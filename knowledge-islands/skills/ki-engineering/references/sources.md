@@ -27,10 +27,10 @@ The standard pins versions in `packageManager`, `engines`, `biome.json`'s `$sche
 
 The standard is the **majority shape** across the TS/Bun repos under `knowledgeislands/`. They are the living source of truth for house style; when they diverge, the majority wins and the outlier is a finding unless documented.
 
-| Tag       | Source                        | Governs                                                                              | Last reviewed |
-| --------- | ----------------------------- | ------------------------------------------------------------------------------------ | ------------- |
-| REPOS     | the 10 TS/Bun sibling repos † | aggregate/scoped scripts, tsconfig/biome, config-gated Vitest, build/chmod           | 2026-06-21    |
-| FRAMEWORK | harness docs ※                | the enforcement framework (modes, checker contract, rubric tagging, sources cadence) | 2026-06-21    |
+| Tag | Source | Governs | Last reviewed |
+| --- | --- | --- | --- |
+| REPOS | the 10 TS/Bun sibling repos † | aggregate/scoped scripts, tsconfig/biome, config-gated Vitest, build/chmod | 2026-06-21 |
+| FRAMEWORK | harness docs ※ | the enforcement framework (modes, checker contract, rubric tagging, sources cadence) | 2026-06-21 |
 
 † the 7 `mcp-*` servers + `ki-agentic-harness`, `ki-arcadia-principal`, `ki-website`.
 

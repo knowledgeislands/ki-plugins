@@ -8,11 +8,11 @@ Two layers feed the standard: **Cloudflare's platform** (what Workers + Static A
 
 ## Authoritative (Cloudflare platform)
 
-| Tag      | Source                                      | Governs                                                                 | Last reviewed |
-| -------- | ------------------------------------------- | ----------------------------------------------------------------------- | ------------- |
-| ASSETS   | [Workers · Static Assets][assets]           | The `assets` block and its keys †                                       | 2026-07-04    |
-| WRANGLER | [wrangler configuration][wrangler]          | `name`, `compatibility_date`, `routes`/`custom_domain`, `observability` | 2026-07-04    |
-| PAGES    | [Pages → Workers migration / status][pages] | Whether Pages remains the recommended target for static sites ‡         | 2026-07-04    |
+| Tag | Source | Governs | Last reviewed |
+| --- | --- | --- | --- |
+| ASSETS | [Workers · Static Assets][assets] | The `assets` block and its keys † | 2026-07-04 |
+| WRANGLER | [wrangler configuration][wrangler] | `name`, `compatibility_date`, `routes`/`custom_domain`, `observability` | 2026-07-04 |
+| PAGES | [Pages → Workers migration / status][pages] | Whether Pages remains the recommended target for static sites ‡ | 2026-07-04 |
 
 † `directory`, `binding`, `html_handling`, `not_found_handling`.
 

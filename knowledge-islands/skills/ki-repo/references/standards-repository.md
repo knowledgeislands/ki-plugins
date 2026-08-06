@@ -19,14 +19,14 @@ The canonical configuration a Knowledge Islands repo should carry, so repos pres
 
 Every repo carries these at the root. Presence is checked **on the default branch via the GitHub API** (the git-tree endpoint), not from a working checkout — so what's actually committed is what's audited, and `--org` mode covers uncloned repos.
 
-| File              | Why                                                                                                             |
-| ----------------- | --------------------------------------------------------------------------------------------------------------- |
-| `README.md`       | The repo's entry point.                                                                                         |
-| `LICENSE`         | The declared license's text (default MIT); proprietary copyright text if `license` is `UNLICENSED`.             |
-| `.gitignore`      | Keeps build/dep noise out of history.                                                                           |
-| `.editorconfig`   | Shared editor defaults across the workspace toolchain.                                                          |
-| `CLAUDE.md`       | Agent instructions — the always-loaded anchor for any repo-specific gate or convention (skills rubric SHAPE-7). |
-| `.ki-config.toml` | Declares this repo's expected config under `[ki-repo]`. †                                                       |
+| File | Why |
+| --- | --- |
+| `README.md` | The repo's entry point. |
+| `LICENSE` | The declared license's text (default MIT); proprietary copyright text if `license` is `UNLICENSED`. |
+| `.gitignore` | Keeps build/dep noise out of history. |
+| `.editorconfig` | Shared editor defaults across the workspace toolchain. |
+| `CLAUDE.md` | Agent instructions — the always-loaded anchor for any repo-specific gate or convention (skills rubric SHAPE-7). |
+| `.ki-config.toml` | Declares this repo's expected config under `[ki-repo]`. † |
 
 † The values it carries: `visibility`, the declared `license` (SPDX id, default MIT), and any per-repo check overrides.
 
@@ -65,18 +65,18 @@ Knowledge Bases retain their own fixed `+/` and `-/` staging model under `ki-kb`
 
 For every repo on github.com:
 
-| Setting            | Value                                                                            | Why                                      |
-| ------------------ | -------------------------------------------------------------------------------- | ---------------------------------------- |
-| Default branch     | `main`                                                                           | Uniform; what tooling and docs assume.   |
-| License            | Live GitHub license matches the declared `license` SPDX id (default MIT)         | Decoupled from visibility.               |
-| Package license    | `package.json` `"license"` matches the declared id (`UNLICENSED` if proprietary) | Matches the declared license.            |
-| Description        | Present, one sentence; synced with `package.json` where one exists               | One-line identity on GitHub.             |
-| Merge methods      | **Squash only** — merge-commit off, rebase off                                   | One commit per PR; clean, linear `main`. |
-| Auto-delete branch | On                                                                               | No stale merged branches.                |
-| Issues             | On                                                                               | The tracker.                             |
-| Wiki               | Off                                                                              | Docs live in-repo.                       |
-| Projects           | Off                                                                              | Unused.                                  |
-| Discussions        | Off                                                                              | Unused.                                  |
+| Setting | Value | Why |
+| --- | --- | --- |
+| Default branch | `main` | Uniform; what tooling and docs assume. |
+| License | Live GitHub license matches the declared `license` SPDX id (default MIT) | Decoupled from visibility. |
+| Package license | `package.json` `"license"` matches the declared id (`UNLICENSED` if proprietary) | Matches the declared license. |
+| Description | Present, one sentence; synced with `package.json` where one exists | One-line identity on GitHub. |
+| Merge methods | **Squash only** — merge-commit off, rebase off | One commit per PR; clean, linear `main`. |
+| Auto-delete branch | On | No stale merged branches. |
+| Issues | On | The tracker. |
+| Wiki | Off | Docs live in-repo. |
+| Projects | Off | Unused. |
+| Discussions | Off | Unused. |
 
 Public repos (`mcp-*`) additionally:
 

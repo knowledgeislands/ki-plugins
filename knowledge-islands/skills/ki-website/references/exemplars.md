@@ -9,12 +9,12 @@ Curated patterns worth reading when authoring or auditing a Knowledge Islands El
 
 ## Collections
 
-| Source                | URL                              | What it covers                                                           |
-| --------------------- | -------------------------------- | ------------------------------------------------------------------------ |
-| Eleventy docs         | [11ty.dev docs][eleventy]        | Config API: `addTransform`, `addDataExtension`, `eleventy.before`, `dir` |
-| Tailwind CSS v4 docs  | [tailwindcss.com docs][tailwind] | Config-less `@import "tailwindcss"`, `@theme inline`, the CLI            |
-| Lucide docs           | [lucide.dev guide][lucide]       | UMD passthrough delivery, client-side `createIcons()` initialisation     |
-| ki-website (in-house) | [ki-website repo][arcadia]       | Reference implementation: monorepo layout, config, Tailwind, wrangler    |
+| Source | URL | What it covers |
+| --- | --- | --- |
+| Eleventy docs | [11ty.dev docs][eleventy] | Config API: `addTransform`, `addDataExtension`, `eleventy.before`, `dir` |
+| Tailwind CSS v4 docs | [tailwindcss.com docs][tailwind] | Config-less `@import "tailwindcss"`, `@theme inline`, the CLI |
+| Lucide docs | [lucide.dev guide][lucide] | UMD passthrough delivery, client-side `createIcons()` initialisation |
+| ki-website (in-house) | [ki-website repo][arcadia] | Reference implementation: monorepo layout, config, Tailwind, wrangler |
 
 ## Selected patterns
 
@@ -72,11 +72,16 @@ export default function (eleventyConfig: UserConfig) {
       return typeof mod.default === 'function' ? mod.default() : mod.default
     }
   })
-  eleventyConfig.addDataExtension('json5', { read: false, parser: (filePath: string) => JSON5.parse(readFileSync(filePath, 'utf-8')) })
+  eleventyConfig.addDataExtension('json5', {
+    read: false,
+    parser: (filePath: string) => JSON5.parse(readFileSync(filePath, 'utf-8'))
+  })
 
   eleventyConfig.on('eleventy.before', ({ runMode }: { runMode: string }) => {
     if (runMode !== 'serve' && runMode !== 'watch') {
-      execSync('bunx tailwindcss -i src/assets/css/main.css -o ./dist/assets/css/main.css --minify', { stdio: 'inherit' })
+      execSync('bunx tailwindcss -i src/assets/css/main.css -o ./dist/assets/css/main.css --minify', {
+        stdio: 'inherit'
+      })
     }
   })
   eleventyConfig.addWatchTarget('./dist/assets/css/main.css')

@@ -51,11 +51,11 @@ The two are separable: a base on the canonical zone names declares a bare `[ki-k
 
 So **what an absent table means is per-skill**, and that is exactly what _Coverage enforcement_ (below) checks:
 
-| Table absent                   | Means                                                                                      |
-| ------------------------------ | ------------------------------------------------------------------------------------------ |
-| `[ki-repo]` (the file)         | not a ki-repo — the marker itself (bedrock; missing file is a FAIL)                        |
-| any other marker skill's table | not opted into that standard — a coverage WARN _if_ the repo shows that skill's artifacts  |
-| `ki-authoring`                 | a bare `[ki-authoring]` marker — declared like any coverage, not assumed (FAIL if missing) |
+| Table absent | Means |
+| --- | --- |
+| `[ki-repo]` (the file) | not a ki-repo — the marker itself (bedrock; missing file is a FAIL) |
+| any other marker skill's table | not opted into that standard — a coverage WARN _if_ the repo shows that skill's artifacts |
+| `ki-authoring` | a bare `[ki-authoring]` marker — declared like any coverage, not assumed (FAIL if missing) |
 
 Every declared governance root also commits the repository to a complete **resolvable native capability**: `ki repo audit` and `ki repo conform` must resolve its compatible registered operations only from the verified active installed collection before any operation runs. A declaration is not a request to vendor a manifest or payload into the repository. Process skills (`ki-delegate`, `ki-next`, `ki-plan`, and `ki-recap`) remain global process tooling, not target-local governance contracts, and must not be declared in `.ki-config.toml`. Human-led repository review is a mode of the declared `ki-repo` capability, not a separate configuration table.
 

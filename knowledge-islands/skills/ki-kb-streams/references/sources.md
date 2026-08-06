@@ -19,11 +19,11 @@ The canonical definition lives in this skill itself:
 
 Sampled at REFRESH time through each base's own `kb-fs` MCP and `CLAUDE.md`. These are **consumers** of the canonical skill, read to keep it honest against real use — not sources of the definition.
 
-| Source                           | Governs                                                             | Last reviewed |
-| -------------------------------- | ------------------------------------------------------------------- | ------------- |
-| `ki-arcadia-principal` base[^ap] | Whether the canonical skill still matches practice ※                | 2026-07-04    |
-| `kit-legal` base[^kl]            | The same, from a second base running the process under a local name | 2026-07-04    |
-| Other bases running the process  | The same, as further bases adopt the skill                          | 2026-06-21    |
+| Source | Governs | Last reviewed |
+| --- | --- | --- |
+| `ki-arcadia-principal` base[^ap] | Whether the canonical skill still matches practice ※ | 2026-07-04 |
+| `kit-legal` base[^kl] | The same, from a second base running the process under a local name | 2026-07-04 |
+| Other bases running the process | The same, as further bases adopt the skill | 2026-06-21 |
 
 ※ How the principal island runs its Streams in practice.
 

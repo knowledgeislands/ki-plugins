@@ -2,11 +2,11 @@
 
 **Refresh:** canonical · on-change
 
-| Source                                                             | Last reviewed | Governs                                               |
-| ------------------------------------------------------------------ | ------------- | ----------------------------------------------------- |
-| Knowledge Islands project planning practice and repository history | 2026-07-27    | Profiles, horizons, locators, projections, and plans  |
-| Knowledge Islands chezmoi roadmap                                  | 2026-07-16    | Canonical horizon blurbs and local placement guidance |
-| `ki-kb-streams` canonical standard                                 | 2026-07-16    | KB boundary and off-ramp                              |
+| Source | Last reviewed | Governs |
+| --- | --- | --- |
+| Knowledge Islands project planning practice and repository history | 2026-07-27 | Profiles, horizons, locators, projections, and plans |
+| Knowledge Islands chezmoi roadmap | 2026-07-16 | Canonical horizon blurbs and local placement guidance |
+| `ki-kb-streams` canonical standard | 2026-07-16 | KB boundary and off-ramp |
 
 ## Last review
 
