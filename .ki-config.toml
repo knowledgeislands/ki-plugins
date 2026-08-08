@@ -1,26 +1,29 @@
-["knowledgeislands/ki-agentic-harness:ki-repo"]
+[repo]
+harnesses = ["knowledgeislands/ki-agentic-harness"]
+
+[skills.ki-repo]
 repository = "https://github.com/knowledgeislands/ki-plugins"
 title = "ki-plugins"
 description = "Knowledge Islands Claude plugin marketplace — the Cowork-surface projection of ki-agentic-harness (skills + agents)."
 supported_runtimes = ["claude-code", "chatgpt-codex"]
 visibility = "public" # Cowork's extraKnownMarketplaces GitHub source must reach it.
 
-["knowledgeislands/ki-agentic-harness:ki-git"]
+[skills.ki-git]
 
-["knowledgeislands/ki-agentic-harness:ki-authoring"]
+[skills.ki-authoring]
 
-["knowledgeislands/ki-agentic-harness:ki-plugins"]
+[skills.ki-plugins]
 
 # The projection's marketplace topics supersede the source-repository defaults.
-["knowledgeislands/ki-agentic-harness:ki-repo".checks]
+[skills.ki-repo.checks]
 topics = false
 
 # The public proprietary projection intentionally retains its unresolved MIT-default license divergence.
 
-["knowledgeislands/ki-agentic-harness:ki-tokenomics"]
+[skills.ki-tokenomics]
 
-["knowledgeislands/ki-agentic-harness:ki-housekeeping-claude"]
+[skills.ki-housekeeping-claude]
 
-["knowledgeislands/ki-agentic-harness:ki-tokenomics-claude"]
+[skills.ki-tokenomics-claude]
 
-["knowledgeislands/ki-agentic-harness:ki-tokenomics-codex"]
+[skills.ki-tokenomics-codex]
