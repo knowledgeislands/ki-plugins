@@ -76,8 +76,12 @@ const parseHomes = (value: unknown, local: string | undefined): AuditOutcome[] =
       outcomes.push(violation(`home ${identifier} must be a table`))
       continue
     }
-    for (const key of Object.keys(home).filter((key) => !['purpose', 'targets', 'members'].includes(key)))
+    for (const key of Object.keys(home).filter((key) => !['owner', 'purpose', 'targets', 'members'].includes(key)))
       outcomes.push(warning(`home ${identifier} has unrecognised key ${key}`))
+    if (typeof home.owner !== 'string' || !REPOSITORY.test(home.owner))
+      outcomes.push(violation(`home ${identifier} owner must be a canonical HTTPS GitHub repository`))
+    else if (home.owner !== local)
+      outcomes.push(violation(`home ${identifier} owner must match its declaring repository`))
     if (typeof home.purpose !== 'string' || !home.purpose.trim())
       outcomes.push(violation(`home ${identifier} requires a non-empty purpose`))
     if (!distinctStrings(home.targets) || home.targets.some((target) => !TARGETS.has(target)))
@@ -141,7 +145,7 @@ const parseConfiguration = (configuration: Readonly<AgoraConfiguration>, root: s
     configuration: {
       outcomes: configurationOutcomes.length
         ? configurationOutcomes
-        : pass('Agora homes use canonical identity, purpose, policy, and approved member shape.')
+        : pass('Agora homes use canonical owner identity, purpose, policy, and approved member shape.')
     },
     memberships: {
       outcomes: membershipsOutcomes.length

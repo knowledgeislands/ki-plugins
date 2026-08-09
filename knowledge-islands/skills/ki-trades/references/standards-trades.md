@@ -21,13 +21,18 @@ A repository participates only by declaring its own table, naming each partner o
 ```toml
 [skills.ki-trades]
 
-[skills.ki-trades.routes]
-"owner/receiver" = { export = ["work"] }
-"owner/sender" = { import = ["knowledge"] }
-"owner/peer" = { export = ["work", "knowledge"], import = ["work"] }
+[skills.ki-trades.routes."owner/receiver"]
+export = ["work"]
+
+[skills.ki-trades.routes."owner/sender"]
+import = ["knowledge"]
+
+[skills.ki-trades.routes."owner/peer"]
+export = ["work", "knowledge"]
+import = ["work"]
 ```
 
-The repository's canonical endpoint is `ki-repo.repository`, a required HTTPS GitHub URI. A route is keyed by the partner's `owner/name` — the same form a trade record uses for its `sender` and `receiver` — and is an inline table carrying `export` and `import`, each a duplicate-free array drawn from the closed trade-kind set `work` and `knowledge`. A direction the partner does not trade is **absent**, never an empty array. A partner outside the default host keeps a full canonical HTTPS URL as its key, so that exception stays visibly exceptional.
+The repository's canonical endpoint is `ki-repo.repository`, a required HTTPS GitHub URI. Each route has its own table, keyed by the partner's `owner/name` — the same form a trade record uses for its `sender` and `receiver` — carrying `export` and `import`, each a duplicate-free array drawn from the closed trade-kind set `work` and `knowledge`. A direction the partner does not trade is **absent**, never an empty array. A partner outside the default host keeps a full canonical HTTPS URL as its key, so that exception stays visibly exceptional.
 
 Each partner appears exactly once: TOML's own prohibition on defining a key twice enforces that, so no hand-written uniqueness or lexical-ordering rule is needed. `[skills.ki-trades]` is declared explicitly rather than implied by its `routes` sub-table, because declaring a skill is separate from configuring it.
 

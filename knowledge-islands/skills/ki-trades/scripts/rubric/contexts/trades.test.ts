@@ -52,8 +52,13 @@ const writeRepositoryConfiguration = (
       '',
       '[skills.ki-trades]',
       '',
-      '[skills.ki-trades.routes]',
-      ...peers.map((peer) => `${JSON.stringify(peer)} = ${JSON.stringify(routes([peer], kinds)[peer])}`),
+      ...peers.flatMap((peer) => [
+        `[skills.ki-trades.routes.${JSON.stringify(peer)}]`,
+        ...Object.entries(routes([peer], kinds)[peer] as Record<string, readonly string[]>).map(
+          ([direction, values]) => `${direction} = ${JSON.stringify(values)}`
+        ),
+        ''
+      ]),
       ''
     ].join('\n')
   )

@@ -11,4 +11,4 @@ The sources behind [the Agora membership standard](standards-agora.md) and its [
 
 ## Last review
 
-- 2026-08-09 — Initial standard: reciprocal home/member declarations, local-only shape validation, explicit target policy, and a registry-derived estate distinct from named Agoras.
+- 2026-08-09 — Initial standard: reciprocal home/member declarations, explicit registered owner identity, owner-inclusive projection, local-only shape validation, explicit target policy, and a registry-derived estate distinct from named Agoras.

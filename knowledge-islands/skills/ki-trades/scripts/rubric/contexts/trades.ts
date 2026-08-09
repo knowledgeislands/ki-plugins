@@ -185,7 +185,7 @@ const parseConfiguration = (
   if (!local.repository || !local.identity)
     outcomes.push({ status: 'VIOLATION', message: 'ki-repo repository must be a canonical HTTPS GitHub home', subject })
 
-  // Routes are declared partner-first — one inline table per peer, keyed by `owner/name` — while the
+  // Routes are declared partner-first — one table per peer, keyed by `owner/name` — while the
   // rest of this skill reasons kind-first. Partner keys are unique by TOML's own prohibition on
   // defining a key twice, and ordering is immaterial to a map, so neither is re-checked here; both
   // were hand-written requirements the old direction-first arrays needed and this shape supersedes.

@@ -15,11 +15,11 @@ This governance skill defines the portable declaration of an **Agora**: a purpos
 
 ## What this skill owns
 
-1. **Agora homes** — a home repository declares a stable Agora identifier, human purpose, permitted target-policy categories, and its approved canonical repository members with their roles.
+1. **Agora homes** — a registered owner repository declares a stable, globally unique Agora identifier, its own canonical identity, human purpose, permitted target-policy categories, and its approved canonical repository members with their roles.
 2. **Member consent** — a member repository independently declares each Agora identifier it joins, the canonical home repository, and the matching role. A repository may join more than one Agora.
 3. **Portable boundary** — declarations use canonical HTTPS repository identities only. They contain no local path, installed-harness location, editor database, app setting, user name, or machine-specific state.
 4. **Target policy** — a home can permit Zed or VS Code workspace projection and source-root trust for supported clients. An empty policy expressly permits no projection.
-5. **Independent authority** — the home approves membership; every member consents for itself. This skill validates declaration shape only. `ki` resolves local registry identities and observes both sides before it reports reciprocal agreement; a user-environment owner renders the permitted target state.
+5. **Independent authority** — the registered owner is an automatic projection participant, while every other member consents for itself. This skill validates declaration shape only. `ki` resolves local registry identities, verifies owner identity, rejects duplicate Agora IDs, and observes member consent before it reports reciprocal agreement; a user-environment owner renders the permitted target state.
 
 ## Operating modes
 

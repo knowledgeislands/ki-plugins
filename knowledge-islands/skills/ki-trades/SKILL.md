@@ -16,7 +16,7 @@ This governance skill defines safe **trade preparation and submission**, not tra
 
 ## What this skill owns
 
-1. **Declared participation** — a repository opts in with its own `ki-trades` table, declaring typed `exports_to` and `imports_from` routes. Its canonical HTTPS GitHub home comes from `ki-repo.repository`.
+1. **Declared participation** — a repository opts in with its own `ki-trades` table, declaring typed export and import routes in one partner-keyed table each. Its canonical HTTPS GitHub home comes from `ki-repo.repository`.
 2. **Directional trade routes** — a sender-declared export permits local preparation or submission before receiver participation. Receipt becomes available only when both repositories are registered, the sender exports that trade kind, and the receiver imports it. Pending participation and active reciprocity remain distinct route facts.
 3. **Trade phases and identity** — every preparation and submission uses one `TRD-<eight lower-case hexadecimal characters>` identity and declares `kind: work | knowledge`. Every copy declares its own `phase` — `preparing`, `submitted`, or `received`. A committed `phase: preparing` record is mutable and silently observable at the sender's outbound path; submission rewrites the phase to `submitted` on that same path and freezes it.
 4. **Authority and byte boundaries** — the sender writes only preparations and outbound submissions. The receiver creates and updates only its inbound copy. The complete raw sender projection remains byte-stable; only closed receiver-local receipt, decision, rationale, and linkage fields may differ.
