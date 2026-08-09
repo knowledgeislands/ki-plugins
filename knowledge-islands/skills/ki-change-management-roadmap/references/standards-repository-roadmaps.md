@@ -23,7 +23,8 @@ Every non-KB repository uses one shape.
 ROADMAP.md                              # concise orientation
 docs/roadmap/
   _ISSUES.md                            # durable issue-allocation ledger, sorted first
-  <REPO>-<NNN>-<slug>.md                # one durable work item
+  <REPO>-<NNN>-<slug>.md                # repository-wide issuing mode
+  <REPO>-<AREA>-<NNN>-<slug>.md         # fixed-area issuing mode
 ```
 
 `ROADMAP.md` is a concise stable orientation that points to `docs/roadmap/` and explicitly does not duplicate the work-item queue.
@@ -36,19 +37,21 @@ Its frontmatter `title` is a compact label of at most four words. The file slug 
 
 There are no simple or thematic profiles, theme `ROADMAP.md` files, `plans/` directories, item locators, or standalone plan records.
 
-The item identifier is globally unique within its repository: `<REPO>-<NNN>`.
+The item identifier is globally unique within its repository. A repository chooses one issuing mode: repository-wide `<REPO>-<NNN>`, or fixed-area `<REPO>-<AREA>-<NNN>`.
 
 `<REPO>` is the stable uppercase `repo_code` in the `ki-repo` table.
 
-`<NNN>` is a zero-padded project-scoped serial allocated from `001`.
+`<AREA>` is an uppercase code for a fixed issuing namespace. It is selected when the item opens, recorded as `area:` frontmatter, and never changes. It is not a mutable theme or group.
 
-`docs/roadmap/_ISSUES.md` is the canonical durable allocation ledger. Its `last_id` is the highest number ever issued, including pruned records. Allocate a new issue as `last_id + 1`, then advance the ledger in the same coherent change that creates the item. Never lower the ledger, fill a gap, or reuse a number. The checker verifies that the ledger is well-formed and no retained item exceeds it; CONFORM scaffolds the file only when it is absent.
+`<NNN>` is a zero-padded serial allocated from `001`. In repository-wide mode it is one repository sequence. In fixed-area mode it is one sequence per area. Never lower a high-water mark, fill a gap, or reuse a number after pruning.
+
+`docs/roadmap/_ISSUES.md` is the canonical durable allocation ledger. Repository-wide mode uses `last_id`; fixed-area mode uses a code-sorted `areas: { AREA: N }` map. The checker verifies that the ledger matches the configured issuing mode and no retained item exceeds its applicable high-water mark; CONFORM scaffolds the file only when it is absent.
 
 The filename repeats the identifier followed by a lowercase kebab-case slug.
 
 The `theme` frontmatter field is a human-readable kebab-case grouping such as `foundation-tooling`.
 
-It is deliberately retained after flattening: items in one theme may be selected, shaped, and executed together without becoming a physical directory hierarchy. Its identifier code and name must be declared together in `.ki-config.toml`:
+It is deliberately retained after flattening: items in one theme may be selected, shaped, and executed together without becoming a physical directory hierarchy. A repository that does not need fixed areas declares its theme vocabulary directly:
 
 ```toml
 [skills.ki-repo]
@@ -58,7 +61,15 @@ repo_code = "KI-HARNESS"
 themes = ["foundation-tooling", "governance-consistency"]
 ```
 
-The array is the complete allowed theme vocabulary for the repository. Every item’s `theme` value must appear in it. It may declare a theme before that theme has an item. Keep horizons, lifecycle values, work-item location, and reporting behaviour universal rather than per-repository configuration.
+For fixed-area mode, the same table instead declares each durable area code and its human-readable theme:
+
+```toml
+[skills.ki-change-management-roadmap.areas]
+FND = "foundation-tooling"
+GOV = "governance-consistency"
+```
+
+The array or area-map values are the complete allowed theme vocabulary. Every item's `theme` must be declared; in fixed-area mode its `area` must be declared and map to that theme. A repository must not mix issuing modes. Keep horizons, lifecycle values, work-item location, and reporting behaviour universal rather than per-repository configuration.
 
 ## Horizons
 

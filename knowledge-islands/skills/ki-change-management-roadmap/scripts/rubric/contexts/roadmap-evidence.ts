@@ -8,6 +8,8 @@ export type Finding = { level: Level; area: string; msg: string; ref?: string; f
 export type Horizon = (typeof HORIZONS)[number]
 export type WorkItem = {
   readonly id: string
+  readonly area: string | null
+  readonly serial: number
   readonly title: string
   readonly theme: string
   readonly horizon: Horizon
@@ -20,7 +22,11 @@ export type WorkItem = {
   readonly file: string
   readonly body: string
 }
-type RoadmapConfiguration = { readonly repoCode: string; readonly themes: ReadonlySet<string> }
+type RoadmapConfiguration = {
+  readonly repoCode: string
+  readonly themes: ReadonlySet<string>
+  readonly areas: ReadonlyMap<string, string>
+}
 
 export const HORIZONS = ['now', 'next', 'soon', 'waiting-for', 'parked', 'future'] as const
 export const HORIZON_BLURBS: Record<Horizon, string> = {
@@ -38,6 +44,7 @@ export const HORIZON_BLURBS: Record<Horizon, string> = {
 const ID_RE = /^[A-Z][A-Z0-9-]{1,23}-\d{3,}$/
 const FILE_RE = /^([A-Z][A-Z0-9-]{1,23}-\d{3,})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/
 const THEME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const AREA_RE = /^[A-Z][A-Z0-9]*$/
 const COMMIT_RE = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/
 const TRADE_RE = /^TRD-[0-9a-f]{8}$/
 const MAX_TITLE_WORDS = 4
@@ -142,17 +149,14 @@ const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefi
         ? (table as Record<string, unknown>)
         : undefined
     const configuredThemes = values?.themes
-    if (!Array.isArray(configuredThemes) || configuredThemes.length === 0) {
-      add(
-        'FAIL',
-        'ROAD-6',
-        'ki-change-management-roadmap themes must be a non-empty array of theme names',
-        STANDARD,
-        '.ki-config.toml'
-      )
+    if (configuredThemes !== undefined && (!Array.isArray(configuredThemes) || configuredThemes.length === 0)) {
+      add('FAIL', 'ROAD-6', 'roadmap themes must be a non-empty array when declared', STANDARD, '.ki-config.toml')
       return undefined
     }
-    if (configuredThemes.some((theme) => typeof theme !== 'string' || !THEME_RE.test(theme))) {
+    if (
+      Array.isArray(configuredThemes) &&
+      configuredThemes.some((theme) => typeof theme !== 'string' || !THEME_RE.test(theme))
+    ) {
       add(
         'FAIL',
         'ROAD-6',
@@ -162,7 +166,7 @@ const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefi
       )
       return undefined
     }
-    if (new Set(configuredThemes).size !== configuredThemes.length) {
+    if (Array.isArray(configuredThemes) && new Set(configuredThemes).size !== configuredThemes.length) {
       add(
         'FAIL',
         'ROAD-6',
@@ -172,7 +176,53 @@ const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefi
       )
       return undefined
     }
-    return { repoCode: code, themes: new Set(configuredThemes) }
+    const configuredAreas = values?.areas
+    const areas = new Map<string, string>()
+    if (configuredAreas !== undefined) {
+      if (typeof configuredAreas !== 'object' || configuredAreas === null || Array.isArray(configuredAreas)) {
+        add(
+          'FAIL',
+          'ROAD-6',
+          'ki-change-management-roadmap areas must be a code-to-theme table',
+          STANDARD,
+          '.ki-config.toml'
+        )
+        return undefined
+      }
+      for (const [area, theme] of Object.entries(configuredAreas as Record<string, unknown>)) {
+        if (!AREA_RE.test(area) || typeof theme !== 'string' || !THEME_RE.test(theme)) {
+          add(
+            'FAIL',
+            'ROAD-6',
+            'roadmap area codes must be uppercase and map to lowercase kebab-case themes',
+            STANDARD,
+            '.ki-config.toml'
+          )
+          return undefined
+        }
+        if (Array.isArray(configuredThemes) && !configuredThemes.includes(theme)) {
+          add('FAIL', 'ROAD-6', 'every roadmap area must map to a declared theme', STANDARD, '.ki-config.toml')
+          return undefined
+        }
+        areas.set(area, theme)
+      }
+      if (!areas.size) {
+        add(
+          'FAIL',
+          'ROAD-6',
+          'ki-change-management-roadmap areas must not be empty when declared',
+          STANDARD,
+          '.ki-config.toml'
+        )
+        return undefined
+      }
+    }
+    const themes = new Set(Array.isArray(configuredThemes) ? configuredThemes : areas.values())
+    if (!themes.size) {
+      add('FAIL', 'ROAD-6', 'roadmap must declare themes or a non-empty areas table', STANDARD, '.ki-config.toml')
+      return undefined
+    }
+    return { repoCode: code, themes, areas }
   } catch {
     add('FAIL', 'ROAD-6', 'cannot parse .ki-config.toml', STANDARD, '.ki-config.toml')
     return undefined
@@ -250,6 +300,7 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
   const value = (key: string): string | undefined =>
     typeof parsed.values[key] === 'string' ? (parsed.values[key] as string) : undefined
   const id = value('id')
+  const area = value('area')
   const title = value('title')
   const theme = value('theme')
   const horizon = value('horizon') as Horizon | undefined
@@ -268,6 +319,7 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
     (key) =>
       ![
         'id',
+        'area',
         'title',
         'theme',
         'horizon',
@@ -290,20 +342,39 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
   else if (title.trim().split(/\s+/).length > MAX_TITLE_WORDS)
     add('FAIL', 'ITEM-1', `title must contain at most ${MAX_TITLE_WORDS} words`, FORMAT, display)
   if (!theme || !THEME_RE.test(theme)) add('FAIL', 'ITEM-2', 'theme must be lowercase kebab-case', FORMAT, display)
+  const configuredArea = configuration && area && configuration.areas.has(area) ? area : undefined
   const issueNumber =
-    configuration && id?.startsWith(`${configuration.repoCode}-`)
-      ? id.slice(configuration.repoCode.length + 1)
+    configuration && id
+      ? id.slice(`${configuration.repoCode}${configuration.areas.size ? `-${area ?? ''}` : ''}-`.length)
       : undefined
-  if (!configuration || !issueNumber || !/^\d{3,}$/.test(issueNumber))
+  const expectedPrefix = configuration?.areas.size
+    ? `${configuration.repoCode}-${configuredArea ?? ''}-`
+    : `${configuration?.repoCode ?? ''}-`
+  if (
+    !configuration ||
+    !id?.startsWith(expectedPrefix) ||
+    !issueNumber ||
+    !/^\d{3,}$/.test(issueNumber) ||
+    (configuration.areas.size > 0 && (!area || !configuredArea)) ||
+    (configuration.areas.size === 0 && area !== undefined)
+  )
     add(
       'FAIL',
       'ITEM-1',
-      'item identifier must use the configured repository code and a zero-padded issue number',
+      'item identifier must use the configured repository code, optional configured area code, and a zero-padded issue number',
       FORMAT,
       display
     )
   if (!configuration || !theme || !configuration.themes.has(theme))
     add('FAIL', 'ITEM-2', 'item theme must be declared by ki-change-management-roadmap configuration', FORMAT, display)
+  if (configuration?.areas.size && (!area || configuration.areas.get(area) !== theme))
+    add(
+      'FAIL',
+      'ITEM-2',
+      'item area must map to its theme in ki-change-management-roadmap configuration',
+      FORMAT,
+      display
+    )
   if (!horizon || !HORIZONS.includes(horizon))
     add('FAIL', 'ITEM-2', 'horizon must be one canonical value', FORMAT, display)
   if (!status || !STATUS.has(status)) add('FAIL', 'ITEM-2', 'status must be one lifecycle value', FORMAT, display)
@@ -334,9 +405,13 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
     (typeof baselineRef !== 'string' || !COMMIT_RE.test(baselineRef))
   )
     add('FAIL', 'ITEM-2', 'executing or completed item needs an immutable baseline-ref', FORMAT, display)
-  if (!id || !title || !theme || !horizon || !status || !blocks || !blockedBy) return undefined
+  const serial = Number.parseInt(id?.split('-').at(-1) ?? '', 10)
+  if (!id || !title || !theme || !horizon || !status || !blocks || !blockedBy || !Number.isSafeInteger(serial))
+    return undefined
   const item: WorkItem = {
     id,
+    area: area ?? null,
+    serial,
     title,
     theme,
     horizon,
@@ -385,14 +460,34 @@ const validateDependencies = (items: readonly WorkItem[]): void => {
 export const rootRoadmap = (): string =>
   '# Repository roadmap\n\nThis repository manages forward work as canonical structured Markdown work items under [`docs/roadmap/`](docs/roadmap/).\n\nUse `ki` to audit and report these items; `ROADMAP.md` deliberately does not duplicate their queue.\n'
 
-export const issueLedger = (lastId: number): string =>
-  `---\nlast_id: ${lastId}\n---\n\n# Roadmap issue ledger\n\nThis ledger reserves every project-scoped roadmap issue number through \`${lastId.toString().padStart(3, '0')}\`. Allocate the next work item as one greater than \`last_id\`; never lower this value or reuse an issued number after a record is pruned.\n`
+export const issueLedger = (allocation: number | ReadonlyMap<string, number>): string => {
+  if (typeof allocation === 'number')
+    return `---\nlast_id: ${allocation}\n---\n\n# Roadmap issue ledger\n\nThis ledger reserves every repository-scoped roadmap issue number through \`${allocation.toString().padStart(3, '0')}\`. Allocate the next work item as one greater than \`last_id\`; never lower this value or reuse an issued number after a record is pruned.\n`
+  const areas = [...allocation.entries()].sort(([left], [right]) => left.localeCompare(right))
+  const values = areas.map(([area, lastId]) => `${area}: ${lastId}`).join(', ')
+  const detail = areas
+    .map(([area, lastId]) => `- \`${area}\` reserves through \`${lastId.toString().padStart(3, '0')}\`.`)
+    .join('\n')
+  return `---\nareas: { ${values} }\n---\n\n# Roadmap issue ledger\n\nThis ledger reserves fixed issuing-area namespaces. Allocate the next work item in its area as one greater than that area's high-water mark; never lower a value or reuse an issued number after a record is pruned. Areas are not mutable themes or groups.\n\n${detail}\n`
+}
 
-const ledgerLastId = (text: string): number | undefined => {
+const ledgerAllocation = (text: string): number | ReadonlyMap<string, number> | undefined => {
   const matched = text.match(/^---\r?\nlast_id:\s*(\d+)\s*\r?\n---\r?\n/)
-  if (!matched) return undefined
-  const lastId = Number.parseInt(matched[1], 10)
-  return Number.isSafeInteger(lastId) && lastId >= 0 && text === issueLedger(lastId) ? lastId : undefined
+  if (matched) {
+    const lastId = Number.parseInt(matched[1], 10)
+    return Number.isSafeInteger(lastId) && lastId >= 0 && text === issueLedger(lastId) ? lastId : undefined
+  }
+  const areaMatch = text.match(/^---\r?\nareas:\s*\{\s*(.*?)\s*}\s*\r?\n---\r?\n/)
+  if (!areaMatch) return undefined
+  const allocation = new Map<string, number>()
+  for (const entry of areaMatch[1].split(',')) {
+    const pair = entry.trim().match(/^([A-Z][A-Z0-9]*):\s*(\d+)$/)
+    if (!pair || allocation.has(pair[1])) return undefined
+    const lastId = Number.parseInt(pair[2], 10)
+    if (!Number.isSafeInteger(lastId) || lastId < 0) return undefined
+    allocation.set(pair[1], lastId)
+  }
+  return allocation.size && text === issueLedger(allocation) ? allocation : undefined
 }
 
 export const inspectRoadmap = (repository: string): readonly Finding[] => {
@@ -440,17 +535,8 @@ export const inspectRoadmap = (repository: string): readonly Finding[] => {
       `docs/roadmap/${ISSUE_LEDGER}`
     )
   else {
-    const lastId = ledgerLastId(readFileSync(ledgerPath, 'utf8'))
-    const highestItemId = Math.max(
-      0,
-      ...items.flatMap((item) => {
-        const serial = item.id.startsWith(`${configuration?.repoCode ?? ''}-`)
-          ? Number.parseInt(item.id.slice((configuration?.repoCode.length ?? 0) + 1), 10)
-          : Number.NaN
-        return Number.isSafeInteger(serial) ? [serial] : []
-      })
-    )
-    if (lastId === undefined)
+    const allocation = ledgerAllocation(readFileSync(ledgerPath, 'utf8'))
+    if (allocation === undefined)
       add(
         'FAIL',
         'ROAD-7',
@@ -458,14 +544,52 @@ export const inspectRoadmap = (repository: string): readonly Finding[] => {
         STANDARD,
         `docs/roadmap/${ISSUE_LEDGER}`
       )
-    else if (lastId < highestItemId)
-      add(
-        'FAIL',
-        'ROAD-7',
-        `issue ledger last_id ${lastId} is below retained issue ${highestItemId}`,
-        STANDARD,
-        `docs/roadmap/${ISSUE_LEDGER}`
+    else if (configuration?.areas.size) {
+      if (
+        typeof allocation === 'number' ||
+        [...configuration.areas.keys()].some((area) => !allocation.has(area)) ||
+        [...allocation.keys()].some((area) => !configuration.areas.has(area))
       )
+        add(
+          'FAIL',
+          'ROAD-7',
+          'issue ledger areas must exactly match configured issuing areas',
+          STANDARD,
+          `docs/roadmap/${ISSUE_LEDGER}`
+        )
+      else {
+        for (const area of configuration.areas.keys()) {
+          const highest = Math.max(0, ...items.filter((item) => item.area === area).map((item) => item.serial))
+          const lastId = allocation.get(area) ?? 0
+          if (lastId < highest)
+            add(
+              'FAIL',
+              'ROAD-7',
+              `issue ledger area ${area} high-water ${lastId} is below retained issue ${highest}`,
+              STANDARD,
+              `docs/roadmap/${ISSUE_LEDGER}`
+            )
+        }
+      }
+    } else {
+      const highest = Math.max(0, ...items.map((item) => item.serial))
+      if (typeof allocation !== 'number')
+        add(
+          'FAIL',
+          'ROAD-7',
+          'repository-scoped roadmap ledger must use last_id',
+          STANDARD,
+          `docs/roadmap/${ISSUE_LEDGER}`
+        )
+      else if (allocation < highest)
+        add(
+          'FAIL',
+          'ROAD-7',
+          `issue ledger last_id ${allocation} is below retained issue ${highest}`,
+          STANDARD,
+          `docs/roadmap/${ISSUE_LEDGER}`
+        )
+    }
   }
   if (!existsSync(rootIndexPath) || lstatSync(rootIndexPath).isSymbolicLink())
     add('FAIL', 'ROOT-1', 'root ROADMAP.md must be a regular work-item orientation', STANDARD, 'ROADMAP.md')

@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
@@ -144,6 +144,46 @@ test('a flat work item and concise root orientation conform', () => {
   expect(inspectRoadmap(repository).filter((finding) => finding.level === 'FAIL')).toEqual([])
   expect(readFileSync(join(repository, 'ROADMAP.md'), 'utf8')).toContain('canonical structured Markdown work items')
   expect(readFileSync(join(repository, 'ROADMAP.md'), 'utf8')).not.toContain('TEST-001')
+})
+
+test('an area-qualified work item uses its configured namespace and area ledger', () => {
+  const repository = createFixture()
+  writeFileSync(
+    join(repository, '.ki-config.toml'),
+    '[skills.ki-repo]\nrepo_code = "TEST"\n\n[skills.ki-change-management-roadmap.areas]\nCORE = "foundation-tooling"\n'
+  )
+  const source = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
+  const target = join(repository, 'docs', 'roadmap', 'TEST-CORE-001-build-the-foundation.md')
+  renameSync(source, target)
+  writeFileSync(target, readFileSync(target, 'utf8').replace('id: TEST-001', 'id: TEST-CORE-001\narea: CORE'))
+  writeFileSync(join(repository, 'docs', 'roadmap', ISSUE_LEDGER), issueLedger(new Map([['CORE', 1]])))
+  expect(inspectRoadmap(repository).filter((finding) => finding.level === 'FAIL')).toEqual([])
+})
+
+test('fixed areas reject an unknown namespace and a ledger below its retained serial', () => {
+  const repository = createFixture()
+  writeFileSync(
+    join(repository, '.ki-config.toml'),
+    '[skills.ki-repo]\nrepo_code = "TEST"\n\n[skills.ki-change-management-roadmap.areas]\nCORE = "foundation-tooling"\n'
+  )
+  const source = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
+  const target = join(repository, 'docs', 'roadmap', 'TEST-CORE-001-build-the-foundation.md')
+  renameSync(source, target)
+  writeFileSync(target, readFileSync(target, 'utf8').replace('id: TEST-001', 'id: TEST-CORE-001\narea: OTHER'))
+  writeFileSync(join(repository, 'docs', 'roadmap', ISSUE_LEDGER), issueLedger(new Map([['CORE', 0]])))
+  expect(inspectRoadmap(repository)).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ area: 'ITEM-1' }),
+      expect.objectContaining({
+        area: 'ITEM-2',
+        msg: 'item area must map to its theme in ki-change-management-roadmap configuration'
+      })
+    ])
+  )
+  writeFileSync(target, readFileSync(target, 'utf8').replace('area: OTHER', 'area: CORE'))
+  expect(inspectRoadmap(repository)).toContainEqual(
+    expect.objectContaining({ area: 'ROAD-7', msg: 'issue ledger area CORE high-water 0 is below retained issue 1' })
+  )
 })
 
 test('invalid lifecycle placement and missing execution sections fail', () => {

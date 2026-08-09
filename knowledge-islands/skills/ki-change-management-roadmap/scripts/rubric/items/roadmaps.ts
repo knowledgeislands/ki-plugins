@@ -91,14 +91,14 @@ const ROAD_6: RubricItem<RoadmapAuditContext> = {
   code: 'ROAD-6',
   title: 'repository work-item code',
   description:
-    'The ki-repo table declares a valid stable repository code and the ki-change-management-roadmap table declares its complete theme vocabulary.',
+    'The ki-repo table declares a valid stable repository code; roadmap configuration declares either repository-wide themes or fixed area-to-theme namespaces.',
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
     remediation: {
       class: 'diagnostic',
       guidance:
-        'Correct the configured repository code or theme vocabulary from authoritative repository configuration.'
+        'Correct the configured repository code, theme vocabulary, or fixed area map from authoritative repository configuration.'
     },
     audit: {
       phase: 'INSPECT',
@@ -111,7 +111,7 @@ const ROAD_7: RubricItem<RoadmapAuditContext> = {
   code: 'ROAD-7',
   title: 'issue-allocation ledger',
   description:
-    'docs/roadmap/_ISSUES.md records a project-scoped high-water mark, preventing a pruned issue number from being reused.',
+    'docs/roadmap/_ISSUES.md records the repository-wide or fixed-area high-water marks, preventing a pruned issue number from being reused.',
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
@@ -121,7 +121,7 @@ const ROAD_7: RubricItem<RoadmapAuditContext> = {
     audit: {
       phase: 'INSPECT',
       run: (context) =>
-        outcomesFor(context, 'ROAD-7', 'The issue-allocation ledger reserves every issued project number.')
+        outcomesFor(context, 'ROAD-7', 'The issue-allocation ledger reserves every issued repository or area number.')
     },
     conform: { phase: 'DERIVED', run: (context) => context.scaffoldIssueLedger?.() }
   }

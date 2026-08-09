@@ -41,9 +41,9 @@ Those responsibilities move cleanly to the dedicated process skills; `ki-plan` c
 
 ## Planning is repo-first
 
-In a KI code repository the canonical record is `docs/roadmap/<REPO>-<NNN>-<slug>.md`, authored through this skill—not a runtime-native Plan Mode scratch file.
+In a KI code repository the canonical record is `docs/roadmap/<REPO>-<NNN>-<slug>.md`, or `docs/roadmap/<REPO>-<AREA>-<NNN>-<slug>.md` where the repository declares fixed issuing areas, authored through this skill—not a runtime-native Plan Mode scratch file.
 
-`ki-change-management-roadmap` owns the stable `<REPO>` code in `.ki-config.toml`; the identifier holds `<THEME>` and frontmatter holds the human-readable `theme`.
+`ki-change-management-roadmap` owns the stable `<REPO>` code and any fixed `<AREA>` namespace in `.ki-config.toml`; `theme` remains the human-readable grouping in frontmatter.
 
 A native scratch file is only a draft.
 

@@ -24,14 +24,14 @@ export const createRoadmapDraft = (_repository: string, findings: readonly Findi
   }
   const scaffoldIssueLedger = (): void => {
     if (existsSync(join(_repository, 'docs', 'roadmap', ISSUE_LEDGER))) return
-    const highestRetained = Math.max(
-      0,
-      ...workItemsFor(_repository).flatMap((item) => {
-        const serial = Number.parseInt(item.id.split('-').at(-1) ?? '', 10)
-        return Number.isSafeInteger(serial) ? [serial] : []
-      })
-    )
-    addWrite(`docs/roadmap/${ISSUE_LEDGER}`, issueLedger(highestRetained))
+    const items = workItemsFor(_repository)
+    const areas = new Map<string, number>()
+    for (const item of items) {
+      if (!item.area) continue
+      areas.set(item.area, Math.max(areas.get(item.area) ?? 0, item.serial))
+    }
+    const highestRetained = Math.max(0, ...items.map((item) => item.serial))
+    addWrite(`docs/roadmap/${ISSUE_LEDGER}`, issueLedger(areas.size ? areas : highestRetained))
   }
   return {
     normaliseRoot: () => {

@@ -13,9 +13,10 @@ Each work item is one regular Markdown file directly under `docs/roadmap/`:
 
 ```text
 docs/roadmap/<REPO>-<NNN>-<slug>.md
+docs/roadmap/<REPO>-<AREA>-<NNN>-<slug>.md
 ```
 
-`<REPO>-<NNN>` is the identifier described by [the repository-roadmap standard](standards-repository-roadmaps.md). `docs/roadmap/_ISSUES.md` retains the highest issued number so a pruned record never makes its identifier reusable.
+`<REPO>-<NNN>` or `<REPO>-<AREA>-<NNN>` is the identifier described by [the repository-roadmap standard](standards-repository-roadmaps.md). `docs/roadmap/_ISSUES.md` retains the applicable repository or area high-water mark so a pruned record never makes its identifier reusable.
 
 `<slug>` is lowercase kebab-case and no longer than 50 characters.
 
@@ -23,7 +24,8 @@ docs/roadmap/<REPO>-<NNN>-<slug>.md
 
 ```yaml
 ---
-id: KI-HARNESS-001
+id: KI-HARNESS-FND-001
+area: FND
 title: Compact descriptive title
 theme: foundation-tooling
 horizon: future
@@ -35,7 +37,7 @@ baseline-ref: null
 ---
 ```
 
-`id`, `title`, `theme`, `horizon`, `status`, `blocks`, `blocked-by`, and `baseline-ref` are required.
+`id`, `title`, `theme`, `horizon`, `status`, `blocks`, `blocked-by`, and `baseline-ref` are required. `area` is required only when the repository configures fixed issuing areas, and prohibited otherwise.
 
 `title` contains at most four words. It is a compact human label for lists and reports; put scope and nuance in the Goal and Context rather than extending the title.
 
@@ -52,6 +54,8 @@ baseline-ref: null
 `baseline-ref` is `null` until execution begins, then the immutable full lowercase commit ID.
 
 `theme` is the human-readable kebab-case project grouping.
+
+`area` is the immutable issuing code included in an area-qualified identifier. It is not a theme or mutable group.
 
 An optional non-empty `transferred-from` records a durable handoff origin.
 
