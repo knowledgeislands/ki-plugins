@@ -13,6 +13,7 @@ type KiSkillsSubjectScope =
   | 'target'
   | 'invalidSkill'
   | 'skill'
+  | 'rubric'
   | 'markdown'
   | 'reference'
   | 'portability'
@@ -29,6 +30,7 @@ const KI_SKILLS_SUBJECT_FAMILIES = {
   target: ['LAY'],
   invalidSkill: ['LAY', 'FM'],
   skill: ['LAY', 'FM', 'NAME', 'DESC', 'OPT', 'SIZE', 'BODY', 'SCRIPT', 'KI-CHECKER', 'KI-SHAPE', 'KI-INVOKE', 'PROC'],
+  rubric: ['RUBRIC'],
   markdown: ['LAY', 'KI-LINK'],
   reference: ['LAY', 'KI-LINK', 'REF'],
   portability: ['PORT'],
@@ -37,7 +39,11 @@ const KI_SKILLS_SUBJECT_FAMILIES = {
   ownership: ['KI-SHAPE']
 } as const satisfies Record<KiSkillsSubjectScope, readonly string[]>
 
-const rubricSubject = (scope: KiSkillsSubjectScope, context: KiSkillsRubricContext, subject?: string): KiSkillsSubject => ({
+const rubricSubject = (
+  scope: KiSkillsSubjectScope,
+  context: KiSkillsRubricContext,
+  subject?: string
+): KiSkillsSubject => ({
   scope,
   families: KI_SKILLS_SUBJECT_FAMILIES[scope],
   context: () => context,
@@ -87,7 +93,11 @@ const ownershipCollisions = (directories: readonly string[]): { file: string; sk
 }
 
 /** Build one operation-scoped repository session for the generic KI rubric host. */
-export const createKiSkillsSession = ({ mode, repository }: RubricContextOptions): RubricSession<KiSkillsRubricContext> => {
+export const createKiSkillsSession = ({
+  mode,
+  repository,
+  publication
+}: RubricContextOptions): RubricSession<KiSkillsRubricContext> => {
   const reportTarget = repository
   const skillDirectories = discoverSkillDirs(repository).sort()
   const subjects: KiSkillsSubject[] = []
@@ -116,13 +126,16 @@ export const createKiSkillsSession = ({ mode, repository }: RubricContextOptions
 
   for (const skillDirectory of skillDirectories) {
     const conform = mode === 'conform' ? createSkillConformState(skillDirectory, reportTarget) : undefined
-    const skill = createSkillRubricContext(skillDirectory, conform?.capabilities)
+    const skill = createSkillRubricContext(skillDirectory, conform?.capabilities, publication)
     const skillSubject = relative(reportTarget, skillDirectory) || '.'
     subjects.push(rubricSubject(skill.validFrontmatter ? 'skill' : 'invalidSkill', skill.context, skillSubject))
     if (conform) documents.push(conform.document)
     if (!skill.validFrontmatter) continue
 
-    const runtimeBinding = parseFrontmatter(readFileSync(join(skillDirectory, 'SKILL.md'), 'utf8')).values['ki-runtime-binding'] === true
+    if (basename(skillDirectory) === 'ki-skills') subjects.push(rubricSubject('rubric', skill.context, skillSubject))
+
+    const runtimeBinding =
+      parseFrontmatter(readFileSync(join(skillDirectory, 'SKILL.md'), 'utf8')).values['ki-runtime-binding'] === true
 
     for (const file of listMarkdownFiles(skillDirectory)) {
       const document =

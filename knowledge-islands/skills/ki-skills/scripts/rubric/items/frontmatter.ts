@@ -1,5 +1,10 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { type FrontmatterRubricContext, type KiSkillsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
+import { DIAGNOSTIC_REMEDIATION } from '../../shared/rubric.ts'
+import {
+  type FrontmatterRubricContext,
+  type KiSkillsRubricContext,
+  selectKiSkillsContext
+} from '../contexts/contexts.ts'
 
 const FM_1: RubricItem<FrontmatterRubricContext> = {
   code: 'FM-1',
@@ -9,10 +14,12 @@ const FM_1: RubricItem<FrontmatterRubricContext> = {
   sources: ['SPEC', 'CC'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ hasBlock, isMapping }) => {
-        if (!hasBlock) return [{ status: 'VIOLATION', message: 'SKILL.md must begin with a YAML frontmatter block (--- ... ---)' }]
+        if (!hasBlock)
+          return [{ status: 'VIOLATION', message: 'SKILL.md must begin with a YAML frontmatter block (--- ... ---)' }]
         if (!isMapping) return [{ status: 'VIOLATION', message: 'YAML frontmatter must parse to a mapping' }]
         return [{ status: 'PASS', message: 'SKILL.md begins with a valid YAML frontmatter mapping' }]
       }

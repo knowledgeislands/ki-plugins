@@ -10,11 +10,12 @@ import { LONG } from './longevity.ts'
 import { NAME } from './name.ts'
 import { PROC } from './process.ts'
 import { PROMPT } from './prompt.ts'
+import { RUBRIC } from './publication.ts'
 
 export default {
   contract: 1,
   name: 'ki-subagents',
   concern: 'Claude Code subagent definitions',
   createSession: createAgentsSession,
-  families: [LAY, NAME, DESC, FM, PROMPT, LANE, LINK, PROC, LONG, COLL]
+  families: [LAY, NAME, DESC, FM, PROMPT, LANE, LINK, PROC, LONG, COLL, RUBRIC]
 } satisfies SkillRubricDefinition<AgentsRubricContext>

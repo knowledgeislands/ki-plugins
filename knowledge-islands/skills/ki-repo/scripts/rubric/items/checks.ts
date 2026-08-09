@@ -6,7 +6,14 @@ const CHECKS_1: RubricItem<EvidenceRubricContext> = {
   title: 'Override keys',
   description: 'Every ki-repo checks override names a supported overridable concern.',
   sources: ['standards-configuration.md'],
-  mechanical: { level: 'WARN', audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'WARN') } }
+  mechanical: {
+    level: 'WARN',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Remove the unsupported override or select a supported concern, then rerun the audit.'
+    },
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'WARN') }
+  }
 }
 
 export const CHECKS: RubricFamily<RepoRubricContext, EvidenceRubricContext> = {

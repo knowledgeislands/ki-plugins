@@ -14,8 +14,16 @@ const item = (
   sources: ['standards-engineering.md'],
   mechanical: {
     level: 'WARN',
+    remediation: conform
+      ? { class: 'automatic' }
+      : {
+          class: 'diagnostic',
+          guidance: 'Align the declared toolchain pins and remove obsolete pin files, then rerun the audit.'
+        },
     audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), 'WARN') },
-    ...(conform ? { conform: { phase: 'PREPARE' as const, run: (context: MiseRubricContext) => context.scaffold?.() } } : {})
+    ...(conform
+      ? { conform: { phase: 'PREPARE' as const, run: (context: MiseRubricContext) => context.scaffold?.() } }
+      : {})
   }
 })
 

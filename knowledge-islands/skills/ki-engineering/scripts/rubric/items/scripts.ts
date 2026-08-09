@@ -21,6 +21,12 @@ const mechanical = (
   mechanical: {
     level,
     ...(options.overrideLevels ? { overrideLevels: options.overrideLevels } : {}),
+    remediation: options.conform
+      ? { class: 'automatic' }
+      : {
+          class: 'diagnostic',
+          guidance: 'Revise the package scripts to meet the governed script surface, then rerun the audit.'
+        },
     audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), level, options.overrideLevels) },
     ...(options.conform
       ? {
@@ -33,12 +39,19 @@ const mechanical = (
   }
 })
 
-const judgment = (code: string, title: string, description: string, prompt: string): RubricItem<ScriptsRubricContext> => ({
+const judgment = (
+  code: string,
+  title: string,
+  description: string,
+  scope: string,
+  prompt: string,
+  guidance: string
+): RubricItem<ScriptsRubricContext> => ({
   code,
   title,
   description,
   sources: ['standards-engineering.md'],
-  judgment: { prompt }
+  judgment: { scope, prompt, outcomes: ['conforming', 'gap', 'exclusion'], guidance }
 })
 
 export const SCRIPTS: RubricFamily<EngineeringRubricContext, ScriptsRubricContext> = {
@@ -58,7 +71,7 @@ export const SCRIPTS: RubricFamily<EngineeringRubricContext, ScriptsRubricContex
     mechanical(
       'SCR-2',
       'Repository maintenance stays CLI-owned',
-      'Package scripts do not alias `ki repo audit`, `ki repo conform`, or `ki repo educate`; repositories invoke the installed CLI directly.',
+      'Package scripts do not invoke `ki repo audit`, `ki repo conform`, or `ki repo educate`, whether for the whole repository or a focused skill; repositories invoke the installed CLI directly.',
       'FAIL',
       (context) => context.scr2,
       { conform: true }
@@ -66,7 +79,7 @@ export const SCRIPTS: RubricFamily<EngineeringRubricContext, ScriptsRubricContex
     mechanical(
       'SCR-3',
       'Retired script families absent',
-      'Retired `ki:lint:*`, `ki:deps:*`, `ki:knip`, `ki:verify`, and aggregate governance aliases are absent.',
+      'Every `ki:` script belongs to a declared owning capability and `ki:deps:update` is present; retired tool families and aggregate governance aliases are absent.',
       'FAIL',
       (context) => context.scr3,
       { conform: true }
@@ -105,13 +118,17 @@ export const SCRIPTS: RubricFamily<EngineeringRubricContext, ScriptsRubricContex
       'SCR-8',
       'Repo-specific scripts retain clear ownership',
       'Repo-specific scripts beyond the governance surface are valid only when an owning skill governs them and they do not shadow a governed entrypoint.',
-      'Do repo-specific scripts have a clear owner and avoid divergent shadows of governed entrypoints?'
+      'Every repo-specific script outside the governed lifecycle and `ki:` surface.',
+      'Do repo-specific scripts have a clear owner and avoid divergent shadows of governed entrypoints?',
+      'Assign the script to an owning capability, remove a divergent shadow, record a named Gap, or record an explicit exclusion.'
     ),
     judgment(
       'SCR-9',
       'Clean-end-state cutovers',
       'Repository-footprint replacements cut directly to the intended contract, remove the superseded implementation, and verify the result without compatibility code that exists only for an intermediate state.',
-      'Did the cutover reach and verify the correct clean end state without retaining transitional compatibility code?'
+      'Every current or recently completed repository-footprint replacement.',
+      'Did the cutover reach and verify the correct clean end state without retaining transitional compatibility code?',
+      'Complete the clean cutover, record a named Gap with its owner, or record an explicit exclusion.'
     )
   ]
 }

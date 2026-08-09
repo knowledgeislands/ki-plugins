@@ -14,6 +14,10 @@ const FILENAME_1: RubricItem<FilenameRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Rename the record to its canonical ID and title slug, then update every affected citation.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context: FilenameRubricContext) =>
@@ -39,6 +43,11 @@ const FILENAME_2: RubricItem<FilenameRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Choose the canonical record identity, then rename or retire the duplicate and update affected citations.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context: FilenameRubricContext) =>
@@ -64,6 +73,10 @@ const FILENAME_3: RubricItem<FilenameRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Renumber the series contiguously and update every citation of each shifted record ID.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context: FilenameRubricContext) =>

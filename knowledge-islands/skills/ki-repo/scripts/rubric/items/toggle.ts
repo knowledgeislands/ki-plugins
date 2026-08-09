@@ -6,7 +6,14 @@ const TOGGLE_1: RubricItem<EvidenceRubricContext> = {
   title: 'Repository feature toggles',
   description: 'Issues are enabled and Wiki and Projects are disabled unless explicitly overridden.',
   sources: ['standards-repository.md'],
-  mechanical: { level: 'FAIL', audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL') } }
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Align the repository feature settings or record an explicit override, then rerun the audit.'
+    },
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL') }
+  }
 }
 
 export const TOGGLE: RubricFamily<RepoRubricContext, EvidenceRubricContext> = {

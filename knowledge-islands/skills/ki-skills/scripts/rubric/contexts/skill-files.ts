@@ -8,12 +8,15 @@ export const discoverSkillDirs = (path: string): string[] => {
   if (existsSync(join(absolutePath, 'SKILL.md'))) return [absolutePath]
 
   const root =
-    basename(absolutePath) === 'skills' || !existsSync(join(absolutePath, 'skills')) ? absolutePath : join(absolutePath, 'skills')
+    basename(absolutePath) === 'skills' || !existsSync(join(absolutePath, 'skills'))
+      ? absolutePath
+      : join(absolutePath, 'skills')
   if (!existsSync(root)) return []
 
   const skillDirs: string[] = []
   for (const entry of readdirSync(root, { withFileTypes: true })) {
-    if (!entry.isDirectory() || entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === 'scripts') continue
+    if (!entry.isDirectory() || entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === 'scripts')
+      continue
     const first = join(root, entry.name)
     if (existsSync(join(first, 'SKILL.md'))) {
       skillDirs.push(first)

@@ -8,7 +8,12 @@ const SEC_1: RubricItem<EvidenceRubricContext> = {
   sources: ['standards-repository.md'],
   mechanical: {
     level: 'FAIL',
+    cost: 4,
     overrideLevels: ['WARN'],
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Enable secret scanning and push protection or record an explicit override, then rerun the audit.'
+    },
     audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL', ['WARN']) }
   }
 }

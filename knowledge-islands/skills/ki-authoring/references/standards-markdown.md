@@ -1,12 +1,14 @@
 # Markdown authoring conventions
 
-The **judgment-layer** rules for the Markdown written across Knowledge Islands repositories and bases — the choices a formatter cannot make. Markdown is a distinct standard because its mechanical formatter/linter boundary and its human table, link, callout, and code-block decisions do not apply to the TOML configuration format. Everything mechanical (prose wrapping, bullet and quote characters, heading hierarchy, single H1, list spacing) is owned by **Prettier + markdownlint-cli2**; run `ki repo conform --skill ki-authoring` at the repository root and let that hosted rubric settle those. This file only covers what remains for a person or model.
+The **judgment-layer** rules for the Markdown written across Knowledge Islands repositories and bases — the choices a formatter cannot make. Markdown is a distinct standard because its mechanical formatter/linter boundary and its human table, link, callout, and code-block decisions do not apply to the TOML configuration format. Everything mechanical (prose wrapping, bullet and quote characters, heading hierarchy, single H1, list spacing) is owned by **rumdl**; run `ki repo conform --skill ki-authoring` at the repository root and let that hosted rubric settle those. This file only covers what remains for a person or model.
 
 ## Contents
 
 - [What to leave to the linter](#what-to-leave-to-the-linter)
-- [Tables and footnotes](#tables-and-footnotes)
-- [Links](#links)
+- [Migration safety](#migration-safety)
+  - [Tables and footnotes](#tables-and-footnotes)
+  - [Frontmatter](#frontmatter)
+  - [Links](#links)
 - [Callouts](#callouts)
 - [Code blocks](#code-blocks)
 
@@ -14,11 +16,17 @@ The **judgment-layer** rules for the Markdown written across Knowledge Islands r
 
 Don't hand-apply or document any of these — the toolchain owns them, and restating them here only invites drift when a config changes:
 
-- **Prose wrapping** — Prettier runs with `proseWrap: "never"` and will join any mid-paragraph line break back to a single line. Never insert a line break mid-sentence; the linter will undo it.
-- **Bullet, emphasis, and quote characters; trailing commas; blank-line spacing** — Prettier normalises these.
-- **Heading hierarchy, single H1, duplicate-heading and list rules** — markdownlint-cli2 flags these.
+- **Prose wrapping** — rumdl runs `MD013` with `reflow-mode = "normalize"` at an unbounded width, which joins any mid-paragraph line break back to a single line. Never insert a line break mid-sentence; the linter will undo it.
+- **Bullet, emphasis, and quote characters; trailing commas; blank-line spacing** — rumdl normalises these.
+- **Heading hierarchy, single H1, duplicate-heading and list rules** — rumdl flags these.
 
-The one place column width _is_ your job is **tables** — Prettier aligns table columns but will not reflow a row's content. Crucially, Prettier only pads columns when the result fits within `printWidth`; if the widest row would exceed 160 chars, Prettier leaves the table in compact (unpadded) format. So an over-long row blocks column alignment too — that's the first convention below.
+The one place column width _is_ your job is **tables**, and it is now wholly your job. The former formatter padded table columns only when the padded result fit within its print width, leaving wider tables compact; rumdl's `MD060` styles are unconditional, so the house configuration sets `style = "any"`, which accepts either shape and enforces neither. Nothing mechanical will align a table for you — that makes the width conventions below load-bearing rather than advisory.
+
+## Migration safety
+
+Treat Markdown-linter findings as evidence, not permission for a bulk rewrite when the syntax has more than one valid meaning.
+
+In particular, a setext-style heading uses an underline of `---`, but the same line can be a horizontal rule after an image or other block. Before converting a setext-heading finding to an ATX heading, classify its local structure and intended meaning; where that remains uncertain, preserve the source and obtain the author's confirmation. Do not apply a global `---` → `##` transform.
 
 ## Tables and footnotes
 
@@ -36,7 +44,7 @@ Rule of thumb: **table for parallel data across several dimensions; list for ter
 
 ### Keeping tables skimmable
 
-Keep every table **skimmable at a glance**. Prettier pads columns to align them but never breaks a cell across lines, so a cell with too much content forces a very wide row that's unreadable in a terminal or in print. Aim to keep each row within `printWidth` (160 chars — the same limit the formatter enforces on prose).
+Keep every table **skimmable at a glance**. Nothing breaks a cell across lines, so a cell with too much content forces a very wide row that's unreadable in a terminal or in print. Aim to keep each row within 120 characters.
 
 When a column's content would force the table to wrap awkwardly or demand cryptic abbreviations in the headers, **move the long content into footnotes below the table** and leave a footnote marker in the cell instead.
 
@@ -76,14 +84,24 @@ Learned applying this; bake them in:
 2. **Footnoting a column often isn't enough to reach `printWidth`.** A long `Source` URL still blows the row out; convert such URLs to **reference-style links** (`[text][ref]` in the cell, `[ref]: https://…` definitions collected at the file bottom).
 3. **When the long cell is content, not a URL,** reference links don't help — shorten the cell to a short label with a marker and move the full content to a **second-series (`※`) footnote**.
 4. **Watch for a pre-existing footnote series.** If a table already uses `†` for something (e.g. a date caveat), give the dominant content series the primary daggers and move the lone caveat to the `※` series so markers don't collide.
-5. **Author loosely, then run `ki repo conform --skill ki-authoring`.** Prettier re-aligns table padding (`MD060`) and markdownlint flags `MD052` (undefined reference) until the `[ref]:` definitions land — both transient; the pass should end at 0 errors.
+5. **Author loosely, then run `ki repo conform --skill ki-authoring`.** rumdl flags `MD052` (undefined reference) until the `[ref]:` definitions land — transient; the pass should end at 0 errors. It will not re-align table padding, so check that yourself.
+
+## Frontmatter
+
+Frontmatter is authored Markdown content. Use an unquoted scalar when it is a plain, unambiguous token; quote a value only when quoting preserves its intended string meaning or makes punctuation and whitespace clear.
+
+The mechanical normalizer removes paired single or double quotes only when the value is a bare-safe identifier-like token (`[A-Za-z_][A-Za-z0-9_-]*`) and is not YAML-significant (`true`, `false`, `null`, `y`, `n`, `yes`, `no`, `on`, `off`, `.nan`, or `.inf`, case-insensitively). It leaves dates, numeric-looking values, whitespace, punctuation, escaped values, and YAML-significant scalars unchanged.
+
+For example, write `id: DOTFILES-UE-001`, not `id: 'DOTFILES-UE-001'`; retain `title: "A value: with punctuation"` and `enabled: "true"` where those values must remain strings.
+
+This is an authoring presentation rule. Domain skills own a document's required frontmatter fields and value semantics; `ki` accepts valid quoted scalar input so existing authored files remain readable.
 
 ## Links
 
 - **Use standard relative markdown links, never Obsidian wikilinks** (`[[…]]`). Wikilinks break the moment a file is relocated, symlinked, or read outside the base; relative markdown links survive it. For a path containing spaces, use the CommonMark angle-bracket form: `[ref](<references/My Detail.md>)`.
 - **Never use wikilinks inside table cells.** The display-name form `[[target|Display text]]` contains a `|` that Markdown parsers treat as a column separator, silently breaking the table layout. Use a standard relative markdown link (`[Display text](path/to/file.md)`) instead.
 - **Write descriptive link text** — the words you'd skim for, not "click here" or a bare URL. `[the repo standard](…)`, not `[here](…)`.
-- **Refer to another skill by its `name`**, never by a file path — "the `ki-kb` skill" — because a skill's location on disk is not stable, but its name is how it loads into the session.
+- **Refer to another skill by its `name`**, never by a file path — "the `ki-repo-kb` skill" — because a skill's location on disk is not stable, but its name is how it loads into the session.
 - **In editor / IDE contexts** where the harness asks for clickable references, link files and lines with relative markdown links (`[file.ts:42](src/file.ts#L42)`) rather than bare backtick paths, so the reference is navigable.
 
 ## Callouts

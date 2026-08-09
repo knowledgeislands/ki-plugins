@@ -15,6 +15,10 @@ const ROOT_1: RubricItem<RootRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Create or correct the marked collection root with a human review of its record identity and contents.'
+    },
     audit: {
       phase: 'PREPARE',
       run: (context: RootRubricContext) => {

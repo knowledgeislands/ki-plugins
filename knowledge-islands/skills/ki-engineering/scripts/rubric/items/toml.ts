@@ -11,10 +11,11 @@ export const TOML: RubricFamily<EngineeringRubricContext, TomlRubricContext> = {
     {
       code: 'TOML-1',
       title: 'Engineering selector table',
-      description: 'A `[ki-engineering]` table is present.',
+      description: 'A `[skills.ki-engineering]` table is present.',
       sources: ['standards-engineering.md'],
       mechanical: {
         level: 'WARN',
+        remediation: { class: 'automatic' },
         audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.toml1, 'WARN') },
         conform: { phase: 'PRIMARY', run: (context) => context.declare?.() }
       }
@@ -22,10 +23,14 @@ export const TOML: RubricFamily<EngineeringRubricContext, TomlRubricContext> = {
     {
       code: 'TOML-2',
       title: 'Engineering configuration validates down',
-      description: 'Every key under `[ki-engineering]` is known to the checker; an unknown key is drift.',
+      description: 'Every key under `[skills.ki-engineering]` is known to the checker; an unknown key is drift.',
       sources: ['standards-engineering.md'],
       mechanical: {
         level: 'WARN',
+        remediation: {
+          class: 'diagnostic',
+          guidance: 'Remove or correct the unknown engineering configuration key, then rerun the audit.'
+        },
         audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.toml2, 'WARN') }
       }
     }

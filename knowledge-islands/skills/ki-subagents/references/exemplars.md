@@ -59,13 +59,13 @@ hooks:
 
 ### Domain-grounded KB agent (KI house pattern)
 
-From the KI harness `subagents/governance/ki-kb-curator.md`. Demonstrates: grounding section that lists specific KB notes to read before acting; own-vs-defer with reciprocal sibling references; confirm-before-write authoring convention.
+From the KI harness `subagents/governance/ki-repo-kb-curator.md`. Demonstrates: grounding section that lists specific KB notes to read before acting; own-vs-defer with reciprocal sibling references; confirm-before-write authoring convention.
 
 ```markdown
 ---
-name: ki-kb-curator
+name: ki-repo-kb-curator
 description: >
-  Knowledge Islands KB Curator — owns KB zone health, note structure, and conformance to the ki-kb standard … Does not own SKILL.md authoring — that is ki-skills-lead — or decision record authoring — that is ki-decision-author.
+  Knowledge Islands KB Curator — owns KB zone health, note structure, and conformance to the ki-repo-kb standard … Does not own SKILL.md authoring — that is ki-skills-lead — or decision record authoring — that is ki-decision-author.
 model: inherit
 color: green
 ---

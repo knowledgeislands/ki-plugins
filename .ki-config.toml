@@ -12,7 +12,9 @@ visibility = "public" # Cowork's extraKnownMarketplaces GitHub source must reach
 
 [skills.ki-authoring]
 
-[skills.ki-plugins]
+[skills.ki-repo-project]
+
+[skills.ki-repo-plugins]
 
 # The projection's marketplace topics supersede the source-repository defaults.
 [skills.ki-repo.checks]

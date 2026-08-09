@@ -50,7 +50,7 @@ Each `type_url` expands from `https://knowledgeislands.info/specifications/decis
 | `repo_type = "kb"` | `Admin/Governance/Decisions/` | `Decisions.md` | Required (see below) |
 | code / unset       | `docs/decisions/`             | `README.md`    | Required (see below) |
 
-The repo type is declared in `.ki-config.toml` under `[ki-decision-records]` (or inferred from `[ki-kb]` presence). The checker auto-detects the decisions directory (`docs/decisions/` then `Admin/Governance/Decisions/`) and picks the matching index file by mode; pass an explicit path to override.
+The repo type is declared in `.ki-config.toml` under `[skills.ki-decision-records]` (or inferred from `[skills.ki-repo-kb]` presence). The checker auto-detects the decisions directory (`docs/decisions/` then `Admin/Governance/Decisions/`) and picks the matching index file by mode; pass an explicit path to override.
 
 ## Frontmatter
 

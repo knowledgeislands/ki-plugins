@@ -10,6 +10,7 @@ import { GENERATED } from './generated.ts'
 import { KNIP } from './knip.ts'
 import { MISE } from './mise.ts'
 import { PACKAGE } from './package.ts'
+import { RUBRIC } from './publication.ts'
 import { SCRIPTS } from './scripts.ts'
 import { SYNC } from './sync.ts'
 import { TEST } from './test.ts'
@@ -21,5 +22,22 @@ export default {
   name: 'ki-engineering',
   concern: 'Knowledge Islands engineering standards',
   createSession: createEngineeringSession,
-  families: [PACKAGE, MISE, CI, SCRIPTS, BUN, TYPESCRIPT, BIOME, KNIP, SYNC, DEPENDENCIES, GENERATED, TEST, BUILD, ENVIRONMENT, TOML]
+  families: [
+    RUBRIC,
+    PACKAGE,
+    MISE,
+    CI,
+    SCRIPTS,
+    BUN,
+    TYPESCRIPT,
+    BIOME,
+    KNIP,
+    SYNC,
+    DEPENDENCIES,
+    GENERATED,
+    TEST,
+    BUILD,
+    ENVIRONMENT,
+    TOML
+  ]
 } satisfies SkillRubricDefinition<EngineeringRubricContext>

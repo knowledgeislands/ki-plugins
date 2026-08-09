@@ -1,4 +1,4 @@
-export const isProcessSkill = (description: string): boolean => /\(kind:\s*process\b/i.test(description)
+export const isProcessSkill = (kind: string): boolean => kind === 'process'
 
 export const hintVerbs = (hint: string): string[] =>
   hint

@@ -16,6 +16,11 @@ export const GENERATED: RubricFamily<EngineeringRubricContext, GeneratedRubricCo
       sources: ['standards-engineering.md'],
       mechanical: {
         level: 'FAIL',
+        remediation: {
+          class: 'diagnostic',
+          guidance:
+            'Align the generated-surface exclusions with the managed paths and remove the legacy runtime exclusion, then rerun the audit.'
+        },
         audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.gen1, 'FAIL') }
       }
     }

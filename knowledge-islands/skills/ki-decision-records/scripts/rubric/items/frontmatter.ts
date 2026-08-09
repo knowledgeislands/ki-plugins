@@ -13,13 +13,23 @@ const FM_0: RubricItem<RecordsRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Add canonical YAML frontmatter using the record body and filename as evidence.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context: RecordsRubricContext) =>
         outcomes(
           context.records
             .filter((record) => !record.frontmatter)
-            .map((record): AuditOutcome => ({ status: 'VIOLATION', message: 'YAML frontmatter is absent.', subject: record.file })),
+            .map(
+              (record): AuditOutcome => ({
+                status: 'VIOLATION',
+                message: 'YAML frontmatter is absent.',
+                subject: record.file
+              })
+            ),
           'Every decision record has YAML frontmatter.'
         )
     }
@@ -33,6 +43,10 @@ const FM_3: RubricItem<RecordsRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Set `type` to the canonical human-readable value for the record prefix.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context: RecordsRubricContext) =>
@@ -59,6 +73,10 @@ const FM_4: RubricItem<RecordsRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Add the canonical `decision_type` metadata derived from the record prefix.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context: RecordsRubricContext) =>
@@ -87,6 +105,10 @@ const FM_5: RubricItem<RecordsRubricContext> = {
   mechanical: {
     level: 'FAIL',
     overrideLevels: ['WARN'],
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Align `decision_type` with the canonical filename prefix after confirming the record classification.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context: RecordsRubricContext) => {
@@ -115,17 +137,25 @@ const FM_6: RubricItem<RecordsRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Complete the required metadata from the canonical H1, filename, and record type.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context: RecordsRubricContext) =>
         outcomes(
           context.records.flatMap((record): AuditOutcome[] => {
             if (record.frontmatterId !== record.id)
-              return [{ status: 'VIOLATION', message: '`id` must exactly match the H1 identifier.', subject: record.file }]
+              return [
+                { status: 'VIOLATION', message: '`id` must exactly match the H1 identifier.', subject: record.file }
+              ]
             const expectedTitle = record.headingTitle ?? ''
             if (!record.title) return [{ status: 'VIOLATION', message: '`title` is absent.', subject: record.file }]
             if (record.title !== expectedTitle)
-              return [{ status: 'VIOLATION', message: '`title` must exactly match the H1 title.', subject: record.file }]
+              return [
+                { status: 'VIOLATION', message: '`title` must exactly match the H1 title.', subject: record.file }
+              ]
             if (!record.date) return [{ status: 'VIOLATION', message: '`date` is absent.', subject: record.file }]
             if (!/^\d{4}-\d{2}-\d{2}$/.test(record.date))
               return [{ status: 'VIOLATION', message: '`date` must use YYYY-MM-DD.', subject: record.file }]

@@ -1,9 +1,10 @@
 ---
 name: ki-decision-records
+ki-kind: governance
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Codify, audit, and maintain Decision Records in any Knowledge Islands repo — the unified instrument replacing ki-adrs and ki-kdrs. Each decision type has its own prefix: GDR- (governance), ADR- (architecture), KDR- (knowledge), SDR- (strategy), PDR- (product), DDR- (data), XDR- (security), ODR- (operations), RDR- (research). Serials are per-prefix within scope. Governs universal metadata, the Nygard five-section format, and placement: docs/decisions/ for code repos, Admin/Governance/Decisions/ for KB repos. A DR's status records document currency, never a decision lifecycle. Use when writing, auditing, or conforming decision records. Triggers: "write a DR", "create a decision record", "document this decision", "audit the DRs". Off-ramps: ki-kb (island structure and frontmatter standard), ki-kb-streams (Enactment Process).
+  Codify, audit, and maintain Decision Records in any Knowledge Islands repo — the unified instrument replacing ki-adrs and ki-kdrs. Each decision type has its own prefix: GDR- (governance), ADR- (architecture), KDR- (knowledge), SDR- (strategy), PDR- (product), DDR- (data), XDR- (security), ODR- (operations), RDR- (research). Serials are per-prefix within scope. Governs universal metadata, the Nygard five-section format, and placement: docs/decisions/ for code repos, Admin/Governance/Decisions/ for KB repos. A DR's status records document currency, never a decision lifecycle. Use when writing, auditing, or conforming decision records. Triggers: "write a DR", "create a decision record", "document this decision", "audit the DRs". Off-ramps: ki-repo-kb (island structure and frontmatter standard), ki-repo-kb-streams (Enactment Process).
 argument-hint: 'audit [dir] | conform [dir] | help | educate [dir] | new <scope> "<title>" | refresh'
 ---
 
@@ -66,5 +67,5 @@ Run `ki repo educate --skill ki-decision-records --repo <repo>` to render the ca
 - **Serials are per-prefix within scope** — NNN is unique for a given `<PREFIX>`+`<SCOPE>`. `GDR-ARCADIA-001` and `SDR-ARCADIA-001` are both valid; two DRs never share the same prefix+scope+serial. A deliberately byte-identical cross-repository record declares `shared_record: true`; it retains its canonical ID and is excluded from a receiving collection’s local serial series only when no ordinary local record has that prefix+scope.
 - **Not every proposal needs a DR** — routine content additions, typo fixes, and minor configuration changes do not warrant one. Reserve DRs for decisions with standalone standing.
 - **All repos** require frontmatter (`id`, `title`, `date`, `status`, `type`, `type_url`, `decision_type`). KB repos use `Admin/Governance/Decisions/`; code repos use `docs/decisions/`.
-- The KI-wide frontmatter standard (universal fields and the `type` taxonomy) lives in the `ki-kb` skill.
+- The KI-wide frontmatter standard (universal fields and the `type` taxonomy) lives in the `ki-repo-kb` skill.
 - Checker output conforms to the canonical JSONL response and reporter contract owned by `ki-skills`; judgment aspects are counted as unevaluated rather than emitted as synthetic findings.

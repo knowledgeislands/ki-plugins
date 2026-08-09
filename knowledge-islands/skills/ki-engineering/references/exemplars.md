@@ -23,14 +23,14 @@ For the full upstream pin list and in-house sources, see [sources.md](sources.md
 
 ### Canonical `biome.json`
 
-All 10 KI TS/Bun repos carry this config verbatim. The `$schema` pins the Biome version — when the house upgrades Biome, bump this value and the matching devDependency together. `vcs.useIgnoreFile: true` means `.gitignore` is the single ignore source; no separate Biome ignore file is needed. `lineWidth: 160` matches `.prettierrc.json` so Biome-formatted code and Prettier-formatted Markdown use the same column budget. `noExplicitAny: off` is the deliberate house divergence from the recommended preset — KI TypeScript uses `any` sparingly but does not ban it.
+All 10 KI TS/Bun repos carry this config verbatim. The `$schema` pins the Biome version — when the house upgrades Biome, bump this value and the matching devDependency together. `vcs.useIgnoreFile: true` means `.gitignore` is the single ignore source; no separate Biome ignore file is needed. `lineWidth: 120` is the shared code-formatting budget; Markdown is owned separately by ki-authoring. `noExplicitAny: off` is the deliberate house divergence from the recommended preset — KI TypeScript uses `any` sparingly but does not ban it.
 
 ```json
 {
   "$schema": "https://biomejs.dev/schemas/2.5.3/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": { "includes": ["src/**", "*.ts", "*.json"], "ignoreUnknown": true },
-  "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 160 },
+  "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
   "javascript": {
     "formatter": { "quoteStyle": "single", "semicolons": "asNeeded", "trailingCommas": "none" }
   },
@@ -95,12 +95,12 @@ The governance surface is direct native `ki repo audit` / `ki repo conform` comm
 
 The three Vitest scripts above apply only when the repository carries `vitest.config.*`. A runner-neutral repository supplies only its appropriate bare `test` script; it does not restore aggregate or scoped governance-script aliases.
 
-The harness's [actual package manifest](../../../../package.json) uses the same bare idiom without a Vitest configuration; each standalone test program remains explicit and the complete entry chains the whole suite. An abbreviated shape:
+The harness's [actual package manifest](../../../../package.json) uses the same bare idiom without a Vitest configuration; the complete entry delegates discovery and execution to Bun without recreating retired bootstrap or governance runners. An abbreviated shape:
 
 ```jsonc
 {
   "scripts": {
-    "test": "bun hooks/plan-stamp.test.ts && bun hooks/plan-sync.test.ts && bun skills/keystone/ki-bootstrap/scripts/internal/repo-bootstrap/resolve.test.ts"
+    "test": "bun test --isolate --max-concurrency=1 ./skills ./hooks"
   }
 }
 ```
@@ -129,16 +129,16 @@ export default defineConfig({
 })
 ```
 
-### Minimal `[ki-engineering]` table in `.ki-config.toml`
+### Minimal `[skills.ki-engineering]` table in `.ki-config.toml`
 
-The table is a conformance marker — its presence declares "the engineering standard applies here". It carries no top-level keys because capabilities (tests, compiled build, env config) are auto-detected from repo markers (`vitest.config.*`, `tsconfig.build.json`, `.env*.example`). The only allowed sub-structure is a `[ki-engineering.checks]` table for deliberate waivers. A repo that fully conforms writes the table header and nothing else.
+The table is a conformance marker — its presence declares "the engineering standard applies here". It carries no top-level keys because capabilities (tests, compiled build, env config) are auto-detected from repo markers (`vitest.config.*`, `tsconfig.build.json`, `.env*.example`). The only allowed sub-structure is a `[skills.ki-engineering.checks]` table for deliberate waivers. A repo that fully conforms writes the table header and nothing else.
 
 ```toml
-[ki-engineering]
+[skills.ki-engineering]
 # This repo fully conforms. Capabilities (tests, compiled build, env config) are auto-detected
 # from repo markers — no profile key is needed here.
 # To waive a specific check, add:
-# [ki-engineering.checks]
+# [skills.ki-engineering.checks]
 # <check-id> = false  # reason: …
 ```
 

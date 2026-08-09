@@ -1,4 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
+import { judgment } from '../../shared/rubric.ts'
 import type { KiSkillsRubricContext } from '../contexts/contexts.ts'
 
 const PROC_1: RubricItem<unknown> = {
@@ -6,7 +7,7 @@ const PROC_1: RubricItem<unknown> = {
   title: 'the skill was built evaluation-first',
   description: 'Built evaluation-first — ≥ 3 evaluation scenarios against a no-skill baseline before extensive docs.',
   sources: ['BP', 'ENG'],
-  judgment: { prompt: 'Was this skill built evaluation-first with meaningful scenarios against a no-skill baseline?' }
+  judgment: judgment('Was this skill built evaluation-first with meaningful scenarios against a no-skill baseline?')
 }
 
 const PROC_2: RubricItem<unknown> = {
@@ -14,7 +15,7 @@ const PROC_2: RubricItem<unknown> = {
   title: 'the skill has been tested across intended models and real use',
   description: 'Tested across the models it will run on (Haiku/Sonnet/Opus) and with real usage.',
   sources: ['BP'],
-  judgment: { prompt: 'Has the skill been tested across its intended models and through real usage?' }
+  judgment: judgment('Has the skill been tested across its intended models and through real usage?')
 }
 
 export const PROCESS: RubricFamily<KiSkillsRubricContext, KiSkillsRubricContext> = {

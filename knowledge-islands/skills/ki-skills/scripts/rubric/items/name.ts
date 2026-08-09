@@ -1,4 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
+import { AUTOMATIC_REMEDIATION, DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
 import { type KiSkillsRubricContext, type NameRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 import { containsXmlTag } from '../contexts/text.ts'
 
@@ -12,10 +13,13 @@ const NAME_1: RubricItem<NameRubricContext> = {
   sources: ['SPEC', 'CC'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ name }) =>
-        !name ? [{ status: 'VIOLATION', message: '`name` is missing from frontmatter' }] : [{ status: 'PASS', message: 'name is present' }]
+        !name
+          ? [{ status: 'VIOLATION', message: '`name` is missing from frontmatter' }]
+          : [{ status: 'PASS', message: 'name is present' }]
     }
   }
 }
@@ -27,6 +31,7 @@ const NAME_2: RubricItem<NameRubricContext> = {
   sources: ['SPEC', 'BP'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ name }) =>
@@ -46,13 +51,19 @@ const NAME_3: RubricItem<NameRubricContext> = {
   sources: ['SPEC', 'BP'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ name }) =>
         !name
           ? [{ status: 'NOT_APPLICABLE', message: 'name is not present' }]
           : !/^[a-z0-9-]+$/.test(name)
-            ? [{ status: 'VIOLATION', message: `\`name\` "${name}" must be lowercase letters, digits, and hyphens only` }]
+            ? [
+                {
+                  status: 'VIOLATION',
+                  message: `\`name\` "${name}" must be lowercase letters, digits, and hyphens only`
+                }
+              ]
             : [{ status: 'PASS', message: 'name uses lowercase letters, digits, and hyphens only' }]
     }
   }
@@ -65,6 +76,7 @@ const NAME_4: RubricItem<NameRubricContext> = {
   sources: ['SPEC'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ name }) =>
@@ -85,13 +97,19 @@ const NAME_5: RubricItem<NameRubricContext> = {
   sources: ['SPEC'],
   mechanical: {
     level: 'FAIL',
+    remediation: AUTOMATIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ name, directoryName, localGovernanceSource }) =>
         !name
           ? [{ status: 'NOT_APPLICABLE', message: 'name is not present' }]
           : name !== directoryName
-            ? [{ status: 'VIOLATION', message: `\`name\` "${name}" does not match the directory name "${directoryName}"` }]
+            ? [
+                {
+                  status: 'VIOLATION',
+                  message: `\`name\` "${name}" does not match the directory name "${directoryName}"`
+                }
+              ]
             : [
                 {
                   status: 'PASS',
@@ -113,20 +131,32 @@ const NAME_5: RubricItem<NameRubricContext> = {
 const NAME_6: RubricItem<NameRubricContext> = {
   code: 'NAME-6',
   title: 'name contains no XML tags or reserved words',
-  description: '`name` contains no XML tags and no reserved words (`anthropic`, `claude`).',
-  sources: ['BP'],
+  description:
+    '`name` contains no XML tags and no reserved words (`anthropic`, `claude`), except that an explicit runtime adapter may use its matching vendor word.',
+  sources: ['BP', 'KI'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
-      run: ({ name }) => {
+      run: ({ name, reservedVendorNameAllowed }) => {
         if (!name) return [{ status: 'NOT_APPLICABLE', message: 'name is not present' }]
-        const violations = containsXmlTag(name) ? [{ status: 'VIOLATION' as const, message: '`name` contains an XML tag' }] : []
+        const violations = containsXmlTag(name)
+          ? [{ status: 'VIOLATION' as const, message: '`name` contains an XML tag' }]
+          : []
         for (const word of RESERVED_WORDS)
-          if (name.includes(word)) violations.push({ status: 'VIOLATION', message: `\`name\` contains the reserved word "${word}"` })
+          if (name.includes(word) && !reservedVendorNameAllowed)
+            violations.push({ status: 'VIOLATION', message: `\`name\` contains the reserved word "${word}"` })
         return violations.length > 0
           ? [violations[0] as (typeof violations)[number], ...violations.slice(1)]
-          : [{ status: 'PASS', message: 'name contains no XML tags or reserved words' }]
+          : [
+              {
+                status: 'PASS',
+                message: reservedVendorNameAllowed
+                  ? 'name contains no XML tags and its vendor word matches the explicit runtime boundary'
+                  : 'name contains no XML tags or reserved words'
+              }
+            ]
       }
     }
   }
@@ -137,7 +167,7 @@ const NAME_7: RubricItem<NameRubricContext> = {
   title: 'name is specific rather than generic',
   description: '`name` is specific, not generic (avoid `helper`, `utils`, `tools`, `data`).',
   sources: ['BP'],
-  judgment: { prompt: 'Is this name concrete and appropriately scoped for the capability it governs?' }
+  judgment: judgment('Is this name concrete and appropriately scoped for the capability it governs?')
 }
 
 export const NAME: RubricFamily<KiSkillsRubricContext, NameRubricContext> = {

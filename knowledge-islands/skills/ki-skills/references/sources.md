@@ -10,6 +10,8 @@ Abbreviations match the `(SOURCE)` tags in the standards and [rubric](rubric.md)
 
 - [Portable Agent Skills contract](#portable-agent-skills-contract)
 - [Established authoring practice](#established-authoring-practice)
+- [Anthropic practice](#anthropic-practice)
+- [OpenAI practice](#openai-practice)
 - [Knowledge Islands house standard](#knowledge-islands-house-standard)
 - [Runtime overlay: Claude Code](#runtime-overlay-claude-code)
 - [Last review](#last-review)
@@ -45,13 +47,31 @@ The Agent Skills [documentation index][agentskills-index] is the inventory autho
 
 † Anthropic Engineering, 2025-12-18.
 
+## Anthropic practice
+
+The Claude blog is a discovery source, not a normative standard. On each REFRESH, scan its landing page for new articles materially relevant to agent skills, agentic practice, or authoring workflows; open and assess only those relevant articles.
+
+| Tag  | Source                     | Scope                                            | Last reviewed |
+| ---- | -------------------------- | ------------------------------------------------ | ------------- |
+| BLOG | [Claude blog][claude-blog] | Agentic-practice and authoring article discovery | 2026-07-28    |
+
+## OpenAI practice
+
+The OpenAI News page is a discovery source, not a normative standard. On each REFRESH, scan its landing page for new articles materially relevant to agent skills, agentic practice, or authoring workflows; open and assess only those relevant articles.
+
+| Tag    | Source                     | Scope                                            | Last reviewed |
+| ------ | -------------------------- | ------------------------------------------------ | ------------- |
+| OPENAI | [OpenAI News][openai-news] | Agentic-practice and authoring article discovery | 2026-07-28    |
+
 ## Community
 
-| Tag       | Source                                               | Scope                  | Last reviewed |
-| --------- | ---------------------------------------------------- | ---------------------- | ------------- |
-| COMMUNITY | [Skill Authoring Patterns][patterns]                 | Patterns and feedback  | 2026-07-04    |
-| COMMUNITY | [obra/superpowers writing-skills][superpowers]†      | Convergent conventions | 2026-06-18    |
-| COMMUNITY | [skills.sh — Open Agent Skills Ecosystem][skills-sh] | Registry and security  | 2026-07-04    |
+| Tag | Source | Scope | Last reviewed |
+| --- | --- | --- | --- |
+| COMMUNITY | [Skill Authoring Patterns][patterns] | Patterns and feedback | 2026-07-04 |
+| COMMUNITY | [obra/superpowers writing-skills][superpowers]† | Convergent conventions | 2026-06-18 |
+| COMMUNITY | [skills.sh — Open Agent Skills Ecosystem][skills-sh] | Registry and security | 2026-07-04 |
+| GASTOWN | [Gas Town Hall][gastown-hall] | Multi-agent orchestration and harness-practice discovery | 2026-07-29 |
+| FAFF | [shftwst/faff][faff] | Claude Code delivery-harness and autonomy-gate discovery | 2026-07-29 |
 
 † Community restatement of the best-practices document.
 
@@ -60,7 +80,7 @@ The Agent Skills [documentation index][agentskills-index] is the inventory autho
 | Tag                       | Source                       | Scope            | Last reviewed |
 | ------------------------- | ---------------------------- | ---------------- | ------------- |
 | ki-agentic-harness README | The repo's own `README.md`   | House structure† | 2026-06-21    |
-| `ki-kb`                   | The reference standard skill | Worked example‡  | 2026-06-21    |
+| `ki-repo-kb`                   | The reference standard skill | Worked example‡  | 2026-06-21    |
 
 † Linking convention (no wikilinks), standard vs base-coupled-extension, the house toolchain, Knowledge Islands structure.
 
@@ -83,11 +103,15 @@ REFRESH last run **2026-07-19** against the tracked Agent Skills documentation s
 - **BP (Anthropic platform best-practices):** accessible; full page fetched. No new guidance beyond the standard — confirms third-person description, gerund naming, < 500-line body, progressive disclosure, ToC > 100 lines, ≥ 3 evaluations, Haiku/Sonnet/Opus testing, forward-slash paths, one-default-with-escape-hatch, fully-qualified `ServerName:tool_name`, plan-validate-execute, justified constants, and the authoring checklist.
 - **CC runtime overlay (Claude Code skills docs):** accessible; full frontmatter table confirms every CC-only field the standard lists. Confirms the 1,536-char `description`+`when_to_use` listing cap (~1% of context, configurable via `skillListingBudgetFraction` / `SLASH_COMMAND_TOOL_CHAR_BUDGET`; the per-skill desc-char cap is now documented as **`skillListingMaxDescChars`** — last run named it `maxSkillDescriptionChars`; the standard does not pin the setting name, so no standard drift), the post-compaction 5,000-tok-per-skill / 25,000-tok combined budgets, and the commands→skills merge. New since last run is runtime/settings, not authoring standard: `disable-model-invocation: true` now also blocks scheduled-task firing and subagent preload (v2.1.196), and `skillOverrides` gained an `"off"` state (v2.1.199) — neither changes a rubric criterion.
 - **ENG (Anthropic Engineering blog):** accessible. Confirms the two required fields, three-level progressive-disclosure model, evaluation-first authoring, and name/description as the trigger signal. No numeric caps — cited for rationale only.
+- **BLOG (Claude blog):** added as a discovery source. Future REFRESH runs scan it for articles materially relevant to agent skills, agentic practice, or authoring workflows; an article is supporting evidence, not a normative rule by itself.
+- **OPENAI (OpenAI News):** added as a discovery source. Future REFRESH runs scan it for articles materially relevant to agent skills, agentic practice, or authoring workflows; an article is supporting evidence, not a normative rule by itself.
+- **GASTOWN (Gas Town Hall):** added as a discovery source. Future REFRESH runs scan its announcements and documentation for material multi-agent orchestration or harness-practice lessons; its practice is supporting evidence, not a normative rule by itself.
+- **FAFF (shftwst/faff):** added as a discovery source. Future REFRESH runs review its delivery-loop contracts, autonomy levels, and gate design for transferable lessons; its Claude Code-specific implementation is supporting evidence, not a portable rule by itself.
 - **COMMUNITY (generativeprogrammer.com Skill Authoring Patterns):** accessible; page dated 2026-04-19, unchanged since last run. 14 named patterns incl. Known Gotchas, Autonomy Calibration, Exclusion Clause; confirms the 1024 / 1536 caps, < 500 lines, third-person "pushy" descriptions. Repeats the soft ~300-line split trigger — compatible with (and below) our 500-line WARN; still not adopted as a separate cap.
 - **`skills-ref` validator:** `validate` CLI documented but internals not fetchable; the frontmatter + naming rules it enforces are fully specified on the SPEC page (which links skills-ref as the validator), so the mechanical baseline (NAME / DESC / OPT) is confirmed there.
 - **In-house scan:** the then-current governed skill set passed its skill-quality audit, including `ki-skills` itself. Exact commands and fleet counts are intentionally omitted because both change as the host and skill set evolve.
 - **No standard, rubric, or linter change this run.**
-- **Open watch-items:** (1) re-fetch `superpowers` directly next run (carried forward). (2) The canonical dependency order in `ADR-KI-HARNESS-SKILLS-003` (mirrored in SKILL.md line 27) still lists 12 skills and omits `activities`, `bootstrap`, `decision-records`, `handoffs`, `live-artifacts`, `plans` — flag for the ADR owner; SKILL.md re-mirrors once the ADR is refreshed. (3) Confirm the `skills-ref` validator source if its repo layout becomes fetchable.
+- **Open watch-items:** (1) re-fetch `superpowers` directly next run (carried forward). (2) Confirm the `skills-ref` validator source if its repo layout becomes fetchable.
 
 (What past reviews changed in the standard / rubric / linter — the `disallowed-tools` behavioural note in §6, the CC runtime-extension fields, MCP fully-qualified tool naming, the CC post-compaction budget row, the migration to area-scoped codes — is in git.)
 
@@ -104,6 +128,10 @@ REFRESH last run **2026-07-19** against the tracked Agent Skills documentation s
 [bp]: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
 [cc]: https://code.claude.com/docs/en/skills
 [eng]: https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills
+[claude-blog]: https://claude.com/blog
+[openai-news]: https://openai.com/news/
+[gastown-hall]: https://gastownhall.ai/
+[faff]: https://github.com/shftwst/faff
 [skills-ref]: https://github.com/agentskills/agentskills/tree/main/skills-ref
 [patterns]: https://generativeprogrammer.com/p/skill-authoring-patterns-from-anthropics
 [superpowers]: https://github.com/obra/superpowers/blob/main/skills/writing-skills/anthropic-best-practices.md

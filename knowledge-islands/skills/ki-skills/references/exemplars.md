@@ -38,7 +38,7 @@ The frontmatter of `ki-subagents` shows the governance-skill contract plus the m
 name: ki-subagents
 ki-depends-on: []
 description: >
-  Audit, review, and write Claude Code subagent definitions against current best practice. Use when creating a new agent (subagent), reviewing or critiquing an agent's definition, checking an agent before it ships, asking "is this agent any good / well-scoped", or refreshing the agents rubric. Carries a checkable rubric — mechanical checks a bundled linter runs, judgment checks applied by reading — covering the name and description (the delegation signal), the system-prompt shape (role/lane, grounding, when-invoked, own-vs-defer), least-privilege tools and model choice, and cross-agent lane collisions. Triggers: "audit this agent", "review my subagent", "write a new agent", "is this agent definition good", "scaffold an agent", "refresh the agents rubric", "check the agents". Judges a subagent definition (frontmatter + system prompt) — for authoring a SKILL.md use the `ki-skills` skill instead; for harness-level layout (five-part bundle, `.ki-config.toml` compliance) use `ki-harness`.
+  Audit, review, and write Claude Code subagent definitions against current best practice. Use when creating a new agent (subagent), reviewing or critiquing an agent's definition, checking an agent before it ships, asking "is this agent any good / well-scoped", or refreshing the agents rubric. Carries a checkable rubric — mechanical checks a bundled linter runs, judgment checks applied by reading — covering the name and description (the delegation signal), the system-prompt shape (role/lane, grounding, when-invoked, own-vs-defer), least-privilege tools and model choice, and cross-agent lane collisions. Triggers: "audit this agent", "review my subagent", "write a new agent", "is this agent definition good", "scaffold an agent", "refresh the agents rubric", "check the agents". Judges a subagent definition (frontmatter + system prompt) — for authoring a SKILL.md use the `ki-skills` skill instead; for harness-level layout (five-part bundle, `.ki-config.toml` compliance) use `ki-repo-harness`.
 argument-hint: 'audit <agent-or-dir> | conform <agent> | help | educate <description> | refresh'
 ---
 ```
@@ -79,14 +79,15 @@ Create a well-formed agent definition from a plain-English description of the ag
 
 ### Correct cross-skill composition declaration
 
-When a skill runs a sibling's checker in sequence, it declares the edge explicitly rather than inheriting by coupling. The declaration appears in the mode step that calls the sibling, names the sibling by its `name` (never a file path), and explains what the sibling contributes and what this skill adds on top. This is the **composition-only** principle: each skill is valid standalone; the composition is in the calling skill's prose, not a shared base.
+When selecting one skill necessarily selects and executes another first, the dependent declares that prerequisite in `ki-depends-on`. The host resolves the graph and runs prerequisites before dependents. Array order has no semantic meaning. The skill body explains the prerequisite's contribution and the dependent's delta without importing the sibling's source.
 
-```markdown
-## Operating modes
+Coverage-selected governance is different: if two independently declared standards merely apply to the same repository, neither declares the other as a dependency. Off-ramps and shared-module dependencies are also separate contracts.
 
-### Mode AUDIT — audit the harness bundle
-
-1. **Run the skills audit.** From the harness root, run `ki repo audit --skill ki-skills` — it audits every `SKILL.md` in `skills/` against the mechanical criteria. Capture its output verbatim.
-2. **Compose a sibling only when its concern is in scope.** For example, run `ki repo audit --skill ki-engineering` when the requested harness review includes the toolchain, `tsconfig`, or Biome configuration. Capture its findings; do not re-derive them here.
-3. **Apply harness-specific judgment** — five-part bundle completeness, `.ki-config.toml` table presence for each populated part, and cross-skill consistency (no two skills claiming the same domain). State the harness-specific delta separately from any sibling's findings.
+```yaml
+---
+name: ki-repo-website-cloudflare
+ki-depends-on: [skills.ki-repo-website]
+---
 ```
+
+Here `ki-repo-website` is a prerequisite because the hosting capability consumes the site capability's built output. `ki-engineering` may also govern the repository, but coverage selects it separately rather than implying a dependency from either website skill.

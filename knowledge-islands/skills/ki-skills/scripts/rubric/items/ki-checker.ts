@@ -1,4 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
+import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
 import { type KiCheckerRubricContext, type KiSkillsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const KI_CHECKER_1: RubricItem<KiCheckerRubricContext> = {
@@ -6,10 +7,13 @@ const KI_CHECKER_1: RubricItem<KiCheckerRubricContext> = {
   title: 'rubric sessions scope subjects beneath the repository root',
   description:
     '`ki repo audit` and `ki repo conform` pass the repository root to `createSession`. The skill discovers only its governed subjects beneath that root and represents an absent scope explicitly with `NOT_APPLICABLE`; it does not reinterpret the root as its content directory, scan unrelated files, or claim a vacuous pass.',
-  sources: ['standards-rubric-authoring.md#context-and-evidence', 'standards-rubric-authoring.md#host-and-session-boundary'],
-  judgment: {
-    prompt: 'Does the rubric session discover only its governed subjects and represent an absent scope explicitly?'
-  }
+  sources: [
+    'standards-rubric-authoring.md#context-and-evidence',
+    'standards-rubric-authoring.md#host-and-session-boundary'
+  ],
+  judgment: judgment(
+    'Does the rubric session discover only its governed subjects and represent an absent scope explicitly?'
+  )
 }
 
 const KI_CHECKER_2: RubricItem<KiCheckerRubricContext> = {
@@ -20,6 +24,7 @@ const KI_CHECKER_2: RubricItem<KiCheckerRubricContext> = {
   sources: ['KI'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ imports }) => {
@@ -30,7 +35,9 @@ const KI_CHECKER_2: RubricItem<KiCheckerRubricContext> = {
             message: `\`scripts/${entry.entry}\` imports \`${entry.specifier}\`, which resolves outside its own scripts directory`
           }))
         const [first, ...rest] = violations
-        return first ? [first, ...rest] : [{ status: 'PASS', message: 'skill script imports remain inside its own payload' }]
+        return first
+          ? [first, ...rest]
+          : [{ status: 'PASS', message: 'skill script imports remain inside its own payload' }]
       }
     }
   }
@@ -44,10 +51,12 @@ const KI_CHECKER_3: RubricItem<KiCheckerRubricContext> = {
   sources: ['ADR-KI-HARNESS-SKILLS-012'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ rootSkill, declaredSharedModules, sharedDependencies, rubricModuleExists }) => {
-        if (!rootSkill) return [{ status: 'NOT_APPLICABLE', message: 'the audited skill is not the shared rubric-contract provider' }]
+        if (!rootSkill)
+          return [{ status: 'NOT_APPLICABLE', message: 'the audited skill is not the shared rubric-contract provider' }]
         const violations = []
         if (declaredSharedModules.length !== 1 || declaredSharedModules[0] !== 'rubric')
           violations.push({
@@ -66,7 +75,9 @@ const KI_CHECKER_3: RubricItem<KiCheckerRubricContext> = {
             message: `\`ki-skills\` must use its owned rubric contract directly, not declare ${selfDependencies.join(', ')}`
           })
         const [first, ...rest] = violations
-        return first ? [first, ...rest] : [{ status: 'PASS', message: 'ki-skills publishes the portable rubric contract' }]
+        return first
+          ? [first, ...rest]
+          : [{ status: 'PASS', message: 'ki-skills publishes the portable rubric contract' }]
       }
     }
   }
@@ -80,20 +91,25 @@ const KI_CHECKER_4: RubricItem<KiCheckerRubricContext> = {
   sources: ['standards-rubric-authoring.md#rubric-families-and-items'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ structuredRubricRequired, itemsIndexExists, itemsIndexDefinesRules, familyModules }) => {
         if (!structuredRubricRequired)
           return [{ status: 'NOT_APPLICABLE', message: 'the skill does not publish a structured rubric catalogue' }]
         const violations = []
-        if (!itemsIndexExists) violations.push({ status: 'VIOLATION' as const, message: '`scripts/rubric/items/index.ts` is missing' })
+        if (!itemsIndexExists)
+          violations.push({ status: 'VIOLATION' as const, message: '`scripts/rubric/items/index.ts` is missing' })
         if (itemsIndexDefinesRules)
           violations.push({
             status: 'VIOLATION' as const,
             message: '`scripts/rubric/items/index.ts` defines rule execution instead of catalogue wiring only'
           })
         if (itemsIndexExists && familyModules.length === 0)
-          violations.push({ status: 'VIOLATION' as const, message: 'the rubric catalogue defines no imported family collections' })
+          violations.push({
+            status: 'VIOLATION' as const,
+            message: 'the rubric catalogue defines no imported family collections'
+          })
         for (const family of familyModules) {
           if (family.source === null)
             violations.push({
@@ -114,7 +130,9 @@ const KI_CHECKER_4: RubricItem<KiCheckerRubricContext> = {
           }
         }
         const [first, ...rest] = violations
-        return first ? [first, ...rest] : [{ status: 'PASS', message: 'structured rubric items follow the uniform family layout' }]
+        return first
+          ? [first, ...rest]
+          : [{ status: 'PASS', message: 'structured rubric items follow the uniform family layout' }]
       }
     }
   }
@@ -128,12 +146,16 @@ const KI_CHECKER_5: RubricItem<KiCheckerRubricContext> = {
   sources: ['KI'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ declaredSharedModules, legacyLibPresent, presentSharedModules, sharedDependencies }) => {
         const violations = []
         if (legacyLibPresent)
-          violations.push({ status: 'VIOLATION' as const, message: 'classify `scripts/lib/` contents as shared or internal' })
+          violations.push({
+            status: 'VIOLATION' as const,
+            message: 'classify `scripts/lib/` contents as shared or internal'
+          })
         const dependencyModules = sharedDependencies
           .map((dependency) => dependency.split(':').at(-1))
           .filter((module): module is string => Boolean(module))
@@ -145,7 +167,9 @@ const KI_CHECKER_5: RubricItem<KiCheckerRubricContext> = {
             message: `\`scripts/shared/\` must exactly match published and materialised modules (declared: ${declared.join(', ') || 'none'}; present: ${present.join(', ') || 'none'})`
           })
         const [first, ...rest] = violations
-        return first ? [first, ...rest] : [{ status: 'PASS', message: 'shared and internal script packaging is explicit' }]
+        return first
+          ? [first, ...rest]
+          : [{ status: 'PASS', message: 'shared and internal script packaging is explicit' }]
       }
     }
   }

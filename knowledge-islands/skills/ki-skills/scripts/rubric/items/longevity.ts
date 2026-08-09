@@ -1,4 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
+import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
 import { type KiSkillsRubricContext, type LongevityRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const REFRESH_GRACE_DAYS = 14
@@ -9,7 +10,7 @@ const LONG_1: RubricItem<unknown> = {
   description:
     '_Volatile facts & a refresh path._ A skill hard-coding facts that drift (model IDs, versions, tool names, dated spec numbers, URLs) must either resolve them at runtime **or** carry a tracked source list with `last reviewed` dates **and** a REFRESH mode that re-anchors them and names what to re-fetch.',
   sources: ['BP', 'COMMUNITY'],
-  judgment: { prompt: 'Do volatile facts resolve at runtime or have a tracked source list and refresh path?' }
+  judgment: judgment('Do volatile facts resolve at runtime or have a tracked source list and refresh path?')
 }
 
 const LONG_2: RubricItem<unknown> = {
@@ -18,7 +19,9 @@ const LONG_2: RubricItem<unknown> = {
   description:
     "_A cadence, not just a capability._ A skill that ships a refresh path also **declares a cadence** in its `sources.md` `**Refresh:**` marker (`<class> · <cadence>`) and, where supported, registers a scheduled run; a refresh capability with no declared cadence is a half-measure. The cadence has runtime teeth in both directions: overdue → LONG-3 WARN; too-soon → the REFRESH mode's confirm-before-force gate (enforcement framework §5).",
   sources: ['COMMUNITY'],
-  judgment: { prompt: 'Does the refresh path have an appropriate declared cadence and scheduled execution where supported?' }
+  judgment: judgment(
+    'Does the refresh path have an appropriate declared cadence and scheduled execution where supported?'
+  )
 }
 
 const LONG_3: RubricItem<LongevityRubricContext> = {
@@ -29,6 +32,7 @@ const LONG_3: RubricItem<LongevityRubricContext> = {
   sources: ['COMMUNITY'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: (context) => {
@@ -53,10 +57,11 @@ const LONG_4: RubricItem<LongevityRubricContext> = {
   code: 'LONG-4',
   title: 'the refresh marker is present and coherent',
   description:
-    '_The refresh marker is present and coherent._ Each `sources.md` carries a parseable `**Refresh:** <class> · <cadence>` line (§4 of the enforcement framework) — a missing or malformed marker WARNs (**4a**). An `external-spec` skill must declare a clock cadence, not `on-change` (**4b**, soft WARN). Class is **not** mechanically tied to `## Last review`-block presence — a `canonical` skill may keep a block as a hand-curated practice note (`ki-kb-streams` does), so block-presence stays a `[J]` read, not a checker rule.',
+    '_The refresh marker is present and coherent._ Each `sources.md` carries a parseable `**Refresh:** <class> · <cadence>` line (§4 of the enforcement framework) — a missing or malformed marker WARNs (**4a**). An `external-spec` skill must declare a clock cadence, not `on-change` (**4b**, soft WARN). Class is **not** mechanically tied to `## Last review`-block presence — a `canonical` skill may keep a block as a hand-curated practice note (`ki-repo-kb-streams` does), so block-presence stays a `[J]` read, not a checker rule.',
   sources: ['COMMUNITY'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: (context) => {
@@ -65,7 +70,8 @@ const LONG_4: RubricItem<LongevityRubricContext> = {
           return [
             {
               status: 'VIOLATION',
-              message: 'references/sources.md has no parseable `**Refresh:** <class> · <cadence>` marker near the top (LONG-4a)'
+              message:
+                'references/sources.md has no parseable `**Refresh:** <class> · <cadence>` marker near the top (LONG-4a)'
             }
           ]
         return [

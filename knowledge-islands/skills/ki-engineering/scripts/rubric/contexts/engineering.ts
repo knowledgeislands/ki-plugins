@@ -5,10 +5,14 @@ import type {
   ConformCommand,
   ConformWrite,
   RubricContextOptions,
+  RubricEmitter,
+  RubricPublicationContext,
   RubricSession,
   ViolationLevel
 } from '../../shared/rubric.ts'
 import { collectAuditEvidence, type EngineeringEvidenceFinding } from './audit-evidence.ts'
+
+const ENGINEERING_TABLE = 'ki-engineering'
 
 export type EngineeringEvidence = readonly EngineeringEvidenceFinding[]
 
@@ -49,17 +53,16 @@ export type TypescriptRubricContext = {
 export type BiomeRubricContext = {
   bio1: EngineeringEvidence
   bio2: EngineeringEvidence
-  normalise?: () => void
   scaffold?: () => void
 }
 export type KnipRubricContext = {
   knip1: EngineeringEvidence
   knip2: EngineeringEvidence
+  knip3: EngineeringEvidence
   scaffold?: () => void
-  repair?: () => void
 }
 export type SyncRubricContext = { sync1: EngineeringEvidence; normalise?: () => void }
-export type DependenciesRubricContext = { deps1: EngineeringEvidence; update?: () => void }
+export type DependenciesRubricContext = { deps1: EngineeringEvidence }
 export type GeneratedRubricContext = { gen1: EngineeringEvidence }
 export type TestRubricContext = {
   test1: EngineeringEvidence
@@ -82,6 +85,7 @@ export type TomlRubricContext = {
 }
 
 export type EngineeringRubricContext = {
+  rubric: RubricPublicationContext
   package: PackageRubricContext
   mise: MiseRubricContext
   ci: CiRubricContext
@@ -99,7 +103,10 @@ export type EngineeringRubricContext = {
   toml: TomlRubricContext
 }
 
-export type EngineeringEvidenceInspector = (repository: string) => readonly EngineeringEvidenceFinding[]
+export type EngineeringEvidenceInspector = (
+  repository: string,
+  emit?: RubricEmitter
+) => readonly EngineeringEvidenceFinding[] | Promise<readonly EngineeringEvidenceFinding[]>
 
 export const auditEvidence = (
   evidence: EngineeringEvidence,
@@ -110,7 +117,11 @@ export const auditEvidence = (
     if (finding.level === 'PASS')
       return { status: 'PASS', message: finding.message, ...(finding.subject ? { subject: finding.subject } : {}) }
     if (finding.level === 'NOT_APPLICABLE')
-      return { status: 'NOT_APPLICABLE', message: finding.message, ...(finding.subject ? { subject: finding.subject } : {}) }
+      return {
+        status: 'NOT_APPLICABLE',
+        message: finding.message,
+        ...(finding.subject ? { subject: finding.subject } : {})
+      }
     if (finding.level === 'INFO')
       return { status: 'INFO', message: finding.message, ...(finding.subject ? { subject: finding.subject } : {}) }
     const level = finding.level as ViolationLevel
@@ -121,23 +132,24 @@ export const auditEvidence = (
       ...(level !== defaultLevel && overrideLevels?.includes(level) ? { level } : {})
     }
   })
-  return outcomes.length ? outcomes : [{ status: 'NOT_APPLICABLE', message: 'This criterion did not apply to the target.' }]
+  return outcomes.length
+    ? outcomes
+    : [{ status: 'NOT_APPLICABLE', message: 'This criterion did not apply to the target.' }]
 }
 
-const requiredDev = ['@biomejs/biome', 'knip', 'prettier', 'husky', 'lint-staged', 'markdownlint-cli2', 'syncpack', 'typescript']
+const requiredDev = ['@biomejs/biome', 'knip', 'rumdl', 'husky', 'lint-staged', 'syncpack', 'typescript']
 const versions: Record<string, string> = {
   '@biomejs/biome': '^2.5.4',
   knip: '^6.27.0',
-  prettier: '^3.9.5',
+  rumdl: '^0.2.52',
   husky: '^9.1.7',
   'lint-staged': '^17.1.0',
-  'markdownlint-cli2': '^0.23.1',
   syncpack: '^15.3.2',
   typescript: '^7.0.2'
 }
 const lintStaged = {
   '*.{ts,tsx,js,jsx,json,jsonc}': ['bunx @biomejs/biome check --write --no-errors-on-unmatched'],
-  '*.md': ['bunx prettier --write', 'bunx markdownlint-cli2 --no-globs']
+  '*.md': ['bunx rumdl check --fix']
 }
 const defaults = {
   'mise.toml': `[tools]\nnode = "22"\nbun = "1.3.14"\n`,
@@ -172,7 +184,7 @@ const defaults = {
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "lineWidth": 160,
+    "lineWidth": 120,
     "indentWidth": 2
   },
   "javascript": {
@@ -209,8 +221,14 @@ const defaults = {
 const legacyAggregateScript = (key: string): boolean =>
   key === 'ki:audit' || key === 'ki:conform' || key === 'ki:educate' || key === 'ki:help'
 
+const nativeGovernanceScript = (value: string): boolean => /\bki\s+repo\s+(?:audit|conform|educate)\b/.test(value)
+
 const legacyToolScript = (key: string): boolean =>
-  /^ki:(lint|deps):/.test(key) || key === 'ki:knip' || key === 'ki:verify' || /^ki:[a-z-]+:lint$/.test(key)
+  /^ki:lint:/.test(key) ||
+  (/^ki:deps:/.test(key) && key !== 'ki:deps:update') ||
+  key === 'ki:knip' ||
+  key === 'ki:verify' ||
+  /^ki:[a-z-]+:lint$/.test(key)
 
 const legacySkillModeScript = (key: string): boolean => /^ki:[a-z-]+:(audit|conform|educate|help)$/.test(key)
 
@@ -242,16 +260,27 @@ const packageContent = (source: string): string | undefined => {
   packageJson['lint-staged'] = lintStaged
   const scripts = { ...((packageJson.scripts as Record<string, string> | undefined) ?? {}) }
   for (const key of Object.keys(scripts)) {
-    if (legacyAggregateScript(key) || legacyToolScript(key) || legacySkillModeScript(key) || legacyRuntimeOnlyScript(scripts[key] ?? ''))
+    if (
+      legacyAggregateScript(key) ||
+      nativeGovernanceScript(scripts[key] ?? '') ||
+      legacyToolScript(key) ||
+      legacySkillModeScript(key) ||
+      legacyRuntimeOnlyScript(scripts[key] ?? '')
+    )
       delete scripts[key]
   }
+  scripts['ki:deps:update'] = 'bun update --latest'
   scripts.clean = scripts.clean?.includes('node_modules') ? scripts.clean : 'rm -rf dist node_modules'
   scripts.prepare = 'husky'
-  packageJson.scripts = scripts
+  packageJson.scripts = Object.fromEntries(
+    Object.entries(scripts).sort(([first], [second]) => first.localeCompare(second))
+  )
   return `${JSON.stringify(packageJson, null, 2)}\n`
 }
 
-const evidenceByCode = (findings: readonly EngineeringEvidenceFinding[]): ((code: string) => readonly EngineeringEvidenceFinding[]) => {
+const evidenceByCode = (
+  findings: readonly EngineeringEvidenceFinding[]
+): ((code: string) => readonly EngineeringEvidenceFinding[]) => {
   const grouped = new Map<string, EngineeringEvidenceFinding[]>()
   for (const finding of findings) {
     const values = grouped.get(finding.code) ?? []
@@ -261,13 +290,15 @@ const evidenceByCode = (findings: readonly EngineeringEvidenceFinding[]): ((code
   return (code) => grouped.get(code) ?? []
 }
 
-export const createEngineeringSession = (
-  { mode, repository }: RubricContextOptions,
+export const createEngineeringSession = async (
+  { mode, repository, publication, emit }: RubricContextOptions,
   inspect: EngineeringEvidenceInspector = collectAuditEvidence
-): RubricSession<EngineeringRubricContext> => {
+): Promise<RubricSession<EngineeringRubricContext>> => {
   const target = resolve(repository)
   const mutable = mode === 'conform'
-  const evidence = evidenceByCode(inspect(target))
+  emit?.({ kind: 'stage', edge: 'start', label: 'engineering evidence' })
+  const evidence = evidenceByCode(await inspect(target, emit))
+  emit?.({ kind: 'stage', edge: 'end', label: 'engineering evidence' })
   const packagePath = join(target, 'package.json')
   const packageSource = isSafeRegularFile(packagePath) ? readFileSync(packagePath, 'utf8') : undefined
   let synchronisePackage = false
@@ -312,6 +343,7 @@ export const createEngineeringSession = (
       : {}
 
   const context: EngineeringRubricContext = {
+    rubric: { publication },
     package: packageContext,
     mise: {
       mise1: evidence('MISE-1'),
@@ -341,11 +373,6 @@ export const createEngineeringSession = (
       bio2: evidence('BIO-2'),
       ...(mutable
         ? {
-            normalise: () =>
-              requestCommands([
-                { program: 'bunx', arguments: ['@biomejs/biome', 'check', '--write', '--unsafe'] },
-                { program: 'bunx', arguments: ['@biomejs/biome', 'format', '--write'] }
-              ]),
             scaffold: () => requestScaffold('biome.json')
           }
         : {})
@@ -353,10 +380,10 @@ export const createEngineeringSession = (
     knip: {
       knip1: evidence('KNIP-1'),
       knip2: evidence('KNIP-2'),
+      knip3: evidence('KNIP-3'),
       ...(mutable
         ? {
-            scaffold: () => requestScaffold('knip.json'),
-            repair: () => requestCommands([{ program: 'bunx', arguments: ['knip', '--fix', '--no-config-hints'] }])
+            scaffold: () => requestScaffold('knip.json')
           }
         : {})
     },
@@ -364,18 +391,7 @@ export const createEngineeringSession = (
       sync1: evidence('SYNC-1'),
       ...(mutable ? { normalise: () => requestCommands([{ program: 'bunx', arguments: ['syncpack', 'format'] }]) } : {})
     },
-    dependencies: {
-      deps1: evidence('DEPS-1'),
-      ...(mutable
-        ? {
-            update: () =>
-              requestCommands([
-                { program: 'bun', arguments: ['update', '--latest'] },
-                { program: 'bun', arguments: ['install'] }
-              ])
-          }
-        : {})
-    },
+    dependencies: { deps1: evidence('DEPS-1') },
     generated: { gen1: evidence('GEN-1') },
     test: {
       test1: evidence('TEST-1'),
@@ -400,8 +416,25 @@ export const createEngineeringSession = (
 
   return {
     subjects: [
+      { families: ['RUBRIC'], context: () => context },
       {
-        families: ['PKG', 'MISE', 'CI', 'SCR', 'BUN', 'TSC', 'BIO', 'KNIP', 'SYNC', 'DEPS', 'GEN', 'TEST', 'BUILD', 'ENV', 'TOML'],
+        families: [
+          'PKG',
+          'MISE',
+          'CI',
+          'SCR',
+          'BUN',
+          'TSC',
+          'BIO',
+          'KNIP',
+          'SYNC',
+          'DEPS',
+          'GEN',
+          'TEST',
+          'BUILD',
+          'ENV',
+          'TOML'
+        ],
         context: () => context
       }
     ],
@@ -414,11 +447,15 @@ export const createEngineeringSession = (
       for (const name of scaffold) writes.push({ path: name, content: defaults[name], create: true })
       if (declareEngineering) {
         const path = join(target, '.ki-config.toml')
-        if (!existsSync(path)) writes.push({ path: '.ki-config.toml', content: '[ki-engineering]\n', create: true })
+        if (!existsSync(path))
+          writes.push({ path: '.ki-config.toml', content: `[skills.${ENGINEERING_TABLE}]\n`, create: true })
         else {
           const source = readFileSync(path, 'utf8')
-          if (!/^\[ki-engineering\]/m.test(source))
-            writes.push({ path: '.ki-config.toml', content: `${source.replace(/\n*$/, '\n\n')}[ki-engineering]\n` })
+          if (!new RegExp(`^\\[skills\\.${ENGINEERING_TABLE}\\]`, 'm').test(source))
+            writes.push({
+              path: '.ki-config.toml',
+              content: `${source.replace(/\n*$/, '\n\n')}[skills.${ENGINEERING_TABLE}]\n`
+            })
         }
       }
       return {

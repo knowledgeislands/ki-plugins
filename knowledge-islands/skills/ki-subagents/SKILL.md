@@ -1,10 +1,11 @@
 ---
 name: ki-subagents
+ki-kind: governance
 ki-depends-on: []
 ki-runtime-binding: true
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Audit, review, and write Claude Code subagent definitions against current best practice. Use when creating a new agent (subagent), reviewing or critiquing an agent's definition, checking an agent before it ships, asking "is this agent any good / well-scoped", or refreshing the agents rubric. Carries a checkable rubric — mechanical checks executed by the `ki` host and judgment checks applied by reading — covering the name and description (the delegation signal), the system-prompt shape (role/lane, grounding, when-invoked, own-vs-defer), least-privilege tools and model choice, and cross-agent lane collisions. Triggers: "audit this agent", "review my subagent", "write a new agent", "is this agent definition good", "scaffold an agent", "refresh the agents rubric", "check the agents". Judges a subagent definition (frontmatter + system prompt) — for authoring a SKILL.md use the `ki-skills` skill instead; for harness-level layout (five-part bundle, `.ki-config.toml` compliance) use `ki-harness`.
+  Audit, review, and write Claude Code subagent definitions against current best practice. Use when creating a new agent (subagent), reviewing or critiquing an agent's definition, checking an agent before it ships, asking "is this agent any good / well-scoped", or refreshing the agents rubric. Carries a checkable rubric — mechanical checks executed by the `ki` host and judgment checks applied by reading — covering the name and description (the delegation signal), the system-prompt shape (role/lane, grounding, when-invoked, own-vs-defer), least-privilege tools and model choice, and cross-agent lane collisions. Triggers: "audit this agent", "review my subagent", "write a new agent", "is this agent definition good", "scaffold an agent", "refresh the agents rubric", "check the agents". Judges a subagent definition (frontmatter + system prompt) — for authoring a SKILL.md use the `ki-skills` skill instead; for harness-level layout (five-part bundle, `.ki-config.toml` compliance) use `ki-repo-harness`.
 argument-hint: 'audit <agent-or-dir> | conform <agent> | help | educate <description> | refresh'
 ---
 
@@ -59,14 +60,14 @@ Review an agent (or every agent in a directory) against the rubric and report.
 
 ### Mode REFRESH — re-anchor best practice
 
-**Precondition:** REFRESH edits this skill's own canonical files, which exist only in `ki-agentic-harness`. Invoked from an installed copy, it stops here and names the harness as where to run it — or, for a pattern recurring across bases, routes it through `ki-kb`'s IMPROVE mode instead.
+**Precondition:** REFRESH edits this skill's own canonical files, which exist only in `ki-agentic-harness`. Invoked from an installed copy, it stops here and names the harness as where to run it — or, for a pattern recurring across bases, routes it through `ki-repo-kb`'s IMPROVE mode instead.
 
 Keep the rubric current — the subagents spec and house practice move, and this is why the skill tracks its own sources. Run on its declared cadence (see `references/sources.md`), or when asked "is the agents rubric current".
 
 1. **Read [the source list](references/sources.md)** — the tracked sources (the Claude Code subagents docs and the house agent conventions), each with a `last reviewed` date.
 2. **Re-fetch each source** (WebFetch/WebSearch) and **diff against the current [standard](references/standards-subagent-definitions.md) and canonical TypeScript rubric items**: new/changed frontmatter fields (`model`, `tools`, `color`, invocation control), new constraints, deprecations. Note where sources disagree.
 3. **Scan the live agents** in the harness for emergent patterns that work but aren't yet codified — promote the good ones; flag drift.
-4. **Propose a diff** to [the standard](references/standards-subagent-definitions.md) and the canonical TypeScript items under `scripts/rubric/items/`. Confirm before writing, then regenerate [the published rubric](references/rubric.md) with `ki skill rubric ki-subagents --write`.
+4. **Propose a diff** to [the standard](references/standards-subagent-definitions.md) and the canonical TypeScript items under `scripts/rubric/items/`. Confirm before writing, then regenerate [the published rubric](references/rubric.md) with `ki dev skill rubric ki-subagents --write`.
 5. **Update [the source list](references/sources.md)** — bump each `last reviewed` date, add/retire sources, and refresh the `## Last review` block. The record of _what changed_ is the commit itself — history lives in git, not a changelog.
 
 ### Mode HELP — orient without changing anything

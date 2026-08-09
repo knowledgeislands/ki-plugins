@@ -8,7 +8,12 @@ const SYNC_1: RubricItem<SynchronisationRubricContext> = {
   title: 'Standard synchronisation',
   description: 'The standard, structured rubric, and executable behaviour remain aligned.',
   sources: ['standards-repository.md'],
-  judgment: { prompt: 'Compare the standard, generated rubric, and checker behaviour for semantic drift.' }
+  judgment: {
+    scope: 'The repository standard, structured rubric, generated publication, and checker behaviour.',
+    prompt: 'Compare the standard, generated rubric, and checker behaviour for semantic drift.',
+    outcomes: ['conforming', 'gap', 'exclusion'],
+    guidance: 'Align the affected source, record a named gap, or record an explicit repository-level exclusion.'
+  }
 }
 
 export const SYNC: RubricFamily<RepoRubricContext, SynchronisationRubricContext> = {

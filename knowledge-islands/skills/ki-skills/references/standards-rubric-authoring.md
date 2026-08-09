@@ -83,11 +83,11 @@ The host loads only `scripts/rubric/items/index.ts`; a governed skill does not s
 
 Private reusable implementation lives in `scripts/internal/`. Modules published through `ki-shared-modules` and local copies materialised through `ki-shared-dependencies` live in `scripts/shared/`.
 
-Every non-test TypeScript file directly under `scripts/` is a deliberate public skill command. Retain one only when its capability sits outside governed rubric execution and it has a clear purpose, useful `--help`, explicit error handling, and focused tests. Move private implementation to `scripts/internal/`, compile-time shared modules to `scripts/shared/`, and rubric behaviour to `scripts/rubric/`; remove wrappers, one-off migration helpers, and validators whose capability belongs to `ki` or to the rubric host.
+Every non-test TypeScript file directly under `scripts/` is a deliberate public skill command. Its leading documentation comment states `Purpose:`, the canonical `Run: bun scripts/<name> --help` invocation, and `Boundary:` (no-write or exact mutation scope). Retain one only when its capability sits outside governed rubric execution and it has useful `--help`, explicit error handling, and focused tests. Move private implementation to `scripts/internal/`, compile-time shared modules to `scripts/shared/`, and rubric behaviour to `scripts/rubric/`; remove wrappers, one-off migration helpers, and validators whose capability belongs to `ki` or to the rubric host.
 
 Another skill receives a declared module at `scripts/shared/<module>.ts` and imports only that local copy. `ki-skills` uses its owned rubric module directly from the same location; it never materialises its own module back into itself.
 
-The one target shared module is `scripts/shared/rubric.ts`. It is materialised only to let a skill's TypeScript catalogue compile and type-check without crossing the skill-root boundary. Generic execution, finding conversion, progress, ordering, transactions, rollback, and reporting belong to `tools-ki` and MUST NOT be copied into a skill.
+The one target shared module is `scripts/shared/rubric.ts`. It is materialised only to let a skill's TypeScript catalogue compile and type-check without crossing the skill-root boundary. Generic execution, finding conversion, progress, ordering, guarded publication, and reporting belong to `tools-ki` and MUST NOT be copied into a skill.
 
 A dependent governance skill declares `ki-shared-dependencies: [ki-skills:rubric]` and imports only its local `scripts/shared/rubric.ts` copy.
 
@@ -347,6 +347,8 @@ The required projection is the readable `references/rubric.md` publication.
 
 It is generated from the structured catalogue, begins with a conspicuous notice that the canonical definitions live under `scripts/rubric/`, and has an exact read-only parity check.
 
+The `ki-skills` exemplar's `RUBRIC-1` makes missing or differing publication bytes a FAIL. During CONFORM, the item requests only a host-injected derived-publication capability; `ki` validates the catalogue, chooses the target and bytes, and publishes each derived write atomically through its guarded incremental publisher. A later failure retains earlier safe writes, then re-audits and reports the remaining state; the host does not roll those writes back.
+
 A versioned machine projection of rubric metadata or an execution schedule MAY be added when a concrete consumer needs to load the catalogue without importing callback code.
 
 Such a projection is generated, never authored, and its path and responsibility-based name are decided by that integration rather than fixed prematurely here.
@@ -400,13 +402,13 @@ receive host options
   → return subjects plus one final proposal function
 ```
 
-`tools-ki` owns command arguments, repository resolution, catalogue loading, contract validation, planning, progress, finding conversion, dry-run, publication, rollback, and post-conform re-audit.
+`tools-ki` owns command arguments, repository resolution, catalogue loading, contract validation, planning, progress, finding conversion, dry-run, guarded incremental publication, and post-conform re-audit.
 
 The skill owns subject discovery, evidence, family selection, and draft capabilities. It contains no generic reporter, transaction, or progress implementation.
 
 A conform item receives only the domain capability it needs and changes only the session draft. It MUST NOT write to disk, launch a process, return a write proposal, or select behaviour from its own criterion code.
 
-The session proposal returns the final changed files and bounded commands once, after all item actions. Host validation and transaction rules remain authoritative.
+The session proposal returns the final changed files and bounded commands once, after all item actions. Host validation and guarded-publication rules remain authoritative.
 
 An audit callback returns typed outcomes.
 
@@ -454,7 +456,7 @@ The renderer uses family metadata and ordered item metadata to reproduce:
 
 The generated file carries a clear generated marker.
 
-`ki skill rubric <skill>` verifies the tracked publication against the catalogue; `ki skill rubric <skill> --write` writes it.
+`ki dev skill rubric <skill>` verifies the tracked publication against the catalogue; `ki dev skill rubric <skill> --write` writes it. The exemplar also exposes that exact parity through `ki repo audit --skill ki-skills`; `ki repo conform --skill ki-skills` schedules the same host-owned publication write when drift is found.
 
 Runtime code never parses the generated Markdown back into policy.
 
@@ -500,7 +502,7 @@ Complete these units in order, keeping each independently reviewable.
 2. **Single catalogue entrypoint.** Default-export one `SkillRubricDefinition` from `items/index.ts` with ordered families and `createSession`.
 3. **Item-owned behaviour.** Put every rule's audit and optional conform behaviour on that item; remove code-based dispatch and adapter mappers.
 4. **Session boundary.** Build focused subjects, retain one mutable conform draft per governed artifact, and return one final proposal.
-5. **Host runtime.** Keep loading, validation, ordering, progress, reporting, transactions, rollback, and re-audit in `tools-ki`.
+5. **Host runtime.** Keep loading, validation, ordering, progress, reporting, guarded incremental publication, and re-audit in `tools-ki`.
 6. **Generated publication.** Render and parity-check `references/rubric.md` from the default export.
 7. **Exemplar verification.** Prove real `ki repo audit --skill ki-skills` and `ki repo conform --skill ki-skills --dry-run`, including two ordered items touching one file.
 

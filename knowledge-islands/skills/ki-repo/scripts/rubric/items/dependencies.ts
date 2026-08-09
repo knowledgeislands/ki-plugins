@@ -7,8 +7,15 @@ const DEP_1: RubricItem<EvidenceRubricContext> = {
   description: 'Dependabot alerts and updates are enabled and pull-request branches may be updated.',
   sources: ['standards-repository.md'],
   mechanical: {
+    // Three GitHub round trips where its siblings each make one.
     level: 'FAIL',
+    cost: 12,
     overrideLevels: ['WARN'],
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Enable the required Dependabot and branch-update settings or record an explicit override, then rerun the audit.'
+    },
     audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL', ['WARN']) }
   }
 }

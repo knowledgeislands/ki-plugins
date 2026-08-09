@@ -3,12 +3,26 @@ import type { AgentFileContext, AgentsRubricContext } from '../contexts/agents.t
 
 const STANDARD = 'standards-subagent-definitions.md'
 const DESCRIPTION_MAX = 1024
+const DIAGNOSTIC = {
+  class: 'diagnostic' as const,
+  guidance:
+    'Revise the agent description through its responsible author; do not rewrite the agent role or delegation boundary automatically.'
+}
+const judgment = (prompt: string) => ({
+  scope: 'The target agent description and the role, delegation, and request cues it communicates.',
+  prompt,
+  outcomes: ['conforming', 'gap', 'exclusion'] as const,
+  guidance:
+    'Revise the description through its responsible author, record a named gap, or record an explicit justified exclusion.'
+})
 const stripCode = (markdown: string): string => markdown.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, '')
 const inspect = (
   context: AgentFileContext,
   run: (agent: NonNullable<AgentFileContext['agent']>) => readonly AuditOutcome[]
 ): readonly AuditOutcome[] =>
-  context.agent ? run(context.agent) : [{ status: 'NOT_APPLICABLE', message: 'No physical agent definition is available.' }]
+  context.agent
+    ? run(context.agent)
+    : [{ status: 'NOT_APPLICABLE', message: 'No physical agent definition is available.' }]
 
 const DESC_1: RubricItem<AgentFileContext> = {
   code: 'DESC-1',
@@ -17,6 +31,7 @@ const DESC_1: RubricItem<AgentFileContext> = {
   sources: [`${STANDARD}#4-frontmatter-description`, 'CC'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC,
     audit: {
       phase: 'INSPECT',
       run: (context) =>
@@ -40,6 +55,7 @@ const DESC_2: RubricItem<AgentFileContext> = {
   sources: [`${STANDARD}#4-frontmatter-description`, 'BP'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC,
     audit: {
       phase: 'INSPECT',
       run: (context) =>
@@ -63,6 +79,7 @@ const DESC_3: RubricItem<AgentFileContext> = {
   sources: [`${STANDARD}#4-frontmatter-description`, 'BP'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC,
     audit: {
       phase: 'INSPECT',
       run: (context) =>
@@ -85,28 +102,28 @@ const judgments: readonly RubricItem<AgentFileContext>[] = [
     title: 'Ownership and delegation signal',
     description: 'The description states both what the agent owns and when to delegate to it.',
     sources: [`${STANDARD}#4-frontmatter-description`, 'CC', 'BP'],
-    judgment: { prompt: 'States both what the agent owns and when to delegate to it.' }
+    judgment: judgment('States both what the agent owns and when to delegate to it.')
   },
   {
     code: 'DESC-5',
     title: 'Third-person description',
     description: 'The description is written in the third person, never first or second person.',
     sources: [`${STANDARD}#4-frontmatter-description`, 'BP'],
-    judgment: { prompt: 'Written in the third person, never first/second person.' }
+    judgment: judgment('Written in the third person, never first/second person.')
   },
   {
     code: 'DESC-6',
     title: 'Concrete request cues',
     description: 'The description includes concrete cues a request would carry.',
     sources: [`${STANDARD}#4-frontmatter-description`, 'CC', 'BP'],
-    judgment: { prompt: "Includes concrete cues a request would carry (the role's nouns/verbs)." }
+    judgment: judgment("Includes concrete cues a request would carry (the role's nouns/verbs).")
   },
   {
     code: 'DESC-7',
     title: 'Specific description',
     description: 'The description avoids vague phrasing such as helps with engineering.',
     sources: [`${STANDARD}#4-frontmatter-description`, 'BP'],
-    judgment: { prompt: 'Avoids vague phrasing ("helps with engineering").' }
+    judgment: judgment('Avoids vague phrasing ("helps with engineering").')
   }
 ]
 

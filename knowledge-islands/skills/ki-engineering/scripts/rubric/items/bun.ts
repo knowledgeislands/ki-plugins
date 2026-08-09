@@ -14,7 +14,12 @@ export const BUN: RubricFamily<EngineeringRubricContext, BunRubricContext> = {
       description:
         'Where the repo loads `.env`, `loadConfig` (or equivalent) calls `process.loadEnvFile()` in a try/catch for Node parity.',
       sources: ['standards-engineering.md'],
-      judgment: { prompt: 'Where `.env` is loaded, does the loader call `process.loadEnvFile()` safely?' }
+      judgment: {
+        scope: 'Every repository configuration loader that reads `.env` files.',
+        prompt: 'Where `.env` is loaded, does the loader call `process.loadEnvFile()` safely?',
+        outcomes: ['conforming', 'gap', 'exclusion'],
+        guidance: 'Add the guarded Node parity call, record a named Gap, or record an explicit capability exclusion.'
+      }
     }
   ]
 }

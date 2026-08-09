@@ -80,7 +80,7 @@ The host never executes `scripts/govern.ts`, `.ki/bin` wrappers, copied checkers
 - detect supported local agent runtimes;
 - create the KI user configuration when absent;
 - install or restore the verified canonical harness; and
-- activate the core `ki-bootstrap`, `ki-delegate`, `ki-next`, `ki-plan`, and `ki-recap` skills for each detected runtime.
+- activate the core `ki-bootstrap`, `ki-next`, `ki-plan`, `ki-implement`, `ki-accept`, `ki-batch`, and `ki-recap` skills for each detected runtime.
 
 Repeated bootstrap is idempotent over correctly managed state. `ki bootstrap --refresh` redetects runtimes and rebuilds the recorded installed-harness and managed user-skill inventory from current state.
 
@@ -93,6 +93,12 @@ Installed verified payloads remain authoritative during ordinary use.
 `ki dev on <path>` is the explicit development-only exception for the canonical harness. It validates the local checkout and switches the canonical installed payload to that source. `ki dev off` restores the verified canonical archive.
 
 A nearby checkout is never selected implicitly.
+
+While `ki dev on` is active the selected checkout is live, so every `ki` invocation on the machine resolves governance through its **working tree**, uncommitted edits included. Governance is then no longer a fixed input: editing the harness changes how `ki repo audit` and `ki repo conform` behave everywhere, immediately, including in sessions that did not make the edit. A rubric criterion can appear, change level, or acquire a new dependency underneath work already in progress, and a repository's audit result can move with no change to that repository at all.
+
+The exposure is widest where harness edits and harness-dependent verification overlap in time, which is most likely when either is delegated: a worker editing the harness and a worker auditing repositories against it are, in development mode, sharing one mutable input. Separating them in time removes the interaction, and `ki dev off` removes it entirely by resolving the run against the verified canonical archive, which is what makes a result reproducible or comparable across sessions.
+
+`ki diag` distinguishes the two cases after the fact. `Installation` and `Local source` say whether governance came from a mutable tree, so an audit or conform result that moved while the target repository did not is explained there rather than in the repository.
 
 ## Guide-led legacy retirement
 

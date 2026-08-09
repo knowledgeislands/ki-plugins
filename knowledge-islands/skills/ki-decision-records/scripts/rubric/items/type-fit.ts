@@ -8,8 +8,12 @@ const TYPE_FIT_1: RubricItem<RecordsRubricContext> = {
     'The filename prefix accurately categorises the decision itself; the body makes the type obvious. A mismatch is resolved with a human by choosing the correct canonical record ID or metadata, never by mechanically overwriting either side.',
   sources: ['standards-decision-records.md'],
   judgment: {
+    scope: 'The filename prefix, metadata, and body of every active decision record.',
     prompt:
-      'Assess whether the filename prefix accurately categorises the decision itself without a stretch fit and whether the body makes the type obvious. Resolve a mismatch with a human, never by mechanically overwriting either side.'
+      'Assess whether the filename prefix accurately categorises the decision itself without a stretch fit and whether the body makes the type obvious. Resolve a mismatch with a human, never by mechanically overwriting either side.',
+    outcomes: ['conforming', 'gap', 'exclusion'],
+    guidance:
+      'Agree the canonical classification with the responsible human, record a named Gap, or record an explicit exclusion.'
   }
 }
 

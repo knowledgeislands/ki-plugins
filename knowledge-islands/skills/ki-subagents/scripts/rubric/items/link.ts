@@ -4,6 +4,11 @@ import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
 import type { AgentFileContext, AgentsRubricContext } from '../contexts/agents.ts'
 
 const STANDARD = 'standards-subagent-definitions.md'
+const REVIEW = {
+  scope: 'The target agent links and named skill or agent references.',
+  outcomes: ['conforming', 'gap', 'exclusion'] as const,
+  guidance: 'Correct the reference through the responsible author, record a gap, or record an explicit exclusion.'
+}
 const stripCode = (markdown: string): string => markdown.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, '')
 const relativeLinkTargets = (markdown: string): string[] => {
   const targets: string[] = []
@@ -29,14 +34,22 @@ const LINK_ITEMS = [
     sources: [`${STANDARD}#10-linking`, 'HOUSE'],
     mechanical: {
       level: 'FAIL',
+      remediation: { class: 'diagnostic', guidance: 'Correct broken references through the responsible agent author.' },
       audit: {
         phase: 'INSPECT',
         run: (context: AgentFileContext) => {
           const agent = context.agent
-          if (!agent) return [{ status: 'NOT_APPLICABLE' as const, message: 'No physical agent definition is available.' }]
-          const broken = relativeLinkTargets(stripCode(agent.body)).filter((target) => !existsSync(resolve(dirname(agent.file), target)))
+          if (!agent)
+            return [{ status: 'NOT_APPLICABLE' as const, message: 'No physical agent definition is available.' }]
+          const broken = relativeLinkTargets(stripCode(agent.body)).filter(
+            (target) => !existsSync(resolve(dirname(agent.file), target))
+          )
           return broken.length > 0
-            ? broken.map((target) => ({ status: 'VIOLATION', message: `Broken relative link → "${target}".`, subject: agent.file }))
+            ? broken.map((target) => ({
+                status: 'VIOLATION',
+                message: `Broken relative link → "${target}".`,
+                subject: agent.file
+              }))
             : [{ status: 'PASS', message: 'Relative links resolve.', subject: agent.file }]
         }
       }
@@ -48,6 +61,7 @@ const LINK_ITEMS = [
     description: 'Wikilinks to knowledge-base notes are allowed in grounded agent prompts.',
     sources: [`${STANDARD}#10-linking`, 'HOUSE'],
     judgment: {
+      ...REVIEW,
       prompt:
         '`[[wikilinks]]` to KB notes are allowed here (a grounded agent cites its notes) and are not a defect, unlike in a `SKILL.md`.'
     }
@@ -57,7 +71,7 @@ const LINK_ITEMS = [
     title: 'Name-based composition references',
     description: 'Other agents and skills are referred to by name, never by file path.',
     sources: [`${STANDARD}#10-linking`, 'HOUSE'],
-    judgment: { prompt: 'Other agents/skills are referred to by name, never by file path.' }
+    judgment: { ...REVIEW, prompt: 'Other agents/skills are referred to by name, never by file path.' }
   }
 ] as const
 

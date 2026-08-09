@@ -1,0 +1,56 @@
+# Exemplars
+
+## Slash-command activity
+
+```yaml
+---
+status: active
+realization: slash-command
+skill: ki-repo-kb
+author: AI-assisted
+---
+```
+
+```markdown
+# KB Audit
+
+Runs `ki-repo-kb` AUDIT mode on demand to check the base structure against the KB standard.
+
+Adopted because the KB grows rapidly and manual structure reviews are error-prone.
+```
+
+## Scheduled-task activity
+
+```yaml
+---
+status: active
+realization: scheduled-task
+schedule_name: Morning Briefing
+schedule_env: scheduler
+author: AI-assisted
+---
+```
+
+```markdown
+# Morning Briefing
+
+Runs each working day at 06:00. Reads the calendar, active streams, and any outstanding items, then produces a briefing note in Calendar/.
+
+Verify registration in the selected scheduling runtime. The base's Charter records the adoption position.
+```
+
+## Conversational activity
+
+```yaml
+---
+status: active
+realization: conversational
+author: AI-assisted
+---
+```
+
+```markdown
+# Weekly Review
+
+A recurring conversation with the island custodian each Friday to review the week's captures, route outstanding notes, and update the active streams. No external artefact — invoked by the user.
+```

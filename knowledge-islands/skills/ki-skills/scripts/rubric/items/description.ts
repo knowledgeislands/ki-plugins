@@ -1,5 +1,10 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { type DescriptionRubricContext, type KiSkillsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
+import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import {
+  type DescriptionRubricContext,
+  type KiSkillsRubricContext,
+  selectKiSkillsContext
+} from '../contexts/contexts.ts'
 import { containsXmlTag, stripCode } from '../contexts/text.ts'
 
 const DESCRIPTION_MAX_LENGTH = 1024
@@ -11,6 +16,7 @@ const DESC_1: RubricItem<DescriptionRubricContext> = {
   sources: ['SPEC', 'CC'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ description }) =>
@@ -28,13 +34,19 @@ const DESC_2: RubricItem<DescriptionRubricContext> = {
   sources: ['SPEC', 'BP'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ description }) =>
         !description
           ? [{ status: 'NOT_APPLICABLE', message: 'description is not present' }]
           : description.length > DESCRIPTION_MAX_LENGTH
-            ? [{ status: 'VIOLATION', message: `\`description\` is ${description.length} chars (max ${DESCRIPTION_MAX_LENGTH})` }]
+            ? [
+                {
+                  status: 'VIOLATION',
+                  message: `\`description\` is ${description.length} chars (max ${DESCRIPTION_MAX_LENGTH})`
+                }
+              ]
             : [{ status: 'PASS', message: 'description is no longer than 1024 characters' }]
     }
   }
@@ -47,6 +59,7 @@ const DESC_3: RubricItem<DescriptionRubricContext> = {
   sources: ['BP'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ description }) =>
@@ -64,7 +77,7 @@ const DESC_4: RubricItem<DescriptionRubricContext> = {
   title: 'description states what the skill does and when to use it',
   description: 'States **both** what it does **and** when to use it.',
   sources: ['SPEC', 'BP'],
-  judgment: { prompt: 'Does the description state both what this skill does and when it should be used?' }
+  judgment: judgment('Does the description state both what this skill does and when it should be used?')
 }
 
 const DESC_5: RubricItem<DescriptionRubricContext> = {
@@ -72,7 +85,7 @@ const DESC_5: RubricItem<DescriptionRubricContext> = {
   title: 'description is written in the third person',
   description: 'Written in the **third person**, never first/second person.',
   sources: ['BP', 'COMMUNITY'],
-  judgment: { prompt: 'Is the description consistently written in the third person?' }
+  judgment: judgment('Is the description consistently written in the third person?')
 }
 
 const DESC_6: RubricItem<DescriptionRubricContext> = {
@@ -80,7 +93,7 @@ const DESC_6: RubricItem<DescriptionRubricContext> = {
   title: 'description includes concrete trigger phrases',
   description: 'Includes concrete **trigger keywords/phrases** a user would say.',
   sources: ['SPEC', 'BP', 'CC'],
-  judgment: { prompt: 'Does the description include concrete trigger phrases a user would say?' }
+  judgment: judgment('Does the description include concrete trigger phrases a user would say?')
 }
 
 const DESC_7: RubricItem<DescriptionRubricContext> = {
@@ -88,7 +101,9 @@ const DESC_7: RubricItem<DescriptionRubricContext> = {
   title: 'description leans toward firing and front-loads its main trigger',
   description: 'Leans toward firing, and front-loads the most important trigger.',
   sources: ['ENG', 'COMMUNITY', 'CC'],
-  judgment: { prompt: 'Does the description lean toward appropriate selection and front-load its most important trigger?' }
+  judgment: judgment(
+    'Does the description lean toward appropriate selection and front-load its most important trigger?'
+  )
 }
 
 const DESC_8: RubricItem<DescriptionRubricContext> = {
@@ -96,7 +111,7 @@ const DESC_8: RubricItem<DescriptionRubricContext> = {
   title: 'description avoids vague phrasing',
   description: 'Avoids vague phrasing ("helps with documents").',
   sources: ['SPEC', 'BP'],
-  judgment: { prompt: 'Does the description avoid vague phrases such as "helps with documents"?' }
+  judgment: judgment('Does the description avoid vague phrases such as "helps with documents"?')
 }
 
 const DESC_9: RubricItem<DescriptionRubricContext> = {
@@ -104,7 +119,18 @@ const DESC_9: RubricItem<DescriptionRubricContext> = {
   title: 'description may state explicit non-triggers where collision is likely',
   description: '_(Advanced)_ Where collision is likely, may end with explicit non-triggers.',
   sources: ['COMMUNITY'],
-  judgment: { prompt: 'Where skill-selection collision is likely, would explicit non-triggers improve routing?' }
+  judgment: judgment('Where skill-selection collision is likely, would explicit non-triggers improve routing?')
+}
+
+const DESC_10: RubricItem<DescriptionRubricContext> = {
+  code: 'DESC-10',
+  title: 'description earns its standing cost through routing value',
+  description:
+    'The description retains scope, its primary trigger, and essential collision guidance while routing mode and workflow detail out of the standing surface.',
+  sources: ['KI'],
+  judgment: judgment(
+    'Does the description earn its standing source cost by retaining scope, its primary trigger, and only essential collision guidance while routing mode and workflow detail out?'
+  )
 }
 
 export const DESC: RubricFamily<KiSkillsRubricContext, DescriptionRubricContext> = {
@@ -113,5 +139,5 @@ export const DESC: RubricFamily<KiSkillsRubricContext, DescriptionRubricContext>
   description: 'The portable skill description contract.',
   standard: 'standards-agent-skills.md#5-frontmatter-description',
   selectContext: (context: KiSkillsRubricContext) => selectKiSkillsContext(context, 'description'),
-  items: [DESC_1, DESC_2, DESC_3, DESC_4, DESC_5, DESC_6, DESC_7, DESC_8, DESC_9]
+  items: [DESC_1, DESC_2, DESC_3, DESC_4, DESC_5, DESC_6, DESC_7, DESC_8, DESC_9, DESC_10]
 }

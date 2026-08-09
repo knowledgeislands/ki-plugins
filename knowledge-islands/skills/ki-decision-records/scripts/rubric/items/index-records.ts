@@ -13,6 +13,10 @@ const INDEX_1: RubricItem<IndexRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Create the canonical decision index for this repository or Knowledge Base.'
+    },
     audit: {
       phase: 'PREPARE',
       run: (context: IndexRubricContext) =>
@@ -34,6 +38,7 @@ const INDEX_2: RubricItem<IndexRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
+    remediation: { class: 'automatic' },
     audit: {
       phase: 'DERIVED',
       run: (context: IndexRubricContext) => {
@@ -69,6 +74,10 @@ const INDEX_3: RubricItem<IndexRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Remove or correct each stale index entry after confirming the record history.'
+    },
     audit: {
       phase: 'DERIVED',
       run: (context: IndexRubricContext) => {
@@ -98,7 +107,12 @@ const INDEX_6: RubricItem<IndexRubricContext> = {
   description:
     'Entries are in a sensible reveal order: a from-scratch build narrative with roots first, then dependents, weaving sub-scopes in.',
   sources: [SOURCE],
-  judgment: { prompt: 'Assess whether index entries form a sensible from-scratch reveal order with roots before dependents.' }
+  judgment: {
+    scope: 'The ordered entries of the active decision index.',
+    prompt: 'Assess whether index entries form a sensible from-scratch reveal order with roots before dependents.',
+    outcomes: ['conforming', 'gap', 'exclusion'],
+    guidance: 'Reorder the index to improve the reading path, record a named Gap, or record an explicit exclusion.'
+  }
 }
 
 const INDEX_7: RubricItem<IndexRubricContext> = {
@@ -106,7 +120,12 @@ const INDEX_7: RubricItem<IndexRubricContext> = {
   title: 'Index gloss alignment',
   description: "An entry's gloss matches the decision record's heading title, excluding the ID prefix.",
   sources: [SOURCE],
-  judgment: { prompt: "Compare every index gloss with its decision record's heading title, excluding the ID prefix." }
+  judgment: {
+    scope: 'Every active decision-index entry and its linked record heading.',
+    prompt: "Compare every index gloss with its decision record's heading title, excluding the ID prefix.",
+    outcomes: ['conforming', 'gap', 'exclusion'],
+    guidance: 'Align the gloss with its record heading, record a named Gap, or record an explicit exclusion.'
+  }
 }
 
 const INDEX_8: RubricItem<IndexRubricContext> = {
@@ -117,6 +136,10 @@ const INDEX_8: RubricItem<IndexRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Renumber the affected records and citations rather than reordering serials out of sequence.'
+    },
     audit: {
       phase: 'DERIVED',
       run: (context: IndexRubricContext) =>

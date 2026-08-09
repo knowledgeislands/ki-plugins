@@ -1,4 +1,5 @@
 import type { AuditOutcome, RubricFamily, RubricItem, RubricOutcomes } from '../../shared/rubric.ts'
+import { AUTOMATIC_REMEDIATION, DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
 import { type KiShapeRubricContext, type KiSkillsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const UNIVERSAL_VERBS = ['AUDIT', 'CONFORM', 'EDUCATE', 'REFRESH', 'HELP'] as const
@@ -7,23 +8,25 @@ const KI_SHAPE_1: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-1',
   title: 'standard skills resolve base bindings at runtime',
   description: 'A **standard** KI skill resolves base bindings at runtime and hard-codes **no single base**.',
-  sources: ['ki-agentic-harness README', '`ki-kb`'],
-  judgment: { prompt: 'Does this standard skill resolve base bindings at runtime without hard-coding one base?' }
+  sources: ['ki-agentic-harness README', '`ki-repo-kb`'],
+  judgment: judgment('Does this standard skill resolve base bindings at runtime without hard-coding one base?')
 }
 
 const KI_SHAPE_2: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-2',
-  title: 'skills compose rather than extend',
+  title: 'skills compose or optionally augment rather than extend',
   description:
-    '**Composition is the only inter-skill relationship — the base-coupled extension pattern is retired.** A skill builds on another by running the sibling\'s checker/mode **in sequence** and adding its delta (never importing it), and **declares the edge** — naming the sibling and the run order in its AUDIT mode. What a base needs differently is **declared, not forked**: data in the repo\'s own `.ki-config` table (read validate-down), prose in its `CLAUDE.md` — never a `<base>-kb`-style skill that takes the shared modes by name. _Delegation between two standards (kb → streams) is composition at sub-scope._ The linter flags **endorsement of the retired pattern** (telling a base to ship/"prefer" an extension skill, or that a skill "delegates the modes back" / "extends this one") as a mechanical heuristic; the **[J]** gate is that no skill in the set models a relationship as a base-coupled extension.',
+    '**Composition and optional augmentation are the only dependent inter-skill relationships — the base-coupled extension pattern is retired.** Formal composition means selecting one skill necessarily selects and runs another governance capability before adding its delta; declare it in `ki-depends-on:`. An optional augmentation is declared in `ki-optional-depends-on:` and applies only when the named capability is active in the same scope; it never makes that capability mandatory or claims composition. List order is not semantic. Separately coverage-detected standards are audited alongside, off-ramps are routing, and `ki-shared-dependencies:` is packaging — none is composition. What a base needs differently is **declared, not forked**: data in the repo\'s own `.ki-config` table (read validate-down), prose in its `CLAUDE.md` — never a `<base>-kb`-style skill that takes the shared modes by name. _Delegation between two standards (kb → streams) is composition at sub-scope and is declared by the delegating parent._ The linter flags **endorsement of the retired pattern** (telling a base to ship/"prefer" an extension skill, or that a skill "delegates the modes back" / "extends this one") as a mechanical heuristic; the **[J]** gate is that every claimed composition has the matching dependency edge and no adjacent relationship is mislabeled as composition.',
   sources: ['ki-agentic-harness README', '`ki-engineering`'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     heuristic: true,
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
-        if (!skill) return [{ status: 'NOT_APPLICABLE', message: 'skill evidence is unavailable for composition inspection' }]
+        if (!skill)
+          return [{ status: 'NOT_APPLICABLE', message: 'skill evidence is unavailable for composition inspection' }]
         const violations = skill.retiredExtensionFiles.map((file) => ({
           status: 'VIOLATION' as const,
           message:
@@ -35,16 +38,36 @@ const KI_SHAPE_2: RubricItem<KiShapeRubricContext> = {
       }
     }
   },
-  judgment: { prompt: 'Does every inter-skill relationship use declared composition rather than base-coupled extension?' }
+  judgment: judgment(
+    'Does every claimed composition have a required dependency edge, every optional augmentation the correct optional edge, and coverage-detected standards, off-ramps, and shared-module packaging remain distinct?'
+  )
 }
 
 const KI_SHAPE_3: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-3',
   title: 'the skill declares its kind',
   description:
-    'The skill declares its **kind** — **governance** or **process** — clearly (ADR-KI-HARNESS-SKILLS-006). A **governance skill** holds a house standard and exposes the universal modes (KI-SHAPE-5). A **process skill** drives an action or lifecycle rather than holding a standard: it is lightweight, may bundle a helper `scripts/` and a `references/` procedure, and is exempt from universal governance modes — its mode count follows its own lifecycle and it exposes HELP only optionally. Both kinds use the closed Knowledge Islands reference vocabulary (KI-SHAPE-6) and are dual-invocable (`/<name>` and model-triggered).',
+    'Every KI skill declares its **kind** in exact frontmatter as `ki-kind: governance` or `ki-kind: process`; a directory and prose never establish kind (ADR-KI-HARNESS-SKILLS-006). A **governance skill** holds a house standard and exposes the universal modes (KI-SHAPE-5). A **process skill** drives an action or lifecycle rather than holding a standard: it is lightweight, may bundle a helper `scripts/` and a `references/` procedure, and is exempt from universal governance modes — its mode count follows its own lifecycle and it exposes HELP only optionally. Both kinds use the closed Knowledge Islands reference vocabulary (KI-SHAPE-6) and are dual-invocable (`/<name>` and model-triggered).',
   sources: ['ki-agentic-harness README', 'ADR-KI-HARNESS-SKILLS-006'],
-  judgment: { prompt: 'Does the skill correctly and clearly declare its governance or process kind?' }
+  mechanical: {
+    level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
+    audit: {
+      phase: 'INSPECT',
+      run: ({ skill }) => {
+        if (!skill?.knowledgeIslandsSkill)
+          return [{ status: 'NOT_APPLICABLE', message: 'the target is not a Knowledge Islands skill' }]
+        if (!skill.kiKindPresent)
+          return [
+            { status: 'VIOLATION', message: 'missing required `ki-kind: governance | process` frontmatter metadata' }
+          ]
+        if (skill.kiKind !== 'governance' && skill.kiKind !== 'process')
+          return [{ status: 'VIOLATION', message: '`ki-kind:` must be exactly `governance` or `process`' }]
+        return [{ status: 'PASS', message: 'the skill declares an explicit governance or process kind' }]
+      }
+    }
+  },
+  judgment: judgment('Does the explicit kind accurately match the skill’s concern and operating contract?')
 }
 
 const KI_SHAPE_4: RubricItem<KiShapeRubricContext> = {
@@ -53,7 +76,7 @@ const KI_SHAPE_4: RubricItem<KiShapeRubricContext> = {
   description:
     "A skill that reads the shared `.ki-config.toml` consumes and **validates only its own `[<skill>]` table** — warns on a key it doesn't recognise, advises dropping one that merely restates a default — and never inspects another skill's table. Validate down, ignore across.",
   sources: ['contract defined by `ki-repo`'],
-  judgment: { prompt: 'Does this skill validate only its own configuration table and ignore unrelated tables?' }
+  judgment: judgment('Does this skill validate only its own configuration table and ignore unrelated tables?')
 }
 
 const KI_SHAPE_5: RubricItem<KiShapeRubricContext> = {
@@ -62,7 +85,7 @@ const KI_SHAPE_5: RubricItem<KiShapeRubricContext> = {
   description:
     "A **governance skill** (one that holds a standard) exposes the universal modes **AUDIT** + **CONFORM** + **EDUCATE** + **REFRESH**. AUDIT and CONFORM run through the skill's hosted rubric; EDUCATE teaches or creates the governed artifact from that standard; REFRESH re-anchors the standard to its sources. Further modes (`OPTIMISE` to push a compliant artifact from the floor toward excellent, and operational modes like kb's note-ops) are skill-specific. Modes are named, not lettered, and ordered alphabetically in the body and `argument-hint`.",
   sources: ['ki-agentic-harness README'],
-  judgment: { prompt: 'Does this governance skill expose the universal modes with appropriate additional modes only?' }
+  judgment: judgment('Does this governance skill expose the universal modes with appropriate additional modes only?')
 }
 
 const KI_SHAPE_6: RubricItem<KiShapeRubricContext> = {
@@ -73,10 +96,12 @@ const KI_SHAPE_6: RubricItem<KiShapeRubricContext> = {
   sources: ['ki-agentic-harness README'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
-        if (!skill?.knowledgeIslandsSkill) return [{ status: 'NOT_APPLICABLE', message: 'the target is not a Knowledge Islands skill' }]
+        if (!skill?.knowledgeIslandsSkill)
+          return [{ status: 'NOT_APPLICABLE', message: 'the target is not a Knowledge Islands skill' }]
         const allowed = /^(?:exemplars|rubric|sources|standards-[a-z0-9]+(?:-[a-z0-9]+)*|mode-[a-z0-9]+)\.md$/
         const violations = skill.referencePaths
           .filter((path) => !allowed.test(path))
@@ -86,27 +111,34 @@ const KI_SHAPE_6: RubricItem<KiShapeRubricContext> = {
             subject: `references/${path}`
           }))
         const [first, ...rest] = violations
-        return first ? [first, ...rest] : [{ status: 'PASS', message: 'reference files use the closed Knowledge Islands vocabulary' }]
+        return first
+          ? [first, ...rest]
+          : [{ status: 'PASS', message: 'reference files use the closed Knowledge Islands vocabulary' }]
       }
     }
   },
-  judgment: { prompt: 'Does each retained reference class serve a distinct reader need, with templates and executable helpers elsewhere?' }
+  judgment: judgment(
+    'Does each retained reference class serve a distinct reader need, with templates and executable helpers elsewhere?'
+  )
 }
 
 const KI_SHAPE_7: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-7',
   title: 'behaviour-changing skills define and check their anchor',
   description:
-    '_A behaviour-changing skill defines its gate — and checks the anchor._ A skill that changes a **default behaviour** — installs a gate, a standing "always do X before Y" rule, or a routing intercept — cannot rely on its own `description` to fire it, because skills load **on demand** and the triggering request often won\'t mention the skill (e.g. "edit this note" never says "proposal"). Such a skill must **anchor the behaviour in always-loaded context** (the base/repo `CLAUDE.md` / `AGENTS.md`, or a companion skill that _does_ reliably load handing off to it), **and its rubric must verify the anchor is present** so it can\'t be silently lost. The hosted audit surfaces candidates mechanically (strong gate phrasing in the body or a reference file — body + references scanned as one unit, since mode-routing lifts procedures out of the body — without an anchor its rubric reads); the **[J]** call is whether the skill genuinely changes a default and so _needs_ a gate. Realised as `ki-kb-streams`\' **GATE-1** (the Enactment gate) and `ki-kb`\'s **MEM-2** (the memory cascade); `ki-repo`\'s `.ki-config.toml` marker is the same pattern (anchor + checked).',
+    '_A behaviour-changing skill defines its gate — and checks the anchor._ A skill that changes a **default behaviour** — installs a gate, a standing "always do X before Y" rule, or a routing intercept — cannot rely on its own `description` to fire it, because skills load **on demand** and the triggering request often won\'t mention the skill (e.g. "edit this note" never says "proposal"). Such a skill must **anchor the behaviour in always-loaded context** (the base/repo `CLAUDE.md` / `AGENTS.md`, or a companion skill that _does_ reliably load handing off to it), **and its rubric must verify the anchor is present** so it can\'t be silently lost. The hosted audit surfaces candidates mechanically (strong gate phrasing in the body or a reference file — body + references scanned as one unit, since mode-routing lifts procedures out of the body — without an anchor its rubric reads); the **[J]** call is whether the skill genuinely changes a default and so _needs_ a gate. Realised as `ki-repo-kb-streams`\' **GATE-1** (the Enactment gate) and `ki-repo-kb`\'s **MEM-2** (the memory cascade); `ki-repo`\'s `.ki-config.toml` marker is the same pattern (anchor + checked).',
   sources: ['standards-knowledge-islands.md §2', 'standards-rubric-authoring.md#context-and-evidence'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     heuristic: true,
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
-        if (!skill) return [{ status: 'NOT_APPLICABLE', message: 'skill evidence is unavailable for anchor inspection' }]
-        if (!skill.strongGate) return [{ status: 'NOT_APPLICABLE', message: 'the skill does not appear to change default behaviour' }]
+        if (!skill)
+          return [{ status: 'NOT_APPLICABLE', message: 'skill evidence is unavailable for anchor inspection' }]
+        if (!skill.strongGate)
+          return [{ status: 'NOT_APPLICABLE', message: 'the skill does not appear to change default behaviour' }]
         return skill.anchorMentioned && skill.rubricReadsAnchor
           ? [{ status: 'PASS', message: 'the behaviour-changing skill defines and checks its anchor' }]
           : [
@@ -119,7 +151,9 @@ const KI_SHAPE_7: RubricItem<KiShapeRubricContext> = {
       }
     }
   },
-  judgment: { prompt: 'Does a behaviour-changing skill have an appropriate always-loaded anchor that its rubric verifies?' }
+  judgment: judgment(
+    'Does a behaviour-changing skill have an appropriate always-loaded anchor that its rubric verifies?'
+  )
 }
 
 const KI_SHAPE_9: RubricItem<KiShapeRubricContext> = {
@@ -130,6 +164,7 @@ const KI_SHAPE_9: RubricItem<KiShapeRubricContext> = {
   sources: ['[Rubric authoring](standards-rubric-authoring.md)'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     heuristic: true,
     audit: {
       phase: 'INSPECT',
@@ -147,7 +182,7 @@ const KI_SHAPE_9: RubricItem<KiShapeRubricContext> = {
       }
     }
   },
-  judgment: { prompt: 'Do remaining judgment criteria genuinely require review rather than deterministic checking?' }
+  judgment: judgment('Do remaining judgment criteria genuinely require review rather than deterministic checking?')
 }
 
 const KI_SHAPE_10: RubricItem<KiShapeRubricContext> = {
@@ -156,7 +191,7 @@ const KI_SHAPE_10: RubricItem<KiShapeRubricContext> = {
   description:
     "_A skill must not assume personal runtime configuration._ A Knowledge Islands skill is installed by any contributor, not only its author. It must not assume the user has any particular private configuration or imported topic files — plan-mode gates, house style rules, footnote conventions, workflow preferences. Any behaviour a skill requires beyond what the open spec guarantees must be **anchored in always-loaded repo context** (`CLAUDE.md`, `AGENTS.md`, or a KI-SHAPE-7-style companion hook) — not in the author's private config. Where a skill cross-checks a convention that _might_ live in personal config, it must degrade gracefully rather than silently rely on that content being present.",
   sources: ['standards-knowledge-islands.md §2'],
-  judgment: { prompt: 'Does the skill avoid assuming private personal configuration?' }
+  judgment: judgment('Does the skill avoid assuming private personal configuration?')
 }
 
 const KI_SHAPE_11: RubricItem<KiShapeRubricContext> = {
@@ -167,6 +202,7 @@ const KI_SHAPE_11: RubricItem<KiShapeRubricContext> = {
   sources: ['ADR-KI-HARNESS-SKILLS-001'],
   mechanical: {
     level: 'FAIL',
+    remediation: AUTOMATIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
@@ -174,13 +210,19 @@ const KI_SHAPE_11: RubricItem<KiShapeRubricContext> = {
           return [{ status: 'NOT_APPLICABLE', message: '`argument-hint` is unavailable for HELP-mode inspection' }]
         return skill.hintVerbs.includes('HELP')
           ? [{ status: 'PASS', message: 'governance skills expose HELP' }]
-          : [{ status: 'VIOLATION', message: '`argument-hint` does not expose the universal `help` mode (ADR-KI-HARNESS-SKILLS-001)' }]
+          : [
+              {
+                status: 'VIOLATION',
+                message: '`argument-hint` does not expose the universal `help` mode (ADR-KI-HARNESS-SKILLS-001)'
+              }
+            ]
       }
     },
     conform: {
       phase: 'NORMALISE',
       run: ({ skill, addArgumentHintVerbs }) => {
-        if (skill?.governanceSkill && skill.argumentHint && !skill.hintVerbs.includes('HELP')) addArgumentHintVerbs?.(['help'])
+        if (skill?.governanceSkill && skill.argumentHint && !skill.hintVerbs.includes('HELP'))
+          addArgumentHintVerbs?.(['help'])
       }
     }
   }
@@ -196,7 +238,9 @@ const auditKiShape12 = ({ skill }: KiShapeRubricContext): RubricOutcomes<AuditOu
       message: `\`argument-hint\` is missing the universal verb(s) ${missing.map((verb) => verb.toLowerCase()).join(', ')} — a governance skill exposes AUDIT, CONFORM, EDUCATE, REFRESH and HELP (ADR-KI-HARNESS-SKILLS-001)`
     })
   const [first, ...rest] = violations
-  return first ? [first, ...rest] : [{ status: 'PASS', message: 'governance mode vocabulary is canonical and complete' }]
+  return first
+    ? [first, ...rest]
+    : [{ status: 'PASS', message: 'governance mode vocabulary is canonical and complete' }]
 }
 
 const KI_SHAPE_12: RubricItem<KiShapeRubricContext> = {
@@ -207,6 +251,7 @@ const KI_SHAPE_12: RubricItem<KiShapeRubricContext> = {
   sources: ['ADR-KI-HARNESS-SKILLS-001', 'ADR-KI-HARNESS-SKILLS-006', 'ADR-KI-HARNESS-007'],
   mechanical: {
     level: 'WARN',
+    remediation: AUTOMATIC_REMEDIATION,
     audit: { phase: 'INSPECT', run: auditKiShape12 },
     conform: {
       phase: 'PRIMARY',
@@ -227,10 +272,12 @@ const KI_SHAPE_13: RubricItem<KiShapeRubricContext> = {
   sources: ['ADR-KI-HARNESS-SKILLS-001'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
-        if (!skill?.governanceSkill) return [{ status: 'NOT_APPLICABLE', message: 'the target is not a governance skill' }]
+        if (!skill?.governanceSkill)
+          return [{ status: 'NOT_APPLICABLE', message: 'the target is not a governance skill' }]
         const violations: AuditOutcome[] = []
         if (skill.operatingModesSection === null)
           violations.push({
@@ -267,10 +314,11 @@ const KI_SHAPE_14: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-14',
   title: 'REFRESH states its ownership precondition',
   description:
-    "_REFRESH states its ownership precondition._ REFRESH's write target is normally the skill's own canonical files under `skills/<name>/` in `ki-agentic-harness` — a governance skill's `### Mode REFRESH` section (or, per REF-5, its `references/mode-refresh.md`) must name `ki-agentic-harness` as the only place it writes, and instruct the agent to stop and redirect when invoked from an installed copy (to the harness, or — for a pattern recurring across bases — to `ki-kb`'s IMPROVE mode). The one committed repository-local source at `.agents/skills/ki-self/` instead names that local source and stops to promote reusable rules to their shared owner. Missing either half **WARNs**. Process skills (KI-SHAPE-3) are exempt; a skill with no REFRESH section at all is already caught by KI-SHAPE-12.",
+    "_REFRESH states its ownership precondition._ REFRESH's write target is normally the skill's own canonical files under `skills/<name>/` in `ki-agentic-harness` — a governance skill's `### Mode REFRESH` section (or, per REF-5, its `references/mode-refresh.md`) must name `ki-agentic-harness` as the only place it writes, and instruct the agent to stop and redirect when invoked from an installed copy (to the harness, or — for a pattern recurring across bases — to `ki-repo-kb`'s IMPROVE mode). The one committed repository-local source at `.agents/skills/ki-self/` instead names that local source and stops to promote reusable rules to their shared owner. Missing either half **WARNs**. Process skills (KI-SHAPE-3) are exempt; a skill with no REFRESH section at all is already caught by KI-SHAPE-12.",
   sources: ['ADR-KI-HARNESS-SKILLS-001', 'ADR-KI-HARNESS-SKILLS-006'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
@@ -315,7 +363,9 @@ const auditKiShape15 = ({ skill }: KiShapeRubricContext): RubricOutcomes<AuditOu
         message: `\`scripts/${script}\` is retired — expose the catalogue only through \`scripts/rubric/items/index.ts\``
       })
   const [first, ...rest] = violations
-  return first ? [first, ...rest] : [{ status: 'PASS', message: 'governance skills expose no legacy runner entrypoints' }]
+  return first
+    ? [first, ...rest]
+    : [{ status: 'PASS', message: 'governance skills expose no legacy runner entrypoints' }]
 }
 
 const KI_SHAPE_15: RubricItem<KiShapeRubricContext> = {
@@ -326,6 +376,7 @@ const KI_SHAPE_15: RubricItem<KiShapeRubricContext> = {
   sources: ['standards-knowledge-islands.md §2', 'ADR-KI-HARNESS-007'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: { phase: 'INSPECT', run: auditKiShape15 }
   }
 }
@@ -338,6 +389,7 @@ const KI_SHAPE_16: RubricItem<KiShapeRubricContext> = {
   sources: ['KI'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     heuristic: true,
     audit: {
       phase: 'INSPECT',
@@ -365,7 +417,9 @@ const KI_SHAPE_16: RubricItem<KiShapeRubricContext> = {
       }
     }
   },
-  judgment: { prompt: 'Do all governed target-file reads and session proposals carry the appropriate ownership declaration?' }
+  judgment: judgment(
+    'Do all governed target-file reads and session proposals carry the appropriate ownership declaration?'
+  )
 }
 
 const KI_SHAPE_17: RubricItem<KiShapeRubricContext> = {
@@ -376,10 +430,12 @@ const KI_SHAPE_17: RubricItem<KiShapeRubricContext> = {
   sources: ['ADR-KI-HARNESS-SKILLS-006'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
-        if (!skill) return [{ status: 'NOT_APPLICABLE', message: 'skill evidence is unavailable for dependency inspection' }]
+        if (!skill)
+          return [{ status: 'NOT_APPLICABLE', message: 'skill evidence is unavailable for dependency inspection' }]
         if (!skill.dependsOnPresent)
           return [
             {
@@ -396,6 +452,66 @@ const KI_SHAPE_17: RubricItem<KiShapeRubricContext> = {
                 message: `\`ki-depends-on:\` must be a single-line flow list (got \`${skill.dependsOn}\`)`
               }
             ]
+      }
+    }
+  }
+}
+
+const KI_SHAPE_18: RubricItem<KiShapeRubricContext> = {
+  code: 'KI-SHAPE-18',
+  title: 'runtime compatibility is explicit and bounded',
+  description:
+    'A vendor-bound skill declares `ki-supported-runtimes:` as a non-empty, duplicate-free flow list of recognised repository runtime identifiers and also declares `ki-runtime-binding: true`; an absent list means the skill is portable across supported runtimes.',
+  sources: ['standards-knowledge-islands.md §2'],
+  mechanical: {
+    level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
+    audit: {
+      phase: 'INSPECT',
+      run: ({ skill }) => {
+        if (!skill)
+          return [{ status: 'NOT_APPLICABLE', message: 'skill evidence is unavailable for runtime inspection' }]
+        if (!skill.supportedRuntimesPresent)
+          return [{ status: 'PASS', message: 'the skill declares no runtime compatibility restriction' }]
+        if (!/^\[[^\]]+\]$/.test(skill.supportedRuntimes))
+          return [
+            {
+              status: 'VIOLATION',
+              message: '`ki-supported-runtimes:` must be a non-empty single-line flow list'
+            }
+          ]
+        const runtimes = skill.supportedRuntimes
+          .slice(1, -1)
+          .split(',')
+          .map((runtime) => runtime.trim())
+          .filter(Boolean)
+        if (new Set(runtimes).size !== runtimes.length)
+          return [{ status: 'VIOLATION', message: '`ki-supported-runtimes:` must not repeat a runtime' }]
+        const retired = runtimes.filter((runtime) => runtime === 'codex')
+        if (retired.length > 0)
+          return [
+            {
+              status: 'VIOLATION',
+              message: `\`ki-supported-runtimes:\` names retired runtime(s): ${retired.join(', ')}; use chatgpt-codex`
+            }
+          ]
+        const recognised = new Set(['claude-code', 'chatgpt-codex'])
+        const unknown = runtimes.filter((runtime) => !recognised.has(runtime))
+        if (unknown.length > 0)
+          return [
+            {
+              status: 'VIOLATION',
+              message: `\`ki-supported-runtimes:\` names unknown runtime(s): ${unknown.join(', ')}`
+            }
+          ]
+        if (!skill.runtimeBinding)
+          return [
+            {
+              status: 'VIOLATION',
+              message: 'a runtime-restricted skill must also declare `ki-runtime-binding: true`'
+            }
+          ]
+        return [{ status: 'PASS', message: 'runtime compatibility is explicit and bounded' }]
       }
     }
   }
@@ -423,6 +539,7 @@ export const KI_SHAPE: RubricFamily<KiSkillsRubricContext, KiShapeRubricContext>
     KI_SHAPE_14,
     KI_SHAPE_15,
     KI_SHAPE_16,
-    KI_SHAPE_17
+    KI_SHAPE_17,
+    KI_SHAPE_18
   ]
 }

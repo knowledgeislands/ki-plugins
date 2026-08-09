@@ -8,7 +8,12 @@ const OVR_J1: RubricItem<OverrideRubricContext> = {
   title: 'Override rationale',
   description: 'Every checks override represents a warranted repository-specific decision.',
   sources: ['standards-configuration.md'],
-  judgment: { prompt: 'Review each configured override and confirm that it records a real exception rather than hiding drift.' }
+  judgment: {
+    scope: 'Every configured ki-repo checks override and its repository context.',
+    prompt: 'Review each configured override and confirm that it records a real exception rather than hiding drift.',
+    outcomes: ['conforming', 'gap', 'exclusion'],
+    guidance: 'Remove or justify the override, record a named gap, or record an explicit repository-level exclusion.'
+  }
 }
 
 export const OVR: RubricFamily<RepoRubricContext, OverrideRubricContext> = {

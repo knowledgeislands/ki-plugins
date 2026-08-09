@@ -1,5 +1,9 @@
 import type { RubricFamily } from '../../shared/rubric.ts'
-import { auditEvidence, type DependenciesRubricContext, type EngineeringRubricContext } from '../contexts/engineering.ts'
+import {
+  auditEvidence,
+  type DependenciesRubricContext,
+  type EngineeringRubricContext
+} from '../contexts/engineering.ts'
 
 export const DEPENDENCIES: RubricFamily<EngineeringRubricContext, DependenciesRubricContext> = {
   code: 'DEPS',
@@ -11,13 +15,26 @@ export const DEPENDENCIES: RubricFamily<EngineeringRubricContext, DependenciesRu
     {
       code: 'DEPS-1',
       title: 'Dependencies are current',
-      description: '`bun outdated` reports no available updates; available updates are reviewed through `ki repo conform`.',
+      description:
+        '`bun outdated` reports no available updates; available updates are reviewed through `ki repo conform`.',
       sources: ['standards-engineering.md'],
       mechanical: {
         level: 'WARN',
         overrideLevels: ['FAIL'],
-        audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.deps1, 'WARN', ['FAIL']) },
-        conform: { phase: 'PREPARE', run: (context) => context.update?.() }
+        remediation: {
+          class: 'guarded',
+          guidance:
+            'Review each available dependency update and apply the selected versions deliberately, then rerun the audit.'
+        },
+        audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.deps1, 'WARN', ['FAIL']) }
+      },
+      judgment: {
+        scope: 'Every available dependency update and its release notes, compatibility impact, and lockfile change.',
+        prompt:
+          'Should each available update be adopted now without violating repository compatibility or release commitments?',
+        outcomes: ['adopt', 'defer', 'exclusion'],
+        guidance:
+          'Apply the approved update, record a deliberate deferral with its owner, or record an explicit exclusion.'
       }
     }
   ]

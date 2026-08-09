@@ -6,7 +6,14 @@ const TOPICS_1: RubricItem<EvidenceRubricContext> = {
   title: 'Public repository topics',
   description: 'A public repository carries the standard topic set unless explicitly overridden.',
   sources: ['standards-repository.md'],
-  mechanical: { level: 'FAIL', audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL') } }
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Set the required public topics or record an explicit override, then rerun the audit.'
+    },
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL') }
+  }
 }
 
 export const TOPICS: RubricFamily<RepoRubricContext, EvidenceRubricContext> = {

@@ -1,6 +1,7 @@
 import type { SkillRubricDefinition } from '../../shared/rubric.ts'
 import { type BindingRubricContext, createBindingSession } from '../contexts/binding.ts'
 import { BIND } from './bind.ts'
+import { RUBRIC } from './publication.ts'
 
 type BindingDefinition = SkillRubricDefinition<BindingRubricContext> & {
   scope: {
@@ -18,5 +19,5 @@ export default {
     paths: ['Library/Application Support/Claude/local-agent-mode-sessions']
   },
   createSession: createBindingSession,
-  families: [BIND]
+  families: [BIND, RUBRIC]
 } satisfies BindingDefinition

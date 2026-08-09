@@ -1,4 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
+import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
 import { type KiSkillsRubricContext, type SizeRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const BODY_MAX_LINES = 500
@@ -11,10 +12,12 @@ const SIZE_1: RubricItem<SizeRubricContext> = {
   sources: ['SPEC', 'BP', 'CC'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ bodyLines }) => {
-        if (bodyLines === undefined) return [{ status: 'NOT_APPLICABLE', message: 'SKILL.md body line count is unavailable' }]
+        if (bodyLines === undefined)
+          return [{ status: 'NOT_APPLICABLE', message: 'SKILL.md body line count is unavailable' }]
         return bodyLines > BODY_MAX_LINES
           ? [
               {
@@ -35,12 +38,19 @@ const SIZE_2: RubricItem<SizeRubricContext> = {
   sources: ['SPEC'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ bodyTokens }) => {
-        if (bodyTokens === undefined) return [{ status: 'NOT_APPLICABLE', message: 'SKILL.md body token count is unavailable' }]
+        if (bodyTokens === undefined)
+          return [{ status: 'NOT_APPLICABLE', message: 'SKILL.md body token count is unavailable' }]
         return bodyTokens > BODY_MAX_TOKENS
-          ? [{ status: 'VIOLATION', message: `SKILL.md body is ~${bodyTokens} tokens (recommended < ${BODY_MAX_TOKENS})` }]
+          ? [
+              {
+                status: 'VIOLATION',
+                message: `SKILL.md body is ~${bodyTokens} tokens (recommended < ${BODY_MAX_TOKENS})`
+              }
+            ]
           : [{ status: 'PASS', message: 'body stays below approximately 5,000 tokens' }]
       }
     }
@@ -52,7 +62,7 @@ const SIZE_3: RubricItem<SizeRubricContext> = {
   title: 'body omits knowledge the agent already has',
   description: 'No token spent on what a competent agent already knows.',
   sources: ['BP'],
-  judgment: { prompt: 'Does the body avoid spending tokens on knowledge a competent agent already has?' }
+  judgment: judgment('Does the body avoid spending tokens on knowledge a competent agent already has?')
 }
 
 const SIZE_4: RubricItem<SizeRubricContext> = {
@@ -60,7 +70,7 @@ const SIZE_4: RubricItem<SizeRubricContext> = {
   title: 'body is an overview that routes to detail',
   description: '`SKILL.md` reads as an **overview that routes to detail**, not all detail inlined.',
   sources: ['BP', 'SPEC', 'CC'],
-  judgment: { prompt: 'Does the body work as an overview that routes rarely used detail into supporting files?' }
+  judgment: judgment('Does the body work as an overview that routes rarely used detail into supporting files?')
 }
 
 export const SIZE: RubricFamily<KiSkillsRubricContext, SizeRubricContext> = {

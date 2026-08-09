@@ -8,7 +8,12 @@ const DESCFIT_1: RubricItem<DescriptionFitContext> = {
   title: 'Description fit',
   description: 'The repository description accurately and concisely describes its purpose.',
   sources: ['standards-repository.md'],
-  judgment: { prompt: 'Read the repository and judge whether its one-sentence description fits its actual purpose.' }
+  judgment: {
+    scope: 'The repository description and its current public purpose.',
+    prompt: 'Read the repository and judge whether its one-sentence description fits its actual purpose.',
+    outcomes: ['conforming', 'gap', 'exclusion'],
+    guidance: 'Update the description, record a named gap, or record an explicit repository-level exclusion.'
+  }
 }
 
 export const DESCFIT: RubricFamily<RepoRubricContext, DescriptionFitContext> = {

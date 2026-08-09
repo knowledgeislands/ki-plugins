@@ -15,6 +15,7 @@ export const KNIP: RubricFamily<EngineeringRubricContext, KnipRubricContext> = {
       sources: ['standards-engineering.md'],
       mechanical: {
         level: 'FAIL',
+        remediation: { class: 'automatic' },
         audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.knip1, 'FAIL') },
         conform: { phase: 'PREPARE', run: (context) => context.scaffold?.() }
       }
@@ -26,8 +27,37 @@ export const KNIP: RubricFamily<EngineeringRubricContext, KnipRubricContext> = {
       sources: ['standards-engineering.md'],
       mechanical: {
         level: 'FAIL',
-        audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.knip2, 'FAIL') },
-        conform: { phase: 'PRIMARY', run: (context) => context.repair?.() }
+        cost: 8,
+        remediation: {
+          class: 'guarded',
+          guidance:
+            'Review each reported unused symbol or dependency and make the intended source or configuration change, then rerun Knip.'
+        },
+        audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.knip2, 'FAIL') }
+      },
+      judgment: {
+        scope: 'Every unused-code or dependency finding reported by Knip.',
+        prompt:
+          'Is each finding genuinely unused, or does it represent a runtime, generated, or public surface that needs configuration rather than deletion?',
+        outcomes: ['remove', 'configure', 'exclusion'],
+        guidance:
+          'Remove genuinely unused code, protect a valid surface in configuration, or record an explicit exclusion.'
+      }
+    },
+    {
+      code: 'KNIP-3',
+      title: 'Knip entry points cover every package export',
+      description:
+        'Every target in the `exports` map of `package.json` is reachable from at least one glob in the `entry` list of `knip.json`, mapping the built path back to its source (`./dist/X.js` and `./dist/X.d.ts` map to `src/X.ts`); `./package.json` is exempt. An unreachable published entrypoint is invisible to knip as a public surface, so the KNIP-2 repair deletes genuine public API. Audit only — which entry glob to add is a judgment call, so there is no conform action.',
+      sources: ['standards-engineering.md'],
+      mechanical: {
+        level: 'FAIL',
+        remediation: {
+          class: 'diagnostic',
+          guidance:
+            'Add the intended source entry glob to `knip.json` so the published export is protected, then rerun the audit.'
+        },
+        audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.knip3, 'FAIL') }
       }
     }
   ]

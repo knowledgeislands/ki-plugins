@@ -6,7 +6,14 @@ const VIS_1: RubricItem<EvidenceRubricContext> = {
   title: 'Declared visibility',
   description: 'Live GitHub visibility matches the valid visibility declared in .ki-config.toml.',
   sources: ['standards-repository.md'],
-  mechanical: { level: 'FAIL', audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL') } }
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Align the declared and live repository visibility, then rerun the audit.'
+    },
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL') }
+  }
 }
 
 export const VIS: RubricFamily<RepoRubricContext, EvidenceRubricContext> = {

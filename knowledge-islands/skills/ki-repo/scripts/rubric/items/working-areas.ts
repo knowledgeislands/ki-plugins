@@ -1,25 +1,48 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import type { RepoRubricContext } from '../contexts/repository.ts'
+import type { RepoRubricContext, WorkingAreasRubricContext } from '../contexts/repository.ts'
 
-type WorkingAreasRubricContext = Record<string, never>
+const SOURCE = 'standards-repository.md'
+
+const WORK_1: RubricItem<WorkingAreasRubricContext> = {
+  code: 'WORK-1',
+  title: 'Working-area scaffold',
+  description:
+    'Every KI repository has the canonical generic inbound and outbound working areas and README orientation.',
+  sources: [SOURCE],
+  mechanical: {
+    level: 'FAIL',
+    remediation: { class: 'automatic' },
+    audit: { phase: 'INSPECT', run: (context) => context.workingAreas1 },
+    conform: {
+      phase: 'PRIMARY',
+      run: (context) => {
+        context.ensureWorkingAreaScaffold?.()
+      }
+    }
+  }
+}
 
 const WORK_J1: RubricItem<WorkingAreasRubricContext> = {
   code: 'WORK-J1',
   title: 'working-area direction and lifecycle',
   description:
-    'Optional +/ and -/ working areas distinguish inbound from outbound material, and retained handoffs have an owner, active disposition, reason or request, and named review trigger while resolved copies are removed.',
-  sources: ['standards-repository.md'],
+    'The required +/ and -/ working areas distinguish temporary inbound from outbound material without becoming a shadow canonical store.',
+  sources: [SOURCE],
   judgment: {
+    scope: 'The repository +/ and -/ working areas and their README orientation.',
     prompt:
-      'Where +/ or -/ exists, review that it remains working material rather than a shadow canonical store or archive: each retained handoff has a receiving owner, active disposition, reason or request, and named review trigger; resolved inbound and outbound copies are removed.'
+      'Review that +/ and -/ remain temporary directional material rather than a shadow canonical store or archive.',
+    outcomes: ['conforming', 'gap', 'exclusion'],
+    guidance:
+      'Move material to its canonical store, record a named gap, or record an explicit repository-level exclusion.'
   }
 }
 
 export const WORK: RubricFamily<RepoRubricContext, WorkingAreasRubricContext> = {
   code: 'WORK',
   title: 'Working areas',
-  description: 'Judgment-led review of optional inbound and outbound working material.',
-  standard: 'standards-repository.md',
+  description: 'Required generic inbound and outbound working-area scaffold and direction.',
+  standard: SOURCE,
   selectContext: (context) => context.workingAreas,
-  items: [WORK_J1]
+  items: [WORK_1, WORK_J1]
 }

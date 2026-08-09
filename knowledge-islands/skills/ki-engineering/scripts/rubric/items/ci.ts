@@ -16,6 +16,11 @@ const item = (
   mechanical: {
     level,
     ...(overrideLevels ? { overrideLevels } : {}),
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Align the CI workflow with the declared toolchain and canonical repository gates, then rerun the audit.'
+    },
     audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), level, overrideLevels) }
   }
 })
@@ -37,7 +42,7 @@ export const CI: RubricFamily<EngineeringRubricContext, CiRubricContext> = {
     item(
       'CI-2',
       'CI runs the canonical gates',
-      '`ci.yml` runs `ki repo audit`, then `bun run test` when tests exist, and does not route governance through package scripts.',
+      '`ci.yml` runs `ki repo audit --repo .`, then `bun run test` when tests exist, and does not route governance through package scripts.',
       'FAIL',
       (context) => context.ci2,
       ['WARN']

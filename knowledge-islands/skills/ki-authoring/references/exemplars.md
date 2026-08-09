@@ -4,7 +4,7 @@
 
 - [Selected patterns](#selected-patterns)
 
-Curated illustrations of the Knowledge Islands authoring conventions in practice. Use these when writing or conforming a document, checking whether a table should spill to footnotes, choosing between link styles, or formatting a `.ki-config.toml` entry. The exemplars show the judgment layer — the choices no formatter makes — annotated to make the reasoning visible. Mechanical rules (line width, prose wrap, heading hierarchy) are owned by Prettier + markdownlint-cli2; run `ki repo conform --skill ki-authoring` for the write pass and `ki repo audit --skill ki-authoring` for the read-only gate.
+Curated illustrations of the Knowledge Islands authoring conventions in practice. Use these when writing or conforming a document, checking whether a table should spill to footnotes, choosing between link styles, or formatting a `.ki-config.toml` entry. The exemplars show the judgment layer — the choices no formatter makes — annotated to make the reasoning visible. Mechanical rules (prose wrap, heading hierarchy, list and emphasis characters) are owned by rumdl; run `ki repo conform --skill ki-authoring` for the write pass and `ki repo audit --skill ki-authoring` for the read-only gate.
 
 ## Selected patterns
 
@@ -12,7 +12,7 @@ Curated illustrations of the Knowledge Islands authoring conventions in practice
 
 When a table column's content would force rows past a comfortable reading width (≈ 100 characters in a terminal), move the long content into footnotes below the table. The correct marker series, in order, is `†` `‡` `§` `¶` `‖` (then doubled: `††` `‡‡` …). Never use `*` — it collides with Markdown emphasis. Markers reset per table. A separate second series (`※` `❡` `¤` `¥`) separates two distinct footnote categories in the same table (e.g. a "source" series and a "caveat" series) so they do not collide.
 
-Each footnote must be separated from its neighbours by a blank line — under `proseWrap: never` Prettier joins adjacent footnote lines into one paragraph otherwise.
+Each footnote must be separated from its neighbours by a blank line — otherwise rumdl joins adjacent footnote lines into one paragraph.
 
 ```markdown
 | Repo  | Branch | Notes |
@@ -31,13 +31,13 @@ Each footnote must be separated from its neighbours by a blank line — under `p
 When the long content is a URL rather than prose, convert it to a **reference-style link** so the cell stays narrow:
 
 ```markdown
-| Tool         | Purpose | Docs  |
-| ------------ | ------- | ----- |
-| Prettier     | Format  | [†][] |
-| markdownlint | Lint    | [‡][] |
+| Tool  | Purpose            | Docs  |
+| ----- | ------------------ | ----- |
+| rumdl | Markdown           | [†][] |
+| Biome | TypeScript + JSON  | [‡][] |
 
-[†]: https://prettier.io/docs/options
-[‡]: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+[†]: https://rumdl.dev/rules
+[‡]: https://biomejs.dev/reference/configuration/
 ```
 
 ### Correct relative link style (no wikilinks in skill files)
@@ -55,7 +55,7 @@ See [the enactment process](<../Processes/Enactment Process/Enactment Process.md
 
 <!-- Correct: cross-skill reference by name, not path -->
 
-For KB note conventions use the `ki-kb` skill.
+For KB note conventions use the `ki-repo-kb` skill.
 
 <!-- Wrong: wikilink — breaks outside Obsidian and corrupts tables -->
 
@@ -63,26 +63,26 @@ See [[audit-rubric|the rubric]].
 
 <!-- Wrong: file path reference for a skill -->
 
-See `skills/knowledge-bases/ki-kb/SKILL.md` for KB conventions.
+See `skills/repo-structure/ki-repo-kb/SKILL.md` for KB conventions.
 ```
 
 ### Well-formed `.ki-config.toml` table
 
-Keys are lowercase `snake_case`. Strings are double-quoted. Arrays use the inline `["a", "b"]` form for short lists. One table per skill, named for the skill (`[ki-repo]`), with sub-tables nested under it. Comment non-obvious keys with a `#` line above them — the _why_, not the _what_. The contract behind what each table means (the one-table-per-skill model, validate-your-own-table protocol) belongs to the `ki-repo` skill; this pattern covers formatting only.
+Keys are lowercase `snake_case`. Strings are double-quoted. Arrays use the inline `["a", "b"]` form for short lists. One table per skill, named for the skill (`[skills.ki-repo]`), with sub-tables nested under it. Comment non-obvious keys with a `#` line above them — the _why_, not the _what_. The contract behind what each table means (the one-table-per-skill model, validate-your-own-table protocol) belongs to the `ki-repo` skill; this pattern covers formatting only.
 
 ```toml
-[ki-repo]
+[skills.ki-repo]
 visibility = "public"
 
 # Branch protection is opt-in; most repos leave this off.
-[ki-repo.checks]
+[skills.ki-repo.checks]
 branch-protection = true
 
-[ki-engineering]
+[skills.ki-engineering]
 node_version = "22"
 lint_paths = ["src", "scripts"]
 
-[ki-kb]
+[skills.ki-repo-kb]
 zones = ["Pillars", "Admin", "Reference"]
 # default_zone controls where new notes land when no zone is specified.
 default_zone = "Pillars"

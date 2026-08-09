@@ -31,7 +31,7 @@ test('the catalogue preserves the complete chezmoi binding rubric', () => {
   expect(catalogue.contract).toBe(1)
   expect(catalogue.name).toBe('ki-binding-chezmoi')
   expect(catalogue.createSession).toBeFunction()
-  expect(catalogue.families.map((family) => family.code)).toEqual(['BINDCHEZ'])
+  expect(catalogue.families.map((family) => family.code)).toEqual(['BINDCHEZ', 'RUBRIC'])
   expect(catalogue.families[0]?.items.map((item) => item.code)).toEqual([
     'BINDCHEZ-1',
     'BINDCHEZ-2',
@@ -41,6 +41,24 @@ test('the catalogue preserves the complete chezmoi binding rubric', () => {
     'BINDCHEZ-6',
     'BINDCHEZ-7'
   ])
+  expect(catalogue.families[1]?.items.map((item) => item.code)).toEqual(['RUBRIC-1'])
+  const families = catalogue.families as unknown as readonly {
+    items: readonly {
+      mechanical?: { remediation: { class: string }; conform?: unknown }
+      judgment?: { scope: string; outcomes: readonly string[]; guidance: string }
+    }[]
+  }[]
+  for (const item of families.flatMap((family) => family.items)) {
+    if (item.mechanical) {
+      expect(item.mechanical.remediation.class).not.toBe('')
+      if (item.mechanical.conform) expect(item.mechanical.remediation.class).toBe('automatic')
+    }
+    if (item.judgment) {
+      expect(item.judgment.scope).not.toBe('')
+      expect(item.judgment.outcomes.length).toBeGreaterThan(0)
+      expect(item.judgment.guidance).not.toBe('')
+    }
+  }
 })
 
 test('each family module exports one complete family', async () => {

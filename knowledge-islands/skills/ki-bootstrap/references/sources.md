@@ -13,11 +13,12 @@ Provenance only: the record of what changed lives in git, not a changelog here. 
 
 ## Last review
 
-REFRESH last ran **2026-07-26**.
+REFRESH last ran **2026-07-27**.
 
 - [ADR] and [HC] confirm that verified installed compatible harnesses are authoritative, runtime links are projections, and repositories never carry an alternative executor.
 - [TK] confirms the delivered `ki bootstrap`, `ki harness`, `ki skill user`, `ki skill repo`, `ki repo`, `ki dev`, `ki doctor`, and `ki diag` surfaces used by this skill.
 - [KR] confirms that repository coverage remains explicit in `.ki-config.toml` and separate from user activation.
+- The FND-003 boundary review confirmed that this skill remains guidance-only: no harness-local bootstrap process launch, publisher, synchroniser, generated HELP, or repository executor remains. `tools-ki` owns bootstrap execution, native rubric hosting, reporting, and transactions; its validated external `ConformCommand` and per-agent user-space mutation boundaries remain deliberately external.
 
 ## Open watch-items
 

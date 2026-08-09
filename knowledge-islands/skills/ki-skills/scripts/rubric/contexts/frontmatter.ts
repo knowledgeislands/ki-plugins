@@ -55,7 +55,13 @@ export const parseFrontmatter = (content: string): ParsedFrontmatter => {
     const key = keyValue[1] as string
     const value = (keyValue[2] as string).trim()
     present.add(key)
-    if (value === '>' || value === '|' || value.startsWith('> ') || value.startsWith('| ') || /^[>|][-+]?\d*\s*$/.test(value)) {
+    if (
+      value === '>' ||
+      value === '|' ||
+      value.startsWith('> ') ||
+      value.startsWith('| ') ||
+      /^[>|][-+]?\d*\s*$/.test(value)
+    ) {
       const folded = value[0] === '>'
       const collected: string[] = []
       index++

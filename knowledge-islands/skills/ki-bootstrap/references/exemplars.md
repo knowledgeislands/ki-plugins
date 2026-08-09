@@ -10,7 +10,7 @@ ki doctor
 ki diag
 ```
 
-The first command detects supported agent runtimes, establishes the user configuration, installs the canonical harness, and activates the five core user skills. `ki doctor` checks the resulting environment; `ki diag` reports the effective configuration, harness inventory, repository, and XDG paths.
+The first command detects supported agent runtimes, establishes the user configuration, installs the canonical harness, and activates the seven core user skills. `ki-delegation` remains an opt-in standard for durable delegation packets. `ki doctor` checks the resulting environment; `ki diag` reports the effective configuration, harness inventory, repository, and XDG paths.
 
 Running `ki bootstrap` again leaves correctly managed state in place. Use the refresh form after adding or removing a supported agent runtime or after reconciling installed state:
 
@@ -42,13 +42,13 @@ ki skill user remove example-engineering
 
 ## Repository activation and maintenance
 
-Given an existing KI repository whose `.ki-config.toml` does not yet declare `ki-roadmap`, add the installed skill at repository scope:
+Given an existing KI repository whose `.ki-config.toml` does not yet declare `ki-change-management-roadmap`, add the installed skill at repository scope:
 
 ```sh
-ki skill repo add ki-roadmap --repo .
+ki skill repo add ki-change-management-roadmap --repo .
 ```
 
-The command adds the `[ki-roadmap]` declaration and managed runtime-discovery links only for that repository. It does not add the skill to user scope.
+The command adds the `[skills.ki-change-management-roadmap]` declaration and managed runtime-discovery links only for that repository. It does not add the skill to user scope.
 
 Native repository maintenance then resolves the repository's declared skills from verified installed harnesses:
 
@@ -61,7 +61,7 @@ ki repo conform --repo . --dry-run
 Remove the repository declaration and its managed repository links without changing user activation:
 
 ```sh
-ki skill repo remove ki-roadmap --repo .
+ki skill repo remove ki-change-management-roadmap --repo .
 ```
 
 ## Canonical harness development

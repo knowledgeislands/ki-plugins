@@ -1,5 +1,10 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { type KiSkillsRubricContext, type ReferencesRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
+import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import {
+  type KiSkillsRubricContext,
+  type ReferencesRubricContext,
+  selectKiSkillsContext
+} from '../contexts/contexts.ts'
 
 const TOC_LINE_THRESHOLD = 100
 
@@ -14,7 +19,9 @@ const REF_1: RubricItem<ReferencesRubricContext> = {
   title: 'rarely used detail is separated into on-demand files',
   description: 'Detailed/rarely-used material is in on-demand files; mutually-exclusive domains are split.',
   sources: ['BP', 'ENG', 'SPEC'],
-  judgment: { prompt: 'Is detailed or rarely used material routed to on-demand files, with mutually exclusive domains split?' }
+  judgment: judgment(
+    'Is detailed or rarely used material routed to on-demand files, with mutually exclusive domains split?'
+  )
 }
 
 const REF_2: RubricItem<ReferencesRubricContext> = {
@@ -22,7 +29,7 @@ const REF_2: RubricItem<ReferencesRubricContext> = {
   title: 'supporting files are referenced from SKILL.md with a loading cue',
   description: 'Every supporting file is referenced from `SKILL.md` with when-to-load — no orphans.',
   sources: ['BP', 'CC', 'SPEC'],
-  judgment: { prompt: 'Is every supporting file referenced from SKILL.md with clear guidance on when to load it?' }
+  judgment: judgment('Is every supporting file referenced from SKILL.md with clear guidance on when to load it?')
 }
 
 const REF_3: RubricItem<ReferencesRubricContext> = {
@@ -32,6 +39,7 @@ const REF_3: RubricItem<ReferencesRubricContext> = {
   sources: ['BP', 'COMMUNITY'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ lineCount, content }) => [
@@ -53,7 +61,7 @@ const REF_4: RubricItem<ReferencesRubricContext> = {
   title: 'script execution intent is explicit',
   description: 'Execution intent is explicit per script (run vs read).',
   sources: ['BP', 'ENG'],
-  judgment: { prompt: 'Is the execution intent for each script explicit: run it or read it?' }
+  judgment: judgment('Is the execution intent for each script explicit: run it or read it?')
 }
 
 const REF_5: RubricItem<ReferencesRubricContext> = {
@@ -61,10 +69,9 @@ const REF_5: RubricItem<ReferencesRubricContext> = {
   title: 'many-moded skills route independently invoked procedures',
   description: `_Mode-router for many-moded skills._ A skill whose body is dominated by **independently-invoked** modes keeps the shared model + a dispatch table in \`SKILL.md\` and moves each mode's procedure to its own flat \`references/mode-<name>.md\`; combined mode files such as \`mode-audit-conform.md\` are split, and each procedure states its own preconditions. Behaviour anchors and the shared model stay in the body. Not required when modes are few, short, or call-chained.`,
   sources: ['BP', 'SPEC §8'],
-  judgment: {
-    prompt:
-      'Where this skill has many independently invoked modes, does SKILL.md retain the shared model and dispatch while flat mode files hold their procedures?'
-  }
+  judgment: judgment(
+    'Where this skill has many independently invoked modes, does SKILL.md retain the shared model and dispatch while flat mode files hold their procedures?'
+  )
 }
 
 export const REFERENCES: RubricFamily<KiSkillsRubricContext, ReferencesRubricContext> = {

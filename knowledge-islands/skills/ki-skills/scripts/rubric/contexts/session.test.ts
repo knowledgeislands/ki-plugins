@@ -6,15 +6,15 @@ import { createKiSkillsSession } from './subjects.ts'
 
 const temporaryDirectories: string[] = []
 
-const createRepository = (): string => {
+const createRepository = (name = 'ki-example'): string => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-skills-session-'))
   temporaryDirectories.push(repository)
-  const skillDirectory = join(repository, 'skills', 'ki-example')
+  const skillDirectory = join(repository, 'skills', name)
   mkdirSync(skillDirectory, { recursive: true })
   writeFileSync(
     join(skillDirectory, 'SKILL.md'),
     `---
-name: ki-example
+name: ${name}
 ki-depends-on: []
 description: Checks a small example skill.
 argument-hint: 'audit'
@@ -35,7 +35,13 @@ const createSession = (mode: 'audit' | 'conform') =>
     mode,
     repository: createRepository(),
     userHome: tmpdir(),
-    configuration: {}
+    configuration: {},
+    publication: {
+      target: 'references/rubric.md',
+      rendered: '',
+      state: 'in-sync',
+      propose: () => {}
+    }
   })
 
 describe('ki-skills session evidence', () => {
@@ -50,7 +56,9 @@ describe('ki-skills session evidence', () => {
 
   test('keeps conform draft capabilities on the cached subject context', () => {
     const session = createSession('conform')
-    const subject = session.subjects.find((candidate) => candidate.subject?.endsWith('SKILL.md') && candidate.families.includes('KI-LINK'))
+    const subject = session.subjects.find(
+      (candidate) => candidate.subject?.endsWith('SKILL.md') && candidate.families.includes('KI-LINK')
+    )
 
     expect(subject).toBeDefined()
     const initial = subject?.context()
@@ -77,6 +85,29 @@ describe('ki-skills session evidence', () => {
     shape?.addArgumentHintVerbs?.(['conform', 'educate'])
     shape?.addArgumentHintVerbs?.(['refresh', 'help'])
 
-    expect(session.proposal().writes[0]?.content).toContain("argument-hint: 'audit | conform | educate | refresh | help'")
+    expect(session.proposal().writes[0]?.content).toContain(
+      "argument-hint: 'audit | conform | educate | refresh | help'"
+    )
+  })
+
+  test('routes the host publication capability to one dedicated rubric subject', () => {
+    const publication = {
+      target: 'references/rubric.md',
+      rendered: '# Rubric\n',
+      state: 'stale' as const,
+      propose: () => {}
+    }
+    const session = createKiSkillsSession({
+      mode: 'audit',
+      repository: createRepository('ki-skills'),
+      userHome: tmpdir(),
+      configuration: {},
+      publication
+    })
+    const rubricSubjects = session.subjects.filter((subject) => subject.families.includes('RUBRIC'))
+
+    expect(rubricSubjects).toHaveLength(1)
+    expect(rubricSubjects[0]?.subject).toBe('skills/ki-skills')
+    expect(rubricSubjects[0]?.context().rubric?.publication).toBe(publication)
   })
 })

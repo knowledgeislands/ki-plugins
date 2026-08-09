@@ -1,5 +1,10 @@
 import type { RubricFamily, RubricItem, ViolationLevel } from '../../shared/rubric.ts'
-import { auditEvidence, type BuildRubricContext, type EngineeringEvidence, type EngineeringRubricContext } from '../contexts/engineering.ts'
+import {
+  auditEvidence,
+  type BuildRubricContext,
+  type EngineeringEvidence,
+  type EngineeringRubricContext
+} from '../contexts/engineering.ts'
 
 const item = (
   code: string,
@@ -16,6 +21,11 @@ const item = (
   mechanical: {
     level,
     ...(overrideLevels ? { overrideLevels } : {}),
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Align the compiled-build configuration and package surface with the declared build capability, then rerun the audit.'
+    },
     audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), level, overrideLevels) }
   }
 })

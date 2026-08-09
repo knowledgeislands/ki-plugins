@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { RubricFamily } from '../../shared/rubric.ts'
@@ -7,119 +7,78 @@ import { type BindingRubricContext, createBindingSession } from '../contexts/bin
 import catalogue from './index.ts'
 
 const temporaryDirectories: string[] = []
-const familyModules = readdirSync(import.meta.dir)
-  .filter((file) => file.endsWith('.ts') && file !== 'index.ts' && !file.endsWith('.test.ts'))
-  .sort()
+const originalMcpSource = process.env.KI_MCP_SOURCE
 
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) rmSync(directory, { recursive: true, force: true })
+  if (originalMcpSource === undefined) delete process.env.KI_MCP_SOURCE
+  else process.env.KI_MCP_SOURCE = originalMcpSource
+})
+test('the portable catalogue publishes the host-owned rubric criterion', () => {
+  expect(catalogue.name).toBe('ki-binding')
+  expect(catalogue.families.map((family) => family.code)).toEqual(['BIND', 'RUBRIC'])
+  expect(catalogue.families[0]?.items.map((item) => item.code)).toEqual(['BIND-1', 'BIND-2', 'BIND-J1'])
+  expect(catalogue.families[1]?.items.map((item) => item.code)).toEqual(['RUBRIC-1'])
 })
 
-const fixture = (): { repository: string; userHome: string; cowork: string } => {
+test('criteria declare complete v1 remediation and review metadata', () => {
+  const bind = catalogue.families[0]
+  const publication = catalogue.families[1]
+  const mechanicalItems = [...(bind?.items ?? []), ...(publication?.items ?? [])].filter((item) => item.mechanical)
+  const judgment = bind?.items.find((item) => item.code === 'BIND-J1')?.judgment
+
+  expect(mechanicalItems).toHaveLength(3)
+  expect(mechanicalItems.every((item) => item.mechanical?.remediation)).toBe(true)
+  expect(judgment?.scope).not.toBeEmpty()
+  expect(judgment?.outcomes.length).toBeGreaterThan(0)
+  expect(judgment?.guidance).not.toBeEmpty()
+})
+test('the session compares only mcporter against a canonical source', () => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-binding-repository-'))
   const userHome = mkdtempSync(join(tmpdir(), 'ki-binding-home-'))
   temporaryDirectories.push(repository, userHome)
-  mkdirSync(join(repository, '.ki'), { recursive: true })
+  mkdirSync(join(userHome, '.config', 'ki'), { recursive: true })
+  mkdirSync(join(userHome, '.mcporter'), { recursive: true })
   writeFileSync(
-    join(repository, '.ki', 'mcps.yaml'),
-    `mcpServers:
-  - name: ki-example
-    clients: [chatgpt-codex]
-    command: node
-`
+    join(userHome, '.config', 'ki', 'mcp-servers.yaml'),
+    'mcpServers:\n  - name: ki-example\n    clients: [mcporter]\n    command: node\n'
   )
-  writeFileSync(
-    join(repository, '.ki-config.toml'),
-    `[ki-repo]
-supported_runtimes = ["codex"]
-
-[ki-binding]
-`
-  )
-  mkdirSync(join(repository, '.agents', 'skills', 'ki-binding'), { recursive: true })
-  mkdirSync(join(repository, '.agents', 'skills', 'ki-repo'), { recursive: true })
-  mkdirSync(join(userHome, '.codex'), { recursive: true })
-  writeFileSync(join(userHome, '.codex', 'config.toml'), '[mcp_servers.ki-example]\ncommand = "node"\n')
-  const cowork = join(
+  writeFileSync(join(userHome, '.mcporter', 'mcporter.json'), '{"mcpServers":{"ki-example":{}}}\n')
+  delete process.env.KI_MCP_SOURCE
+  const context = createBindingSession({
+    mode: 'audit',
+    repository,
     userHome,
-    'Library',
-    'Application Support',
-    'Claude',
-    'local-agent-mode-sessions',
-    'account',
-    'workspace',
-    'cowork_settings.json'
-  )
-  mkdirSync(join(cowork, '..'), { recursive: true })
-  writeFileSync(cowork, '{"enabledPlugins":{},"extraKnownMarketplaces":{}}\n')
-  return { repository, userHome, cowork }
-}
-
-test('the catalogue preserves the complete binding rubric', () => {
-  expect(catalogue.contract).toBe(1)
-  expect(catalogue.name).toBe('ki-binding')
-  expect(catalogue.createSession).toBeFunction()
-  expect(catalogue.families.map((family) => family.code)).toEqual(['BIND'])
-  expect(catalogue.families[0]?.items.map((item) => item.code)).toEqual(['BIND-1', 'BIND-2', 'BIND-3', 'BIND-4', 'BIND-5'])
+    configuration: {}
+  }).subjects[0]?.context() as BindingRubricContext
+  expect(context.mcporterServerKeys).toEqual(new Set(['ki-example']))
+  const family = catalogue.families[0] as RubricFamily<BindingRubricContext, BindingRubricContext>
+  expect(family.items[0]?.mechanical?.audit.run(context)[0]?.status).toBe('PASS')
 })
 
-test('each family module exports one complete family', async () => {
-  for (const file of familyModules) {
+test('the session honours an explicit MCP source override', () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-binding-repository-'))
+  const userHome = mkdtempSync(join(tmpdir(), 'ki-binding-home-'))
+  temporaryDirectories.push(repository, userHome)
+  const source = join(userHome, 'mcp-servers.yaml')
+  writeFileSync(source, 'mcpServers:\n  - name: ki-example\n    clients: [mcporter]\n    command: node\n')
+  process.env.KI_MCP_SOURCE = source
+
+  const context = createBindingSession({
+    mode: 'audit',
+    repository,
+    userHome,
+    configuration: {}
+  }).subjects[0]?.context() as BindingRubricContext
+
+  expect(context.source).toBe(source)
+  expect(context.sourceState).toMatchObject({ kind: 'valid' })
+})
+test('family modules export only one complete family', async () => {
+  for (const file of readdirSync(import.meta.dir).filter(
+    (file) => file.endsWith('.ts') && file !== 'index.ts' && !file.endsWith('.test.ts')
+  )) {
     const module = (await import(`./${file}`)) as Record<string, unknown>
     expect(Object.keys(module)).toHaveLength(1)
-    const family = Object.values(module)[0] as { code?: unknown; items?: unknown }
-    expect(typeof family.code).toBe('string')
-    expect(Array.isArray(family.items)).toBe(true)
   }
-})
-
-test('the session keeps mixed evidence stable and coalesces Cowork drafts', () => {
-  const { repository, userHome } = fixture()
-  const session = createBindingSession({ mode: 'conform', repository, userHome, configuration: {} })
-  const root = session.subjects[0]?.context() as BindingRubricContext
-  expect(session.subjects[0]?.context()).toBe(root)
-  expect(root.source).toBe(join(repository, '.ki', 'mcps.yaml'))
-  expect(root.surfaces.find(({ surface }) => surface.token === 'chatgpt-codex')?.serverKeys).toEqual(new Set(['ki-example']))
-  expect(root.repository.missingSkills).toEqual([])
-
-  const family = catalogue.families[0] as RubricFamily<BindingRubricContext, BindingRubricContext>
-  const bind4 = family.items.find((item) => item.code === 'BIND-4')
-  expect(bind4?.mechanical?.audit.run(root)[0]?.status).toBe('VIOLATION')
-  bind4?.mechanical?.conform?.run(root)
-  bind4?.mechanical?.conform?.run(root)
-
-  const writes = session.proposal().writes
-  expect(writes).toHaveLength(1)
-  expect(writes[0]?.path).toStartWith('Library/Application Support/Claude/local-agent-mode-sessions/')
-  const proposed = JSON.parse(writes[0]?.content ?? '{}') as {
-    enabledPlugins?: Record<string, boolean>
-    extraKnownMarketplaces?: Record<string, unknown>
-  }
-  expect(proposed.enabledPlugins?.['knowledge-islands@ki-plugins']).toBe(true)
-  expect(proposed.extraKnownMarketplaces?.['ki-plugins']).toBeDefined()
-})
-
-test('conform refuses a symlinked Cowork settings file', () => {
-  const { repository, userHome, cowork } = fixture()
-  const target = join(userHome, 'cowork-source.json')
-  writeFileSync(target, '{}\n')
-  rmSync(cowork)
-  symlinkSync(target, cowork)
-
-  const session = createBindingSession({ mode: 'conform', repository, userHome, configuration: {} })
-  const root = session.subjects[0]?.context() as BindingRubricContext
-  expect(root.cowork.files[0]?.status).toBe('unsafe')
-  root.cowork.files[0]?.enable?.()
-  expect(session.proposal().writes).toEqual([])
-})
-
-test('malformed source entries produce findings instead of crashing the session', () => {
-  const { repository, userHome } = fixture()
-  writeFileSync(join(repository, '.ki', 'mcps.yaml'), 'mcpServers: [null, {clients: wrong-shape}]\n')
-  const session = createBindingSession({ mode: 'audit', repository, userHome, configuration: {} })
-  const root = session.subjects[0]?.context() as BindingRubricContext
-  const family = catalogue.families[0] as RubricFamily<BindingRubricContext, BindingRubricContext>
-  const bind2 = family.items.find((item) => item.code === 'BIND-2')
-  const outcomes = bind2?.mechanical?.audit.run(root) ?? []
-  expect(outcomes.some((outcome) => outcome.status === 'VIOLATION')).toBe(true)
 })

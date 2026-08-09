@@ -55,7 +55,9 @@ export const createSkillConformState = (directory: string, repository: string): 
           const current = frontmatterScalar(line, 'argument-hint')
           const present = new Set(hintVerbs(current))
           const missing = verbs.filter((verb) => !present.has(verb.toUpperCase()))
-          return missing.length === 0 ? block : replaceFrontmatterScalar(block, 'argument-hint', `${current} | ${missing.join(' | ')}`)
+          return missing.length === 0
+            ? block
+            : replaceFrontmatterScalar(block, 'argument-hint', `${current} | ${missing.join(' | ')}`)
         })
       }
     }

@@ -14,27 +14,35 @@ const item = (
   title,
   description,
   sources: [SOURCE],
-  mechanical: { level, audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), level) } }
+  mechanical: {
+    level,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Align the repository structure declaration with the applicable standard or record an explicit exemption, then rerun the audit.'
+    },
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), level) }
+  }
 })
 
 export const STRUCT: RubricFamily<RepoRubricContext, StructureRubricContext> = {
   code: 'STRUCT',
   title: 'Repository structure',
-  description: 'Structural governance identity.',
+  description: 'Primary repository structure, with composable specialisations.',
   standard: SOURCE,
   selectContext: (context) => context.structure,
   items: [
     item(
       'STRUCT-1',
-      'Single repository structure',
-      'A repository declares at most one repo-structure governance table.',
+      'Single primary repository structure',
+      'A repository declares at most one mutually exclusive Project or Knowledge Base primary.',
       'FAIL',
       (context) => context.structure1
     ),
     item(
       'STRUCT-2',
-      'Repository structure presence',
-      'A repository normally declares one repo-structure table unless explicitly exempted.',
+      'Primary repository structure presence',
+      'A repository declares a Project or Knowledge Base primary structure.',
       'WARN',
       (context) => context.structure2
     )

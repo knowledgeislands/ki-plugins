@@ -55,7 +55,7 @@ Create a review record only when the user asks to retain working evidence beyond
 
 Review records are working evidence, not permanent documentation. Before closing an owning delivery item, move every independently durable conclusion to its route. When no concrete artifact remains in `retained-by`, show the exact review record and its dependent state, then require explicit confirmation before pruning it. Preserve identifiers in Git history; never reuse them.
 
-`review close <REV-NNN>` is a review-evidence decision, not `ki-plan prune`: it must not remove a plan, roadmap item, Decision Record, or guide.
+`review close <REV-NNN>` is a review-evidence decision, not `ki-accept prune`: it must not remove a plan, roadmap item, Decision Record, or guide.
 
 ## 7. Finish
 

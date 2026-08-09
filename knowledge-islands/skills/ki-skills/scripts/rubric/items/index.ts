@@ -15,6 +15,7 @@ import { NAME } from './name.ts'
 import { OPTIONAL } from './optional.ts'
 import { PORTABILITY } from './portability.ts'
 import { PROCESS } from './process.ts'
+import { RUBRIC } from './publication.ts'
 import { REFERENCES } from './references.ts'
 import { SCRIPTS } from './scripts.ts'
 import { SIZE } from './size.ts'
@@ -35,6 +36,7 @@ export default {
     BODY,
     SCRIPTS,
     KI_CHECKER,
+    RUBRIC,
     KI_LINK,
     PORTABILITY,
     KI_SHAPE,

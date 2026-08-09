@@ -7,7 +7,10 @@ import type { DecisionRecordsRubricContext } from '../contexts/decision-records.
 import catalogue from './index.ts'
 
 const temporaryDirectories: string[] = []
-const families = catalogue.families as unknown as readonly RubricFamily<DecisionRecordsRubricContext, unknown>[]
+const families = catalogue.families.filter((family) => family.code !== 'RUBRIC') as unknown as readonly RubricFamily<
+  DecisionRecordsRubricContext,
+  unknown
+>[]
 const items = families.flatMap((family) => family.items) as readonly RubricItem<unknown>[]
 const familyModules = readdirSync(import.meta.dir)
   .filter((file) => file.endsWith('.ts') && file !== 'index.ts' && !file.endsWith('.test.ts'))
@@ -21,7 +24,15 @@ test('the structured catalogue preserves every decision-record criterion', () =>
   expect(catalogue.contract).toBe(1)
   expect(catalogue.name).toBe('ki-decision-records')
   expect(catalogue.createSession).toBeFunction()
-  expect(catalogue.families.map((family) => family.code)).toEqual(['FILENAME', 'ROOT', 'FM', 'TYPE-FIT', 'BODY', 'INDEX'])
+  expect(catalogue.families.map((family) => family.code)).toEqual([
+    'RUBRIC',
+    'FILENAME',
+    'ROOT',
+    'FM',
+    'TYPE-FIT',
+    'BODY',
+    'INDEX'
+  ])
   expect(items.map((item) => item.code)).toEqual([
     'FILENAME-1',
     'FILENAME-2',
@@ -50,7 +61,21 @@ test('the structured catalogue preserves every decision-record criterion', () =>
     'INDEX-8'
   ])
   expect(items.filter((item) => item.judgment)).toHaveLength(9)
-  expect(items.filter((item) => item.judgment).every((item) => Boolean(item.judgment?.prompt.trim()))).toBe(true)
+  expect(items.filter((item) => item.mechanical).every((item) => Boolean(item.mechanical?.remediation))).toBe(true)
+  expect(
+    items.filter((item) => item.mechanical?.conform).every((item) => item.mechanical?.remediation.class === 'automatic')
+  ).toBe(true)
+  expect(
+    items
+      .filter((item) => item.judgment)
+      .every(
+        (item) =>
+          Boolean(item.judgment?.scope.trim()) &&
+          Boolean(item.judgment?.prompt.trim()) &&
+          item.judgment?.outcomes.length &&
+          Boolean(item.judgment?.guidance.trim())
+      )
+  ).toBe(true)
 })
 
 test('each family module exports one complete family', async () => {
@@ -68,7 +93,7 @@ test('the session keeps one index draft and proposes all missing entries once', 
   temporaryDirectories.push(repository)
   const directory = join(repository, 'docs', 'decisions')
   mkdirSync(directory, { recursive: true })
-  writeFileSync(join(repository, '.ki-config.toml'), '[ki-decision-records]\n')
+  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-decision-records]\n')
   writeFileSync(join(directory, 'README.md'), '# Decisions\n')
 
   for (const [serial, title] of [
@@ -107,14 +132,16 @@ The decision is available.
   }
 
   const session = catalogue.createSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
-  const subject = session.subjects[0]
+  const subject = session.subjects[1]
   const rootContext = subject?.context()
   const family = families.find((candidate) => candidate.code === 'INDEX')
   const indexContext = family?.selectContext(rootContext as NonNullable<typeof rootContext>)
   const indexItem = family?.items.find((candidate) => candidate.code === 'INDEX-2')
 
   expect(subject?.context()).toBe(rootContext)
-  expect(indexItem?.mechanical?.audit.run(indexContext as NonNullable<typeof indexContext>)[0]?.status).toBe('VIOLATION')
+  expect(indexItem?.mechanical?.audit.run(indexContext as NonNullable<typeof indexContext>)[0]?.status).toBe(
+    'VIOLATION'
+  )
 
   indexItem?.mechanical?.conform?.run(indexContext as NonNullable<typeof indexContext>)
 

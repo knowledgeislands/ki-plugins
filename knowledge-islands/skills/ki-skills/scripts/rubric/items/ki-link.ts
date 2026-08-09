@@ -1,4 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
+import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
 import { type KiLinkRubricContext, type KiSkillsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const relativeLinkTargets = (markdown: string): string[] => {
@@ -26,6 +27,7 @@ const KI_LINK_1: RubricItem<KiLinkRubricContext> = {
   sources: ['ki-agentic-harness README'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ markdown }) =>
@@ -43,6 +45,7 @@ const KI_LINK_2: RubricItem<KiLinkRubricContext> = {
   sources: ['ki-agentic-harness README'],
   mechanical: {
     level: 'FAIL',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ markdown, relativeTargetExists }) => {
@@ -61,15 +64,15 @@ const KI_LINK_3: RubricItem<KiLinkRubricContext> = {
   title: 'other skills are referred to by name',
   description: 'Other skills are referenced by `name`, never by file path.',
   sources: ['ki-agentic-harness README'],
-  judgment: { prompt: 'Are other skills referred to by their public name rather than by a file path?' }
+  judgment: judgment('Are other skills referred to by their public name rather than by a file path?')
 }
 
 const KI_LINK_4: RubricItem<KiLinkRubricContext> = {
   code: 'KI-LINK-4',
   title: 'the house toolchain passes',
-  description: 'The house toolchain passes: Biome (TS/JSON), Prettier + markdownlint-cli2 (markdown).',
+  description: 'The house toolchain passes: Biome (TS/JSON), rumdl (markdown).',
   sources: ['ki-agentic-harness README'],
-  judgment: { prompt: 'Does the repository pass its configured Biome, Prettier, and markdownlint toolchain?' }
+  judgment: judgment('Does the repository pass its configured Biome and rumdl toolchain?')
 }
 
 export const KI_LINK: RubricFamily<KiSkillsRubricContext, KiLinkRubricContext> = {

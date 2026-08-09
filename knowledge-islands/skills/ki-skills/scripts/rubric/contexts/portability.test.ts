@@ -23,9 +23,9 @@ describe('runtime-portability evidence', () => {
   })
 
   test('accepts an explicitly bounded runtime-binding section only until its next peer heading', () => {
-    expect(findings('## Runtime binding: Claude Code\nUse ~/.claude.\n\n## Portable behaviour\nUse Claude Code.')).toEqual([
-      { line: 5, reference: 'Claude Code' }
-    ])
+    expect(
+      findings('## Runtime binding: Claude Code\nUse ~/.claude.\n\n## Portable behaviour\nUse Claude Code.')
+    ).toEqual([{ line: 5, reference: 'Claude Code' }])
   })
 
   test('accepts source material and a same-line multi-runtime comparison', () => {

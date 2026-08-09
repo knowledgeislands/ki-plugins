@@ -1,5 +1,6 @@
 ---
 name: ki-bootstrap
+ki-kind: process
 ki-depends-on: []
 description: >
   Explains first-time Knowledge Islands activation through the `ki` CLI: bootstrap a user, select a verified canonical harness, and distinguish user skills from repository-declared governance (kind: process). Use for guidance on `ki bootstrap`, `ki harness`, `ki skill user`, and `ki skill repo`; the CLI itself owns all mechanics. Triggers: "set up KI", "what does ki bootstrap do", "activate a KI skill", "why won't ki repo audit run". For repository coverage use `ki-repo`; for command behaviour use `ki help`.

@@ -10,10 +10,10 @@
  * packageManager, CI via mise-action + `ki repo audit`), the `bun test` trap,
  * tsconfig.json + tool exclusions, and the capability conditionals
  * (tests, compiled build + the cli-chmod rule, env) that fire only when the repo opts in.
- * It is deliberately PERMISSIVE about additive repo-specific scripts, and it does
- * NOT judge anything artifact-specific (an MCP's coverage-excludes, bin, tool
- * surface) — that is the artifact skill's checker (e.g. audit.ts), run after
- * this one. See references/rubric.md for the judgment half.
+ * It admits a `ki:` script only when one declared capability owns its script
+ * family, and it does NOT judge that family's artifact-specific command shape
+ * (an MCP's coverage-excludes, bin, tool surface) — that is the owning skill's
+ * checker, run after this one. See references/rubric.md for the judgment half.
  *
  * Each finding carries a minted rubric code (PKG-*, MISE-*, SCR-*, …), a
  * reference-doc pointer (`ref`), and — when file-scoped — the path it concerns
@@ -22,9 +22,11 @@
  *
  * The native rubric host owns execution, reporting, and exit status.
  */
-import { execSync } from 'node:child_process'
+import { execFile } from 'node:child_process'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { promisify } from 'node:util'
+import type { RubricEmitter } from '../../shared/rubric.ts'
 
 // Unified severity ladder — shared by every KI checker (checker-contract).
 // area is the minted rubric code (references/rubric.md); ref is its
@@ -43,25 +45,66 @@ type Finding = { level: Level; area: string; msg: string; ref?: string; file?: s
 // the rubric that maps code↔criterion (cited by the judgment/scope handoff).
 const STD = 'references/standards-engineering.md'
 
+const scriptOwner = (key: string): string | undefined => {
+  if (key === 'ki:deps:update') return 'ki-engineering'
+  if (key === 'ki:eval') return 'ki-repo-harness'
+  if (key.startsWith('ki:binding:')) return 'ki-binding-claude'
+  if (key.startsWith('ki:site:')) return 'ki-repo-website'
+  if (key.startsWith('ki:ingress:')) return 'ki-repo-website-cloudflare'
+  if (key === 'ki:generate:client' || key.startsWith('ki:server:') || key.startsWith('ki:test:')) return 'ki-repo-mcp'
+  if (key.startsWith('ki:tools:')) return 'ki-repo-tools'
+  if (key.startsWith('ki:self:')) return 'ki-self'
+  return undefined
+}
+
+// A declaration is a bare name under `[skills]`; the quoted form survives only for a skill drawn
+// from a harness outside the declared list, so both spellings are read here.
+const declaredSkillNames = (configuration: string): ReadonlySet<string> =>
+  new Set(
+    [...configuration.matchAll(/^\[skills\.(?:"[^"\n]+:(ki-[a-z0-9-]+)"|(ki-[a-z0-9-]+))\]/gm)].map(
+      (match) => (match[1] ?? match[2]) as string
+    )
+  )
+
 /** Inspect the repository once and return the complete engineering evidence set. */
-export const collectAuditEvidence = (repo: string): readonly EngineeringEvidenceFinding[] => {
+const run = promisify(execFile)
+
+export const collectAuditEvidence = async (
+  repo: string,
+  emit?: RubricEmitter
+): Promise<readonly EngineeringEvidenceFinding[]> => {
   const findings: Finding[] = []
   const add = (level: Level, area: string, msg: string, ref?: string, file?: string): void => {
     findings.push({ level, area, msg, ref, file })
   }
   if (!repo || !existsSync(repo)) {
     add('FAIL', 'PKG-4', 'Audit target is missing or does not exist.', STD)
-    return findings.map(({ level, area, msg, file }) => ({ level, code: area, message: msg, ...(file ? { subject: file } : {}) }))
+    return findings.map(({ level, area, msg, file }) => ({
+      level,
+      code: area,
+      message: msg,
+      ...(file ? { subject: file } : {})
+    }))
   }
   const at = (...p: string[]) => join(repo, ...p)
-  function runCheck(area: string, label: string, cmd: string, ref?: string, file?: string) {
+  // Awaited rather than synchronous so the session yields between external commands: these
+  // are the longest spans in a run, and a blocked event loop starves the host's progress
+  // refresh, leaving a live audit indistinguishable from a hang.
+  async function runCheck(area: string, label: string, cmd: string, ref?: string, file?: string): Promise<void> {
+    emit?.({ kind: 'step', label, code: area })
     try {
-      execSync(cmd, { cwd: repo, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] })
+      await run('/bin/sh', ['-c', cmd], { cwd: repo, encoding: 'utf8' })
       add('PASS', area, `${label} exits 0`, ref, file)
     } catch (e: unknown) {
       const err = e as { stderr?: string; stdout?: string }
       const detail = (err.stderr ?? err.stdout ?? '').trim()
-      add('FAIL', area, detail ? `${label} failed:\n  ${detail.split('\n').join('\n  ')}` : `${label} failed`, ref, file)
+      add(
+        'FAIL',
+        area,
+        detail ? `${label} failed:\n  ${detail.split('\n').join('\n  ')}` : `${label} failed`,
+        ref,
+        file
+      )
     }
   }
   const has = (...p: string[]) => existsSync(at(...p))
@@ -81,7 +124,12 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
   // ki-repo → ki-engineering implies edge, including non-code repos (dotfiles, KB, tap).
   if (!has('package.json')) {
     add('NOT_APPLICABLE', 'PKG-4', 'No package.json — the engineering standard does not apply.')
-    return findings.map(({ level, area, msg, file }) => ({ level, code: area, message: msg, ...(file ? { subject: file } : {}) }))
+    return findings.map(({ level, area, msg, file }) => ({
+      level,
+      code: area,
+      message: msg,
+      ...(file ? { subject: file } : {})
+    }))
   }
 
   let pkg: Record<string, unknown> = {}
@@ -97,7 +145,13 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
     : add('FAIL', 'PKG-1', `type should be "module", got ${JSON.stringify(pkg.type)}`, STD, 'package.json')
   String(pkg.packageManager ?? '').startsWith('bun@')
     ? add('PASS', 'PKG-2', `packageManager = ${pkg.packageManager}`, STD, 'package.json')
-    : add('FAIL', 'PKG-2', `packageManager should be bun@…, got ${JSON.stringify(pkg.packageManager)}`, STD, 'package.json')
+    : add(
+        'FAIL',
+        'PKG-2',
+        `packageManager should be bun@…, got ${JSON.stringify(pkg.packageManager)}`,
+        STD,
+        'package.json'
+      )
   const nodeEngine = String((pkg.engines as Record<string, string> | undefined)?.node ?? '')
   const nodeOk = (() => {
     const m = nodeEngine.match(/>=\s*(\d+)/)
@@ -137,7 +191,7 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
     'dependencies',
     'workspaces',
     'lint-staged',
-    // published-artifact surface → the artifact skill (e.g. ki-mcp)
+    // published-artifact surface → the artifact skill (e.g. ki-repo-mcp)
     'main',
     'bin',
     'exports',
@@ -159,7 +213,7 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
   // toolchain is actually declared, rather than left implied. lint-staged is the husky
   // pre-commit fan-out — a governed key in the manifest, so it must be present and wired.
   const devDeps = (pkg.devDependencies ?? {}) as Record<string, string>
-  const REQUIRED_DEV = ['@biomejs/biome', 'knip', 'prettier', 'husky', 'lint-staged', 'markdownlint-cli2', 'syncpack', 'typescript']
+  const REQUIRED_DEV = ['@biomejs/biome', 'knip', 'rumdl', 'husky', 'lint-staged', 'syncpack', 'typescript']
   const missingDev = REQUIRED_DEV.filter((d) => !(d in devDeps))
   missingDev.length
     ? add(
@@ -172,7 +226,7 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
     : add(
         'PASS',
         'PKG-5',
-        'toolchain devDependencies present (biome, prettier, husky, lint-staged, markdownlint-cli2, syncpack, typescript)',
+        'toolchain devDependencies present (biome, rumdl, husky, lint-staged, syncpack, typescript)',
         STD,
         'package.json'
       )
@@ -181,14 +235,19 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
     add('FAIL', 'PKG-6', 'lint-staged block missing (the husky pre-commit fan-out)', STD, 'package.json')
   } else {
     const ls = JSON.stringify(lintStaged)
-    const fanOut = ls.includes('@biomejs/biome') && ls.includes('prettier') && ls.includes('markdownlint')
-    const stagedMarkdownOnly = ls.includes('markdownlint-cli2 --no-globs')
+    const fanOut = ls.includes('@biomejs/biome') && ls.includes('rumdl')
+    // rumdl resolves its own scope from .rumdl.toml, so a staged invocation needs no
+    // flag to suppress a repository-wide glob the way markdownlint-cli2 did.
+    const stagedMarkdownOnly = ls.includes('rumdl check --fix')
+    // Trade records are no longer excluded from formatting: ki-repo-trades AUTH-1 proves their
+    // integrity by comparing meaning against the sender's copy, so the boundary is a check
+    // rather than an exclusion list.
     fanOut && stagedMarkdownOnly
-      ? add('PASS', 'PKG-6', 'lint-staged fans out to biome and staged-only prettier/markdownlint', STD, 'package.json')
+      ? add('PASS', 'PKG-6', 'lint-staged fans out to biome and rumdl', STD, 'package.json')
       : add(
           'WARN',
           'PKG-6',
-          'lint-staged should run biome on code and prettier + markdownlint-cli2 --no-globs on staged Markdown only',
+          'lint-staged should run biome over staged code and rumdl check --fix over staged Markdown',
           STD,
           'package.json'
         )
@@ -211,7 +270,13 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
       const pmBun = String(pkg.packageManager ?? '').match(/^bun@(.+)$/)?.[1]
       pmBun && pmBun !== miseBun
         ? add('FAIL', 'MISE-2', `mise.toml bun (${miseBun}) must match packageManager bun (${pmBun})`, STD, 'mise.toml')
-        : add('PASS', 'MISE-2', `mise.toml pins bun = ${miseBun}${pmBun ? ' (matches packageManager)' : ''}`, STD, 'mise.toml')
+        : add(
+            'PASS',
+            'MISE-2',
+            `mise.toml pins bun = ${miseBun}${pmBun ? ' (matches packageManager)' : ''}`,
+            STD,
+            'mise.toml'
+          )
     }
   }
   // legacy single-tool pin files shadow mise.toml — warn (redundant, can diverge)
@@ -245,7 +310,13 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
     const usesMise = /mise-action/.test(ci)
     usesMise
       ? add('PASS', 'CI-1', 'ci.yml installs the toolchain via jdx/mise-action', STD, '.github/workflows/ci.yml')
-      : add('FAIL', 'CI-1', 'ci.yml must install the toolchain via jdx/mise-action (reads mise.toml)', STD, '.github/workflows/ci.yml')
+      : add(
+          'FAIL',
+          'CI-1',
+          'ci.yml must install the toolchain via jdx/mise-action (reads mise.toml)',
+          STD,
+          '.github/workflows/ci.yml'
+        )
     const hard = ci.match(/\b(bun|node)-version\s*:/)
     if (hard)
       add(
@@ -255,10 +326,20 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
         STD,
         '.github/workflows/ci.yml'
       )
-    const auditIndex = commandIndex('ki repo audit')
+    // CI names its target explicitly. The bare form remains a valid local CLI
+    // invocation, but a workflow must prove which checkout it governs.
+    const auditIndex = ci.search(
+      /(?:^[ \t]*(?:-[ \t]*)?(?:run:[ \t]*)?|&&[ \t]*|\|\|[ \t]*|;[ \t]*)(["']?)ki[ \t]+repo[ \t]+audit[ \t]+--repo[ \t]+\.[ \t]*\1(?=[ \t]*(?:&&|\|\||;|#|\r?$))/m
+    )
     auditIndex >= 0
-      ? add('PASS', 'CI-2', 'ci.yml runs the native repository gate "ki repo audit"', STD, '.github/workflows/ci.yml')
-      : add('FAIL', 'CI-2', 'ci.yml must run "ki repo audit" directly', STD, '.github/workflows/ci.yml')
+      ? add(
+          'PASS',
+          'CI-2',
+          'ci.yml runs the native repository gate "ki repo audit --repo ."',
+          STD,
+          '.github/workflows/ci.yml'
+        )
+      : add('FAIL', 'CI-2', 'ci.yml must run "ki repo audit --repo ." directly', STD, '.github/workflows/ci.yml')
     if (scripts.test) {
       const testIndex = commandIndex('bun run test')
       if (testIndex < 0)
@@ -270,14 +351,27 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
           '.github/workflows/ci.yml'
         )
       else if (auditIndex >= 0 && auditIndex < testIndex)
-        add('PASS', 'CI-2', 'ci.yml runs the repository self-test suite "bun run test" after native audit', STD, '.github/workflows/ci.yml')
-      else add('FAIL', 'CI-2', 'ci.yml must run "ki repo audit" before "bun run test"', STD, '.github/workflows/ci.yml')
+        add(
+          'PASS',
+          'CI-2',
+          'ci.yml runs the repository self-test suite "bun run test" after native audit',
+          STD,
+          '.github/workflows/ci.yml'
+        )
+      else
+        add(
+          'FAIL',
+          'CI-2',
+          'ci.yml must run "ki repo audit --repo ." before "bun run test"',
+          STD,
+          '.github/workflows/ci.yml'
+        )
     }
     if (/\bbun\s+run\s+ki:(?:audit|conform|educate|help|verify)\b/.test(ci))
       add(
         'FAIL',
         'CI-2',
-        'ci.yml routes governance through a retired package-script alias; invoke "ki repo audit" directly',
+        'ci.yml routes governance through a retired package-script alias; invoke "ki repo audit --repo ." directly',
         STD,
         '.github/workflows/ci.yml'
       )
@@ -289,52 +383,74 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
   // a monorepo declares its packages in the standard Bun `workspaces` array in package.json
   // (e.g. ["site", "ingress"]), whose per-package tsconfigs can carry incompatible
   // `types`/`lib`, so it is type-checked per package rather than once at the root.
-  const workspaces = Array.isArray(pkg.workspaces) ? (pkg.workspaces as string[]).filter((w) => typeof w === 'string') : []
+  const workspaces = Array.isArray(pkg.workspaces)
+    ? (pkg.workspaces as string[]).filter((w) => typeof w === 'string')
+    : []
 
   // ── core: the read-only toolchain, run directly (audit = lint WITHOUT fixing) ──
   // The native ki-engineering rubric runs all read-only tool checks itself. The tools
   // are not hidden behind package scripts. The Markdown gate remains ki-authoring's
-  // responsibility and is composed by `ki repo audit`.
-  runCheck('BIO-1', 'biome check', 'bunx @biomejs/biome check', STD)
+  // responsibility and is orchestrated by `ki repo audit`.
+  await runCheck('BIO-1', 'biome check', 'bunx @biomejs/biome check', STD)
   if (workspaces.length) {
     const noTsconfig = workspaces.filter((p) => !read(`${p}/tsconfig.json`))
-    if (noTsconfig.length) add('FAIL', 'TSC-1', `workspaces names dir(s) without a tsconfig.json: ${noTsconfig.join(', ')}`, STD)
+    if (noTsconfig.length)
+      add('FAIL', 'TSC-1', `workspaces names dir(s) without a tsconfig.json: ${noTsconfig.join(', ')}`, STD)
     for (const ws of workspaces.filter((p) => read(`${p}/tsconfig.json`)))
-      runCheck('TSC-1', `tsc ${ws}`, `tsc --noEmit -p ${ws}/tsconfig.json`, STD)
+      await runCheck('TSC-1', `tsc ${ws}`, `tsc --noEmit -p ${ws}/tsconfig.json`, STD)
   } else {
-    runCheck('TSC-1', 'tsc --noEmit', 'tsc --noEmit', STD)
+    await runCheck('TSC-1', 'tsc --noEmit', 'tsc --noEmit', STD)
   }
-  runCheck('SYNC-1', 'syncpack format (check)', 'bunx syncpack format --check', STD)
-  runCheck('KNIP-2', 'knip', 'bunx knip --no-config-hints', STD)
+  await runCheck('SYNC-1', 'syncpack format (check)', 'bunx syncpack format --check', STD)
+  await runCheck('KNIP-2', 'knip', 'bunx knip --no-config-hints', STD)
 
   // ── core: native CLI ownership + retired-key drift ────────────────────────────
-  const aggregateAliases = ['ki:audit', 'ki:conform', 'ki:educate', 'ki:help'].filter((key) => key in scripts)
-  aggregateAliases.length
+  const nativeGovernanceAliases = Object.entries(scripts)
+    .filter(([, value]) => /\bki\s+repo\s+(?:audit|conform|educate)\b/.test(value))
+    .map(([key]) => key)
+  nativeGovernanceAliases.length
     ? add(
         'FAIL',
         'SCR-2',
-        `repository maintenance must use the installed CLI directly; remove package-script alias(es): ${aggregateAliases.join(', ')}`,
+        `repository maintenance must use the installed CLI directly; remove package script(s) that invoke native governance: ${nativeGovernanceAliases.join(', ')}`,
         STD,
         'package.json'
       )
-    : add('PASS', 'SCR-2', 'repository maintenance has no package-script aliases', STD, 'package.json')
+    : add(
+        'PASS',
+        'SCR-2',
+        'repository maintenance has no package scripts that invoke native governance',
+        STD,
+        'package.json'
+      )
   const retired = Object.keys(scripts).filter(
     (key) =>
-      /^ki:(lint|deps):/.test(key) ||
+      /^ki:lint:/.test(key) ||
+      (/^ki:deps:/.test(key) && key !== 'ki:deps:update') ||
       key === 'ki:knip' ||
       key === 'ki:verify' ||
       /^ki:[a-z-]+:lint$/.test(key) ||
       ['ki:audit', 'ki:conform', 'ki:educate', 'ki:help'].includes(key)
   )
-  retired.length
+  const declared = declaredSkillNames(read('.ki-config.toml'))
+  const unsupported = Object.keys(scripts).filter(
+    (key) => key.startsWith('ki:') && (!scriptOwner(key) || !declared.has(scriptOwner(key) as string))
+  )
+  const missingDependencyUpdate = !Object.hasOwn(scripts, 'ki:deps:update')
+  const scriptProblems = [
+    ...(retired.length ? [`retired script key(s): ${retired.join(', ')}`] : []),
+    ...(unsupported.length ? [`unsupported or undeclared-owner script key(s): ${unsupported.join(', ')}`] : []),
+    ...(missingDependencyUpdate ? ['missing required ki:deps:update'] : [])
+  ]
+  scriptProblems.length
     ? add(
         'FAIL',
         'SCR-3',
-        `retired script key(s): ${retired.join(', ')} — repository governance runs through the installed ki CLI`,
+        `${scriptProblems.join('; ')} — every ki: script must be owned by a declared capability`,
         STD,
         'package.json'
       )
-    : add('PASS', 'SCR-3', 'no retired aggregate or tool-level governance aliases', STD, 'package.json')
+    : add('PASS', 'SCR-3', 'every ki: script has a declared owner and ki:deps:update is present', STD, 'package.json')
 
   // ── core: per-skill wrapper aliases are retired ──────────────────────────────
   const skillModeAliases = Object.keys(scripts).filter((key) => /^ki:[a-z-]+:(audit|conform|educate|help)$/.test(key))
@@ -347,7 +463,13 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
     .map(([key]) => key)
   const legacyAliases = [...new Set([...skillModeAliases, ...runtimeAliases])]
   legacyAliases.length
-    ? add('FAIL', 'SCR-4', `remove legacy governance wrapper script(s): ${legacyAliases.join(', ')}`, STD, 'package.json')
+    ? add(
+        'FAIL',
+        'SCR-4',
+        `remove legacy governance wrapper script(s): ${legacyAliases.join(', ')}`,
+        STD,
+        'package.json'
+      )
     : add('PASS', 'SCR-4', 'no per-skill or path-based governance wrappers', STD, 'package.json')
   // clean (removes node_modules; may also remove dist) + prepare = husky
   scripts.clean?.includes('node_modules')
@@ -376,7 +498,7 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
 
   // ── advisory: dependency freshness (bun outdated) ────────────────────────────
   try {
-    const out = execSync('bun outdated', { cwd: repo, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
+    const out = (await run('/bin/sh', ['-c', 'bun outdated'], { cwd: repo, encoding: 'utf8' })).stdout.trim()
     const pkgRows = out.split('\n').filter((l) => l.includes('│') && !l.includes('Package') && !l.includes('Current'))
     if (pkgRows.length === 0) {
       add('PASS', 'DEPS-1', 'all packages up to date (bun outdated)', STD)
@@ -434,7 +556,7 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
   if (!biome) add('FAIL', 'BIO-2', 'biome.json missing', STD, 'biome.json')
   else {
     const fields: [string, RegExp][] = [
-      ['formatter lineWidth 160', /"lineWidth"\s*:\s*160/],
+      ['formatter lineWidth 120', /"lineWidth"\s*:\s*120/],
       ['formatter indentWidth 2', /"indentWidth"\s*:\s*2/],
       ['js quoteStyle single', /"quoteStyle"\s*:\s*"single"/],
       ['js semicolons asNeeded', /"semicolons"\s*:\s*"asNeeded"/],
@@ -457,6 +579,208 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
     ? add('PASS', 'KNIP-1', 'knip.json present (entry points + ignores for the native knip check)', STD, 'knip.json')
     : add('FAIL', 'KNIP-1', 'knip.json missing (config for the native knip check)', STD, 'knip.json')
 
+  // ── core: knip entry points cover every package export ──────────────────────
+  // `knip --fix` (the KNIP-2 repair) DELETES exports it believes are unused. An
+  // entrypoint published through `exports` but not reachable from any `entry` glob
+  // is invisible to knip as a public surface, so genuine public API gets deleted.
+  // Mechanically checkable, so it is checked here rather than left to review.
+  // Audit only: which entry glob to add is a judgment call, so there is no repair.
+  const knipConfigSource = read('knip.json') || read('knip.jsonc')
+  const exportsMap = pkg.exports
+  if (!exportsMap || typeof exportsMap !== 'object' || Array.isArray(exportsMap)) {
+    add('NOT_APPLICABLE', 'KNIP-3', 'package.json declares no exports map', STD, 'package.json')
+  } else {
+    // knip.json is JSON with C-style comments permitted; strip them string-aware so
+    // that `"$schema": "https://…"` is not mistaken for a line comment.
+    const stripJsonComments = (text: string): string => {
+      let out = ''
+      let inString = false
+      let escaped = false
+      for (let index = 0; index < text.length; index += 1) {
+        const ch = text[index] as string
+        if (inString) {
+          out += ch
+          if (escaped) escaped = false
+          else if (ch === '\\') escaped = true
+          else if (ch === '"') inString = false
+          continue
+        }
+        if (ch === '"') {
+          inString = true
+          out += ch
+          continue
+        }
+        if (ch === '/' && text[index + 1] === '/') {
+          while (index < text.length && text[index] !== '\n') index += 1
+          out += '\n'
+          continue
+        }
+        if (ch === '/' && text[index + 1] === '*') {
+          index += 2
+          while (index < text.length && !(text[index] === '*' && text[index + 1] === '/')) index += 1
+          index += 1
+          out += ' '
+          continue
+        }
+        out += ch
+      }
+      return out
+    }
+    let knipConfig: Record<string, unknown> | undefined
+    if (knipConfigSource) {
+      try {
+        const parsed: unknown = JSON.parse(stripJsonComments(knipConfigSource))
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
+          knipConfig = parsed as Record<string, unknown>
+      } catch {
+        knipConfig = undefined
+      }
+    }
+    if (!knipConfig) {
+      add(
+        'INFO',
+        'KNIP-3',
+        'knip entry list is not mechanically readable (no parseable knip.json / knip.jsonc)',
+        STD,
+        'knip.json'
+      )
+    } else {
+      const entryList = (value: unknown): readonly string[] =>
+        typeof value === 'string'
+          ? [value]
+          : Array.isArray(value)
+            ? value.filter((item): item is string => typeof item === 'string')
+            : []
+      const workspaces = knipConfig.workspaces
+      const rootWorkspace =
+        workspaces && typeof workspaces === 'object' && !Array.isArray(workspaces)
+          ? ((workspaces as Record<string, unknown>)['.'] ?? (workspaces as Record<string, unknown>)['./'])
+          : undefined
+      const declaredEntries = [
+        ...entryList(knipConfig.entry),
+        ...(rootWorkspace && typeof rootWorkspace === 'object' && !Array.isArray(rootWorkspace)
+          ? entryList((rootWorkspace as Record<string, unknown>).entry)
+          : [])
+      ]
+      // A knip entry pattern may carry a trailing `!` (production mode) or a leading
+      // `!` (negation); neither is part of the path glob.
+      const trimSuffix = (pattern: string): string => pattern.replace(/!+$/, '')
+      const included = declaredEntries.filter((pattern) => !pattern.startsWith('!')).map(trimSuffix)
+      const excluded = declaredEntries
+        .filter((pattern) => pattern.startsWith('!'))
+        .map((pattern) => trimSuffix(pattern.slice(1)))
+      const globToRegExp = (pattern: string): RegExp => {
+        let source = ''
+        for (let index = 0; index < pattern.length; index += 1) {
+          const ch = pattern[index] as string
+          if (ch === '*') {
+            if (pattern[index + 1] === '*') {
+              index += 1
+              if (pattern[index + 1] === '/') {
+                index += 1
+                source += '(?:[^/]*/)*'
+              } else source += '.*'
+            } else source += '[^/]*'
+            continue
+          }
+          if (ch === '?') {
+            source += '[^/]'
+            continue
+          }
+          if (ch === '{') {
+            source += '(?:'
+            continue
+          }
+          if (ch === '}') {
+            source += ')'
+            continue
+          }
+          if (ch === ',') {
+            source += '|'
+            continue
+          }
+          source += ch.replace(/[.+^$()|[\]\\]/g, '\\$&')
+        }
+        return new RegExp(`^${source}$`)
+      }
+      const covered = (path: string): boolean =>
+        included.some((pattern) => globToRegExp(pattern).test(path)) &&
+        !excluded.some((pattern) => globToRegExp(pattern).test(path))
+      // A built target maps back to its source: ./dist/X.js and ./dist/X.d.ts → src/X.ts.
+      const sourceForTarget = (target: string): string | undefined => {
+        const relative = target.replace(/^\.\//, '')
+        const mapped = relative.startsWith('dist/') ? `src/${relative.slice('dist/'.length)}` : relative
+        if (mapped.endsWith('.d.ts')) return `${mapped.slice(0, -'.d.ts'.length)}.ts`
+        const built = /\.(?:js|mjs|cjs)$/.exec(mapped)
+        if (built) return `${mapped.slice(0, -built[0].length)}.ts`
+        return mapped.endsWith('.ts') ? mapped : undefined
+      }
+      const targets: [string, string][] = []
+      const collect = (subpath: string, value: unknown): void => {
+        if (typeof value === 'string') targets.push([subpath, value])
+        else if (value && typeof value === 'object' && !Array.isArray(value))
+          for (const nested of Object.values(value as Record<string, unknown>)) collect(subpath, nested)
+      }
+      for (const [subpath, value] of Object.entries(exportsMap as Record<string, unknown>)) {
+        if (subpath === './package.json') continue
+        collect(subpath, value)
+      }
+      const seen = new Set<string>()
+      let checked = 0
+      for (const [subpath, target] of targets) {
+        if (target === './package.json') continue
+        const source = sourceForTarget(target)
+        if (source === undefined) {
+          const key = `unmapped:${subpath}:${target}`
+          if (seen.has(key)) continue
+          seen.add(key)
+          add(
+            'INFO',
+            'KNIP-3',
+            `export "${subpath}" → ${target} does not map to a source file mechanically`,
+            STD,
+            'package.json'
+          )
+          continue
+        }
+        if (source.includes('*')) {
+          const key = `pattern:${subpath}:${source}`
+          if (seen.has(key)) continue
+          seen.add(key)
+          add(
+            'INFO',
+            'KNIP-3',
+            `export "${subpath}" is a subpath pattern (${target}); entry coverage needs review`,
+            STD,
+            'package.json'
+          )
+          continue
+        }
+        const key = `${subpath}:${source}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        checked += 1
+        covered(source)
+          ? add(
+              'PASS',
+              'KNIP-3',
+              `export "${subpath}" → ${source} is reachable from a knip entry point`,
+              STD,
+              'knip.json'
+            )
+          : add(
+              'FAIL',
+              'KNIP-3',
+              `export "${subpath}" → ${source} is not reachable from any knip entry point (knip --fix may delete its exports)`,
+              STD,
+              'knip.json'
+            )
+      }
+      if (!checked && !seen.size)
+        add('NOT_APPLICABLE', 'KNIP-3', 'package.json declares no non-exempt exports', STD, 'package.json')
+    }
+  }
+
   // ── core: generated and managed discovery surfaces ──────────────────────────
   // These are byte-for-byte artifacts owned elsewhere. Formatting or dead-code checks
   // must never rewrite or report them. `ki-authoring` owns the Markdown configuration,
@@ -469,7 +793,13 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
     markdown: string
   }
   const GENERATED_SURFACES: GeneratedSurface[] = [
-    { signal: ['src', 'generated'], label: 'src/generated/', biome: 'src/generated', knip: 'src/generated', markdown: 'src/generated' },
+    {
+      signal: ['src', 'generated'],
+      label: 'src/generated/',
+      biome: 'src/generated',
+      knip: 'src/generated',
+      markdown: 'src/generated'
+    },
     {
       signal: ['.claude', 'skills'],
       label: '.claude/skills/',
@@ -499,14 +829,18 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
     // generated child (`.claude/skills/**`), while preserving authored siblings is
     // preferred where those siblings exist.
     const ancestors = path.split('/').map((_, index, parts) => parts.slice(0, index + 1).join('/'))
-    return ancestors.some((candidate) => new RegExp(`["']${escapeRe(`${prefix}${candidate}`)}(?:/\\*\\*)?["']`).test(content))
+    return ancestors.some((candidate) =>
+      new RegExp(`["']${escapeRe(`${prefix}${candidate}`)}(?:/\\*\\*)?["']`).test(content)
+    )
   }
-  const markdownlint = read('.markdownlint-cli2.jsonc')
+  const rumdl = read('.rumdl.toml')
   const legacyExclusions = [
     ['biome.json', biome],
     ['knip.json', read('knip.json') || read('knip.jsonc') || read('knip.ts')],
-    ['.markdownlint-cli2.jsonc', markdownlint]
-  ].flatMap(([file, content]) => ['.ki/bootstrap', '.ki/bin'].flatMap((path) => (content.includes(path) ? [`${file} → ${path}`] : [])))
+    ['.rumdl.toml', rumdl]
+  ].flatMap(([file, content]) =>
+    ['.ki/bootstrap', '.ki/bin'].flatMap((path) => (content.includes(path) ? [`${file} → ${path}`] : []))
+  )
   const activeGeneratedSurfaces = GENERATED_SURFACES.filter((surface) => isDir(...surface.signal))
   if (legacyExclusions.length) {
     add('FAIL', 'GEN-1', `remove legacy KI runtime exclusion(s): ${legacyExclusions.join('; ')}`, STD)
@@ -516,11 +850,17 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
     const missing: string[] = []
     for (const surface of activeGeneratedSurfaces) {
       if (!excludes(biome, surface.biome, true)) missing.push(`biome.json → ${surface.label}`)
-      if (!excludes(read('knip.json') || read('knip.jsonc') || read('knip.ts'), surface.knip)) missing.push(`knip.json → ${surface.label}`)
-      if (!excludes(markdownlint, surface.markdown)) missing.push(`.markdownlint-cli2.jsonc → ${surface.label}`)
+      if (!excludes(read('knip.json') || read('knip.jsonc') || read('knip.ts'), surface.knip))
+        missing.push(`knip.json → ${surface.label}`)
+      if (!excludes(rumdl, surface.markdown)) missing.push(`.rumdl.toml → ${surface.label}`)
     }
     missing.length
-      ? add('FAIL', 'GEN-1', `managed surfaces need matching Biome, knip, and Markdown exclusions: ${missing.join('; ')}`, STD)
+      ? add(
+          'FAIL',
+          'GEN-1',
+          `managed surfaces need matching Biome, knip, and Markdown exclusions: ${missing.join('; ')}`,
+          STD
+        )
       : add(
           'PASS',
           'GEN-1',
@@ -529,8 +869,8 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
         )
   }
 
-  // .prettierrc.json content is owned and audited by ki-authoring (it backs that
-  // skill's own Markdown conform pass) — not checked here (SHAPE-16 ownership split).
+  // .rumdl.toml content is owned and audited by ki-authoring (it backs that skill's own
+  // Markdown audit and conform passes) — not checked here (SHAPE-16 ownership split).
 
   // ── capability detection ──────────────────────────────────────────────────────
   const vitestFile = [
@@ -556,7 +896,13 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
   // A repo with tests exposes the bare `test` idiom (the whole *.test.ts suite), run in CI
   // after `ki repo audit`. Compiled builds remain the separate bare `build` lifecycle command.
   if (hasTests && !scripts.test)
-    add('FAIL', 'SCR-7', 'repo has tests but no bare "test" script (the whole suite, run after native audit)', STD, 'package.json')
+    add(
+      'FAIL',
+      'SCR-7',
+      'repo has tests but no bare "test" script (the whole suite, run after native audit)',
+      STD,
+      'package.json'
+    )
   else if (hasTests) add('PASS', 'SCR-7', 'bare "test" idiom present', STD, 'package.json')
 
   // ── capability: tests ─────────────────────────────────────────────────────────
@@ -565,13 +911,30 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
   // standalone *.test.ts checker scripts via the bare `test` idiom). The vitest key-shape +
   // 100%-coverage checks fire only when a vitest.config.* is actually present.
   if (vitestFile) {
-    const wantTest: Record<string, string> = { test: 'vitest run', 'test:coverage': 'vitest run --coverage', 'test:watch': 'vitest' }
+    const wantTest: Record<string, string> = {
+      test: 'vitest run',
+      'test:coverage': 'vitest run --coverage',
+      'test:watch': 'vitest'
+    }
     for (const [k, v] of Object.entries(wantTest)) {
-      if (!scripts[k]) add('WARN', 'TEST-1', `test capability: script "${k}" missing (expected ${JSON.stringify(v)})`, STD, 'package.json')
+      if (!scripts[k])
+        add(
+          'WARN',
+          'TEST-1',
+          `test capability: script "${k}" missing (expected ${JSON.stringify(v)})`,
+          STD,
+          'package.json'
+        )
       else
         scripts[k] === v
           ? add('PASS', 'TEST-1', `${k} = ${JSON.stringify(v)}`, STD, 'package.json')
-          : add('FAIL', 'TEST-1', `${k} should be ${JSON.stringify(v)}, got ${JSON.stringify(scripts[k])}`, STD, 'package.json')
+          : add(
+              'FAIL',
+              'TEST-1',
+              `${k} should be ${JSON.stringify(v)}, got ${JSON.stringify(scripts[k])}`,
+              STD,
+              'package.json'
+            )
     }
     {
       const vc = read(vitestFile)
@@ -812,7 +1175,7 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
           )
       }
     }
-    if (scripts['test:coverage']) runCheck('TEST-5', 'test:coverage', 'bun run test:coverage', STD)
+    if (scripts['test:coverage']) await runCheck('TEST-5', 'test:coverage', 'bun run test:coverage', STD)
   } else if (scripts.test) {
     add(
       'INFO',
@@ -867,7 +1230,9 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
         ? add('PASS', 'BUILD-3', `tsconfig.json (shared base) ${label}`, STD, 'tsconfig.json')
         : add('WARN', 'BUILD-3', `tsconfig.json (shared base) should set ${label}`, STD, 'tsconfig.json')
     // CLI chmod rule: build chmods EXACTLY dist/cli/cli.js iff src/cli/, and nothing else.
-    const chmodTargets = [...buildScript.matchAll(/chmod\s+\+x\s+([^&|;]+)/g)].flatMap((m) => m[1].trim().split(/\s+/)).filter(Boolean)
+    const chmodTargets = [...buildScript.matchAll(/chmod\s+\+x\s+([^&|;]+)/g)]
+      .flatMap((m) => m[1].trim().split(/\s+/))
+      .filter(Boolean)
     const allowed = hasCli ? ['dist/cli/cli.js'] : []
     const unexpected = chmodTargets.filter((t) => !allowed.includes(t))
     const missing = allowed.filter((t) => !chmodTargets.includes(t))
@@ -879,7 +1244,8 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
         STD,
         'package.json'
       )
-    if (missing.length) add('WARN', 'BUILD-4', `src/cli/ exists but build does not chmod +x ${missing.join(', ')}`, STD, 'package.json')
+    if (missing.length)
+      add('WARN', 'BUILD-4', `src/cli/ exists but build does not chmod +x ${missing.join(', ')}`, STD, 'package.json')
     if (!unexpected.length && !missing.length)
       add(
         'PASS',
@@ -901,36 +1267,54 @@ export const collectAuditEvidence = (repo: string): readonly EngineeringEvidence
     const devKeys = (k: string) => /:(dev|inspect)\b/.test(k) || k.endsWith(':dev') || k.endsWith(':inspect')
     const leaks = Object.entries(scripts).filter(([k, v]) => v.includes('NODE_ENV=development') && !devKeys(k))
     leaks.length
-      ? add('FAIL', 'ENV-2', `NODE_ENV=development outside a dev/inspect script: ${leaks.map(([k]) => k).join(', ')}`, STD, 'package.json')
+      ? add(
+          'FAIL',
+          'ENV-2',
+          `NODE_ENV=development outside a dev/inspect script: ${leaks.map(([k]) => k).join(', ')}`,
+          STD,
+          'package.json'
+        )
       : add('PASS', 'ENV-2', 'NODE_ENV=development only in dev/inspect scripts', STD, 'package.json')
   } else {
     add('NOT_APPLICABLE', 'ENV-1', 'no env capability — not applicable', STD)
   }
 
-  // ── core: .ki-config.toml [ki-engineering] table ────────────────
+  // ── core: .ki-config.toml qualified ki-engineering table ────────
   const ki = read('.ki-config.toml')
+  const engineeringHeader = '[skills.ki-engineering]'
   if (!ki) add('WARN', 'TOML-1', '.ki-config.toml missing (ki-repo owns the contract)', STD, '.ki-config.toml')
-  else if (!/^\[ki-engineering\]/m.test(ki)) {
+  else if (!/^\[skills\.ki-engineering\]/m.test(ki)) {
     add(
       'WARN',
       'TOML-1',
-      'no [ki-engineering] table — add it to mark this repo as governed by the engineering standard',
+      `no ${engineeringHeader} table — add it to mark this repo as governed by the engineering standard`,
       STD,
       '.ki-config.toml'
     )
   } else {
-    add('PASS', 'TOML-1', '[ki-engineering] table present', STD, '.ki-config.toml')
+    add('PASS', 'TOML-1', `${engineeringHeader} table present`, STD, '.ki-config.toml')
     // validate-down: the table is a conformance marker only — it carries no keys. Repo
     // shape (flat vs monorepo) is read from package.json `workspaces` (§0), a standard Bun
     // convention, not a bespoke key here. Any key directly under the table is drift.
-    const body = ki.split(/^\[ki-engineering\]/m)[1]?.split(/^\[/m)[0] ?? ''
-    const KNOWN = new Set<string>() // no keys defined; only a [ki-engineering.checks] sub-table is allowed
+    const body = ki.split(/^\[skills\.ki-engineering\]/m)[1]?.split(/^\[/m)[0] ?? ''
+    const KNOWN = new Set<string>() // no keys defined; only a [skills.ki-engineering.checks] sub-table is allowed
     for (const m of body.matchAll(/^\s*([A-Za-z0-9_-]+)\s*=/gm)) {
       KNOWN.has(m[1])
         ? add('PASS', 'TOML-2', `known key ${m[1]}`, STD, '.ki-config.toml')
-        : add('WARN', 'TOML-2', `unknown key under [ki-engineering]: ${m[1]} (validate-down)`, STD, '.ki-config.toml')
+        : add(
+            'WARN',
+            'TOML-2',
+            `unknown key under ${engineeringHeader}: ${m[1]} (validate-down)`,
+            STD,
+            '.ki-config.toml'
+          )
     }
   }
 
-  return findings.map(({ level, area, msg, file }) => ({ level, code: area, message: msg, ...(file ? { subject: file } : {}) }))
+  return findings.map(({ level, area, msg, file }) => ({
+    level,
+    code: area,
+    message: msg,
+    ...(file ? { subject: file } : {})
+  }))
 }

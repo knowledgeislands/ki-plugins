@@ -1,3 +1,4 @@
+import type { RubricPublicationContext } from '../../shared/rubric.ts'
 import type { ParsedFrontmatter } from './frontmatter.ts'
 import type { RefreshContext } from './longevity.ts'
 import { hintVerbs, isProcessSkill } from './modes.ts'
@@ -15,6 +16,7 @@ export type NameRubricContext = {
   name: string | undefined
   directoryName: string
   localGovernanceSource: boolean
+  reservedVendorNameAllowed: boolean
   setName?: (name: string) => void
 }
 
@@ -42,6 +44,9 @@ export type ReferencesRubricContext = {
 
 export type ScriptHelpEvidence = {
   subject: string
+  declaresPurpose: boolean
+  declaresCanonicalRun: boolean
+  declaresBoundary: boolean
   declaresShortHelp: boolean
   declaresLongHelp: boolean
   declaresUsageText: boolean
@@ -101,6 +106,8 @@ export type KiCheckerRubricContext = {
   familyModules: readonly RubricFamilyModule[]
 }
 
+export type RubricPublicationRubricContext = RubricPublicationContext
+
 type CollisionTarget = {
   name: string
   description: string
@@ -117,6 +124,8 @@ type OwnershipCollision = {
 
 export type KiShapeSkillContext = {
   knowledgeIslandsSkill: boolean
+  kiKindPresent: boolean
+  kiKind: string
   governanceSkill: boolean
   localGovernanceSource: boolean
   argumentHint: string | undefined
@@ -138,6 +147,9 @@ export type KiShapeSkillContext = {
   documentsMechanicalDelegation: boolean
   dependsOnPresent: boolean
   dependsOn: string
+  supportedRuntimesPresent: boolean
+  supportedRuntimes: string
+  runtimeBinding: boolean
   owns: readonly string[]
   contributes: readonly string[]
   requires: readonly string[]
@@ -152,22 +164,30 @@ export type KiShapeRubricContext = {
 
 export const createKiShapeFrontmatterEvidence = ({
   frontmatter,
-  description,
   scriptNames,
   localGovernanceSource = false
 }: {
   frontmatter: ParsedFrontmatter
-  description: string
   scriptNames: readonly string[]
   localGovernanceSource?: boolean
 }): Pick<
   KiShapeSkillContext,
-  'knowledgeIslandsSkill' | 'governanceSkill' | 'localGovernanceSource' | 'argumentHint' | 'hintVerbs' | 'scriptNames'
+  | 'knowledgeIslandsSkill'
+  | 'kiKindPresent'
+  | 'kiKind'
+  | 'governanceSkill'
+  | 'localGovernanceSource'
+  | 'argumentHint'
+  | 'hintVerbs'
+  | 'scriptNames'
 > => {
   const argumentHint = frontmatter.keys.get('argument-hint')
+  const kiKind = (frontmatter.keys.get('ki-kind') ?? '').trim()
   return {
     knowledgeIslandsSkill: (frontmatter.keys.get('name') ?? '').startsWith('ki-'),
-    governanceSkill: !isProcessSkill(description),
+    kiKindPresent: frontmatter.present.has('ki-kind'),
+    kiKind,
+    governanceSkill: !isProcessSkill(kiKind) && kiKind === 'governance',
     localGovernanceSource,
     argumentHint,
     hintVerbs: hintVerbs(argumentHint ?? ''),
@@ -177,6 +197,8 @@ export const createKiShapeFrontmatterEvidence = ({
 
 const emptyKiShapeSkill: KiShapeSkillContext = {
   knowledgeIslandsSkill: false,
+  kiKindPresent: false,
+  kiKind: '',
   governanceSkill: false,
   localGovernanceSource: false,
   argumentHint: undefined,
@@ -198,6 +220,9 @@ const emptyKiShapeSkill: KiShapeSkillContext = {
   documentsMechanicalDelegation: false,
   dependsOnPresent: false,
   dependsOn: '',
+  supportedRuntimesPresent: false,
+  supportedRuntimes: '',
+  runtimeBinding: false,
   owns: [],
   contributes: [],
   requires: [],
@@ -228,6 +253,7 @@ type KiSkillsRubricFacets = {
   references: ReferencesRubricContext
   scripts: ScriptsRubricContext
   checker: KiCheckerRubricContext
+  rubric: RubricPublicationRubricContext
   link: KiLinkRubricContext
   portability: PortabilityRubricContext
   shape: KiShapeRubricContext

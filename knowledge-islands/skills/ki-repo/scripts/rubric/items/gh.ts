@@ -13,7 +13,14 @@ const item = (
   title,
   description,
   sources: [SOURCE],
-  mechanical: { level: 'FAIL', audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), 'FAIL') } }
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Correct the GitHub setting or aligned local declaration, then rerun the audit.'
+    },
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), 'FAIL') }
+  }
 })
 
 export const GH: RubricFamily<RepoRubricContext, GhRubricContext> = {
@@ -24,11 +31,16 @@ export const GH: RubricFamily<RepoRubricContext, GhRubricContext> = {
   selectContext: (context) => context.gh,
   items: [
     item('GH-1', 'Default branch', 'The default branch is main.', (context) => context.gh1),
-    item('GH-2', 'Declared license alignment', 'The declared license agrees with GitHub and package.json.', (context) => context.gh2),
+    item(
+      'GH-2',
+      'Declared license alignment',
+      'The declared license agrees with GitHub and package.json.',
+      (context) => context.gh2
+    ),
     item(
       'GH-3',
       'Description presence and synchronisation',
-      'The GitHub description is non-empty and matches package.json when that source exists.',
+      'The declared ki-repo description is non-empty and matches GitHub and package.json when those surfaces exist.',
       (context) => context.gh3
     )
   ]

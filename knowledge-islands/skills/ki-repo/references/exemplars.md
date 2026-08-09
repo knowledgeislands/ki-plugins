@@ -21,16 +21,16 @@ Curated patterns from the KI repo set that show what a well-configured Knowledge
 
 ### Minimal `.ki-config.toml` — private repo, no overrides
 
-Every KI-governed repo carries a `.ki-config.toml` at its root. The file is the compliance marker; its presence is what the coverage cascade gates on. A repo that fully conforms to org defaults needs only the `[ki-repo]` table with a `visibility` declaration and silence under `[ki-repo.checks]` (or no checks table at all). Each additional governance skill the repo opts into adds its own table — the tables are independent, each skill reads only its own.
+Every KI-governed repo carries a `.ki-config.toml` at its root. The file is the compliance marker; its presence is what the coverage cascade gates on. A repo that fully conforms to org defaults needs only the `[skills.ki-repo]` table with a `visibility` declaration and silence under `[skills.ki-repo.checks]` (or no checks table at all). Each additional governance skill the repo opts into adds its own table — the tables are independent, each skill reads only its own.
 
 ```toml
 # .ki-config.toml — one [table] per governing skill
 
-[ki-repo]
+[skills.ki-repo]
 visibility = "private"   # "public" | "private" — declared, not inferred
-# No [ki-repo.checks] needed: this repo takes all org defaults.
+# No [skills.ki-repo.checks] needed: this repo takes all org defaults.
 
-[ki-engineering]
+[skills.ki-engineering]
 # Fully conforms; no overrides. Capabilities auto-detected from repo markers.
 ```
 
@@ -39,10 +39,10 @@ visibility = "private"   # "public" | "private" — declared, not inferred
 `branch-protection` defaults **off** for all KI repos — `main` is open, direct pushes allowed. A repo that wants a protected `main` declares it with a single boolean. When `branch-protection = true`, the auditor requires: a PR (0 approvals), the `build` status check, linear history, no force-push, no deletion, admins not enforced. No other check is affected by this override.
 
 ```toml
-[ki-repo]
+[skills.ki-repo]
 visibility = "public"
 
-[ki-repo.checks]
+[skills.ki-repo.checks]
 branch-protection = true   # protect main: PR required, build check, linear history
 ```
 
@@ -68,7 +68,7 @@ One paragraph: what this repo is and who works in it.
 
 ### `AGENTS.md`-literal orientation for a multi-runtime repo
 
-A repo whose `[ki-repo]` `supported_runtimes` names a runtime besides `claude-code` (e.g. `codex`) keeps its root orientation in a literal `AGENTS.md` — Codex reads `AGENTS.md` but cannot resolve Claude Code's `@`-import syntax, so the orientation content itself has to live there, not behind an import. `CLAUDE.md` then stays a thin appendix: one line naming it as the Claude Code supplement, then a single `@AGENTS.md` import, then any topic-file imports Claude Code alone needs. A personal chezmoi dotfiles repo (outside the `knowledgeislands` org, but the same pattern) is a working example: its `AGENTS.md` carries the literal orientation and core rules, and its `CLAUDE.md` opens with `@AGENTS.md` before adding Claude-only topic imports.
+A repo whose `[skills.ki-repo]` `supported_runtimes` names a runtime besides `claude-code` (e.g. `chatgpt-codex`) keeps its root orientation in a literal `AGENTS.md` — ChatGPT Codex reads `AGENTS.md` but cannot resolve Claude Code's `@`-import syntax, so the orientation content itself has to live there, not behind an import. `CLAUDE.md` then stays a thin appendix: one line naming it as the Claude Code supplement, then a single `@AGENTS.md` import, then any topic-file imports Claude Code alone needs. A personal chezmoi dotfiles repo (outside the `knowledgeislands` org, but the same pattern) is a working example: its `AGENTS.md` carries the literal orientation and core rules, and its `CLAUDE.md` opens with `@AGENTS.md` before adding Claude-only topic imports.
 
 ```markdown
 <!-- AGENTS.md — literal, runtime-neutral orientation -->
@@ -99,36 +99,33 @@ The shared orientation lives in AGENTS.md, imported above. The following topic f
 When a repo carries a five-part agentic harness layout (`skills/`, `subagents/`, `mcp/`, `evals/`, `hooks/`), its `.ki-config.toml` must declare all four relevant tables so `ki-repo`'s coverage cascade does not warn on detected-but-undeclared artifacts. The harness repo (`ki-agentic-harness`) is the canonical example — it opts into every applicable governance skill and documents why each table is present.
 
 ```toml
-[ki-repo]
+[skills.ki-repo]
 visibility = "private"
 
-[ki-engineering]
+[skills.ki-engineering]
 # Fully conforms; capabilities auto-detected.
 
-[ki-harness]
+[skills.ki-repo-harness]
 # Declares this repo as a KI agentic harness (the five-part layout compliance marker).
 # No per-harness config keys defined yet — table presence is the declaration.
 
-[ki-skills]
+[skills.ki-skills]
 # skills/ is populated; the skills linter runs over it.
 
-[ki-decision-records]
+[skills.ki-decision-records]
 # This repo authors and maintains decision records.
 ```
 
-### Optional `+` / `-` working areas
+### Required `+` / `-` working areas
 
-A repository creates working areas only when it has material to triage or send. Inbound and outbound handoffs are kept distinct, and an outgoing handoff is grouped by its receiving repository. The handoff remains an originating brief; the receiver independently adopts work into its own roadmap and plan.
+A KI repository always carries its generic inbound and outbound working-area scaffold. The two README files are conformed `ki-repo` direction and boundary orientation. A repository declaring `ki-repo-trades` may additionally carry skill-owned `_TRADES` subdirectories; those are not part of the generic scaffold.
 
 ```text
 my-repo/
 ├── +/
-│   └── _HANDOFFS/
-│       └── partner-repo.md
+│   └── README.md
 └── -/
-    └── _HANDOFFS/
-        └── receiving-repo/
-            └── implement-feature.md
+    └── README.md
 ```
 
 [harness]: https://github.com/knowledgeislands/ki-agentic-harness

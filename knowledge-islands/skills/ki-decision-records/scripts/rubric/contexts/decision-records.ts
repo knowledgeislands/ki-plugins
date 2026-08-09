@@ -1,9 +1,16 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
-import type { ConformWrite, RubricContextOptions, RubricSession } from '../../shared/rubric.ts'
+import type {
+  ConformWrite,
+  RubricContextOptions,
+  RubricPublicationContext,
+  RubricSession
+} from '../../shared/rubric.ts'
 
 const CODE_DIR = 'docs/decisions'
 const KB_DIR = 'Admin/Governance/Decisions'
+const REPO_CONFIG = 'ki-repo'
+const TOML = (globalThis as unknown as { Bun: { TOML: { parse(text: string): unknown } } }).Bun.TOML
 const PREFIX_TO_TYPE: Record<string, { decisionType: string; type: string; typeUrl: string }> = {
   SDR: {
     decisionType: 'strategy',
@@ -20,7 +27,11 @@ const PREFIX_TO_TYPE: Record<string, { decisionType: string; type: string; typeU
     type: 'Architecture Decision Record',
     typeUrl: 'https://knowledgeislands.info/specifications/decision-records/adr'
   },
-  DDR: { decisionType: 'data', type: 'Data Decision Record', typeUrl: 'https://knowledgeislands.info/specifications/decision-records/ddr' },
+  DDR: {
+    decisionType: 'data',
+    type: 'Data Decision Record',
+    typeUrl: 'https://knowledgeislands.info/specifications/decision-records/ddr'
+  },
   XDR: {
     decisionType: 'security',
     type: 'Security Decision Record',
@@ -105,6 +116,7 @@ export type IndexRubricContext = {
 }
 
 export type DecisionRecordsRubricContext = {
+  rubric: RubricPublicationContext
   filename: FilenameRubricContext
   root: RootRubricContext
   frontmatter: RecordsRubricContext
@@ -139,8 +151,19 @@ const findKiConfig = (start: string): string | undefined => {
 const isKb = (target: string): boolean => {
   const config = findKiConfig(target)
   if (!config) return false
-  const content = readFileSync(config, 'utf8')
-  return /^\s*repo_type\s*=\s*["']kb["']/m.test(content) || /^\[ki-kb\]/m.test(content)
+  try {
+    const parsed = TOML.parse(readFileSync(config, 'utf8')) as Record<string, unknown>
+    const skills = parsed.skills
+    const table = skills && typeof skills === 'object' ? (skills as Record<string, unknown>)[REPO_CONFIG] : undefined
+    return (
+      typeof table === 'object' &&
+      table !== null &&
+      !Array.isArray(table) &&
+      (table as Record<string, unknown>).repo_type === 'kb'
+    )
+  } catch {
+    return false
+  }
 }
 
 const isDirectory = (path: string): boolean => existsSync(path) && statSync(path).isDirectory()
@@ -205,7 +228,9 @@ const readRecords = (directory: string, entries: readonly string[], indexFile: s
       ...(frontmatterValue(frontmatter, 'status') ? { status: frontmatterValue(frontmatter, 'status') } : {}),
       ...(frontmatterValue(frontmatter, 'type') ? { type: frontmatterValue(frontmatter, 'type') } : {}),
       ...(frontmatterValue(frontmatter, 'type_url') ? { typeUrl: frontmatterValue(frontmatter, 'type_url') } : {}),
-      ...(frontmatterValue(frontmatter, 'decision_type') ? { decisionType: frontmatterValue(frontmatter, 'decision_type') } : {}),
+      ...(frontmatterValue(frontmatter, 'decision_type')
+        ? { decisionType: frontmatterValue(frontmatter, 'decision_type') }
+        : {}),
       sharedRecord: frontmatterValue(frontmatter, 'shared_record') === 'true',
       headingId: id,
       headingTitle,
@@ -219,7 +244,9 @@ const serialEvidence = (records: readonly DecisionRecord[]) => {
   const idsToFiles = new Map<string, string[]>()
   const serialsBySeries = new Map<string, number[]>()
   const localSerialSeries = new Set(
-    records.filter((record) => record.serial !== 'XXX' && !record.sharedRecord).map((record) => `${record.prefix}-${record.scope}`)
+    records
+      .filter((record) => record.serial !== 'XXX' && !record.sharedRecord)
+      .map((record) => `${record.prefix}-${record.scope}`)
   )
   for (const record of records) {
     idsToFiles.set(record.id, [...(idsToFiles.get(record.id) ?? []), record.file])
@@ -231,7 +258,9 @@ const serialEvidence = (records: readonly DecisionRecord[]) => {
   for (const [series, serials] of serialsBySeries) {
     const unique = [...new Set(serials)].sort((left, right) => left - right)
     const maximum = unique.at(-1) ?? 0
-    const missing = Array.from({ length: maximum }, (_, index) => index + 1).filter((serial) => !unique.includes(serial))
+    const missing = Array.from({ length: maximum }, (_, index) => index + 1).filter(
+      (serial) => !unique.includes(serial)
+    )
     if (missing.length > 0) serialGaps.set(series, missing)
   }
   return {
@@ -261,14 +290,20 @@ const createIndexDraft = (repository: string, path: string, original: string): I
     appendMissingEntries: (records, indexCounts) => {
       const missing = records.filter((record) => (indexCounts.get(record.id) ?? 0) === 0)
       if (missing.length === 0) return
-      const additions = missing.map((record) => `- [${record.id}](${record.file}) — ${record.headingTitle ?? '(title unknown — see file)'}`)
+      const additions = missing.map(
+        (record) => `- [${record.id}](${record.file}) — ${record.headingTitle ?? '(title unknown — see file)'}`
+      )
       working = `${working.replace(/\n*$/, '\n')}${additions.join('\n')}\n`
     },
     proposal: () => (working === original ? undefined : { path: relative(repository, path), content: working })
   }
 }
 
-export const createDecisionRecordsSession = ({ mode, repository }: RubricContextOptions): RubricSession<DecisionRecordsRubricContext> => {
+export const createDecisionRecordsSession = ({
+  mode,
+  repository,
+  publication
+}: RubricContextOptions): RubricSession<DecisionRecordsRubricContext> => {
   const kbMode = isKb(repository)
   const directory = resolveDirectory(repository, kbMode)
   const exists = isDirectory(directory)
@@ -285,11 +320,15 @@ export const createDecisionRecordsSession = ({ mode, repository }: RubricContext
   for (const id of indexIds) indexCounts.set(id, (indexCounts.get(id) ?? 0) + 1)
   const records = readRecords(directory, entries, indexFile)
   const { duplicateIds, serialGaps } = serialEvidence(records)
-  const indexDraft = mode === 'conform' && indexExists ? createIndexDraft(repository, indexPath, indexContent) : undefined
+  const indexDraft =
+    mode === 'conform' && indexExists ? createIndexDraft(repository, indexPath, indexContent) : undefined
 
   const context: DecisionRecordsRubricContext = {
+    rubric: { publication },
     filename: {
-      invalidFilenames: records.filter((record) => record.file !== record.expectedFilename).map((record) => record.file),
+      invalidFilenames: records
+        .filter((record) => record.file !== record.expectedFilename)
+        .map((record) => record.file),
       duplicateIds,
       serialGaps
     },
@@ -320,7 +359,10 @@ export const createDecisionRecordsSession = ({ mode, repository }: RubricContext
   }
 
   return {
-    subjects: [{ families: ['FILENAME', 'ROOT', 'FM', 'TYPE-FIT', 'BODY', 'INDEX'], context: () => context }],
+    subjects: [
+      { families: ['RUBRIC'], context: () => context },
+      { families: ['FILENAME', 'ROOT', 'FM', 'TYPE-FIT', 'BODY', 'INDEX'], context: () => context }
+    ],
     proposal: () => {
       const indexWrite = indexDraft?.proposal()
       return { writes: indexWrite ? [indexWrite] : [] }

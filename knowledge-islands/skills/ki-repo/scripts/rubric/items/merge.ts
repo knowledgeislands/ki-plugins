@@ -6,7 +6,14 @@ const MERGE_1: RubricItem<EvidenceRubricContext> = {
   title: 'Merge policy',
   description: 'The repository permits squash merges only and deletes merged head branches.',
   sources: ['standards-repository.md'],
-  mechanical: { level: 'FAIL', audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL') } }
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Configure squash-only merging and merged-branch deletion, then rerun the audit.'
+    },
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL') }
+  }
 }
 
 export const MERGE: RubricFamily<RepoRubricContext, EvidenceRubricContext> = {

@@ -1,6 +1,11 @@
 import { type Dirent, lstatSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve } from 'node:path'
-import type { ConformWrite, RubricContextOptions, RubricSession } from '../../shared/rubric.ts'
+import type {
+  ConformWrite,
+  RubricContextOptions,
+  RubricPublicationContext,
+  RubricSession
+} from '../../shared/rubric.ts'
 
 export type AgentFrontmatter = {
   keys: ReadonlyMap<string, string>
@@ -37,6 +42,7 @@ export type AgentSetContext = {
 }
 
 export type AgentsRubricContext = {
+  rubric: RubricPublicationContext
   file: AgentFileContext
   set: AgentSetContext
 }
@@ -55,7 +61,8 @@ const pathState = (path: string): 'missing' | 'file' | 'directory' | 'unsafe' =>
 
 const stripQuotes = (value: string): string => {
   const trimmed = value.trim()
-  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) return trimmed.slice(1, -1)
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'")))
+    return trimmed.slice(1, -1)
   return trimmed
 }
 
@@ -169,11 +176,16 @@ const alignedNameContent = (agent: AgentDefinition): string | null => {
   return `${frontmatter.replace(/^name:[^\r\n]*$/m, `name: ${agent.stem}`)}${agent.content.slice(frontmatterEnd)}`
 }
 
-export const createAgentsSession = ({ mode, repository }: RubricContextOptions): RubricSession<AgentsRubricContext> => {
+export const createAgentsSession = ({
+  mode,
+  repository,
+  publication
+}: RubricContextOptions): RubricSession<AgentsRubricContext> => {
   const root = resolve(repository)
   const agentsRoot = join(root, 'subagents')
   const rawRootState = pathState(agentsRoot)
-  const scopeState: ScopeState = rawRootState === 'missing' ? 'absent' : rawRootState === 'directory' ? 'physical' : 'unsafe'
+  const scopeState: ScopeState =
+    rawRootState === 'missing' ? 'absent' : rawRootState === 'directory' ? 'physical' : 'unsafe'
   const inspected = scopeState === 'physical' ? inspectAgentFiles(root, agentsRoot) : { files: [], unsafePaths: [] }
   if (scopeState === 'unsafe') inspected.unsafePaths.push('subagents')
 
@@ -211,7 +223,7 @@ export const createAgentsSession = ({ mode, repository }: RubricContextOptions):
           }
         : {})
     }
-    const context: AgentsRubricContext = { file, set }
+    const context: AgentsRubricContext = { rubric: { publication }, file, set }
     return {
       families: ['LAY', 'NAME', 'DESC', 'FM', 'PROMPT', 'LANE', 'LINK', 'PROC', 'LONG'],
       context: () => context,
@@ -220,6 +232,7 @@ export const createAgentsSession = ({ mode, repository }: RubricContextOptions):
   })
   const unavailableSubjects = inspected.unsafePaths.map((unsafePath) => {
     const context: AgentsRubricContext = {
+      rubric: { publication },
       file: { repository: root, scopeState, agent: null, unsafePath, duplicateNameFiles: [] },
       set
     }
@@ -231,6 +244,7 @@ export const createAgentsSession = ({ mode, repository }: RubricContextOptions):
   })
   if (fileSubjects.length === 0 && unavailableSubjects.length === 0) {
     const context: AgentsRubricContext = {
+      rubric: { publication },
       file: { repository: root, scopeState, agent: null, unsafePath: null, duplicateNameFiles: [] },
       set
     }
@@ -241,6 +255,7 @@ export const createAgentsSession = ({ mode, repository }: RubricContextOptions):
     })
   }
   const collectionContext: AgentsRubricContext = {
+    rubric: { publication },
     file: { repository: root, scopeState, agent: null, unsafePath: null, duplicateNameFiles: [] },
     set
   }
@@ -248,7 +263,8 @@ export const createAgentsSession = ({ mode, repository }: RubricContextOptions):
     subjects: [
       ...fileSubjects,
       ...unavailableSubjects,
-      { families: ['COLL'], context: () => collectionContext, subject: relative(root, agentsRoot) }
+      { families: ['COLL'], context: () => collectionContext, subject: relative(root, agentsRoot) },
+      { families: ['RUBRIC'], context: () => collectionContext, subject: root }
     ],
     proposal: () => ({
       writes: [...requestedDrafts.entries()]

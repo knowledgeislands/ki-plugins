@@ -1,4 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
+import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
 import { type CollisionRubricContext, type KiSkillsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const triggerPhrases = (description: string): string[] => {
@@ -21,10 +22,12 @@ const COLL_1: RubricItem<CollisionRubricContext> = {
   sources: ['COMMUNITY', 'ki-agentic-harness README'],
   mechanical: {
     level: 'WARN',
+    remediation: DIAGNOSTIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ targets }) => {
-        if (targets.length < 2) return [{ status: 'NOT_APPLICABLE', message: 'fewer than two skill descriptions to compare' }]
+        if (targets.length < 2)
+          return [{ status: 'NOT_APPLICABLE', message: 'fewer than two skill descriptions to compare' }]
         const byPhrase = new Map<string, Set<string>>()
         for (const target of targets)
           for (const phrase of triggerPhrases(target.description)) {
@@ -51,11 +54,11 @@ const COLL_2: RubricItem<CollisionRubricContext> = {
   code: 'COLL-2',
   title: 'adjacent skills have non-overlapping scope and reciprocal off-ramps',
   description:
-    "_Non-overlapping scope by design, with a reciprocal off-ramp where adjacency remains._ The first guard is **design**: skills are scoped so they don't compete for the same request, and each `description` is primarily **self-scoped** (what it does, and briefly what it doesn't). Where two skills are nonetheless genuinely adjacent, **each** description names the other as the off-ramp — the reciprocal pattern (`ki-mcp` ↔ `ki-skills`); a one-directional guard is a half-fix. A COLL-1 hit means the scopes overlap and the **design** needs fixing first, before any off-ramp papers over it.",
+    "_Non-overlapping scope by design, with a reciprocal off-ramp where adjacency remains._ The first guard is **design**: skills are scoped so they don't compete for the same request, and each `description` is primarily **self-scoped** (what it does, and briefly what it doesn't). Where two skills are nonetheless genuinely adjacent, **each** description names the other as the off-ramp — the reciprocal pattern (`ki-repo-mcp` ↔ `ki-skills`); a one-directional guard is a half-fix. A COLL-1 hit means the scopes overlap and the **design** needs fixing first, before any off-ramp papers over it.",
   sources: ['standard §15', 'ki-agentic-harness README'],
-  judgment: {
-    prompt: 'Do adjacent skills have non-overlapping scopes and reciprocal off-ramps where their requests are genuinely adjacent?'
-  }
+  judgment: judgment(
+    'Do adjacent skills have non-overlapping scopes and reciprocal off-ramps where their requests are genuinely adjacent?'
+  )
 }
 
 export const COLLISION: RubricFamily<KiSkillsRubricContext, CollisionRubricContext> = {

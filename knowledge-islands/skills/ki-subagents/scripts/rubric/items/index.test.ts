@@ -81,9 +81,12 @@ test('the structured catalogue preserves the complete ki-subagents rule surface'
     'PROC-2',
     'LONG-1',
     'COLL-1',
-    'COLL-2'
+    'COLL-2',
+    'RUBRIC-1'
   ])
-  expect(Object.fromEntries(items.filter((item) => item.mechanical).map((item) => [item.code, item.mechanical?.level]))).toEqual({
+  expect(
+    Object.fromEntries(items.filter((item) => item.mechanical).map((item) => [item.code, item.mechanical?.level]))
+  ).toEqual({
     'LAY-1': 'FAIL',
     'LAY-3': 'WARN',
     'NAME-1': 'FAIL',
@@ -97,14 +100,26 @@ test('the structured catalogue preserves the complete ki-subagents rule surface'
     'FM-11': 'FAIL',
     'PROMPT-1': 'FAIL',
     'LINK-1': 'FAIL',
-    'COLL-1': 'WARN'
+    'COLL-1': 'WARN',
+    'RUBRIC-1': 'FAIL'
   })
   expect(items.filter((item) => item.judgment)).toHaveLength(33)
   expect(items.filter((item) => item.judgment).every((item) => Boolean(item.judgment?.prompt.trim()))).toBe(true)
+  for (const item of items) {
+    if (item.mechanical) {
+      expect(item.mechanical.remediation.class).toBeDefined()
+      if (item.code !== 'RUBRIC-1') expect(item.mechanical.conform).toBeUndefined()
+    }
+    if (item.judgment) {
+      expect(item.judgment.scope).not.toBe('')
+      expect(item.judgment.outcomes.length).toBeGreaterThan(0)
+      expect(item.judgment.guidance).not.toBe('')
+    }
+  }
 })
 
 test('each family module exports one complete family', async () => {
-  expect(familyModules).toHaveLength(10)
+  expect(familyModules).toHaveLength(11)
   for (const file of familyModules) {
     const module = (await import(`./${file}`)) as Record<string, unknown>
     expect(Object.keys(module)).toHaveLength(1)
@@ -115,18 +130,24 @@ test('each family module exports one complete family', async () => {
 })
 
 test('the session creates stable per-agent subjects and one set subject', () => {
-  const session = catalogue.createSession({ mode: 'audit', repository: fixture(), userHome: tmpdir(), configuration: {} })
-  expect(session.subjects.map((subject) => subject.subject)).toEqual([
+  const session = catalogue.createSession({
+    mode: 'audit',
+    repository: fixture(),
+    userHome: tmpdir(),
+    configuration: {}
+  })
+  expect(session.subjects.slice(0, 3).map((subject) => subject.subject)).toEqual([
     'subagents/governance/reviewer.md',
     'subagents/writer.md',
     'subagents'
   ])
   for (const subject of session.subjects) expect(subject.context()).toBe(subject.context())
-  expect(session.subjects.at(-1)?.families).toEqual(['COLL'])
+  expect(session.subjects.at(-2)?.families).toEqual(['COLL'])
+  expect(session.subjects.at(-1)?.families).toEqual(['RUBRIC'])
   expect(session.proposal().writes).toEqual([])
 })
 
-test('filename alignment is item-owned, coalesced, and preserves surrounding bytes', () => {
+test('filename alignment remains a diagnostic author decision', () => {
   const repository = fixture()
   const session = catalogue.createSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
   const subject = session.subjects[0]
@@ -138,15 +159,9 @@ test('filename alignment is item-owned, coalesced, and preserves surrounding byt
   if (!family || !item) throw new Error('LAY-3 is missing')
   const context = family.selectContext(root)
   expect(item.mechanical?.audit.run(context)[0]?.status).toBe('VIOLATION')
-  item.mechanical?.conform?.run(context)
-  item.mechanical?.conform?.run(context)
-  expect(session.proposal().writes).toEqual([
-    {
-      path: 'subagents/governance/reviewer.md',
-      content:
-        '---\r\nname: reviewer\r\ndescription: "Reviews code" when review is requested.\r\nmodel: inherit\r\n---\r\n\r\nReview carefully.\r\n'
-    }
-  ])
+  expect(item.mechanical?.remediation?.class).toBe('diagnostic')
+  expect(item.mechanical?.conform).toBeUndefined()
+  expect(session.proposal().writes).toEqual([])
 })
 
 test('symlinked agent paths are refused without traversal or conform capability', () => {
@@ -162,7 +177,9 @@ test('symlinked agent paths are refused without traversal or conform capability'
   expect(context.file.agent).toBeNull()
   expect(context.file.requestNameAlignment).toBeUndefined()
   expect(
-    session.subjects.some((subject) => subject.subject?.includes('outside.md') && subject.context().file.agent?.name === 'outside')
+    session.subjects.some(
+      (subject) => subject.subject?.includes('outside.md') && subject.context().file.agent?.name === 'outside'
+    )
   ).toBe(false)
   expect(session.proposal().writes).toEqual([])
 })

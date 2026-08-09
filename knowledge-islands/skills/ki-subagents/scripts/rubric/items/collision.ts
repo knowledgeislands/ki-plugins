@@ -2,6 +2,12 @@ import type { AuditOutcome, RubricFamily, RubricItem } from '../../shared/rubric
 import type { AgentSetContext, AgentsRubricContext } from '../contexts/agents.ts'
 
 const STANDARD = 'standards-subagent-definitions.md'
+const REVIEW = {
+  scope: 'The target agent set and overlapping delegation signals.',
+  outcomes: ['conforming', 'gap', 'exclusion'] as const,
+  guidance:
+    'Revise reciprocal hand-offs through the responsible authors, record a gap, or record an explicit exclusion.'
+}
 const triggerPhrases = (description: string): string[] => {
   const phrases = new Set<string>()
   const expression = /"([^"]{2,})"/g
@@ -22,6 +28,10 @@ const COLLISION_ITEMS = [
     sources: [`${STANDARD}#13-cross-agent-collision`, 'HOUSE'],
     mechanical: {
       level: 'WARN',
+      remediation: {
+        class: 'diagnostic',
+        guidance: 'Correct quoted trigger phrases or reciprocal hand-offs through the responsible agent authors.'
+      },
       audit: {
         phase: 'INSPECT',
         run: (context: AgentSetContext) => {
@@ -29,7 +39,10 @@ const COLLISION_ITEMS = [
           const byPhrase = new Map<string, Set<string>>()
           for (const agent of context.agents)
             for (const phrase of triggerPhrases(agent.description ?? ''))
-              byPhrase.set(phrase, new Set([...(byPhrase.get(phrase) ?? []), agent.name ?? agent.file.split('/').at(-1) ?? agent.file]))
+              byPhrase.set(
+                phrase,
+                new Set([...(byPhrase.get(phrase) ?? []), agent.name ?? agent.file.split('/').at(-1) ?? agent.file])
+              )
           const shared = [...byPhrase.entries()].filter(([, agents]) => agents.size > 1)
           return shared.length > 0
             ? shared.map(
@@ -49,7 +62,9 @@ const COLLISION_ITEMS = [
     description: 'Agents that could take the same request name each other as off-ramps.',
     sources: [`${STANDARD}#13-cross-agent-collision`, 'HOUSE'],
     judgment: {
-      prompt: 'Where two agents could take one request, each names the other as the off-ramp; a one-directional guard is a half-fix.'
+      ...REVIEW,
+      prompt:
+        'Where two agents could take one request, each names the other as the off-ramp; a one-directional guard is a half-fix.'
     }
   }
 ] as const

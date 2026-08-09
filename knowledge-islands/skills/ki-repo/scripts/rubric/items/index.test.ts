@@ -6,6 +6,7 @@ describe('ki-repo rubric catalogue', () => {
     expect(definition.contract).toBe(1)
     expect(definition.name).toBe('ki-repo')
     expect(definition.families.map((family) => family.code)).toEqual([
+      'RUBRIC',
       'FILES',
       'GH',
       'PKG',
@@ -21,6 +22,7 @@ describe('ki-repo rubric catalogue', () => {
       'COV',
       'STRUCT',
       'ACCESS',
+      'KIND',
       'RUNTIMES',
       'DESCFIT',
       'OVR',

@@ -4,11 +4,16 @@ import { auditEvidence, type EvidenceRubricContext, type RepoRubricContext } fro
 const ACCESS_1: RubricItem<EvidenceRubricContext> = {
   code: 'ACCESS-1',
   title: 'GitHub access and archive state',
-  description: 'GitHub reachability is reported without manufacturing drift when offline, and archived repositories are skipped.',
+  description:
+    'GitHub reachability is reported without manufacturing drift when offline, and archived repositories are skipped.',
   sources: ['standards-repository.md'],
   mechanical: {
     level: 'WARN',
     overrideLevels: ['FAIL'],
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Restore GitHub access or record the repository archive state, then rerun the audit.'
+    },
     audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'WARN', ['FAIL']) }
   }
 }

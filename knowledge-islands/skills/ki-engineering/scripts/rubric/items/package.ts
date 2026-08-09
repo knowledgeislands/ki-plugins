@@ -21,6 +21,13 @@ const mechanical = (
   mechanical: {
     level,
     ...(options.overrideLevels ? { overrideLevels: options.overrideLevels } : {}),
+    remediation: options.conform
+      ? { class: 'automatic' }
+      : {
+          class: 'diagnostic',
+          guidance:
+            'Correct the package manifest structure or declare the missing ownership before rerunning the audit.'
+        },
     audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), level, options.overrideLevels) },
     ...(options.conform ? { conform: { phase: 'PRIMARY' as const, run: options.conform } } : {})
   }
@@ -61,7 +68,7 @@ export const PACKAGE: RubricFamily<EngineeringRubricContext, PackageRubricContex
     mechanical(
       'PKG-5',
       'Toolchain dependencies declared',
-      'The toolchain devDependencies `@biomejs/biome`, `knip`, `prettier`, `husky`, `lint-staged`, `markdownlint-cli2`, `syncpack`, and `typescript` are declared rather than implied.',
+      'The toolchain devDependencies `@biomejs/biome`, `knip`, `rumdl`, `husky`, `lint-staged`, `syncpack`, and `typescript` are declared rather than implied.',
       'FAIL',
       (context) => context.pkg5,
       { conform: synchronise }
@@ -69,7 +76,7 @@ export const PACKAGE: RubricFamily<EngineeringRubricContext, PackageRubricContex
     mechanical(
       'PKG-6',
       'Lint-staged fan-out',
-      '`lint-staged` is present and fans out to Biome on code and Prettier plus `markdownlint-cli2 --no-globs` on staged Markdown only.',
+      '`lint-staged` is present and fans out to Biome on staged code and `rumdl check --fix` on staged authored Markdown.',
       'FAIL',
       (context) => context.pkg6,
       { overrideLevels: ['WARN'], conform: synchronise }

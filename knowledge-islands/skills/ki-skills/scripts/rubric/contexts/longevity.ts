@@ -49,7 +49,9 @@ export const createRefreshContext = (sources: string | null, now = Date.now()): 
       ageDays: null
     }
 
-  const marker = sources.match(/^\*\*Refresh:\*\*\s*(external-spec|canonical)\s*·\s*(weekly|monthly|quarterly|on-change|\d+d)\s*$/m)
+  const marker = sources.match(
+    /^\*\*Refresh:\*\*\s*(external-spec|canonical)\s*·\s*(weekly|monthly|quarterly|on-change|\d+d)\s*$/m
+  )
   const parsedClass = (marker?.[1] as RefreshClass | undefined) ?? null
   const parsedCadence = marker?.[2] ?? null
   const parsedWindowDays =
