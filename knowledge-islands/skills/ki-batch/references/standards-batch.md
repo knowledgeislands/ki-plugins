@@ -30,8 +30,6 @@ Present the complete authorisation for review and require explicit approval befo
 
 An omitted field is not implied authority.
 
-`ki-agenda` may consume this approved record for one bounded agenda cycle. It preserves this record as the sole authority and ledger, applies every mandatory stop below, and leaves selection, readiness, closure, and pruning with their owning process skills.
-
 ## 2. Validate before implementation
 
 Resolve the approved authorisation and every named canonical work item afresh.
@@ -42,7 +40,13 @@ Reject an invalid item plainly rather than quietly omitting it.
 
 Stop the whole batch when its dependency order, authority, or completion target is no longer honest.
 
-## 3. Coordinate independent cycles
+## 3. Surface known questions
+
+Before starting the first record, collect every known missing decision, external dependency, conflict, or unavailable verification into one concise question set.
+
+Do not start a record whose answer can change its scope, public contract, repository boundary, safety treatment, or completion target. Record the named decision and dependency effect in the batch ledger.
+
+## 4. Run one bounded cycle
 
 Run named items in dependency order.
 
@@ -58,7 +62,7 @@ When an item is ambiguous or blocked, park it with the evidence, named decision 
 
 Continue only items proven independent of the parked item and within the authorisation.
 
-## 4. Review closure and recap
+## 5. Review closure and recap
 
 Records reach `awaiting-review` through `ki-implement`; the batch does not self-certify them.
 
@@ -69,6 +73,12 @@ Otherwise stop each record at awaiting-review for normal human review.
 After the run, produce a concise `ki-recap`-shaped record of delivered items, verification, decisions, parks, failures, deferred work, and proposed learning routes.
 
 Pruning is never implied by batch completion.
+
+## Controlled dry-run model
+
+`scripts/internal/batch-cycle.ts` exposes a pure `evaluateBatchCycle()` helper. Its focused fixture test proves that missing authority, a dirty tree, a failed gate, an unready item, an unsatisfied dependency, and an early decision produce a named no-write outcome.
+
+The model may report `coordinate` only for a clean, approved, same-repository set of named Ready items. It does not invoke any skill, run a command, write a file, or mutate an item.
 
 ## Mandatory stops
 

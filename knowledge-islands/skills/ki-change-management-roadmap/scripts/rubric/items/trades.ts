@@ -7,7 +7,7 @@ const TRADE_1: RubricItem<RoadmapAuditContext> = {
   code: 'TRADE-1',
   title: 'trade review',
   description:
-    'Where declared ki-repo-trades records exist, report structural guidance and proposed local roadmap action without setting disposition, inferring adoption, prioritizing work, pruning records, or changing remote state.',
+    'Where declared ki-trades records exist, report structural guidance and proposed local roadmap action without setting disposition, inferring adoption, prioritizing work, pruning records, or changing remote state.',
   sources: [SOURCE],
   judgment: {
     scope: 'Declared inbound and outbound trade records in the local repository.',

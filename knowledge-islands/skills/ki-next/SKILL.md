@@ -3,7 +3,7 @@ name: ki-next
 ki-kind: process
 ki-depends-on: []
 description: >
-  Selects, captures, promotes, defers, and spawns the next work through one shared queue: now, next, soon, future, waiting-for, and parked. It also records the receiver's confirmed disposition of validated inbound trades, including direct application of a trivial local work change versus a separately prioritised work record. Use when asked "what should we do next", "review these inbound trades", "apply this trade directly", "promote this work", or "defer this". It applies the transition rules owned by ki-change-management-roadmap and the ki-repo-kb-streams adapter; local trade transport belongs to ki-repo-trade.
+  Selects, captures, promotes, defers, and spawns the next work through one shared queue: now, next, soon, future, waiting-for, and parked. It also records the receiver's confirmed disposition of validated inbound trades, including direct application of a trivial local work change versus a separately prioritised work record. Use when asked "what should we do next", "review these inbound trades", "apply this trade directly", "promote this work", or "defer this". It applies the transition rules owned by ki-change-management-roadmap and the ki-repo-kb-streams adapter; local trade transport belongs to ki-trade.
 argument-hint: 'next [--review] | defer <item> <horizon-or-focus> | help'
 ---
 
@@ -17,7 +17,7 @@ The full procedure is in [the next-work standard](references/standards-next-work
 
 ## What this skill does
 
-1. **Ground** the generated repository roadmap index and canonical work items, or Streams Focus and proposal index, plus active `ki-change-management-housekeeping` templates and any inbound records validated by declared `ki-repo-trades` governance.
+1. **Ground** the generated repository roadmap index and canonical work items, or Streams Focus and proposal index, plus active `ki-change-management-housekeeping` templates and any inbound records validated by declared `ki-trades` governance.
 2. **Triage** incoming submissions through an exact human-confirmed receiver disposition, including the proportionate direct-application gate for a work trade, without treating adoption as roadmap authority.
 3. **Review** relevance when asked or when a material stale signal is evident.
 4. **Screen for synergy** across dependency-ready candidates: propose a batch only when the items share a bounded delivery advantage and remain independently executable. A shared theme alone is not enough.
@@ -35,7 +35,7 @@ ki-recap (optional current-session context)
               ├─> ki-implement (one Ready item through Awaiting review)
               │     └─> ki-accept (Awaiting review through Done)
               └─> ki-batch (confirmed independent, synergistic Ready set)
-                    └─> ki-agenda (one fresh-grounded cycle under an approved authorisation)
+                    └─> one fresh-grounded authorised cycle
                           └─> ki-implement (each named Ready item through Awaiting review)
 
 ki-change-management-roadmap governs the shared forward-work contract and the non-KB adapter.
@@ -52,9 +52,9 @@ Selection is itself a compaction boundary. Once the selected work and its confir
 
 `ki-batch` prepares and coordinates an explicitly authorised independent Ready set. It does not change `ki-next` ownership of selection, priority, or an individual item's lifecycle.
 
-`ki-agenda` may run one bounded cycle from that approved batch authority. It asks known questions before delivery and retains the same selection, readiness, acceptance, pruning, push, release, and repository-boundary stops.
+`ki-batch` runs one bounded cycle from that approved authority. It asks known questions before delivery and retains the same selection, readiness, acceptance, pruning, push, release, and repository-boundary stops.
 
-`ki-repo-trade` prepares, submits, receives, releases, and prunes local trade records. It hands a validated received record to `ki-next`; it never chooses the receiver's disposition.
+`ki-trade` prepares, submits, receives, releases, and prunes local trade records. It hands a validated received record to `ki-next`; it never chooses the receiver's disposition.
 
 The process skills are global invocation surfaces, not `.ki-config.toml` governance roots.
 

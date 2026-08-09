@@ -59,7 +59,7 @@ A bare name binds to exactly one provider, resolved against the declared `harnes
 - No declared harness provides it → an error naming the skill and the declared list.
 - More than one provides it → an error requiring explicit qualification.
 
-Declaring a skill is separate from configuring it. `[skills.ki-repo-trades]` with no keys is a marker; a skill is never declared as a side effect of one of its sub-tables. State the root table explicitly even where TOML would create it implicitly, so a declaration never depends on whether the skill happens to carry configuration.
+Declaring a skill is separate from configuring it. `[skills.ki-trades]` with no keys is a marker; a skill is never declared as a side effect of one of its sub-tables. State the root table explicitly even where TOML would create it implicitly, so a declaration never depends on whether the skill happens to carry configuration.
 
 ### The out-of-list exception
 
@@ -135,7 +135,7 @@ The detection signals `ki-repo` uses (one recursive tree read + `package.json`):
 | `ki-repo-homebrew-tap` | `Formula/*.rb` | `[skills.ki-repo-homebrew-tap]` |
 | `ki-skills` | `skills/*/SKILL.md` | `[skills.ki-skills]` |
 | `ki-subagents` | `subagents/**/*.md` | `[skills.ki-subagents]` |
-| `ki-repo-checkpoints` | `+/_CHECKPOINTS/` subarea | `[skills.ki-repo-checkpoints]` |
+| `ki-checkpoint` | `+/_CHECKPOINTS/` subarea | `[skills.ki-checkpoint]` |
 
 This is the **one place** `ki-repo` reads across skill tables — and it reads only table **presence**, never another skill's keys (_validate down, ignore across_ still governs table _contents_). It is an **audit-time enforcement** run by `repo`'s auditor, not behaviour baked into the regular use of each skill. A repo opts out of a single signal it doesn't want enforced with a `coverage-<skill> = false` entry in its `[skills.ki-repo.checks]` table (e.g. a repo that vendors an `eleventy.config` it does not own) — reported as an acknowledged note.
 

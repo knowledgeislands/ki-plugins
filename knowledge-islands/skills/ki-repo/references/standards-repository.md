@@ -85,7 +85,7 @@ Every KI repository carries this fixed working-area scaffold:
 
 `+/` is inbound: temporary material received from another repository or external source that needs local triage. `-/` is outbound: temporary material prepared here for another repository or external recipient. Neither is a canonical roadmap, plan, decision-record collection, archive, or automatic transfer channel. The two generic README files are canonical direction and boundary orientation owned by `ki-repo`; AUDIT checks them and CONFORM creates or restores their exact text. The generic directories and README files remain present whether or not another capability defines a subarea.
 
-`ki-repo-trades` owns the optional `_TRADES` subdirectories, their README files, cross-repository records, reciprocal routes, and submission lifecycle only in a repository that declares that skill. `ki-repo` neither creates nor interprets those subdirectories. Knowledge Bases retain their own fixed `+/` and `-/` staging model under `ki-repo-kb`; a declared `ki-repo-trades` capability remains the separate owner of repository-level cross-repository submissions.
+`ki-trades` owns the optional `_TRADES` subdirectories, their README files, cross-repository records, reciprocal routes, and submission lifecycle only in a repository that declares that skill. `ki-repo` neither creates nor interprets those subdirectories. Knowledge Bases retain their own fixed `+/` and `-/` staging model under `ki-repo-kb`; a declared `ki-trades` capability remains the separate owner of repository-level cross-repository submissions.
 
 ## Layer 2 — core GitHub settings
 

@@ -89,7 +89,7 @@ trim_trailing_whitespace = false
 `
 
 // Trade records are formatted like any other Markdown. Their integrity is proven by the
-// ki-repo-trades AUTH-1 comparison against the sender's copy, which is insensitive to formatting
+// ki-trades AUTH-1 comparison against the sender's copy, which is insensitive to formatting
 // and sensitive to meaning — an exclusion list only avoided touching them and never checked
 // them, and it never covered Biome at all.
 

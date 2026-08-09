@@ -4,8 +4,8 @@ ki-kind: process
 ki-depends-on: []
 ki-optional-depends-on: [ki-delegation]
 description: >
-  Prepares and coordinates an explicitly authorised batch of independent work records in either repository adapter: plan the named candidates up front, then use bounded parallel delivery where it is safe. A process skill: it does not select work, reshape plans, bypass lifecycle gates, infer closure, prune, push, release, or introduce a tracker. Use when asked to "prepare a work batch", "run this approved batch", "coordinate several ready work items", or "record a batch run". For selection use ki-next; plan shape use ki-plan; single-item delivery use ki-implement; closure use ki-accept.
-argument-hint: 'batch <work>... | implement <batch-authorisation> | help'
+  Prepares and runs an explicitly authorised batch of independent work records in either repository adapter: plan the named candidates up front, then execute one fresh-grounded, bounded cycle where it is safe. A process skill: it does not select work, reshape plans, bypass lifecycle gates, infer closure, prune, push, release, or introduce a tracker. Use when asked to "prepare a work batch", "run this approved batch", "run the agenda", "coordinate several ready work items", or "record a batch run". For selection use ki-next; plan shape use ki-plan; single-item delivery use ki-implement; closure use ki-accept.
+argument-hint: 'batch <work>... | run <batch-authorisation> | help'
 ---
 
 # ki-batch
@@ -14,7 +14,7 @@ argument-hint: 'batch <work>... | implement <batch-authorisation> | help'
 
 Coordinates a reviewed, explicitly authorised set of independent implementation cycles.
 
-Read [the batch procedure](references/standards-batch.md) before acting, [the authorisation example](references/exemplars.md) when preparing a record, and [the source notes](references/sources.md) only for their bounded ideas.
+Read [the batch procedure](references/standards-batch.md) before acting, [the authorisation example](references/exemplars.md) when preparing a record, and [the source notes](references/sources.md) only for their bounded ideas. Read `scripts/internal/batch-cycle.ts` only when validating the controlled no-write fixture model.
 
 ## What this skill does
 
@@ -30,7 +30,7 @@ The phase produces a reviewed batch authorisation that names exactly what may ru
 
 ### Implementation
 
-Under that authorisation, coordinate repeated independent `ki-implement` cycles in dependency order.
+Under that authorisation, re-ground the repository and named records, surface known questions before delivery, then coordinate one bounded cycle of independent `ki-implement` cycles in dependency order.
 
 Every record retains its own `ready` → `in-progress` → `awaiting-review` lifecycle, baseline, verification, and review packet.
 
@@ -39,8 +39,6 @@ Park ambiguity rather than resolving it by inference, then record a per-item led
 `ki-accept` remains the only closure owner.
 
 `ki-batch` may request batched closure only when the authorisation expressly grants it for named records.
-
-`ki-agenda` may run one bounded cycle from the same approved authorisation. It adds fresh grounding and early-question handling; it neither broadens the batch nor replaces this skill's authorisation and ledger contract.
 
 Pruning always requires separate explicit destructive authority.
 
@@ -66,7 +64,7 @@ This skill coordinates these siblings; it does not duplicate their procedures or
 
 `batch <work>...` prepares only the named candidates through the normal shared cycle: shape every draft to Ready, decide whether safe parallel lanes exist, and produce a reviewed proposed authorisation. When `ki-delegation` is active, read its packet standard before creating a durable delegation packet.
 
-`implement <batch-authorisation>` validates one approved authorisation and coordinates its named items in dependency order.
+`run <batch-authorisation>` validates one approved authorisation, fresh repository state, and named work records; reports known questions before delivery; then coordinates one bounded cycle in dependency order. It never treats a clean gate, silence, or an unreviewed draft as authority.
 
 With no target, identify whether a candidate set or an approved authorisation is required and stop.
 

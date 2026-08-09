@@ -437,10 +437,10 @@ describe('local repository evidence', () => {
 
     const findings = (await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')
     expect(findings).toContainEqual(
-      expect.objectContaining({ message: expect.stringContaining('looks governed by ki-repo-checkpoints') })
+      expect.objectContaining({ message: expect.stringContaining('looks governed by ki-checkpoint') })
     )
 
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\n\n[skills.ki-repo-checkpoints]\n')
+    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\n\n[skills.ki-checkpoint]\n')
     expect((await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')).toEqual([])
   })
 

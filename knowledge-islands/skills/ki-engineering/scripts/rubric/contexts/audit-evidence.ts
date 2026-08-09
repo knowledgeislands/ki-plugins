@@ -239,7 +239,7 @@ export const collectAuditEvidence = async (
     // rumdl resolves its own scope from .rumdl.toml, so a staged invocation needs no
     // flag to suppress a repository-wide glob the way markdownlint-cli2 did.
     const stagedMarkdownOnly = ls.includes('rumdl check --fix')
-    // Trade records are no longer excluded from formatting: ki-repo-trades AUTH-1 proves their
+    // Trade records are no longer excluded from formatting: ki-trades AUTH-1 proves their
     // integrity by comparing meaning against the sender's copy, so the boundary is a check
     // rather than an exclusion list.
     fanOut && stagedMarkdownOnly

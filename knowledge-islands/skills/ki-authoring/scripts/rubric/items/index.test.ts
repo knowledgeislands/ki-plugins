@@ -117,7 +117,7 @@ test('trade records are normalized like any other authored Markdown', () => {
   )
   const context = session.subjects[1]?.context()
 
-  // ki-repo-trades AUTH-1 compares a record's meaning against the sender's copy, so formatting
+  // ki-trades AUTH-1 compares a record's meaning against the sender's copy, so formatting
   // one is safe and no longer needs an exclusion that never covered Biome anyway.
   expect(context?.markdown.frontmatter.files.map((file) => file.path)).toEqual([
     '+/_TRADES/README.md',

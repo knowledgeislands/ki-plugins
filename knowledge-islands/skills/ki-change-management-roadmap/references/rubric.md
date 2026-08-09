@@ -132,7 +132,7 @@ Regular-file boundaries and host-owned transactional publication.
 
 Read-only judgment guidance for declared cross-repository trade submissions.
 
-- **TRADE-1 [J] — trade review** — Where declared ki-repo-trades records exist, report structural guidance and proposed local roadmap action without setting disposition, inferring adoption, prioritizing work, pruning records, or changing remote state. (standards-repository-roadmaps.md)
+- **TRADE-1 [J] — trade review** — Where declared ki-trades records exist, report structural guidance and proposed local roadmap action without setting disposition, inferring adoption, prioritizing work, pruning records, or changing remote state. (standards-repository-roadmaps.md)
   - _Evidence scope:_ Declared inbound and outbound trade records in the local repository.
   - _Review prompt:_ Inspect declared trade records read-only: identify submissions needing receiver review or a separately confirmed local roadmap proposal and outbound progress needing follow-up; report proposals only.
   - _Outcomes:_ conforming; proposal; exclusion
