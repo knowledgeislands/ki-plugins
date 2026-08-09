@@ -26,13 +26,13 @@ const options = (root: string, mode: 'audit' | 'conform'): RubricContextOptions 
   configuration: {}
 })
 
-const proposal = (title: string, code?: string): string => `---
+const proposal = (title: string, id?: string): string => `---
 title: ${title}
 type: stream-proposal
 status: draft - working
 priority: high (raised)
 dependencies: []
-${code === undefined ? '' : `code: ${code}\n`}---
+${id === undefined ? '' : `id: ${id}\n`}---
 # ${title}
 `
 
@@ -46,8 +46,16 @@ const streamsFixture = (): { root: string; files: string[] } => {
     join(root, 'Streams', 'Now', 'Alpha Proposal', 'Alpha Proposal.md'),
     join(root, 'Streams', 'Future', 'Beta Proposal', 'Beta Proposal.md')
   ]
-  writeFileSync(files[0] as string, proposal('Alpha Proposal', 'KBS-001'))
-  writeFileSync(files[1] as string, proposal('Beta Proposal', 'KBS-002'))
+  writeFileSync(files[0] as string, proposal('Alpha Proposal', 'KBS-STR-001'))
+  writeFileSync(files[1] as string, proposal('Beta Proposal', 'KBS-STR-002'))
+  writeFileSync(
+    join(root, '.ki-config.toml'),
+    '[skills.ki-repo]\nrepo_code = "KBS"\n\n[skills.ki-repo-kb-streams.areas]\nSTR = "streams"\n'
+  )
+  writeFileSync(
+    join(root, 'Streams', '_ISSUES.md'),
+    '---\nareas: { STR: 2 }\n---\n\n# Streams issue ledger\n\n- `STR` reserves through `002`.\n'
+  )
   writeFileSync(join(root, 'AGENTS.md'), 'Canonical changes use a proposal governed by ki-repo-kb-streams.\n')
   return { root, files }
 }
@@ -58,9 +66,18 @@ const rootContext = (session: ReturnType<typeof createStreamsSession>) => {
   return subject.context()
 }
 
-const proposalCodes = (session: ReturnType<typeof createStreamsSession>) => {
+const proposalIds = (session: ReturnType<typeof createStreamsSession>) => {
   const item = ENACT.items.find((candidate) => candidate.code === 'ENACT-6')
   if (!item?.mechanical) throw new Error('ENACT-6 mechanical audit is unavailable')
+  return {
+    item,
+    outcomes: item.mechanical.audit.run(ENACT.selectContext(rootContext(session)))
+  }
+}
+
+const issueLedger = (session: ReturnType<typeof createStreamsSession>) => {
+  const item = ENACT.items.find((candidate) => candidate.code === 'ENACT-7')
+  if (!item?.mechanical) throw new Error('ENACT-7 mechanical audit is unavailable')
   return {
     item,
     outcomes: item.mechanical.audit.run(ENACT.selectContext(rootContext(session)))
@@ -129,66 +146,83 @@ describe('ki-repo-kb-streams session', () => {
     )
   })
 
-  test('passes explicit valid proposal codes without a conform identity write', () => {
+  test('passes explicit valid proposal identifiers without a conform identity write', () => {
     const { root } = streamsFixture()
     const session = createStreamsSession(options(root, 'conform'))
-    const { item, outcomes } = proposalCodes(session)
+    const { item, outcomes } = proposalIds(session)
 
     expect(item.mechanical?.level).toBe('FAIL')
     expect(outcomes).toEqual([
       {
         status: 'PASS',
-        message: 'Proposal codes are present, well-formed, and unique across the Knowledge Base.'
+        message: 'Proposal identifiers are present, configured, and unique across the Knowledge Base.'
       }
     ])
     expect(item.mechanical?.conform).toBeUndefined()
     expect(session.proposal()).toEqual({ writes: [] })
   })
 
-  test('fails missing proposal codes without inventing an identity', () => {
+  test('fails missing proposal identifiers without inventing an identity', () => {
     const { root, files } = streamsFixture()
     writeFileSync(files[0] as string, proposal('Alpha Proposal'))
     const session = createStreamsSession(options(root, 'conform'))
-    const { item, outcomes } = proposalCodes(session)
+    const { item, outcomes } = proposalIds(session)
 
     expect(item.mechanical?.level).toBe('FAIL')
     expect(outcomes).toEqual([
       {
         status: 'VIOLATION',
-        message: 'Missing proposal code: Streams/Now/Alpha Proposal/Alpha Proposal.md.'
+        message: 'Missing proposal id: Streams/Now/Alpha Proposal/Alpha Proposal.md.'
       }
     ])
     expect(session.proposal()).toEqual({ writes: [] })
   })
 
-  test('fails malformed proposal codes without rewriting an identity', () => {
+  test('fails malformed proposal identifiers without rewriting an identity', () => {
     const { root, files } = streamsFixture()
-    writeFileSync(files[0] as string, proposal('Alpha Proposal', 'kbs-000'))
+    writeFileSync(files[0] as string, proposal('Alpha Proposal', 'kbs-str-000'))
     const session = createStreamsSession(options(root, 'conform'))
-    const { item, outcomes } = proposalCodes(session)
+    const { item, outcomes } = proposalIds(session)
 
     expect(item.mechanical?.level).toBe('FAIL')
     expect(outcomes).toEqual([
       {
         status: 'VIOLATION',
-        message: 'Malformed proposal code: Streams/Now/Alpha Proposal/Alpha Proposal.md (kbs-000).'
+        message: 'Malformed proposal id: Streams/Now/Alpha Proposal/Alpha Proposal.md (kbs-str-000).'
       }
     ])
     expect(session.proposal()).toEqual({ writes: [] })
   })
 
-  test('fails a duplicate code across Focus folders without renumbering either proposal', () => {
+  test('fails a duplicate identifier across Focus folders without renumbering either proposal', () => {
     const { root, files } = streamsFixture()
-    writeFileSync(files[1] as string, proposal('Beta Proposal', 'KBS-001'))
+    writeFileSync(files[1] as string, proposal('Beta Proposal', 'KBS-STR-001'))
     const session = createStreamsSession(options(root, 'conform'))
-    const { item, outcomes } = proposalCodes(session)
+    const { item, outcomes } = proposalIds(session)
 
     expect(item.mechanical?.level).toBe('FAIL')
     expect(outcomes).toEqual([
       {
         status: 'VIOLATION',
         message:
-          'Duplicate proposal code: KBS-001 (Streams/Now/Alpha Proposal/Alpha Proposal.md, Streams/Future/Beta Proposal/Beta Proposal.md).'
+          'Duplicate proposal id: KBS-STR-001 (Streams/Now/Alpha Proposal/Alpha Proposal.md, Streams/Future/Beta Proposal/Beta Proposal.md).'
+      }
+    ])
+    expect(session.proposal()).toEqual({ writes: [] })
+  })
+
+  test('fails a missing issue ledger without inventing allocation state', () => {
+    const { root } = streamsFixture()
+    rmSync(join(root, 'Streams', '_ISSUES.md'))
+    const session = createStreamsSession(options(root, 'conform'))
+    const { item, outcomes } = issueLedger(session)
+
+    expect(item.mechanical?.level).toBe('FAIL')
+    expect(outcomes).toEqual([
+      {
+        status: 'VIOLATION',
+        message: 'Missing or malformed Streams/_ISSUES.md.',
+        subject: 'Streams/_ISSUES.md'
       }
     ])
     expect(session.proposal()).toEqual({ writes: [] })

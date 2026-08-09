@@ -71,8 +71,10 @@ Proposal frontmatter, lifecycle, and settlement.
   - _Review prompt:_ Do done proposals retain their review evidence and canonical outputs until an explicit prune selection?
   - _Outcomes:_ conforming; retain evidence; explicit prune selection required
   - _Conforming guidance:_ Restore or retain the reviewed evidence and canonical outputs until an explicit owner-approved prune selection names the proposal.
-- **ENACT-6 [M] — proposal codes** — Each proposal declares a well-formed code unique across the Knowledge Base. (standards-enactment-process.md)
-  - _Remediation:_ diagnostic — Assign an explicit owner-approved code, or resolve the duplicate without deriving, allocating, renumbering, or rewriting a proposal identity.
+- **ENACT-6 [M] — proposal identifiers** — Each proposal declares a configured repository, area, and serial identifier unique across the Knowledge Base. (standards-enactment-process.md)
+  - _Remediation:_ diagnostic — Assign an explicit owner-approved identifier, or resolve the duplicate without deriving, allocating, renumbering, or rewriting a proposal identity.
+- **ENACT-7 [M] — Streams issue ledger** — Streams/_ISSUES.md preserves each configured issuing area’s high-water mark. (standards-enactment-process.md)
+  - _Remediation:_ diagnostic — Restore the configured Streams issue ledger and raise any area high-water mark to cover every retained proposal without reusing or renumbering an identity.
 
 ## GATE — always-loaded gate
 
@@ -94,7 +96,7 @@ The canonical-change gate anchor.
 
 The skill-owned ki-repo-kb-streams table.
 
-- **CONFIG-1 [M] — known Streams configuration** — Only process_note and note_type_scheme are recognised under ki-repo-kb-streams. (standards-enactment-process.md)
+- **CONFIG-1 [M] — known Streams configuration** — Only process_note, note_type_scheme, and areas are recognised under ki-repo-kb-streams. (standards-enactment-process.md)
   - _Remediation:_ diagnostic — Remove or document unsupported configuration keys after confirming the Streams behaviour they were intended to express.
 - **CONFIG-2 [M] — note type scheme** — note_type_scheme is type or tags when declared. (standards-enactment-process.md)
   - _Remediation:_ diagnostic — Use the documented `type` or `tags` scheme, or record the governing decision for a different note classification.

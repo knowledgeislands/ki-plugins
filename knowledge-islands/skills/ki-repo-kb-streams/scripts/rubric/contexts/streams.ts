@@ -16,7 +16,7 @@ const PRIORITY = ['urgent', 'high', 'medium', 'low'] as const
 const SUFFIX = ' Proposal'
 const STREAMS_TABLE = 'ki-repo-kb-streams'
 const KB_TABLE = 'ki-repo-kb'
-const STREAM_CODE = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[0-9]{3,}$/
+const ISSUE_LEDGER = '_ISSUES.md'
 
 export type StreamsEvidence = {
   level: 'FAIL' | 'WARN' | 'INFO' | 'NOT_APPLICABLE' | 'PASS'
@@ -33,7 +33,8 @@ export type StreamRubricContext = {
 export type EnactmentRubricContext = {
   proposalFrontmatter: readonly StreamsEvidence[]
   lifecycle: readonly StreamsEvidence[]
-  proposalCodes: readonly StreamsEvidence[]
+  proposalIds: readonly StreamsEvidence[]
+  issueLedger: readonly StreamsEvidence[]
   normaliseLifecycle?: () => void
 }
 
@@ -63,6 +64,8 @@ type StreamsConfiguration = {
   keys: Record<string, string>
   ownKeys: readonly string[]
   streams: string
+  repoCode: string
+  areas: ReadonlyMap<string, string>
 }
 
 type MarkdownDocument = {
@@ -124,7 +127,11 @@ const parseConfiguration = (text: string): StreamsConfiguration => {
     const kb = (document.skills as Record<string, unknown> | undefined)?.[KB_TABLE] as
       | Record<string, unknown>
       | undefined
+    const repo = (document.skills as Record<string, unknown> | undefined)?.['ki-repo'] as
+      | Record<string, unknown>
+      | undefined
     const zones = kb?.zones as Record<string, unknown> | undefined
+    const areas = own?.areas as Record<string, unknown> | undefined
     return {
       keys: Object.fromEntries(
         Object.entries(own ?? {})
@@ -132,10 +139,16 @@ const parseConfiguration = (text: string): StreamsConfiguration => {
           .map(([key, value]) => [key, String(value)])
       ),
       ownKeys: Object.keys(own ?? {}),
-      streams: typeof zones?.Streams === 'string' ? zones.Streams : 'Streams'
+      streams: typeof zones?.Streams === 'string' ? zones.Streams : 'Streams',
+      repoCode: typeof repo?.repo_code === 'string' ? repo.repo_code : '',
+      areas: new Map(
+        Object.entries(areas ?? {})
+          .filter(([area, theme]) => /^[A-Z][A-Z0-9]*$/.test(area) && typeof theme === 'string')
+          .map(([area, theme]) => [area, theme as string])
+      )
     }
   } catch {
-    return { keys: {}, ownKeys: [], streams: 'Streams' }
+    return { keys: {}, ownKeys: [], streams: 'Streams', repoCode: '', areas: new Map() }
   }
 }
 
@@ -165,9 +178,31 @@ const bareToken = (value: string, vocabulary: readonly string[]): string | undef
     ? undefined
     : vocabulary.find((token) => value.startsWith(token) && /[\s,;.()-]/.test(value.charAt(token.length)))
 
-const validStreamCode = (value: string): boolean => {
-  if (!STREAM_CODE.test(value)) return false
-  return /[1-9]/.test(value.slice(value.lastIndexOf('-') + 1))
+const streamIdentity = (
+  value: string,
+  repositoryCode: string,
+  areas: ReadonlyMap<string, string>
+): { area: string; serial: number } | undefined => {
+  if (!repositoryCode || areas.size === 0) return undefined
+  const match = value.match(new RegExp(`^${escapeRegularExpression(repositoryCode)}-([A-Z][A-Z0-9]*)-([0-9]{3,})$`))
+  if (!match) return undefined
+  const area = match[1] as string
+  const serial = Number.parseInt(match[2] as string, 10)
+  return areas.has(area) && Number.isSafeInteger(serial) && serial > 0 ? { area, serial } : undefined
+}
+
+const ledgerAllocation = (text: string): ReadonlyMap<string, number> | undefined => {
+  const matched = text.match(/^---\r?\nareas:\s*\{\s*(.*?)\s*}\s*\r?\n---\r?\n/)
+  if (!matched) return undefined
+  const allocation = new Map<string, number>()
+  for (const entry of (matched[1] as string).split(',')) {
+    const pair = entry.trim().match(/^([A-Z][A-Z0-9]*):\s*(\d+)$/)
+    if (!pair) return undefined
+    const value = Number.parseInt(pair[2] as string, 10)
+    if (!Number.isSafeInteger(value) || value < 0 || allocation.has(pair[1] as string)) return undefined
+    allocation.set(pair[1] as string, value)
+  }
+  return allocation
 }
 
 const proposalDocument = (document: MarkdownDocument): boolean => {
@@ -209,7 +244,12 @@ const unavailableContext = (
   return {
     rubric: { publication },
     stream: { focusFolders: [evidence], focusIndexes: notApplicable, proposalSuffix: notApplicable },
-    enactment: { proposalFrontmatter: notApplicable, lifecycle: notApplicable, proposalCodes: notApplicable },
+    enactment: {
+      proposalFrontmatter: notApplicable,
+      lifecycle: notApplicable,
+      proposalIds: notApplicable,
+      issueLedger: notApplicable
+    },
     gate: { anchor: notApplicable },
     config: { knownKeys: notApplicable, noteTypeScheme: notApplicable }
   }
@@ -307,9 +347,10 @@ export const createStreamsSession = ({
   const missing: string[] = []
   const badStatus: string[] = []
   const badPriority: string[] = []
-  const missingCodes: string[] = []
-  const malformedCodes: string[] = []
-  const codePaths = new Map<string, string[]>()
+  const missingIds: string[] = []
+  const malformedIds: string[] = []
+  const idPaths = new Map<string, string[]>()
+  const highestIssued = new Map<string, number>()
   for (const document of proposals) {
     const frontmatter = document.frontmatter
     if (!frontmatter?.closed) {
@@ -322,14 +363,20 @@ export const createStreamsSession = ({
       badStatus.push(document.relativePath)
     if (frontmatter.values.priority && !PRIORITY.includes(frontmatter.values.priority as (typeof PRIORITY)[number]))
       badPriority.push(document.relativePath)
-    const code = frontmatter.values.code
-    if (!code) missingCodes.push(document.relativePath)
-    else if (!validStreamCode(code)) malformedCodes.push(`${document.relativePath} (${code})`)
-    else codePaths.set(code, [...(codePaths.get(code) ?? []), document.relativePath])
+    const id = frontmatter.values.id
+    if (!id) missingIds.push(document.relativePath)
+    else {
+      const identity = streamIdentity(id, configuration.repoCode, configuration.areas)
+      if (!identity) malformedIds.push(`${document.relativePath} (${id})`)
+      else {
+        idPaths.set(id, [...(idPaths.get(id) ?? []), document.relativePath])
+        highestIssued.set(identity.area, Math.max(highestIssued.get(identity.area) ?? 0, identity.serial))
+      }
+    }
   }
-  const duplicateCodes = [...codePaths.entries()]
+  const duplicateIds = [...idPaths.entries()]
     .filter(([, paths]) => paths.length > 1)
-    .map(([code, paths]) => `${code} (${paths.join(', ')})`)
+    .map(([id, paths]) => `${id} (${paths.join(', ')})`)
   const proposalFrontmatter: StreamsEvidence[] = [
     {
       level: malformed.length ? 'FAIL' : missing.length ? 'WARN' : proposals.length ? 'PASS' : 'NOT_APPLICABLE',
@@ -353,24 +400,54 @@ export const createStreamsSession = ({
             : 'No full proposals are present.'
     }
   ]
-  const proposalCodes: StreamsEvidence[] = [
+  const proposalIds: StreamsEvidence[] = [
     {
       level:
-        missingCodes.length || malformedCodes.length || duplicateCodes.length
+        missingIds.length || malformedIds.length || duplicateIds.length
           ? 'FAIL'
           : proposals.length
             ? 'PASS'
             : 'NOT_APPLICABLE',
       message:
-        missingCodes.length || malformedCodes.length || duplicateCodes.length
+        missingIds.length || malformedIds.length || duplicateIds.length
           ? [
-              ...(missingCodes.length ? [`Missing proposal code: ${sample(missingCodes)}.`] : []),
-              ...(malformedCodes.length ? [`Malformed proposal code: ${sample(malformedCodes)}.`] : []),
-              ...(duplicateCodes.length ? [`Duplicate proposal code: ${sample(duplicateCodes)}.`] : [])
+              ...(missingIds.length ? [`Missing proposal id: ${sample(missingIds)}.`] : []),
+              ...(malformedIds.length ? [`Malformed proposal id: ${sample(malformedIds)}.`] : []),
+              ...(duplicateIds.length ? [`Duplicate proposal id: ${sample(duplicateIds)}.`] : [])
             ].join(' ')
           : proposals.length
-            ? 'Proposal codes are present, well-formed, and unique across the Knowledge Base.'
+            ? 'Proposal identifiers are present, configured, and unique across the Knowledge Base.'
             : 'No full proposals are present.'
+    }
+  ]
+  const ledgerPath = join(streamsPath, ISSUE_LEDGER)
+  const allocation = regularFile(ledgerPath) ? ledgerAllocation(readFileSync(ledgerPath, 'utf8')) : undefined
+  const missingAreas = [...configuration.areas.keys()].filter((area) => allocation?.get(area) === undefined)
+  const unknownAreas = [...(allocation?.keys() ?? [])].filter((area) => !configuration.areas.has(area))
+  const lowWater = [...highestIssued.entries()].filter(([area, serial]) => (allocation?.get(area) ?? -1) < serial)
+  const issueLedger: StreamsEvidence[] = [
+    {
+      level:
+        !configuration.repoCode ||
+        configuration.areas.size === 0 ||
+        !allocation ||
+        missingAreas.length ||
+        unknownAreas.length ||
+        lowWater.length
+          ? 'FAIL'
+          : 'PASS',
+      message: !configuration.repoCode
+        ? 'Missing ki-repo repo_code for Streams identifier allocation.'
+        : configuration.areas.size === 0
+          ? 'Missing ki-repo-kb-streams fixed issuing areas.'
+          : !allocation
+            ? `Missing or malformed ${configuration.streams}/${ISSUE_LEDGER}.`
+            : missingAreas.length || unknownAreas.length
+              ? `Streams ledger areas differ from configuration: missing ${missingAreas.join(', ') || 'none'}; unknown ${unknownAreas.join(', ') || 'none'}.`
+              : lowWater.length
+                ? `Streams ledger is below retained identifiers: ${lowWater.map(([area, serial]) => `${area} ${serial}`).join(', ')}.`
+                : 'Streams issue ledger reserves every configured issuing area through its high-water mark.',
+      subject: `${configuration.streams}/${ISSUE_LEDGER}`
     }
   ]
   const anchorFiles = ['CLAUDE.md', 'AGENTS.md'].filter((name) => regularFile(join(root, name)))
@@ -390,7 +467,9 @@ export const createStreamsSession = ({
       ...(anchorFiles.length ? { subject: anchorFiles.join(', ') } : {})
     }
   ]
-  const unknownKeys = configuration.ownKeys.filter((key) => !['process_note', 'note_type_scheme'].includes(key))
+  const unknownKeys = configuration.ownKeys.filter(
+    (key) => !['process_note', 'note_type_scheme', 'areas'].includes(key)
+  )
   const knownKeys: StreamsEvidence[] = [
     {
       level: unknownKeys.length ? 'WARN' : 'PASS',
@@ -418,7 +497,8 @@ export const createStreamsSession = ({
     enactment: {
       proposalFrontmatter,
       lifecycle,
-      proposalCodes,
+      proposalIds,
+      issueLedger,
       ...(mutable
         ? {
             normaliseLifecycle: () => {

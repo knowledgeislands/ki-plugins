@@ -6,7 +6,7 @@ const SOURCE = 'standards-enactment-process.md'
 const CONFIG_1: RubricItem<ConfigRubricContext> = {
   code: 'CONFIG-1',
   title: 'known Streams configuration',
-  description: 'Only process_note and note_type_scheme are recognised under ki-repo-kb-streams.',
+  description: 'Only process_note, note_type_scheme, and areas are recognised under ki-repo-kb-streams.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',

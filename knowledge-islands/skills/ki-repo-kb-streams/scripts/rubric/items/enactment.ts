@@ -82,17 +82,34 @@ const ENACT_5: RubricItem<EnactmentRubricContext> = {
 
 const ENACT_6: RubricItem<EnactmentRubricContext> = {
   code: 'ENACT-6',
-  title: 'proposal codes',
-  description: 'Each proposal declares a well-formed code unique across the Knowledge Base.',
+  title: 'proposal identifiers',
+  description:
+    'Each proposal declares a configured repository, area, and serial identifier unique across the Knowledge Base.',
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
     remediation: {
       class: 'diagnostic',
       guidance:
-        'Assign an explicit owner-approved code, or resolve the duplicate without deriving, allocating, renumbering, or rewriting a proposal identity.'
+        'Assign an explicit owner-approved identifier, or resolve the duplicate without deriving, allocating, renumbering, or rewriting a proposal identity.'
     },
-    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.proposalCodes, 'FAIL') }
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.proposalIds, 'FAIL') }
+  }
+}
+
+const ENACT_7: RubricItem<EnactmentRubricContext> = {
+  code: 'ENACT-7',
+  title: 'Streams issue ledger',
+  description: 'Streams/_ISSUES.md preserves each configured issuing area’s high-water mark.',
+  sources: [SOURCE],
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Restore the configured Streams issue ledger and raise any area high-water mark to cover every retained proposal without reusing or renumbering an identity.'
+    },
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.issueLedger, 'FAIL') }
   }
 }
 
@@ -102,5 +119,5 @@ export const ENACT: RubricFamily<StreamsRubricContext, EnactmentRubricContext> =
   description: 'Proposal frontmatter, lifecycle, and settlement.',
   standard: SOURCE,
   selectContext: (context) => context.enactment,
-  items: [ENACT_1, ENACT_2, ENACT_3, ENACT_4, ENACT_5, ENACT_6]
+  items: [ENACT_1, ENACT_2, ENACT_3, ENACT_4, ENACT_5, ENACT_6, ENACT_7]
 }

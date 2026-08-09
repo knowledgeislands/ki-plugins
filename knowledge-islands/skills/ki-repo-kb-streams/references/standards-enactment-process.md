@@ -33,7 +33,7 @@ The process is a **portable pattern**: any island copies it as its governance ba
 
 Not every stream carries the full proposal apparatus. The Enactment Process recognises **two weights**, chosen **per stream** (not per base):
 
-- **Full proposal** — a governed change destined for a canonical zone. It carries the proposal document (an explicitly allocated stable `code`, the `Proposal` suffix, `status` / `priority` / `dependencies`, Inputs / Outputs / Checklist / Open Questions / Design / Governance) and passes the approval gate. Use it whenever the work will change a canonical zone — `Admin`, `Pillars`, or `Resources`.
+- **Full proposal** — a governed change destined for a canonical zone. It carries the proposal document (an explicitly allocated stable `id`, the `Proposal` suffix, `status` / `priority` / `dependencies`, optional `groups`, Inputs / Outputs / Checklist / Open Questions / Design / Governance) and passes the approval gate. Use it whenever the work will change a canonical zone — `Admin`, `Pillars`, or `Resources`.
 - **Lightweight stream** — a tracker for work in motion that is _not (yet) a governed canonical change_: a plain note under a Focus folder, with just enough status to know where it stands. No proposal document, no `Proposal` suffix, no gate. A low-effort "add this to the list" lands here, as does ongoing personal or operational tracking that never touches a canonical zone.
 
 The discipline that matters is **the gate on the canonical zones, not paperwork on every tracker**. A lightweight stream **graduates** to a full proposal the moment it becomes a change to canonical content — at which point it takes the suffix, the proposal document, and the gate. So a base is never "opted out" of the process wholesale; rather, each stream is as heavy as the change it carries. (The checker reflects this: it asks for the suffix and the proposal frontmatter only of streams that declare themselves proposals — `type: stream-proposal` or a lifecycle `status` — and requires the `CLAUDE.md` gate anchor only once the base actually runs proposals.)
@@ -43,13 +43,13 @@ The discipline that matters is **the gate on the canonical zones, not paperwork 
 The proposal document (the stream note) is the physical carrier of a change. Frontmatter:
 
 ```yaml
-code: KBS-001 # explicit, stable, Knowledge-Base-wide proposal identity
+id: KB-OPS-001 # illustrative configured repository / area / serial proposal identity
 status: draft # see the status lifecycle
 priority: medium # urgent | high | medium | low
 dependencies: [] # filenames of prerequisite proposals
 ```
 
-`code` is explicitly allocated when the full proposal is created, matches the Streams code grammar, and remains stable through title, path, Focus, and lifecycle changes. It is unique across retained full proposals in the Knowledge Base; the allocation policy prevents reuse after pruning. `dependencies` is the machine-readable form of the `Prerequisite` entries in Inputs and must stay in sync with them; it is the gate checked before a change moves to `ready`. Sections:
+`id` is explicitly allocated when the full proposal is created, matches the configured Streams repository / area / serial grammar, and remains stable through title, path, Focus, category, group, and lifecycle changes. It is unique across retained full proposals in the Knowledge Base; the `Streams/_ISSUES.md` ledger prevents reuse after pruning. `dependencies` is the machine-readable form of the `Prerequisite` entries in Inputs and must stay in sync with them; it is the gate checked before a change moves to `ready`. Sections:
 
 - **Inputs** — what the change draws on, each labelled entry tagged `Document` (a source file, brief, or reference), `Decision` (a prior agreement that shapes this change), or `Prerequisite` (another proposal that must reach `done` first). Fill in what is known at opening; update as more are identified.
 - **Outputs** — what the change produces, with each labelled entry tagged `Decision` (a conclusion reached) or `Artefact` (a note or asset created/modified). Complete and accurate before `ready`.
@@ -76,7 +76,7 @@ Order: `draft` → `ready` → `in-progress` → `awaiting-review` → `done`. *
 
 ## The cycle
 
-1. **Emerge** — a change is conceived; explicitly allocate a unique proposal code, create the stream folder and proposal note under the appropriate Focus (and Category), and add a row to the focus index and the proposals index. Propose the name, path, and code and wait for confirmation first; never derive the code from the name or path.
+1. **Emerge** — a change is conceived; select a configured fixed issuing area and allocate its next unique proposal ID from `Streams/_ISSUES.md`, create the stream folder and proposal note under the appropriate Focus (and Category), and add a row to the focus index and the proposals index. Propose the name, path, and ID and wait for confirmation first; never derive the ID from the name, path, Focus, category, or group.
 2. **Mature** — iterate the proposal in place: develop the Design Sections, resolve Open Questions with resolution notes, track prerequisites, keep Inputs / Outputs / Checklist current.
 3. **Submit** — when stable (no open questions) and every prerequisite is `done`, set `status: ready` and submit. Approval starts `in-progress`; a declined plan returns to `draft` with its rationale recorded in Discussion.
 4. **Roll out** — execute the Checklist; outputs land in the stores. Set `status: awaiting-review`; keep the stream in the Focus that honestly reflects its remaining review or validation attention.
@@ -121,7 +121,7 @@ The rules that keep the workspace trustworthy:
 - **Knowledge migrates out.** Substantive subject-matter content in a stream is leaking knowledge that should live in a store — extract it early and link back.
 - **Done streams retain evidence.** A done proposal remains until `ki-accept prune` receives an explicit selection; if work resumes later, open a new draft proposal.
 - **Keep the proposal and indexes current.** Update immediately on a decision, status, or priority change; reload before resuming.
-- **Codes are stable identity.** Allocate a unique code explicitly for each full proposal; do not infer, renumber, or change it when the proposal moves, is renamed, changes state, or changes layout.
+- **IDs are stable identity.** Allocate a unique configured repository / area / serial ID explicitly for each full proposal; raise the selected area ledger in the same change, and do not infer, renumber, or change the ID when the proposal moves, is renamed, changes state, changes groups, or changes layout.
 - **No `ready` while a prerequisite is below `done`; no rollout without explicit authorisation.**
 - **Re-verify each rollout item against the live file.**
 - **Prune only explicitly.** Completion alone never deletes the reviewed proposal record.

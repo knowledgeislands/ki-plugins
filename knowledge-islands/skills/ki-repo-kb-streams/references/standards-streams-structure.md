@@ -8,7 +8,7 @@ This standard defines how the `Streams` zone is laid out for the [Knowledge Isla
 - [Path: Focus and Category](#path-focus-and-category)
 - [Leaf, parent, and multi-proposal layout](#leaf-parent-and-multi-proposal-layout)
 - [The Proposal suffix](#the-proposal-suffix)
-- [Proposal codes](#proposal-codes)
+- [Proposal identifiers](#proposal-identifiers)
 - [Note types and frontmatter](#note-types-and-frontmatter)
 - [Index notes](#index-notes)
 - [What lives in a stream note](#what-lives-in-a-stream-note)
@@ -45,6 +45,8 @@ Focus describes **attention**, not maturity: a `draft` proposal may sit in `Now/
 
 A stream in `Waiting for/` names the dependency or external condition that prevents progress. It moves to `Now/` when it becomes the current focus, or to `Soon/` when it is unblocked but not yet immediate. `Parked/` is different: it is intentionally paused, not merely waiting on another party.
 
+`Active`, `Background`, and `Dormant` are legacy state-folder labels, not Focus values and not topical groups. Lifecycle state belongs in `status` and attention belongs in a canonical Focus. A receiving base migrates such folders through its own work; the shared standard does not prescribe a replacement path.
+
 **Category** is optional grouping within a Focus, for navigability. Pick one pattern per Focus and stick to it:
 
 - **No category** — flat; best for a base with few concurrent streams.
@@ -52,6 +54,8 @@ A stream in `Waiting for/` names the dependency or external condition that preve
 - **Status sub-grouping** — the category expresses status; useful when many streams sit at similar levels across one domain.
 
 The guiding principle is easy navigation: too much depth is as unhelpful as too much breadth at one level.
+
+**Groups** are separate, optional multi-valued `groups:` frontmatter on a proposal. They express base-local topical membership and may be selected independently of Focus or Category. A base defines its own group vocabulary in its migration work; groups never determine a path, identity area, or serial allocation.
 
 ## Leaf, parent, and multi-proposal layout
 
@@ -77,24 +81,28 @@ The proposal note's name **always** ends with a space and the word `Proposal` �
 
 Why the suffix: it marks every stream as a proposal under the Enactment Process at a glance, lets the proposal double as the leaf folder's index, and **preemptively disambiguates** the note from same-named artefacts elsewhere in the base (a policy, a settled record, a store note on the same topic) — so the link to it is collision-safe regardless of what the stream eventually produces. The checker keys on the suffix to find proposals. Before creating or renaming a proposal, **propose the name and resulting path and wait for user confirmation** — renames ripple through links.
 
-## Proposal codes
+## Proposal identifiers
 
-Every full `stream-proposal` declares a scalar `code` in closed frontmatter. It is the proposal's concise, durable identity for display and reference; it is not a human-readable title substitute and is never inferred from a title, path, Focus, or serial position in a folder.
+Every full `stream-proposal` declares a scalar `id` in closed frontmatter. It is the proposal's concise, durable identity for display and reference; it is not a human-readable title substitute and is never inferred from a title, path, Focus, category, group, or serial position in a folder.
 
-The value must match `^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[0-9]{3,}$`. Its prefix therefore begins with an uppercase letter and may contain uppercase alphanumeric segments separated by hyphens; its final segment is a positive decimal serial, rendered with at least three digits. `KBS-001` conforms. `KBS-000`, lowercase values, values without a final serial, and values that derive from a title or path do not.
+The ID grammar is `<REPO>-<AREA>-<NNN>`. `<REPO>` is the stable uppercase `repo_code` in `[skills.ki-repo]`. `<AREA>` is one uppercase fixed issuing area declared under `[skills.ki-repo-kb-streams.areas]`; it is selected at opening and never changes. `<NNN>` is a positive decimal serial, rendered with at least three digits, allocated from that area's high-water mark in `Streams/_ISSUES.md`. In a base that configures `KB` and `OPS`, `KB-OPS-001` conforms; lowercase values, a missing configured area, `000`, or any identity derived from navigational or descriptive fields do not.
 
-Codes are allocated explicitly when a full proposal is opened. A code is unique across the whole Knowledge Base, not merely within a Focus, category, folder, or parent stream. Once assigned, it remains unchanged for the proposal's retained lifetime: moving Focus, renaming a title or path, changing lifecycle status, or converting between leaf and parent layouts does not change it. A base must not intentionally reuse a code after closure or pruning. The mechanical check can establish uniqueness only among retained proposals; preserving non-reuse after pruning is an allocation responsibility of the base owner.
+IDs are allocated explicitly when a full proposal opens. An ID is unique across the whole Knowledge Base, not merely within a Focus, category, folder, or parent stream. Once assigned, it remains unchanged for the proposal's retained lifetime: moving Focus, renaming a title or path, changing lifecycle status, changing groups, or converting between leaf and parent layouts does not change it. A base must not intentionally reuse an ID after closure or pruning. The mechanical check can establish uniqueness only among retained proposals; the ledger preserves non-reuse after pruning.
 
-### Adopting codes in an existing base
+`Streams/_ISSUES.md` is the canonical durable allocation ledger. Its closed frontmatter contains a code-sorted map such as `areas: { OPS: 23 }`; each value is the area high-water mark, never a count. It declares the next available serial as one greater than the selected area's mark. Never lower a mark, fill a gap, or reuse a number after a proposal is pruned. Areas are fixed allocation namespaces, not mutable groups.
+
+`groups` is an optional multi-valued proposal frontmatter field. It groups related work for people and tools but does not control ID allocation, does not replace the fixed area, and may change without changing the ID.
+
+### Adopting IDs in an existing base
 
 This is a clean-cut manual migration, not an automatic allocation feature:
 
 1. Inventory every retained full proposal across the base, including every Focus and child proposal.
-2. Have the base owner approve an explicit, base-wide code map. Resolve duplicates and invalid legacy labels in that map before editing notes; do not derive or renumber codes from paths or titles.
-3. Apply the approved map through receiver-owned Knowledge-Base work and update the affected proposal frontmatter only. Do not add `code` to lightweight streams or index notes.
-4. Re-audit the base for requiredness, grammar, and uniqueness before normal proposal operation resumes.
+2. Have the base owner approve the stable repository code, fixed-area map, ledger high-water mark, and an explicit base-wide ID map. Resolve duplicates and invalid legacy labels in that map before editing notes; do not derive or renumber IDs from paths, titles, Focus, category, or groups.
+3. Apply the approved map through receiver-owned Knowledge-Base work, create `Streams/_ISSUES.md`, and update only affected proposal frontmatter. Do not add `id` to lightweight streams or index notes, and do not infer historical groups.
+4. Re-audit the base for configuration, ledger, requiredness, grammar, and uniqueness before normal proposal operation resumes.
 
-The harness defines the contract and diagnoses gaps; it neither allocates a code nor edits a live base as part of CONFORM.
+The harness defines the contract and diagnoses gaps; it neither allocates an ID nor edits a live base as part of CONFORM.
 
 ## Note types and frontmatter
 
@@ -110,7 +118,7 @@ The zone uses the machine-readable `type:` key (the canonical scheme; see the sk
 
 ※ And `Pass N/` sub-folders.
 
-**Frontmatter applies by type.** Every `stream-proposal` carries its `code` identity. Both `stream-proposal` and `stream-note` notes carry the lifecycle fields `status`, `priority`, and `dependencies` (plus the base's descriptive keys such as `title`/`description`, and any local scoping keys), but `stream-note` does not carry a proposal code. `stream-zone` and `stream-focus` index notes carry `type` and the common keys only — **not** `code`/`status`/`priority`/`dependencies`. The checker enforces proposal fields on `<Name> Proposal.md` notes, so it does not wrongly demand them of index notes.
+**Frontmatter applies by type.** Every `stream-proposal` carries its `id` identity. Both `stream-proposal` and `stream-note` notes carry the lifecycle fields `status`, `priority`, and `dependencies` (plus the base's descriptive keys such as `title`/`description`, and any local scoping keys); `groups` is optional on a proposal or stream note. A `stream-note` does not carry a proposal ID. `stream-zone` and `stream-focus` index notes carry `type` and the common keys only — **not** `id`/`status`/`priority`/`dependencies`. The checker enforces proposal fields on `<Name> Proposal.md` notes, so it does not wrongly demand them of index notes.
 
 **Full proposals vs lightweight streams.** A stream comes in [two weights](standards-enactment-process.md): a **full proposal** (a `stream-proposal` with the `Proposal` suffix and the apparatus) or a **lightweight stream** (a plain tracker note — no suffix, no proposal frontmatter — for work that isn't a governed canonical change). The suffix and `STREAM-3` apply only to full proposals; a lightweight stream is just a note under a Focus folder.
 
