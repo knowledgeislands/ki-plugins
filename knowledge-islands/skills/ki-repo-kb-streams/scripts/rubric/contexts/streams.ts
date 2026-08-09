@@ -10,7 +10,19 @@ import type {
   ViolationLevel
 } from '../../shared/rubric.ts'
 
-const FOCI = ['Now', 'Next', 'Soon', 'Waiting for', 'Parked', 'Future', 'Housekeeping'] as const
+const OPERATIONAL_AREAS = ['Roadmap', 'Housekeeping', 'Trades'] as const
+const REQUIRED_AREAS = ['Roadmap', 'Housekeeping'] as const
+const LEGACY_FOLDERS = [
+  'Active',
+  'Background',
+  'Dormant',
+  'Now',
+  'Next',
+  'Soon',
+  'Waiting for',
+  'Parked',
+  'Future'
+] as const
 const STATUS = ['draft', 'ready', 'in-progress', 'awaiting-review', 'done'] as const
 const PRIORITY = ['urgent', 'high', 'medium', 'low'] as const
 const SUFFIX = ' Proposal'
@@ -25,9 +37,8 @@ export type StreamsEvidence = {
 }
 
 export type StreamRubricContext = {
-  focusFolders: readonly StreamsEvidence[]
-  focusIndexes: readonly StreamsEvidence[]
-  proposalSuffix: readonly StreamsEvidence[]
+  operationalAreas: readonly StreamsEvidence[]
+  legacyFolders: readonly StreamsEvidence[]
 }
 
 export type EnactmentRubricContext = {
@@ -243,7 +254,7 @@ const unavailableContext = (
   const notApplicable: StreamsEvidence[] = [{ level: 'NOT_APPLICABLE', message: 'Streams evidence is unavailable.' }]
   return {
     rubric: { publication },
-    stream: { focusFolders: [evidence], focusIndexes: notApplicable, proposalSuffix: notApplicable },
+    stream: { operationalAreas: [evidence], legacyFolders: notApplicable },
     enactment: {
       proposalFrontmatter: notApplicable,
       lifecycle: notApplicable,
@@ -303,44 +314,28 @@ export const createStreamsSession = ({
   const originals = new Map(proposals.map((document) => [document.relativePath, document.content]))
   const drafts = new Map(originals)
   const present = directories(streamsPath)
-  const foci = FOCI.filter((focus) => present.includes(focus))
-  const stray = present.filter((name) => !FOCI.includes(name as (typeof FOCI)[number]))
-  const focusFolders: StreamsEvidence[] = [
+  const missingAreas = REQUIRED_AREAS.filter((area) => !present.includes(area))
+  const unexpectedAreas = present.filter(
+    (name) => !OPERATIONAL_AREAS.includes(name as (typeof OPERATIONAL_AREAS)[number])
+  )
+  const legacy = present.filter((name) => LEGACY_FOLDERS.includes(name as (typeof LEGACY_FOLDERS)[number]))
+  const operationalAreas: StreamsEvidence[] = [
     {
-      level: stray.length ? 'WARN' : 'PASS',
-      message: stray.length ? `Non-Focus folders: ${sample(stray)}.` : 'All direct folders are Focus folders.',
+      level: missingAreas.length || unexpectedAreas.length ? 'WARN' : 'PASS',
+      message:
+        missingAreas.length || unexpectedAreas.length
+          ? `Streams operational areas need review: missing ${missingAreas.join(', ') || 'none'}; unexpected ${unexpectedAreas.join(', ') || 'none'}.`
+          : 'Streams contains the configured Roadmap and Housekeeping operational areas.',
       subject: configuration.streams
     }
   ]
-  const focusIndexes: StreamsEvidence[] =
-    foci.length === 0
-      ? [{ level: 'NOT_APPLICABLE', message: 'No Focus folders are present.' }]
-      : foci.map((focus) => {
-          const path = join(streamsPath, focus, `${focus}.md`)
-          return {
-            level: regularFile(path) ? 'PASS' : 'WARN',
-            message: regularFile(path) ? 'Focus index is present.' : 'Focus index is missing.',
-            subject: `${configuration.streams}/${focus}/${focus}.md`
-          }
-        })
-  const suffixDrift = proposals.flatMap((document) => {
-    const expected = basename(document.absolutePath, '.md')
-    const values = document.frontmatter?.values
-    const problems = [
-      expected.endsWith(SUFFIX) ? '' : 'filename',
-      new RegExp(`^#\\s+${escapeRegularExpression(expected)}\\s*$`, 'm').test(document.content) ? '' : 'H1',
-      values?.title === expected ? '' : 'title'
-    ].filter(Boolean)
-    return problems.length ? [`${document.relativePath} (${problems.join(', ')})`] : []
-  })
-  const proposalSuffix: StreamsEvidence[] = [
+  const legacyFolders: StreamsEvidence[] = [
     {
-      level: suffixDrift.length ? 'WARN' : proposals.length ? 'PASS' : 'NOT_APPLICABLE',
-      message: suffixDrift.length
-        ? `Proposal suffix drift: ${sample(suffixDrift)}.`
-        : proposals.length
-          ? 'Proposal filenames, headings, and titles carry the Proposal suffix.'
-          : 'No full proposals are present.'
+      level: legacy.length ? 'WARN' : 'PASS',
+      message: legacy.length
+        ? `Legacy Streams state or Focus folders: ${sample(legacy)}.`
+        : 'No legacy Streams state or Focus folders are present.',
+      subject: configuration.streams
     }
   ]
   const malformed: string[] = []
@@ -422,7 +417,7 @@ export const createStreamsSession = ({
   ]
   const ledgerPath = join(streamsPath, ISSUE_LEDGER)
   const allocation = regularFile(ledgerPath) ? ledgerAllocation(readFileSync(ledgerPath, 'utf8')) : undefined
-  const missingAreas = [...configuration.areas.keys()].filter((area) => allocation?.get(area) === undefined)
+  const missingIssuingAreas = [...configuration.areas.keys()].filter((area) => allocation?.get(area) === undefined)
   const unknownAreas = [...(allocation?.keys() ?? [])].filter((area) => !configuration.areas.has(area))
   const lowWater = [...highestIssued.entries()].filter(([area, serial]) => (allocation?.get(area) ?? -1) < serial)
   const issueLedger: StreamsEvidence[] = [
@@ -431,7 +426,7 @@ export const createStreamsSession = ({
         !configuration.repoCode ||
         configuration.areas.size === 0 ||
         !allocation ||
-        missingAreas.length ||
+        missingIssuingAreas.length ||
         unknownAreas.length ||
         lowWater.length
           ? 'FAIL'
@@ -442,8 +437,8 @@ export const createStreamsSession = ({
           ? 'Missing ki-repo-kb-streams fixed issuing areas.'
           : !allocation
             ? `Missing or malformed ${configuration.streams}/${ISSUE_LEDGER}.`
-            : missingAreas.length || unknownAreas.length
-              ? `Streams ledger areas differ from configuration: missing ${missingAreas.join(', ') || 'none'}; unknown ${unknownAreas.join(', ') || 'none'}.`
+            : missingIssuingAreas.length || unknownAreas.length
+              ? `Streams ledger areas differ from configuration: missing ${missingIssuingAreas.join(', ') || 'none'}; unknown ${unknownAreas.join(', ') || 'none'}.`
               : lowWater.length
                 ? `Streams ledger is below retained identifiers: ${lowWater.map(([area, serial]) => `${area} ${serial}`).join(', ')}.`
                 : 'Streams issue ledger reserves every configured issuing area through its high-water mark.',
@@ -493,7 +488,7 @@ export const createStreamsSession = ({
   const mutable = mode === 'conform'
   const context: StreamsRubricContext = {
     rubric: { publication },
-    stream: { focusFolders, focusIndexes, proposalSuffix },
+    stream: { operationalAreas, legacyFolders },
     enactment: {
       proposalFrontmatter,
       lifecycle,

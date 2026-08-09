@@ -5,8 +5,9 @@ const SOURCE = 'standards-streams-structure.md'
 
 const STREAM_1: RubricItem<StreamRubricContext> = {
   code: 'STREAM-1',
-  title: 'Focus folders',
-  description: 'Folders directly under Streams are canonical Focus folders.',
+  title: 'operational areas',
+  description:
+    'Streams contains the Roadmap and Housekeeping operational areas, with Trades reserved for later explicit adoption.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
@@ -14,77 +15,62 @@ const STREAM_1: RubricItem<StreamRubricContext> = {
     remediation: {
       class: 'diagnostic',
       guidance:
-        'Reshape the Streams tree only after confirming the intended Focus ownership and canonical location for each entry.'
+        'Establish Roadmap and Housekeeping, then classify any legacy or unexpected folders with the receiving base owner.'
     },
-    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.focusFolders, 'WARN', ['FAIL']) }
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.operationalAreas, 'WARN', ['FAIL']) }
   }
 }
 
 const STREAM_2: RubricItem<StreamRubricContext> = {
   code: 'STREAM-2',
-  title: 'Focus indexes',
-  description: 'Each present Focus carries a same-name index note.',
+  title: 'legacy state folders',
+  description: 'Legacy state and Focus folders are migration inputs, not target Streams structure.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
     remediation: {
       class: 'diagnostic',
-      guidance: 'Add or repair the matching Focus index after confirming the Focus and stream ownership relationship.'
+      guidance: 'Classify each retained legacy record before removing or replacing a legacy navigation folder.'
     },
-    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.focusIndexes, 'WARN') }
-  }
-}
-
-const STREAM_3: RubricItem<StreamRubricContext> = {
-  code: 'STREAM-3',
-  title: 'proposal suffix',
-  description:
-    'Full proposal filenames, H1 headings, and titles use the Proposal suffix while lightweight streams do not.',
-  sources: [SOURCE],
-  mechanical: {
-    level: 'WARN',
-    remediation: {
-      class: 'diagnostic',
-      guidance:
-        'Correct the filename, H1, and title suffix only after confirming whether the note is a full proposal or lightweight stream.'
-    },
-    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.proposalSuffix, 'WARN') }
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.legacyFolders, 'WARN') }
   }
 }
 
 const STREAM_4: RubricItem<StreamRubricContext> = {
   code: 'STREAM-4',
-  title: 'Focus index ordering',
-  description: 'Focus indexes carry correctly ordered Streams tables and one category convention.',
+  title: 'adapter-owned records',
+  description:
+    'Roadmap and housekeeping records follow their owning adapters rather than a generic Streams proposal model.',
   sources: [SOURCE],
   judgment: {
-    scope: 'Focus index tables, their current streams, ordering, and category convention.',
-    prompt: 'Are index tables current, ordered, and consistently categorised?',
-    outcomes: ['conforming', 'index revision required', 'category decision required'],
+    scope: 'Roadmap and housekeeping records sampled from the two Streams areas.',
+    prompt: 'Does each sampled record follow its owning roadmap or housekeeping adapter?',
+    outcomes: ['conforming', 'adapter migration required', 'classification decision required'],
     guidance:
-      'Update rows and ordering from the current streams, and apply one documented category convention or record a deliberate exception.'
+      'Route the record to the correct area and apply its owning adapter’s format; record any unresolved classification decision.'
   }
 }
 
 const STREAM_5: RubricItem<StreamRubricContext> = {
   code: 'STREAM-5',
-  title: 'Focus placement',
-  description: 'Each stream sits under its real attention Focus.',
+  title: 'legacy migration disposition',
+  description:
+    'Each retained legacy Stream has a deliberate roadmap, housekeeping, canonical-knowledge, or prune disposition.',
   sources: [SOURCE],
   judgment: {
-    scope: 'Sampled streams, their stated purpose, and parent Focus placement.',
-    prompt: 'Do sampled streams match their actual attention Focus?',
-    outcomes: ['conforming', 'relocation required', 'focus decision required'],
+    scope: 'Sampled legacy Streams records and their owner-approved migration decisions.',
+    prompt: 'Does each sampled legacy record have an appropriate explicit disposition?',
+    outcomes: ['conforming', 'migration required', 'owner decision required'],
     guidance:
-      'Move the stream to the Focus that owns its present attention, or record the deliberate cross-Focus rationale.'
+      'Record the owner-approved destination before moving, retaining, or pruning the legacy record; never infer it from the former path.'
   }
 }
 
 export const STREAM: RubricFamily<StreamsRubricContext, StreamRubricContext> = {
   code: 'STREAM',
   title: 'Streams structure',
-  description: 'Focus layout, indexes, proposal suffixes, and placement.',
+  description: 'Operational-area layout, legacy migration, and adapter routing.',
   standard: SOURCE,
   selectContext: (context) => context.stream,
-  items: [STREAM_1, STREAM_2, STREAM_3, STREAM_4, STREAM_5]
+  items: [STREAM_1, STREAM_2, STREAM_4, STREAM_5]
 }

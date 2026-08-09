@@ -5,7 +5,7 @@ describe('ki-repo-kb-streams rubric catalogue', () => {
   test('exports one complete ordered definition', () => {
     expect(definition.contract).toBe(1)
     expect(definition.name).toBe('ki-repo-kb-streams')
-    expect(definition.families.map((family) => family.code)).toEqual(['RUBRIC', 'STREAM', 'ENACT', 'GATE', 'CONFIG'])
+    expect(definition.families.map((family) => family.code)).toEqual(['RUBRIC', 'STREAM', 'GATE', 'CONFIG'])
     const codes = definition.families
       .filter((family) => family.code !== 'RUBRIC')
       .flatMap((family) => family.items.map((item) => item.code))
@@ -27,9 +27,9 @@ describe('ki-repo-kb-streams rubric catalogue', () => {
     const mechanical = items.filter((item) => item.mechanical)
     const judgment = items.filter((item) => item.judgment)
 
-    expect(mechanical).toHaveLength(11)
+    expect(mechanical).toHaveLength(6)
     expect(mechanical.every((item) => item.mechanical?.remediation)).toBe(true)
-    expect(judgment).toHaveLength(6)
+    expect(judgment).toHaveLength(3)
     expect(
       judgment.every((item) => item.judgment?.scope && item.judgment.outcomes?.length && item.judgment.guidance)
     ).toBe(true)

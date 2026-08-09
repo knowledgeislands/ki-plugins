@@ -1,8 +1,8 @@
 # Mode CONFORM — bring a base's Streams into line
 
-_On-demand procedure for Streams CONFORM. The shared model — the zone at a glance, status lifecycle, proposal anatomy, bindings, Step 1, working rules, and Enactment gate — lives in [`SKILL.md`](../SKILL.md) and is already loaded._
+_On-demand procedure for Streams CONFORM. The shared model lives in [`SKILL.md`](../SKILL.md) and is already loaded._
 
 1. Run [AUDIT](mode-audit.md) first for the gap list.
-2. Run `ki repo conform --skill ki-repo-kb-streams` to apply its one safe native repair: normalising an existing proposal's non-bare `status` or `priority` value to its recognised lifecycle token. It diagnoses missing, malformed, and duplicate proposal IDs and a missing or low Streams ledger but **never allocates, infers, renumbers, or repairs identity**; resolve those through the base owner's explicit ID map. Add missing `Proposal` suffixes and Focus/stream index notes, add missing `Governance` sections, reconcile the proposals index, and record the process-note binding as deliberate edits. **Confirm before moving or renaming notes** (the name-confirmation gate in the Working rules in [`SKILL.md`](../SKILL.md)); where the base mandates it, run the conforming itself as a proposal.
-3. **Install the gate anchor if `GATE-1` flagged it missing**: add the standing directive to the base's `CLAUDE.md` / `AGENTS.md` (route canonical changes through a proposal; load this skill) — otherwise the gate will not fire on a plain edit. First confirm that the base should run the Enactment Process: if it uses only lightweight streams, flag the choice for a decision instead of force-fitting the gate.
+2. Move records only after the base owner has classified them under the [legacy migration](standards-streams-structure.md#legacy-migration) rules. Establish `Streams/Roadmap/` and `Streams/Housekeeping/`; route their records to `ki-change-management-roadmap` and `ki-change-management-housekeeping` respectively. Do not recreate Focus folders or infer topical groups from a legacy path.
+3. Confirm before moving or renaming records. The relevant owner allocates or migrates roadmap identity and its `Streams/Roadmap/_ISSUES.md` ledger; this container skill never infers, renumbers, or repairs identity.
 4. Re-run [AUDIT](mode-audit.md) until clean.

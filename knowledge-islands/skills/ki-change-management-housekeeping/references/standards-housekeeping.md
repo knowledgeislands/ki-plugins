@@ -13,7 +13,7 @@ docs/housekeeping/
   <REPO>-HK-<NNN>-<slug>.md
 ```
 
-Knowledge Bases use the dedicated Streams Focus:
+Knowledge Bases use the dedicated Streams operational area:
 
 ```text
 Streams/Housekeeping/
@@ -57,11 +57,11 @@ The body states the Goal, the check or maintenance Procedure, the evidence a suc
 | Overdue, `when-overdue` | Create the linked `draft` run at `spawn-horizon`; use `now` when the template declares it. |
 | Paused                  | Never create a run.                                                                        |
 
-The new run records `housekeeping-template` and `scheduled-for`. It is otherwise an ordinary roadmap item or full Stream proposal. `ki-accept` updates `last-run` and clears `active-run` only after the run has completed review, become `done`, and been committed.
+The new run records `housekeeping-template` and `scheduled-for`. It is otherwise an ordinary roadmap item. `ki-accept` updates `last-run` and clears `active-run` only after the run has completed review, become `done`, and been committed.
 
 ## KB adapter
 
-`Streams/Housekeeping/` is a visible source horizon for recurring obligations. It contains templates, not a permanent pile of active work. A due run moves into its declared delivery horizon, normally `Now` or `Next`, as a full proposal. The Enactment gate applies to the run whenever it changes a canonical KB zone.
+`Streams/Housekeeping/` is a visible source area for recurring obligations. It contains templates, not a permanent pile of active work. A due run becomes a linked roadmap item in `Streams/Roadmap/`; its delivery horizon is frontmatter metadata. The base's change-management gate applies whenever the run changes a canonical KB zone.
 
 ## Retention
 

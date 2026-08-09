@@ -16,7 +16,7 @@ argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
 
 A housekeeping template is a durable instruction to create ordinary work when its cadence becomes due. It has a small lifecycle: `active` templates are evaluated, `paused` templates are retained but never spawn work, and a retired template is deleted. Due and overdue are calculated from `cadence`, `last-run`, and `grace`; they are not stored states.
 
-In a non-KB repository templates live directly below `docs/housekeeping/`. In a KB, the `Housekeeping` Focus contains the equivalent template notes at `Streams/Housekeeping/`; it is a source horizon, not a delivery state. `ki-next` reads active templates and creates a linked `draft` run at the template's declared destination horizon. The run then follows the common `draft` → `ready` → `in-progress` → `awaiting-review` → `done` lifecycle.
+In a non-KB repository templates live directly below `docs/housekeeping/`. In a KB, the equivalent template notes live at `Streams/Housekeeping/`; it is an operational area, not a delivery state. `ki-next` reads active templates and creates a linked `draft` run in the KB's `Streams/Roadmap/` area at the template's declared horizon. The run then follows the common `draft` → `ready` → `in-progress` → `awaiting-review` → `done` lifecycle.
 
 `ki-accept` records successful run evidence on the template only after the run is `done`. It never marks a template as run merely because a draft was created. An unfinished linked run prevents a duplicate spawn.
 
@@ -47,7 +47,7 @@ On the cadence in [the sources](references/sources.md), compare observed templat
 - `ki-next` selects, promotes, defers, and spawns due work; this skill only defines its inputs.
 - `ki-plan`, `ki-implement`, and `ki-accept` own the spawned run's readiness, delivery, review, closure, and later pruning.
 - Runtime-specific state-hygiene skills may be named by a recurring template, but they do not own this template model.
-- `Housekeeping` is a KB Streams Focus. It does not replace `Now`, `Next`, `Soon`, `Future`, `Waiting for`, or `Parked` as the destination horizon for a due run.
+- `Housekeeping` is a KB Streams operational area. It does not replace horizon metadata on the due roadmap run.
 
 ## Runtime binding
 

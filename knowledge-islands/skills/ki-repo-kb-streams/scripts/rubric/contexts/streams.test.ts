@@ -117,33 +117,30 @@ describe('ki-repo-kb-streams session', () => {
     const session = createStreamsSession(options(root, 'audit'))
     const context = STREAM.selectContext(rootContext(session))
 
-    expect(context.focusFolders).toEqual([
+    expect(context.operationalAreas).toEqual([
       { level: 'NOT_APPLICABLE', message: 'No Streams/ zone; its presence is owned by ki-repo-kb.' }
     ])
     expect(session.proposal()).toEqual({ writes: [] })
   })
 
-  test('recognises every canonical Focus', () => {
+  test('recognises the initial operational areas and no legacy folders', () => {
     const root = repository()
-    const foci = ['Now', 'Next', 'Soon', 'Waiting for', 'Parked', 'Future', 'Housekeeping']
-    for (const focus of foci) {
-      mkdirSync(join(root, 'Streams', focus), { recursive: true })
-      writeFileSync(join(root, 'Streams', focus, `${focus}.md`), `# ${focus}\n`)
-    }
+    mkdirSync(join(root, 'Streams', 'Roadmap'), { recursive: true })
+    mkdirSync(join(root, 'Streams', 'Housekeeping'), { recursive: true })
 
     const session = createStreamsSession(options(root, 'audit'))
     const context = STREAM.selectContext(rootContext(session))
 
-    expect(context.focusFolders).toEqual([
-      { level: 'PASS', message: 'All direct folders are Focus folders.', subject: 'Streams' }
-    ])
-    expect(context.focusIndexes).toEqual(
-      foci.map((focus) => ({
+    expect(context.operationalAreas).toEqual([
+      {
         level: 'PASS',
-        message: 'Focus index is present.',
-        subject: `Streams/${focus}/${focus}.md`
-      }))
-    )
+        message: 'Streams contains the configured Roadmap and Housekeeping operational areas.',
+        subject: 'Streams'
+      }
+    ])
+    expect(context.legacyFolders).toEqual([
+      { level: 'PASS', message: 'No legacy Streams state or Focus folders are present.', subject: 'Streams' }
+    ])
   })
 
   test('passes explicit valid proposal identifiers without a conform identity write', () => {

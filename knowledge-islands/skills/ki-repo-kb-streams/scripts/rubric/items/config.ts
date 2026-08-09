@@ -1,12 +1,12 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
 import { auditEvidence, type ConfigRubricContext, type StreamsRubricContext } from '../contexts/streams.ts'
 
-const SOURCE = 'standards-enactment-process.md'
+const SOURCE = 'standards-streams-structure.md'
 
 const CONFIG_1: RubricItem<ConfigRubricContext> = {
   code: 'CONFIG-1',
   title: 'known Streams configuration',
-  description: 'Only process_note, note_type_scheme, and areas are recognised under ki-repo-kb-streams.',
+  description: 'Only documented Streams container bindings are recognised under ki-repo-kb-streams.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
@@ -21,8 +21,8 @@ const CONFIG_1: RubricItem<ConfigRubricContext> = {
 
 const CONFIG_2: RubricItem<ConfigRubricContext> = {
   code: 'CONFIG-2',
-  title: 'note type scheme',
-  description: 'note_type_scheme is type or tags when declared.',
+  title: 'legacy note classification',
+  description: 'A declared legacy note_type_scheme remains valid only while a base migrates old Streams records.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',

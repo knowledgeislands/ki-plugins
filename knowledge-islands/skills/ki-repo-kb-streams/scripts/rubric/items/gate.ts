@@ -5,15 +5,15 @@ const SOURCE = 'standards-enactment-process.md'
 
 const GATE_1: RubricItem<GateRubricContext> = {
   code: 'GATE-1',
-  title: 'always-loaded Enactment gate',
-  description: 'A base with proposals anchors the Enactment Process and proposal gate in root CLAUDE.md or AGENTS.md.',
+  title: 'always-loaded change-management gate',
+  description: 'A base with governed work anchors its canonical-change routing in root CLAUDE.md or AGENTS.md.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
     remediation: {
       class: 'diagnostic',
       guidance:
-        'Add the appropriate canonical Enactment Process anchor only after confirming the base carries proposals and the always-loaded instruction surface.'
+        'Add the appropriate canonical change-management anchor only after confirming the base carries governed work and the always-loaded instruction surface.'
     },
     audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.anchor, 'WARN') }
   }
@@ -22,7 +22,7 @@ const GATE_1: RubricItem<GateRubricContext> = {
 const GATE_2: RubricItem<GateRubricContext> = {
   code: 'GATE-2',
   title: 'imperative gate directive',
-  description: 'The anchor is imperative and states the gate exemptions.',
+  description: 'The anchor is imperative and routes canonical changes through the relevant adapter.',
   sources: [SOURCE],
   judgment: {
     scope: 'The always-loaded gate anchor and its stated exceptions.',
