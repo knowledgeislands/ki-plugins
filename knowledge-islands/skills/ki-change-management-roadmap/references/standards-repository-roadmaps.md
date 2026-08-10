@@ -137,15 +137,15 @@ It never creates a duplicate plan file.
 
 `ki-implement` owns `ready` → `in-progress` → `awaiting-review`.
 
-Its start transition records the immutable full `HEAD` commit in `baseline-ref`; its completion writes the required review packet.
+Its start transition records the immutable full `HEAD` commit in `baseline_ref`; its completion writes the required review packet.
 
 `ki-accept` owns explicit `awaiting-review` → `done` and pruning selected by an explicit work-record path or glob.
 
 `ki-recap` and `ki-next` may identify or recommend eligible pruning, but they never delete a work-item record.
 
-`blocks` and `blocked-by` use work-item identifiers, must be reverse-consistent and acyclic, and cannot permit execution while a blocker is not done.
+`blocks` and `blocked_by` use work-item identifiers, must be reverse-consistent and acyclic, and cannot permit execution while a blocker is not done.
 
-An optional flat `waiting-on-trades: [TRD-…]` field identifies the exact trade records whose observable progress forms a Waiting-for condition. It is valid only at `horizon: waiting-for`, contains unique canonical trade identities, and never replaces or extends `blocks` or `blocked-by`. The item body states the exact condition being observed: receipt, a terminal receiver decision, or completion of receiver-local work linked from an adopted trade.
+An optional flat `waiting-on-trades: [TRD-…]` field identifies the exact trade records whose observable progress forms a Waiting-for condition. It is valid only at `horizon: waiting-for`, contains unique canonical trade identities, and never replaces or extends `blocks` or `blocked_by`. The item body states the exact condition being observed: receipt, a terminal receiver decision, or completion of receiver-local work linked from an adopted trade.
 
 An explicit later prune path or glob removes only the resolved `done` items; the selection itself is the deletion authority and does not need a second confirmation. `ki-change-management-housekeeping` templates may spawn linked ordinary work records; their cadence does not create a second delivery lifecycle.
 

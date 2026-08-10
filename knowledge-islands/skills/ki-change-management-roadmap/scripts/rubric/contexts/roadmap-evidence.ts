@@ -306,13 +306,13 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
   const horizon = value('horizon') as Horizon | undefined
   const status = value('status')
   const blocks = Array.isArray(parsed.values.blocks) ? (parsed.values.blocks as string[]) : undefined
-  const blockedBy = Array.isArray(parsed.values['blocked-by']) ? (parsed.values['blocked-by'] as string[]) : undefined
+  const blockedBy = Array.isArray(parsed.values['blocked_by']) ? (parsed.values['blocked_by'] as string[]) : undefined
   const waitingOnTrades = Array.isArray(parsed.values['waiting-on-trades'])
     ? (parsed.values['waiting-on-trades'] as string[])
     : undefined
-  const baselineRef = parsed.values['baseline-ref']
+  const baselineRef = parsed.values['baseline_ref']
   const candidate = parsed.values.candidate === true
-  for (const key of ['id', 'title', 'theme', 'horizon', 'status', 'blocks', 'blocked-by', 'baseline-ref']) {
+  for (const key of ['id', 'title', 'theme', 'horizon', 'status', 'blocks', 'blocked_by', 'baseline_ref']) {
     if (!(key in parsed.values)) add('FAIL', 'ITEM-1', `frontmatter is missing '${key}'`, FORMAT, display)
   }
   const unexpected = Object.keys(parsed.values).filter(
@@ -326,9 +326,9 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
         'status',
         'candidate',
         'blocks',
-        'blocked-by',
+        'blocked_by',
         'waiting-on-trades',
-        'baseline-ref',
+        'baseline_ref',
         'transferred-from',
         'housekeeping-template',
         'scheduled-for'
@@ -378,7 +378,7 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
   if (!horizon || !HORIZONS.includes(horizon))
     add('FAIL', 'ITEM-2', 'horizon must be one canonical value', FORMAT, display)
   if (!status || !STATUS.has(status)) add('FAIL', 'ITEM-2', 'status must be one lifecycle value', FORMAT, display)
-  if (!blocks || !blockedBy) add('FAIL', 'ITEM-2', 'blocks and blocked-by must be arrays', FORMAT, display)
+  if (!blocks || !blockedBy) add('FAIL', 'ITEM-2', 'blocks and blocked_by must be arrays', FORMAT, display)
   if ('waiting-on-trades' in parsed.values) {
     if (!waitingOnTrades?.length)
       add('FAIL', 'TRADE-2', 'waiting-on-trades must be a non-empty flat array', FORMAT, display)
@@ -392,19 +392,19 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
       add('FAIL', 'TRADE-2', 'waiting-on-trades is valid only at the waiting-for horizon', FORMAT, display)
   }
   if (baselineRef !== null && (typeof baselineRef !== 'string' || !COMMIT_RE.test(baselineRef)))
-    add('FAIL', 'ITEM-2', 'baseline-ref must be null or a full lowercase commit ID', FORMAT, display)
+    add('FAIL', 'ITEM-2', 'baseline_ref must be null or a full lowercase commit ID', FORMAT, display)
   if (horizon === 'future' ? !candidate : 'candidate' in parsed.values)
     add('FAIL', 'ITEM-2', 'candidate: true is required only for Future items', FORMAT, display)
   if (status && status !== 'draft' && horizon && !IMMEDIATE.has(horizon))
     add('FAIL', 'ITEM-2', 'non-draft item must be in now or next', FORMAT, display)
   if (status === 'draft' && baselineRef !== null)
-    add('FAIL', 'ITEM-2', 'draft item baseline-ref must be null', FORMAT, display)
+    add('FAIL', 'ITEM-2', 'draft item baseline_ref must be null', FORMAT, display)
   if (
     status &&
     ['in-progress', 'awaiting-review', 'done'].includes(status) &&
     (typeof baselineRef !== 'string' || !COMMIT_RE.test(baselineRef))
   )
-    add('FAIL', 'ITEM-2', 'executing or completed item needs an immutable baseline-ref', FORMAT, display)
+    add('FAIL', 'ITEM-2', 'executing or completed item needs an immutable baseline_ref', FORMAT, display)
   const serial = Number.parseInt(id?.split('-').at(-1) ?? '', 10)
   if (!id || !title || !theme || !horizon || !status || !blocks || !blockedBy || !Number.isSafeInteger(serial))
     return undefined
@@ -448,7 +448,7 @@ const validateDependencies = (items: readonly WorkItem[]): void => {
         add('FAIL', 'ITEM-4', `blocks '${id}' is not reciprocal`, FORMAT, item.file)
     for (const id of item.blockedBy)
       if (!byId.get(id)?.blocks.includes(item.id))
-        add('FAIL', 'ITEM-4', `blocked-by '${id}' is not reciprocal`, FORMAT, item.file)
+        add('FAIL', 'ITEM-4', `blocked_by '${id}' is not reciprocal`, FORMAT, item.file)
     if (
       ['ready', 'in-progress', 'awaiting-review'].includes(item.status) &&
       item.blockedBy.some((id) => byId.get(id)?.status !== 'done')

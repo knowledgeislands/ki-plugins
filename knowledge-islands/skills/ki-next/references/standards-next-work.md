@@ -91,7 +91,7 @@ Resolve the exact record and identify linked dependencies before proposing it.
 
 Use Soon only for understood but non-immediate work; Waiting for only with a named external condition; Parked only with an intentional pause and named return trigger; Future only when re-scoping is needed, adding `candidate: true`.
 
-When the named external condition is observation of one or more trades, add the flat `waiting-on-trades: [TRD-…]` field and state in prose whether the item awaits receipt, a terminal receiver decision, or completion of linked receiver-local work. Do not add trade identities to `blocks` or `blocked-by`: those arrays remain local work-item dependencies. Remove `waiting-on-trades` when moving the item out of Waiting for.
+When the named external condition is observation of one or more trades, add the flat `waiting-on-trades: [TRD-…]` field and state in prose whether the item awaits receipt, a terminal receiver decision, or completion of linked receiver-local work. Do not add trade identities to `blocks` or `blocked_by`: those arrays remain local work-item dependencies. Remove `waiting-on-trades` when moving the item out of Waiting for.
 
 Never silently delete, reopen, or detach a canonical execution record.
 

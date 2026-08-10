@@ -35,8 +35,8 @@ theme: foundation-tooling
 horizon: next
 status: draft
 blocks: []
-blocked-by: []
-baseline-ref: null
+blocked_by: []
+baseline_ref: null
 ---
 
 ## Goal
@@ -274,7 +274,7 @@ test('awaiting-review Steps are all checked', () => {
     item,
     readFileSync(item, 'utf8')
       .replace('status: draft', 'status: awaiting-review')
-      .replace('baseline-ref: null', 'baseline-ref: 0123456789abcdef0123456789abcdef01234567')
+      .replace('baseline_ref: null', 'baseline_ref: 0123456789abcdef0123456789abcdef01234567')
       .replace('- [ ] Implement the first slice.', '- [x] Implement the first slice.')
       .replace(
         '## Discussion',
@@ -358,7 +358,7 @@ test('trade waits use a flat canonical identity array only at Waiting for', () =
     item,
     readFileSync(item, 'utf8')
       .replace('horizon: next', 'horizon: waiting-for')
-      .replace('blocked-by: []', 'blocked-by: []\nwaiting-on-trades: [TRD-1234abcd]')
+      .replace('blocked_by: []', 'blocked_by: []\nwaiting-on-trades: [TRD-1234abcd]')
       .replace(
         '\n## Current state\n\nThe first slice is not implemented.\n\n## Steps\n\n- [ ] Implement the first slice.\n\n## Files touched\n\n- `src/foundation.ts`\n\n## Verify\n\n- `bun test`\n\n## Dependencies / blocks\n\nNo dependencies.\n',
         '\n'
