@@ -16,6 +16,11 @@ visibility = "public" # Cowork's extraKnownMarketplaces GitHub source must reach
 
 [skills.ki-repo-plugins]
 
+[skills.ki-trades]
+
+[skills.ki-trades.routes."knowledgeislands/ki-agentic-harness"]
+import = ["knowledge"]
+
 # The projection's marketplace topics supersede the source-repository defaults.
 [skills.ki-repo.checks]
 topics = false
