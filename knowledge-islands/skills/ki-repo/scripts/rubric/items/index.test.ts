@@ -25,6 +25,7 @@ describe('ki-repo rubric catalogue', () => {
       'KIND',
       'RUNTIMES',
       'DESCFIT',
+      'DOC',
       'OVR',
       'SYNC',
       'WORK'
@@ -35,5 +36,14 @@ describe('ki-repo rubric catalogue', () => {
 
   test('the catalogue entrypoint exposes only the default definition', async () => {
     expect(Object.keys(await import('./index.ts'))).toEqual(['default'])
+  })
+
+  test('runtime coverage is an item-owned automatic host request', () => {
+    const families = definition.families as readonly {
+      items: readonly { code: string; mechanical?: { remediation: { class: string }; conform?: unknown } }[]
+    }[]
+    const item = families.flatMap(({ items }) => items).find(({ code }) => code === 'RUNTIMES-2')
+    expect(item?.mechanical?.remediation.class).toBe('automatic')
+    expect(item?.mechanical?.conform).toBeDefined()
   })
 })

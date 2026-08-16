@@ -123,5 +123,29 @@ export const LA_STRUCTURE: RubricFamily<LiveArtifactsRubricContext, LiveArtifact
   description: 'Artifact pairing, index, freshness, and judgment prompts.',
   standard: SOURCE,
   selectContext: (context) => context.structure,
-  items: [LA_S_1, LA_S_2, LA_S_3, LA_S_4, LA_J_1, LA_J_2, LA_J_3, LA_J_4]
+  items: [
+    {
+      code: 'LA-S-0',
+      title: 'safe artifact configuration',
+      description:
+        'The artifact table parses and any configured directory remains beneath the base without symlink traversal.',
+      sources: [SOURCE],
+      mechanical: {
+        level: 'FAIL',
+        remediation: {
+          class: 'diagnostic',
+          guidance: 'Correct the artifact configuration before auditing or proposing changes.'
+        },
+        audit: { phase: 'PREPARE', run: (context) => context.configuration }
+      }
+    },
+    LA_S_1,
+    LA_S_2,
+    LA_S_3,
+    LA_S_4,
+    LA_J_1,
+    LA_J_2,
+    LA_J_3,
+    LA_J_4
+  ]
 }

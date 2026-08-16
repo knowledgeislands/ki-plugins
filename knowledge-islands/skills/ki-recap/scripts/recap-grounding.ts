@@ -19,7 +19,7 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { type Dirent, readdirSync, readFileSync, statSync } from 'node:fs'
+import { type Dirent, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, isAbsolute, join, resolve } from 'node:path'
 
@@ -42,10 +42,23 @@ type RepositoryEvidence = {
 type TranscriptEvidence = {
   status: 'unchanged' | 'changed' | 'unavailable'
   baseline: RepositoryEvidence | null
-  current: RepositoryEvidence
+  current: RepositoryEvidence | null
   commitRange?: string
   changedPaths?: string[]
 }
+
+type RepositoryGrounding =
+  | {
+      status: 'available'
+      root: string
+      evidence: RepositoryEvidence
+      filesTouched: string[]
+      stagedFiles: string[]
+      unstagedFiles: string[]
+      untrackedFiles: string[]
+      diffStat: string
+    }
+  | { status: 'unavailable'; root: null; reason: string }
 
 type TranscriptCandidate = {
   runtime: Runtime
@@ -55,13 +68,17 @@ type TranscriptCandidate = {
 
 type Grounding = {
   repo: string
+  repository: RepositoryGrounding
   runtime: Runtime | null
   transcript: string | null
   filesTouched: string[]
+  stagedFiles: string[]
+  unstagedFiles: string[]
+  untrackedFiles: string[]
   diffStat: string
   toolTally: Record<string, number>
   highCostCandidates: string[]
-  'ki-change-management-recap-repository-evidence/v1': RepositoryEvidence
+  'ki-work-recap-repository-evidence/v1': RepositoryEvidence | null
   transcriptEvidence: TranscriptEvidence
 }
 
@@ -78,7 +95,7 @@ const slugifyRepoPath = (absolutePath: string): string => absolutePath.replace(/
 const resolveClaudeProjectDir = (repo: string): string => join(homedir(), '.claude', 'projects', slugifyRepoPath(repo))
 
 const resolveCodexSessionsDir = (): string => join(homedir(), '.codex', 'sessions')
-const REPOSITORY_EVIDENCE_MARKER = 'ki-change-management-recap-repository-evidence/v1'
+const REPOSITORY_EVIDENCE_MARKER = 'ki-work-recap-repository-evidence/v1'
 const COMMIT = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/
 
 const readJsonl = (path: string): unknown[] => {
@@ -109,7 +126,13 @@ const codexTranscriptCwd = (records: readonly unknown[]): string | null => {
     const event = asRecord(record)
     if (event?.type !== 'session_meta') continue
     const payload = asRecord(event.payload)
-    if (typeof payload?.cwd === 'string') return resolve(payload.cwd)
+    if (typeof payload?.cwd === 'string') {
+      try {
+        return realpathSync(resolve(payload.cwd))
+      } catch {
+        return null
+      }
+    }
   }
   return null
 }
@@ -254,11 +277,16 @@ const repositoryEvidence = (value: unknown, repository: string): RepositoryEvide
   const marker = asRecord(record?.[REPOSITORY_EVIDENCE_MARKER])
   if (
     !marker ||
-    marker.repo !== repository ||
+    typeof marker.repo !== 'string' ||
     (marker.head !== null && (typeof marker.head !== 'string' || !COMMIT.test(marker.head)))
   )
     return null
   if (marker.worktree !== 'clean' && marker.worktree !== 'dirty') return null
+  try {
+    if (realpathSync(marker.repo) !== repository) return null
+  } catch {
+    return null
+  }
   return { repo: repository, head: marker.head as string | null, worktree: marker.worktree }
 }
 
@@ -338,26 +366,63 @@ const readToolCalls = (transcriptPath: string, runtime: Runtime): ToolCall[] => 
   return calls
 }
 
-const gitOutput = (repo: string, args: string[]): string => {
+const gitOutput = (repo: string, args: string[]): string | null => {
   try {
     return execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
   } catch {
-    return ''
+    return null
   }
 }
 
-const evidenceFor = (repo: string, status: string): RepositoryEvidence => ({
-  repo,
-  head: gitOutput(repo, ['rev-parse', 'HEAD']) || null,
-  worktree: status ? 'dirty' : 'clean'
-})
+const lines = (value: string): string[] => value.split('\n').filter(Boolean)
+
+const resolveRepository = (path: string): string | null => {
+  const root = gitOutput(path, ['rev-parse', '--show-toplevel'])
+  if (!root) return null
+  try {
+    return realpathSync(root)
+  } catch {
+    return null
+  }
+}
+
+const groundRepository = (path: string): RepositoryGrounding => {
+  const root = resolveRepository(path)
+  if (!root) return { status: 'unavailable', root: null, reason: 'Git top-level root could not be resolved.' }
+  const head = gitOutput(root, ['rev-parse', 'HEAD'])
+  const porcelain = gitOutput(root, ['status', '--porcelain'])
+  const stagedStat = gitOutput(root, ['diff', '--cached', '--stat'])
+  const unstagedStat = gitOutput(root, ['diff', '--stat'])
+  const stagedNames = gitOutput(root, ['diff', '--cached', '--name-only'])
+  const unstagedNames = gitOutput(root, ['diff', '--name-only'])
+  if (head === null || porcelain === null || stagedStat === null || unstagedStat === null)
+    return { status: 'unavailable', root: null, reason: 'Git state could not be read completely.' }
+  if (stagedNames === null || unstagedNames === null)
+    return { status: 'unavailable', root: null, reason: 'Git change paths could not be read completely.' }
+  const stagedFiles = lines(stagedNames)
+  const unstagedFiles = lines(unstagedNames)
+  const untrackedFiles = lines(porcelain)
+    .filter((line) => line.startsWith('?? '))
+    .map((line) => line.slice(3))
+  const filesTouched = lines(porcelain).map((line) => line.trim())
+  return {
+    status: 'available',
+    root,
+    evidence: { repo: root, head: head || null, worktree: filesTouched.length ? 'dirty' : 'clean' },
+    filesTouched,
+    stagedFiles,
+    unstagedFiles,
+    untrackedFiles,
+    diffStat: [stagedStat, unstagedStat].filter(Boolean).join('\n')
+  }
+}
 
 const compareEvidence = (
   repo: string,
   baseline: RepositoryEvidence | null,
-  current: RepositoryEvidence
+  current: RepositoryEvidence | null
 ): TranscriptEvidence => {
-  if (!baseline?.head || !current.head) return { status: 'unavailable', baseline, current }
+  if (!current || !baseline?.head || !current.head) return { status: 'unavailable', baseline, current }
   if (
     !gitOutput(repo, ['rev-parse', '--verify', `${baseline.head}^{commit}`]) ||
     !gitOutput(repo, ['rev-parse', '--verify', `${current.head}^{commit}`])
@@ -371,7 +436,7 @@ const compareEvidence = (
   if (baseline.head === current.head) return { status: 'changed', baseline, current }
 
   const commitRange = `${baseline.head}..${current.head}`
-  const changedPaths = gitOutput(repo, ['diff', '--name-only', commitRange]).split('\n').filter(Boolean)
+  const changedPaths = lines(gitOutput(repo, ['diff', '--name-only', commitRange]) ?? '')
   return { status: 'changed', baseline, current, commitRange, changedPaths }
 }
 
@@ -405,24 +470,26 @@ const main = (): void => {
   }
 
   const { jsonMode, repoArg, runtime, transcriptsDir, transcriptSelector } = parseArguments(rawArgs)
-  const repo = resolve(repoArg ?? process.cwd())
+  const requestedPath = resolve(repoArg ?? process.cwd())
+  const repository = groundRepository(requestedPath)
+  const repo = repository.status === 'available' ? repository.root : requestedPath
   const selected = selectTranscript(discoverCandidates({ runtime, repo, transcriptsDir }), transcriptSelector)
   const calls = selected ? readToolCalls(selected.path, selected.runtime) : []
-  const filesTouched = gitOutput(repo, ['status', '--porcelain'])
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => line.trim())
-  const currentEvidence = evidenceFor(repo, filesTouched.join('\n'))
-  const baseline = latestTranscriptEvidence(selected, repo)
+  const currentEvidence = repository.status === 'available' ? repository.evidence : null
+  const baseline = currentEvidence ? latestTranscriptEvidence(selected, repo) : null
   const toolTally: Record<string, number> = {}
   for (const call of calls) toolTally[call.name] = (toolTally[call.name] ?? 0) + 1
 
   const grounding: Grounding = {
     repo,
+    repository,
     runtime: selected?.runtime ?? null,
     transcript: selected?.path ?? null,
-    filesTouched,
-    diffStat: gitOutput(repo, ['diff', '--stat']),
+    filesTouched: repository.status === 'available' ? repository.filesTouched : [],
+    stagedFiles: repository.status === 'available' ? repository.stagedFiles : [],
+    unstagedFiles: repository.status === 'available' ? repository.unstagedFiles : [],
+    untrackedFiles: repository.status === 'available' ? repository.untrackedFiles : [],
+    diffStat: repository.status === 'available' ? repository.diffStat : '',
     toolTally,
     highCostCandidates: findHighCostCandidates(calls),
     [REPOSITORY_EVIDENCE_MARKER]: currentEvidence,
@@ -437,6 +504,8 @@ const main = (): void => {
   console.log(`repo: ${grounding.repo}`)
   console.log(`runtime: ${grounding.runtime ?? '(none found)'}`)
   console.log(`transcript: ${grounding.transcript ?? '(none found)'}`)
+  console.log(`repository: ${grounding.repository.status}`)
+  if (grounding.repository.status === 'unavailable') console.log(`repository reason: ${grounding.repository.reason}`)
   console.log(`files touched: ${grounding.filesTouched.length}`)
   console.log(grounding.diffStat || '(no diff)')
   console.log(`tool tally: ${JSON.stringify(grounding.toolTally)}`)

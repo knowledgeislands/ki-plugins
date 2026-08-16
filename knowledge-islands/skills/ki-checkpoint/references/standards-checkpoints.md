@@ -50,6 +50,17 @@ After frontmatter, both states use exactly this heading sequence, with substanti
 
 The H1 repeats the thread name exactly. `Decisions made`, `Files touched`, and `Open questions` may say `None` when that is the truthful current state; an empty section is not a useful reconstruction snapshot.
 
+## Optional runtime reminder consumers
+
+A runtime-specific reminder consumer is separately opt-in. It may act only when its native event contract is independently evidenced and all of the following are true:
+
+1. The repository declares `ki-checkpoint` and resolves to one physical repository root.
+2. The runtime adapter is explicitly enabled in that runtime's own configuration; the portable `ki-checkpoint` declaration remains an empty capability marker.
+3. The adapter receives one exact, human-selected thread name from that explicit runtime configuration. It resolves only `+/_CHECKPOINTS/<thread>.md`; directory scans, newest-record selection, runtime-derived names, and retired fallback are forbidden.
+4. The resolved record is a regular active checkpoint that satisfies this standard's identity and closed-schema requirements.
+
+The only first-delivery action is a compact reminder that this already-selected record may need an explicit update. The consumer does not create, update, retire, select, or reword a checkpoint; infer work status or completion; invoke `ki-recap`; read a transcript or vendor session; or expose a session identifier. Repeated, interrupted, malformed, unknown, absent, or otherwise unsafe input is a quiet no-op. A native runtime adapter owns its event semantics, registration, timeout, exit behaviour, and any actionable failure text; this portable contract supplies no shared hook or fallback.
+
 ## Update lifecycle
 
 Create or update a checkpoint only at an explicit user request or a documented repository-local trigger, such as before context compaction, after a substantive decision, after a repository commit, or before a known pause. A generic Stop event is not authority to create or choose a checkpoint.
@@ -79,10 +90,10 @@ A retired record is inspectable recovery evidence and never an active resume can
 
 A checkpoint contains reconstruction state, not a transcript. It has no vendor-session field, conversation URL, runtime identifier, message log, or role-by-role dialogue. Its prose must not claim that a future agent can access or reopen the originating session.
 
-It is also not a completion signal, roadmap, decision record, knowledge store, or session recap. `ki-recap` owns the user-facing judgment-led recap; the relevant governance skill owns each durable artifact. Optional runtime adapters may discover or update an already selected checkpoint only within this contract.
+It is also not a completion signal, roadmap, decision record, knowledge store, or session recap. `ki-recap` owns the user-facing judgment-led recap; the relevant governance skill owns each durable artifact. An optional runtime reminder consumer may use only an already-selected valid record under [its explicit contract](#optional-runtime-reminder-consumers). It does not grant write authority, choose a thread, invoke recap, read session material, or turn this portable procedure into a native host operation.
 
 ## Audit and conform boundary
 
-AUDIT checks only the declared repository's physical checkpoint subarea. It reports absent scope as not applicable, rejects symlinks and unsupported nesting, and treats retired records as non-active.
+AUDIT, CONFORM, and EDUCATE are the currently hosted `ki repo` operations. RESUME, UPDATE, and RETIRE remain explicit agent procedures until a host operation is implemented and independently verified. AUDIT checks only the declared repository's physical checkpoint subarea. It reports absent scope as not applicable, rejects symlinks and unsupported nesting, and treats retired records as non-active.
 
 CONFORM never creates content, selects a thread, repairs prose or metadata, moves or retires a record, or infers lifecycle state. Authored corrections require an explicit UPDATE or RETIRE operation because automation cannot safely supply reconstruction judgment.

@@ -37,14 +37,14 @@ The marketplace manifest, generated plugin projection, and repository scaffold.
   - _Remediation:_ diagnostic — Correct the marketplace projection from its authoritative harness inputs; do not infer or rewrite generated projection semantics automatically.
 - **PLUG-10 [M] — MCP deferral** — No `.mcp.json` appears in the plugin. (standards-plugin-marketplace.md)
   - _Remediation:_ diagnostic — Correct the marketplace projection from its authoritative harness inputs; do not infer or rewrite generated projection semantics automatically.
-- **PLUG-11 [J] — Projection freshness** — The projected skill and agent set matches the current harness. (standards-plugin-marketplace.md)
+- **PLUG-11 [J] — Projection freshness** — Separate harness evidence establishes whether the projected skill and agent set is current; this structural audit does not compare source trees. (standards-plugin-marketplace.md)
   - _Evidence scope:_ The generated marketplace projection and its authoritative harness inputs.
-  - _Review prompt:_ Does the projected skill and agent set match the current harness without stale or missing entries?
+  - _Review prompt:_ Is separate, current harness-to-projection evidence available for stale or missing entries?
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Regenerate or revise the projection through its responsible owner, record a named gap, or record an explicit justified exclusion.
-- **PLUG-12 [J] — Projection reproducibility** — Running the canonical `ki-binding` generator leaves no diff. (standards-plugin-marketplace.md)
+- **PLUG-12 [J] — Projection reproducibility** — Separate generator evidence establishes reproducibility; this structural audit does not run or verify the generator. (standards-plugin-marketplace.md)
   - _Evidence scope:_ The generated marketplace projection and its authoritative harness inputs.
-  - _Review prompt:_ Is the complete projection byte-for-byte reproducible from the current harness?
+  - _Review prompt:_ Is separate generator evidence available that the complete projection is reproducible from the current harness?
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Regenerate or revise the projection through its responsible owner, record a named gap, or record an explicit justified exclusion.
 - **PLUG-13 [M] — Repository scaffold** — `LICENSE`, `README.md`, `.gitignore`, and `CLAUDE.md` are physical files. (standards-plugin-marketplace.md)

@@ -40,7 +40,7 @@ const STREAM_4: RubricItem<StreamRubricContext> = {
   code: 'STREAM-4',
   title: 'adapter-owned records',
   description:
-    'Roadmap and housekeeping records follow their owning adapters rather than a generic Streams proposal model.',
+    'Roadmap and housekeeping records follow their owning adapters rather than a generic Streams record model.',
   sources: [SOURCE],
   judgment: {
     scope: 'Roadmap and housekeeping records sampled from the two Streams areas.',

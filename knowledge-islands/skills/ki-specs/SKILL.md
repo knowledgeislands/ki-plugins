@@ -4,7 +4,7 @@ ki-kind: governance
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Codify, audit, and maintain Specifications — the behaviour-level contract of what a system does — in any Knowledge Islands repo. Specifications live in `docs/specs/`, flat one-file-per-area, with an `index.md` that defines the ID scheme and areas table. Each requirement is a `### <PREFIX>-NNN — title` heading carrying one RFC-2119 (MUST / SHOULD / MAY) statement and a `_Verify:_` test hook; IDs are append-only and never reused; an unnumbered `## Gaps` section holds the backlog. Decisions capture the why (`ki-decision-records`), specifications the what, guides the how (`ki-guides`), and roadmap items the when (`ki-change-management-roadmap`). Use when writing or auditing a specification. Triggers: "write a specification", "spec this behaviour", "audit specifications", "add a requirement", "what does the system do". Off-ramps: ki-decision-records (the governing decisions a requirement cites), ki-guides (practical procedure), ki-change-management-roadmap (planned work), ki-authoring (Markdown/TOML style).
+  Codify, audit, and maintain Specifications — the behaviour-level contract of what a system does — in any Knowledge Islands repo. Specifications live in `docs/specs/`, flat one-file-per-area, with an `index.md` that defines the ID scheme and areas table. Each requirement is a `### <PREFIX>-NNN — title` heading carrying one RFC-2119 (MUST / SHOULD / MAY) statement and a `_Verify:_` test hook; IDs are append-only and never reused; an unnumbered `## Gaps` section holds the backlog. Decisions capture the why (`ki-decision-records`), specifications the what, guides the how (`ki-guides`), and roadmap items the when (`ki-work-roadmap`). Use when writing or auditing a specification. Triggers: "write a specification", "spec this behaviour", "audit specifications", "add a requirement", "what does the system do". Off-ramps: ki-decision-records (the governing decisions a requirement cites), ki-guides (practical procedure), ki-work-roadmap (planned work), ki-authoring (Markdown/TOML style).
 argument-hint: 'audit [dir] | conform [dir] | help | educate [dir] | new <area> "<title>" | refresh'
 ---
 
@@ -13,6 +13,8 @@ argument-hint: 'audit [dir] | conform [dir] | help | educate [dir] | new <area> 
 You are applying the **Knowledge Islands Specifications standard** — how a system's behaviour is written down as a testable, append-only contract. A specification is the **what**: the behaviour a built system exhibits, stated normatively and paired with a verification hook, so a test suite or reader can check the system against it. It sits between the **why** (Decision Records, `ki-decision-records`) and the **how** (guides). Read the [Specifications standard](references/standards-specs.md) before authoring, auditing, or conforming a corpus; the [rubric](references/rubric.md) publishes its checkable criteria, [exemplars](references/exemplars.md) illustrate representative shapes, and [sources](references/sources.md) records provenance.
 
 ## What this skill owns
+
+`ki-repo` owns applying the non-Knowledge-Base documentation topology. This skill owns the `docs/specs/` behaviour concern within that topology.
 
 1. **The layout** — Specifications live in `docs/specs/`, **flat, one file per area** (e.g. `authentication.md`, `site-seo.md`). An `index.md` is the overview: purpose, how-to-read, the ID scheme, the Gaps convention, and the **areas table**.
 2. **The areas table** — in `index.md`, a table whose rows map an **area file** to its **prefix** (and a short "covers" blurb). A file may host more than one prefix; a prefix belongs to exactly one file. This table is the registry the checker validates IDs against.
@@ -34,7 +36,7 @@ Carries the universal **AUDIT · CONFORM · EDUCATE · REFRESH**, plus **NEW** (
 
 ### Mode EDUCATE
 
-→ Activate this skill with `ki skill repo add ki-specs`; the hosted EDUCATE mode renders its concern and rubric. Use [NEW](references/mode-new.md) to author the first area and index from the exemplars.
+→ Activate this skill with `ki repo skill add ki-specs`; the hosted EDUCATE mode renders its concern and rubric. Use [NEW](references/mode-new.md) to author the first area and index from the exemplars.
 
 ### Mode AUDIT
 

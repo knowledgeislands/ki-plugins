@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process'
 import { type Dirent, lstatSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 import type {
@@ -15,7 +14,6 @@ type DirectoryState = 'missing' | 'present' | 'unsafe'
 type FileState = 'missing' | 'physical' | 'unsafe'
 type ExecutableState = 'missing' | 'executable' | 'non-executable' | 'unsafe'
 type ConfigState = 'missing' | 'unsafe' | 'malformed' | 'absent' | 'present'
-type VersionState = 'passed' | 'failed' | 'unavailable'
 
 const TOOLS_TABLE = 'ki-repo-tools'
 
@@ -33,7 +31,8 @@ export type ToolRepositoryContext = {
   readonly unsafeBinEntries: readonly string[]
   readonly primary: string | null
   readonly primaryText: string
-  readonly version: VersionState
+  readonly releaseVersion: string | null
+  readonly changelogVersion: string | null
   readonly install: ExecutableState
   readonly changelog: FileState
   readonly workflows: DirectoryState
@@ -139,21 +138,20 @@ const inspectConfig = (
   }
 }
 
-const inspectVersion = (path: string, executableFile: boolean, repository: string): VersionState => {
-  if (!executableFile) return 'unavailable'
+const packageVersion = (source: string | null): string | null => {
+  if (!source) return null
   try {
-    const result = spawnSync(path, ['--version'], {
-      cwd: repository,
-      encoding: 'utf8',
-      env: { LANG: 'C', PATH: process.env.PATH ?? '' },
-      stdio: ['ignore', 'pipe', 'ignore'],
-      timeout: 5_000
-    })
-    return result.status === 0 && result.stdout.trim().length > 0 ? 'passed' : 'failed'
+    const value = JSON.parse(source) as { readonly version?: unknown }
+    return typeof value.version === 'string' && /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(value.version)
+      ? value.version
+      : null
   } catch {
-    return 'failed'
+    return null
   }
 }
+
+const changelogVersion = (source: string | null): string | null =>
+  source?.match(/^##\s+\[?(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)\]?/m)?.[1] ?? null
 
 const inspectDirectory = (
   path: string,
@@ -194,11 +192,9 @@ export const createToolsSession = ({
   const bins = inspectedBins.files.map((name) => ({ name, executable: executable(join(binPath, name)) }))
   const expected = basename(root).replace(/^tools-/, '')
   const manualPath = `man/${expected}.1`
-  const primary = bins.find(({ name }) => name === expected)?.name ?? bins[0]?.name ?? null
+  const primary = bins.find(({ name }) => name === expected)?.name ?? null
   const primaryPath = primary ? join(binPath, primary) : null
   const primaryText = primaryPath ? (readableText(primaryPath) ?? '') : ''
-  const primaryExecutable = primary ? bins.find((bin) => bin.name === primary)?.executable === true : false
-  const version = primaryPath ? inspectVersion(primaryPath, primaryExecutable, root) : 'unavailable'
   const shell = /^#!.*\b(bash|sh|dash|zsh|ksh)\b/.test(primaryText.split(/\r?\n/, 1)[0] ?? '')
 
   const installPath = join(root, 'install.sh')
@@ -215,6 +211,8 @@ export const createToolsSession = ({
   const changelogKind = rootState === 'physical' ? nodeKind(join(root, 'CHANGELOG.md')) : 'missing'
   const changelog: FileState =
     changelogKind === 'missing' ? 'missing' : changelogKind === 'file' ? 'physical' : 'unsafe'
+  const releaseVersion = packageVersion(readableText(join(root, 'package.json')))
+  const changelogRelease = changelog === 'physical' ? changelogVersion(readableText(join(root, 'CHANGELOG.md'))) : null
 
   const githubPath = join(root, '.github')
   const githubKind = rootState === 'physical' ? nodeKind(githubPath) : 'missing'
@@ -281,11 +279,7 @@ export const createToolsSession = ({
     rootState === 'physical'
       ? inspectConfig(configPath, nodeKind(configPath))
       : { state: 'missing' as const, keys: [], content: null }
-  const applicable =
-    configEvidence.state === 'present' ||
-    configEvidence.state === 'malformed' ||
-    configEvidence.state === 'unsafe' ||
-    inspectedBins.state !== 'missing'
+  const applicable = configEvidence.state === 'present'
 
   const requestedExecutables = new Set<string>()
   let markerRequested = false
@@ -301,7 +295,8 @@ export const createToolsSession = ({
       unsafeBinEntries: inspectedBins.unsafe,
       primary,
       primaryText,
-      version,
+      releaseVersion,
+      changelogVersion: changelogRelease,
       install,
       changelog,
       workflows: inspectedWorkflows.state,

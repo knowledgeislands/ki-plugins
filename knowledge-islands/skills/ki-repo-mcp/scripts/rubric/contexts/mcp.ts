@@ -223,20 +223,12 @@ export const createMcpSession = ({
   const configEvidence = rootExists
     ? inspectConfig(configPath, nodeKind(configPath))
     : { state: 'missing' as const, keys: [], content: null }
-  const mcpServerState = rootExists ? nodeKind(at('src', 'mcp-server')) : 'missing'
-  const applicable =
-    rootExists &&
-    (configEvidence.state === 'present' ||
-      configEvidence.state === 'malformed' ||
-      configEvidence.state === 'unsafe' ||
-      mcpServerState !== 'missing')
+  const applicable = rootExists && configEvidence.state === 'present'
   const packagePath = at(PACKAGE_FILE)
   const packageEvidence = rootExists
     ? inspectPackage(packagePath, nodeKind(packagePath))
     : { value: null, malformed: false, content: null }
   const scripts = packageScripts(packageEvidence.value)
-  const originalConfig = configEvidence.content
-  let configDraft = originalConfig
   const originalPackage = packageEvidence.value
   const packageDraft = originalPackage ? structuredClone(originalPackage) : null
   let packageChanged = false
@@ -264,15 +256,7 @@ export const createMcpSession = ({
       rootExists,
       applicable,
       config: configEvidence.state,
-      configKeys: configEvidence.keys,
-      ...(mode === 'conform' && applicable && configEvidence.state === 'absent' && originalConfig !== null
-        ? {
-            addMarker: () => {
-              if (configDraft !== originalConfig) return
-              configDraft = `${originalConfig.replace(/\n*$/, '\n')}\n[skills.${CONFIG_SECTION}]\n`
-            }
-          }
-        : {})
+      configKeys: configEvidence.keys
     },
     layout: {
       requiredDirectories: ['config', 'mcp-server', 'tools', 'main', 'utils'].map((directory) => ({
@@ -384,8 +368,6 @@ export const createMcpSession = ({
     ],
     proposal: () => {
       const writes: ConformWrite[] = []
-      if (configDraft !== null && originalConfig !== null && configDraft !== originalConfig)
-        writes.push({ path: CONFIG_FILE, content: configDraft })
       if (packageChanged && packageDraft && packageEvidence.content !== null)
         writes.push({ path: PACKAGE_FILE, content: `${JSON.stringify(packageDraft, null, 2)}\n` })
       return { writes }

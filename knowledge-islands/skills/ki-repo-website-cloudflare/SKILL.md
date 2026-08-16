@@ -4,13 +4,13 @@ ki-kind: governance
 ki-shared-dependencies: [ki-skills:rubric]
 ki-depends-on: [ki-repo-website]
 description: >
-  Codify, audit, conform, and scaffold the Knowledge Islands house convention for serving a built static site on Cloudflare — Workers + Static Assets (not Pages), one `wrangler.jsonc` pointing `assets.directory` at the site's `dist/`, custom-domain routes, observability, and the `ki:site:deploy` script family. Use when deploying a site to Cloudflare, wiring or auditing its `wrangler.jsonc`, bringing hosting up to standard, or scaffolding it. Triggers: "deploy this site to Cloudflare", "audit the Cloudflare hosting", "set up wrangler for the site", "host the dist on Cloudflare", "configure Workers Static Assets", "why won't the site deploy", "conform the hosting". Depends on `ki-repo-website`, which produces the `dist/` seam; the separately coverage-detected `ki-engineering` standard owns the toolchain. For any Worker that is not the static-site server (bots, ingress receivers, APIs, Durable Objects) and general Cloudflare/Workers/wrangler usage, use the `cloudflare` and `wrangler` skills.
+  Governs Cloudflare hosting for either Knowledge Islands website implementation using Workers Static Assets, never Pages as the deployment target. Audits `wrangler.jsonc`, rejects the legacy `pages_build_output_dir` marker and any `main` server entry, matches `assets.directory` to `dist/`, and covers Workers Builds, workers.dev, custom domains, and deploy scripts. Use when publishing a content site or interactive app on Cloudflare or diagnosing a static deployment failure. Depends only on the neutral `ki-repo-website` seam.
 argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
 ---
 
 # Knowledge Islands Cloudflare hosting standard
 
-Apply the house convention for serving a built static site on **Cloudflare Workers + Static Assets**: one site Worker points at the build's `dist/`, exposes the intended domains, enables observability, and is reached through the `ki:site:*` script family.
+Apply the house convention for serving a built static site on **Cloudflare Workers Static Assets**: one site Worker points at the build's `dist/`, exposes the intended domains, enables observability, and is reached through the `ki:site:*` script family.
 
 This is a base-agnostic standard skill selected by `[skills.ki-repo-website-cloudflare]` in `.ki-config.toml`. It owns only the deploy/serve delta for the static-site Worker. `ki-repo-website` owns the build that emits `dist/`; `ki-engineering` owns the toolchain. Companion Workers and general Cloudflare or Wrangler concerns route to the `cloudflare` and `wrangler` skills.
 
@@ -35,9 +35,9 @@ Use these references progressively:
 
 Three rules define the boundary:
 
-1. Use Workers + Static Assets and `wrangler deploy`, never `wrangler pages deploy`.
+1. Use Workers Static Assets and `wrangler deploy`; Pages is not a deployment target for new projects.
 2. Treat `assets.directory` as the seam to the `dist/` emitted by `ki-repo-website`.
-3. Govern only the site Worker carrying `assets`; leave Workers carrying `main` without `assets` to the generic Cloudflare skills.
+3. Keep the site assets-only: no `main` means no server-side Worker code executes, making a published “no control plane” claim mechanically verifiable.
 
 ## Composition
 
@@ -65,7 +65,7 @@ With no mode, show HELP and, in an interactive session only, offer the mode choi
 
 ## Boundaries
 
-- Building `dist/`, Eleventy, Nunjucks, Tailwind, and portable URLs → `ki-repo-website`.
+- Shared `dist/` lifecycle → `ki-repo-website`; Eleventy content structure → `ki-repo-website-content`; React/Vite app structure → `ki-repo-website-app`.
 - Companion Workers, APIs, Durable Objects, bindings, secrets, `wrangler dev`, deploy flags, KV/R2/D1, crons, and queues → `cloudflare` / `wrangler`.
 - Bun, lint/dependency families, TypeScript, and Biome → `ki-engineering`.
 - Universal repository files and repository configuration ownership → `ki-repo`.

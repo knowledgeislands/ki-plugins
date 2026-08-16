@@ -14,13 +14,13 @@ You are helping audit, conform, or scaffold a **`tools-*` repo** — a repo hold
 
 This skill rides on `ki-repo` (local files, GitHub settings) but **not** `ki-engineering` — a bash tool has no TypeScript/Bun toolchain to govern, so no `ki-engineering` declaration is assumed (the same pattern `ki-repo-kb` follows). If the tool grows a `package.json`, that changes: it then declares `[skills.ki-engineering]` too and defers its lint/test there (see the capability rule below).
 
-The full, quotable standard lives in [the tool-repository standard](references/standards-tool-repositories.md); the line-by-line pass/fail items live in [the generated rubric](references/rubric.md). `ki repo audit` and `ki repo conform` execute the structured mechanical contract directly through the host.
+The full, quotable standard lives in [the tool-repository standard](references/standards-tool-repositories.md); the line-by-line pass/fail items live in [the generated rubric](references/rubric.md). `ki repo audit` and `ki repo conform` inspect the structured mechanical contract directly through the host. They never execute a target binary, installer, package manager, CI workflow, or network validator; runtime and release evidence are explicit separate diagnostics.
 
 ## Container, not contents
 
 This skill judges the **container** and a small shared public interface — not the quality of the tool's own implementation:
 
-- **In scope:** the `bin/<tool>` layout and its exec bit, `install.sh`, versioning + `--version`, `CHANGELOG.md`, CI, test-suite presence, help/error/exit-status behaviour, completion, manual authoring and distribution, and the capability conditionals below.
+- **In scope:** the `bin/<tool>` layout and its exec bit, `install.sh`, local release-marker shape, `CHANGELOG.md`, CI source shape, test-suite presence, completion, manual authoring and distribution, and the capability conditionals below. Runtime `--version`, installer, CI, and release execution remain separate evidence.
 - **Out of scope:** whether tool-specific operations are correct, well-factored, or fast. That is the tool author's concern (and, for a shell tool, shellcheck + bats — which this skill checks are _wired_, not what they _find_). The Homebrew tap and its formula are `ki-repo-homebrew-tap`'s; the repo's README, LICENSE, and GitHub settings are `ki-repo`'s.
 
 ## The canonical shape at a glance
@@ -51,7 +51,11 @@ Mirrors `ki-engineering`'s capability-conditional pattern: what the repo _is_ de
 
 ## The qualified `ki-repo-tools` marker
 
-A `tools-*` repo opts into this standard by declaring a **keyless** `[skills.ki-repo-tools]` table in its `.ki-config.toml`. The table is validated **down** (this skill reads only its own table and warns on any unknown key inside it). `ki repo conform --skill ki-repo-tools` may add the marker to an existing physical, parseable configuration. It may also set executable bits on verified physical `bin/*` files and `install.sh`; missing content, malformed or unsafe paths, external releases, and Homebrew operations remain report-only.
+A `tools-*` repo opts into this standard by declaring a **keyless** `[skills.ki-repo-tools]` table in its `.ki-config.toml`. The table is validated **down** (this skill reads only its own table and warns on any unknown key inside it). `ki-repo` owns selecting the declaration; this skill may only set executable bits on verified physical `bin/*` files and `install.sh`. Missing content, malformed or unsafe paths, external releases, and Homebrew operations remain report-only.
+
+## Release readiness
+
+Before preparing or reviewing a tool release, read [the release-readiness checklist](references/standards-release-readiness.md). It consolidates the existing version, documentation, validation, and distribution obligations into one staged human checklist; it does not create another skill mode or take ownership from `ki-engineering` or `ki-repo-homebrew-tap`.
 
 ## Operating modes
 

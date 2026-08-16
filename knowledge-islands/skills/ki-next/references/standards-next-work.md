@@ -1,6 +1,6 @@
 # Next-work procedure
 
-`ki-next` applies the transition rules owned by `ki-change-management-roadmap` or `ki-repo-kb-streams`.
+`ki-next` applies the transition rules of the adapter selected by `ki-work`.
 
 It never treats a recap, handoff, or historic transcript as authority to write.
 
@@ -19,12 +19,14 @@ Its responsibility ends at selecting, promoting, deferring, or spawning due work
 
 ## 1. Ground
 
-When a `ki-recap` precedes this cycle, require its handoff/compaction boundary to have been reached before starting a new selection cycle. After compaction, treat the digest as orientation only and re-ground every repository fact below.
+When a `ki-recap` precedes this cycle, require its bounded handoff to be complete before starting a new selection cycle. Treat its digest as orientation only and re-ground every repository fact below.
 
 1. Resolve the current git repository physically and read `.ki-config.toml`.
-2. In a non-KB repository, run `ki repo audit --skill ki-change-management-roadmap --repo <git-root>` and stop on any FAIL or WARN. Read the generated `ROADMAP.md`, every canonical item directly below `docs/roadmap/`, and active `docs/housekeeping/` templates; derive lifecycle status and dependencies from frontmatter.
-3. In a Knowledge Base, run `ki repo audit --skill ki-repo-kb-streams --repo <git-root>` and read the Focus, proposal, and `Streams/Housekeeping/` indexes fresh.
-4. When the repository declares `ki-trades`, run its audit and inspect validated inbound records after the clean governing-skill audits. Its `README.md` is orientation, not a record.
+2. Run `ki repo audit --skill ki-work --repo <git-root>` and stop on any failure. Read its selected adapter literal and require the matching declared owner table. This process does not reimplement the base selector's semantic validation and never infers an adapter from repository shape.
+3. For `roadmap`, run `ki repo audit --skill ki-work-roadmap --repo <git-root>` and stop on any FAIL or WARN. Read `ROADMAP.md`, every canonical item directly below `docs/roadmap/`, and active `docs/housekeeping/` templates; derive lifecycle status and dependencies from frontmatter.
+4. For `kb-streams`, run `ki repo audit --skill ki-repo-kb-streams --repo <git-root>` and stop on any FAIL or WARN. Read the flat records and `_ISSUES.md` ledger in `Streams/Roadmap/`, plus active `Streams/Housekeeping/` templates, fresh.
+5. For `github-issues` or `linear`, stop before reading or writing records: remote process execution is not implemented. Do not fall back to local paths or a compatibility representation.
+6. When the repository declares `ki-trades`, run its audit and inspect validated inbound records after the clean governing-skill audits. Its `README.md` is orientation, not a record.
 
 ## 2. Triage inbound handoffs
 
@@ -58,13 +60,13 @@ Do not change content until the user confirms exact wording and placement.
 ### Non-KB repositories
 
 1. Gather dependency-ready `now` and `next` records. Reuse their canonical record; if several are independently ready, recommend a small ranked set only when each retains its own lifecycle and the user confirms the set and order.
-2. Only when none is eligible, assess `soon` records against the Next entry rule. After confirmation, change horizon or Focus to `next`, run the adapter audit, then re-evaluate it at the destination.
+2. Only when none is eligible, assess `soon` records against the Next entry rule. After confirmation, change horizon to `next`, run the adapter audit, then re-evaluate it at the destination.
 3. Only when Soon has no viable record, assess Future candidates. Move directly to Next only when the full Next rule is met and Soon adds no value; otherwise move to Soon once the intended outcome and boundary are known. Re-evaluate after every confirmed move.
 4. Reconsider Waiting-for or Parked items only when their named external condition or return trigger changed.
 
 ### Knowledge Bases
 
-Use the same queue through native Focus folders: `Now`, `Next`, `Soon`, `Future`, `Waiting for`, and `Parked`. `Streams/Housekeeping` is a template horizon, not a delivery destination; due runs move to the template's declared delivery Focus.
+Use the same horizon vocabulary on flat `Streams/Roadmap/` records. `Streams/Housekeeping` is a template home, not a delivery destination; due runs become linked roadmap records at the template's declared horizon.
 
 ### Roadmap batchability screen
 
@@ -85,13 +87,13 @@ If no group meets every condition, say so briefly and use the ordinary single-it
 
 ## 5. Defer
 
-`defer <item> <horizon-or-focus>` is an explicit user-confirmed move.
+`defer <item> <horizon>` is an explicit user-confirmed move.
 
 Resolve the exact record and identify linked dependencies before proposing it.
 
 Use Soon only for understood but non-immediate work; Waiting for only with a named external condition; Parked only with an intentional pause and named return trigger; Future only when re-scoping is needed, adding `candidate: true`.
 
-When the named external condition is observation of one or more trades, add the flat `waiting-on-trades: [TRD-…]` field and state in prose whether the item awaits receipt, a terminal receiver decision, or completion of linked receiver-local work. Do not add trade identities to `blocks` or `blocked_by`: those arrays remain local work-item dependencies. Remove `waiting-on-trades` when moving the item out of Waiting for.
+When the named external condition is observation of one or more trades, add the flat `waiting_on_trades: [TRD-…]` field and state in prose whether the item awaits receipt, a terminal receiver decision, or completion of linked receiver-local work. Do not add trade identities to `blocks` or `blocked_by`: those arrays remain local work-item dependencies. Remove `waiting_on_trades` when moving the item out of Waiting for.
 
 Never silently delete, reopen, or detach a canonical execution record.
 
@@ -137,7 +139,7 @@ That handoff does not permit `ki-next` to infer batch, selection, or implementat
 
 After grounding and before ordinary candidate selection, evaluate each active housekeeping template under the adapter's template horizon. A template is due only when its cadence, last-run evidence, grace period, and spawn policy say so, and it has no active run.
 
-For each due template, present the exact proposed work record, destination (normally Now or Next), template link, and policy effect. Spawn automatically only when the template expressly permits automatic spawning; otherwise require confirmation. The spawned record enters as `draft` and follows the ordinary shared lifecycle. Update the template's `last-run` and `active-run` only in the same coherent change that creates the record.
+For each due template, present the exact proposed work record, destination (normally Now or Next), template link, and policy effect. Spawn automatically only when the template expressly permits automatic spawning; otherwise require confirmation. The spawned record enters as `draft` and follows the ordinary shared lifecycle. In the same coherent change, set only `active-run` to the linked record identity; never change `last-run` at spawn. `ki-accept` records successful completion by updating `last-run` and clearing `active-run` only after the linked run is accepted as `done`.
 
 Never implement a template directly, spawn a duplicate active run, or leave a due run in `Streams/Housekeeping`.
 
@@ -149,6 +151,4 @@ Identify `done` records that are eligible for pruning when useful, but do not de
 
 If no work is eligible, identify the missing condition or scoping decision plainly.
 
-Then treat this point as a compaction boundary. Selection has just resolved a broad survey — roadmap items, inbound trades, near-matches, ranking rationale — into one confirmed choice, and the plan or implementation cycle that follows needs the selected item, not the survey that produced it. Compact by default here, retaining the selected work, its confirmed disposition, and any writes made during this cycle.
-
-Two conditions withhold the default, matching [the session-recap standard](../../ki-recap/references/standards-session-recap.md). **Safety:** do not compact with a pending user decision, an unfinished tool operation, or a cycle write not yet recorded. **Minimum footprint:** do not compact when no substantive work has entered context since the last compaction — a `ki-recap` running straight into this cycle compacts once here rather than at both boundaries. Judge the floor by work done, not by a token count or a context-use percentage; no runtime adapter is required to expose one. Claude Code exposes an invocable mechanism; Codex compacts only automatically, so there the boundary is stated and passed without invocation.
+End after reporting the confirmed selection, handoff, and audit result. Runtime context management is not a `ki-next` action or completion condition.

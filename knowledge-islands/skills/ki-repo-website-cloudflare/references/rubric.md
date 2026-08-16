@@ -24,18 +24,18 @@ The tracked readable rubric is the exact publication of the structured catalogue
 
 → [standard](standards-cloudflare-hosting.md)
 
-Workers + Static Assets hosting standard.
+Workers Static Assets hosting standard.
 
-- **WCF-1 [M] — site Worker config** — A site Worker configuration with static assets exists. (standards-cloudflare-hosting.md#1-model--workers--static-assets-not-pages)
+- **WCF-1 [M] — site Worker config** — A site Worker configuration with static assets exists. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
-- **WCF-2 [M] — Workers deploy** — Deployment uses Workers + Static Assets, not Pages. (standards-cloudflare-hosting.md#1-model--workers--static-assets-not-pages)
+- **WCF-2 [M] — Workers deploy** — Deployment uses Workers Static Assets and contains no legacy Pages marker or Pages deploy command. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
-- **WCF-3 [M] — single site Worker** — Exactly one site Worker carries an assets block. (standards-cloudflare-hosting.md#1-model--workers--static-assets-not-pages)
+- **WCF-3 [M] — single site Worker** — Exactly one site Worker carries an assets block. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
-- **WCF-4 [M + J] — assets directory** — Assets point at the build dist directory. (standards-cloudflare-hosting.md#2-the-dist-seam)
+- **WCF-4 [M + J] — assets directory** — Parsed assets.directory is the exact contained dist output adjacent to its Wrangler config. (standards-cloudflare-hosting.md#2-the-dist-seam)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
   - _Evidence scope:_ The Cloudflare Worker, static assets, deployment configuration, and evidence named by this criterion.
-  - _Review prompt:_ Confirm the declared dist path is the exact output directory produced by the separately audited ki-repo-website build.
+  - _Review prompt:_ Confirm the declared dist path is the exact output directory produced by the separately audited generator-neutral website build.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Revise the hosting design through the responsible site owner, record a named gap, or record an explicit justified exclusion.
 - **WCF-6 [M] — generated directories ignored** — dist and .wrangler are gitignored. (standards-cloudflare-hosting.md#2-the-dist-seam, standards-cloudflare-hosting.md#4-the-script-family)
@@ -68,9 +68,9 @@ Workers + Static Assets hosting standard.
   - _Review prompt:_ Confirm configs classified as companions have main without assets and route their bindings, secrets, and runtime concerns to cloudflare/wrangler.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Revise the hosting design through the responsible site owner, record a named gap, or record an explicit justified exclusion.
-- **WCF-20 [M] — hosting opt-in** — The Cloudflare opt-in table is present. (standards-cloudflare-hosting.md#1-model--workers--static-assets-not-pages)
+- **WCF-20 [M] — hosting opt-in** — The Cloudflare opt-in table is present. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
-- **WCF-21 [M] — opt-in validation** — The opt-in site root is valid. (standards-cloudflare-hosting.md#1-model--workers--static-assets-not-pages)
+- **WCF-21 [M] — opt-in validation** — The opt-in site root is valid. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
 - **WCF-22 [M + J] — hosting delta** — This remains the hosting delta only. (standards-cloudflare-hosting.md#6-boundaries--what-is-not-in-scope)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
@@ -78,3 +78,7 @@ Workers + Static Assets hosting standard.
   - _Review prompt:_ Confirm Workers Builds, account/domain binding, and deployed behavior separately without expanding this rubric into the site build or general Worker concerns.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Revise the hosting design through the responsible site owner, record a named gap, or record an explicit justified exclusion.
+- **WCF-23 [M] — assets-only Worker** — A static website Worker has no main field and therefore executes no server-side code. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
+  - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
+- **WCF-24 [M] — SPA fallback** — An interactive app uses Workers Static Assets single-page-application fallback. (standards-cloudflare-hosting.md#3-the-site-wranglerjsonc-shape)
+  - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.

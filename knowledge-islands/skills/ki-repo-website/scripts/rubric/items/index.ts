@@ -1,12 +1,12 @@
 import type { SkillRubricDefinition } from '../../shared/rubric.ts'
-import { createWebsiteSession, type WebsiteContext } from '../contexts/website.ts'
+import { createWebsiteCoreSession, type WebsiteCoreContext } from '../contexts/website.ts'
 import { RUBRIC } from './publication.ts'
-import { WEB } from './web.ts'
+import { SITE } from './site.ts'
 
 export default {
   contract: 1,
   name: 'ki-repo-website',
-  concern: 'Eleventy static-site build',
-  createSession: createWebsiteSession,
-  families: [RUBRIC, WEB]
-} satisfies SkillRubricDefinition<WebsiteContext>
+  concern: 'generator-neutral website seam',
+  createSession: createWebsiteCoreSession,
+  families: [RUBRIC, SITE]
+} satisfies SkillRubricDefinition<WebsiteCoreContext>

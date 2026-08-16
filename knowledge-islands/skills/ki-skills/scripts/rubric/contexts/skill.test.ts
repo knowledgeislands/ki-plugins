@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { KI_SHAPE } from '../items/ki-shape.ts'
+import { OPTIONAL } from '../items/optional.ts'
 import { selectKiSkillsContext } from './contexts.ts'
 import { createSkillRubricContext } from './skill.ts'
 
@@ -63,7 +64,8 @@ const evidence = (directory: string) => {
   const context = createSkillRubricContext(directory).context
   return {
     name: selectKiSkillsContext(context, 'name'),
-    shape: selectKiSkillsContext(context, 'shape')
+    shape: selectKiSkillsContext(context, 'shape'),
+    optional: selectKiSkillsContext(context, 'optional')
   }
 }
 
@@ -86,6 +88,30 @@ describe('repository-local ki-self source', () => {
     expect(result.name.name === result.name.directoryName).toBe(nameMatchesDirectory)
     expect(result.name.localGovernanceSource).toBe(false)
     expect(result.shape.skill?.localGovernanceSource).toBe(false)
+  })
+})
+
+describe('tool declaration authority', () => {
+  const outcomes = (frontmatter: string) => {
+    const optional = evidence(createSkill('.agents/skills/ki-self', frontmatter)).optional
+    const item = OPTIONAL.items.find(({ code }) => code === 'OPT-3')
+    if (!item?.mechanical || !('audit' in item.mechanical)) throw new Error('OPT-3 mechanical audit is unavailable')
+    return item.mechanical.audit.run(optional)
+  }
+
+  test('rejects a runtime-only YAML list for portable allowed-tools', () => {
+    expect(outcomes('allowed-tools: [Read, Grep]')).toEqual([
+      {
+        status: 'VIOLATION',
+        message: '`allowed-tools` must be a non-empty YAML string scalar of valid tool rules'
+      }
+    ])
+  })
+
+  test('accepts a Claude Code list only for disallowed-tools', () => {
+    expect(outcomes('disallowed-tools: [AskUserQuestion, WebSearch]')).toEqual([
+      { status: 'PASS', message: 'tool declarations use their portable or runtime-specific shape' }
+    ])
   })
 })
 

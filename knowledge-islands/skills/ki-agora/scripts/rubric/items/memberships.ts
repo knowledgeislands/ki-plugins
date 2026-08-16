@@ -7,7 +7,7 @@ const MEMBERSHIP_1: RubricItem<OutcomeContext> = {
   code: 'MEMBERSHIP-1',
   title: 'member consent is canonical',
   description:
-    'Each declared membership names one stable Agora identifier, canonical HTTPS GitHub home, and lower-case hyphenated role. A repository may declare multiple memberships; local shape never infers peer agreement.',
+    'Each declared membership names one stable Agora identifier, canonical HTTPS GitHub home, and lower-case hyphenated role with no unknown fields. A repository may declare multiple memberships; local shape never infers peer agreement.',
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',

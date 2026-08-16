@@ -50,14 +50,18 @@ const IDX_3: RubricItem<HousekeepingIndexContext> = {
 
 const IDX_4: RubricItem<HousekeepingIndexContext> = {
   code: 'IDX-4',
-  title: 'Index line length',
-  description: 'Each index entry stays at or under 150 characters so it is not truncated in context.',
+  title: 'Index size is measured',
+  description:
+    'The audit reports the observed aggregate UTF-8 size of `MEMORY.md`. This is evidence only: the rubric does not infer an effective native loading limit from individual line length or a local file size.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
-    remediation: { class: 'diagnostic', guidance: 'Shorten the index entry, then rerun the audit.' },
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Use current native runtime evidence before selecting a size policy.'
+    },
     heuristic: true,
-    audit: { phase: 'INSPECT', run: (context) => context.lineLength }
+    audit: { phase: 'INSPECT', run: (context) => context.sizeEvidence }
   }
 }
 
@@ -65,7 +69,7 @@ const IDX_5: RubricItem<HousekeepingIndexContext> = {
   code: 'IDX-5',
   title: 'Headroom block markers',
   description:
-    'A Headroom auto-generated block, if present, has both `<!-- headroom:learn:start -->` and `<!-- headroom:learn:end -->` markers in order. A malformed pair is a WARN.',
+    'A Headroom auto-generated block, if present, has both `<!-- headroom:learn:start -->` and `<!-- headroom:learn:end -->` markers in order and a valid `YYYY-MM-DD` generation date. A malformed block is a WARN.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',

@@ -19,8 +19,8 @@ The renderer-specific delta connecting MCP source data, a chezmoi partial, and r
 
 - **BINDCHEZ-1 [M] — Chezmoi source repository is inspectable** — The explicitly targeted chezmoi source repository is a physical directory that can supply render evidence. (standards-chezmoi-mcp-rendering.md)
   - _Remediation:_ diagnostic — Select a safe chezmoi source repository or remove unsafe evidence before re-running the audit.
-- **BINDCHEZ-2 [M] — Surface agreement remains renderer-neutral** — The renderer-neutral ki-binding audit, composed separately, remains the authority for rendered surface agreement. (standards-chezmoi-mcp-rendering.md)
-  - _Remediation:_ diagnostic — Run the preceding ki-binding audit; its renderer-neutral findings own surface agreement.
+- **BINDCHEZ-2 [M] — Render state is distinct from source structure** — Structure evidence does not claim a rendered target, applied state, activation, or runtime health. (standards-chezmoi-mcp-rendering.md)
+  - _Remediation:_ diagnostic — Use authorised, secret-safe renderer evidence for render parity; configuration structure alone cannot prove it.
 - **BINDCHEZ-3 [M] — MCP source data is present** — The chezmoi repository carries MCP source data through either supported, explicitly chosen render pattern. (standards-chezmoi-mcp-rendering.md)
   - _Remediation:_ diagnostic — Add or correct the explicitly chosen MCP data pattern through the repository owner.
 - **BINDCHEZ-4 [M] — Render template is present** — An mcp-servers-json render template partial exists in the chezmoi source repository. (standards-chezmoi-mcp-rendering.md)

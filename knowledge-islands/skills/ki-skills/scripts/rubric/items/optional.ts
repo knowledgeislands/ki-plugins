@@ -1,5 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { judgment } from '../../shared/rubric.ts'
 import { type KiSkillsRubricContext, type OptionalRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const COMPATIBILITY_MIN_LENGTH = 1
@@ -12,7 +12,11 @@ const OPT_1: RubricItem<OptionalRubricContext> = {
   sources: ['SPEC'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Rewrite or remove compatibility after confirming the actual environment requirements; preserve useful constraints within the 1–500 character contract.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ compatibility }) => {
@@ -37,7 +41,11 @@ const OPT_2: RubricItem<OptionalRubricContext> = {
   sources: ['SPEC'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Choose the intended textual representation for each metadata value, or remove metadata that has no valid string meaning.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ metadataPresent, metadata }) => {
@@ -57,25 +65,29 @@ const OPT_2: RubricItem<OptionalRubricContext> = {
 
 const OPT_3: RubricItem<OptionalRubricContext> = {
   code: 'OPT-3',
-  title: 'tool declarations use valid tool specifications',
+  title: 'tool declarations use their portable or runtime-specific shape',
   description:
-    '`allowed-tools` / `disallowed-tools`, if present, are valid tool specs (`allowed-tools` is **experimental**).',
+    'Experimental portable `allowed-tools` is a valid string; Claude-Code-only `disallowed-tools` is a valid string or YAML list.',
   sources: ['SPEC', 'CC'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Confirm the intended runtime and permission boundary, then rewrite allowed-tools or disallowed-tools in that runtime’s supported scalar or sequence shape.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ allowedToolsPresent, allowedTools, disallowedToolsPresent, disallowedTools }) => {
         if (!allowedToolsPresent && !disallowedToolsPresent)
           return [{ status: 'NOT_APPLICABLE', message: 'tool declarations are not present' }]
         const violations = [
-          ...(allowedToolsPresent ? toolDeclarationFindings('allowed-tools', allowedTools) : []),
-          ...(disallowedToolsPresent ? toolDeclarationFindings('disallowed-tools', disallowedTools) : [])
+          ...(allowedToolsPresent ? allowedToolsFindings(allowedTools) : []),
+          ...(disallowedToolsPresent ? disallowedToolsFindings(disallowedTools) : [])
         ]
         return violations.length > 0
           ? [violations[0] as (typeof violations)[number], ...violations.slice(1)]
-          : [{ status: 'PASS', message: 'tool declarations use valid tool specifications' }]
+          : [{ status: 'PASS', message: 'tool declarations use their portable or runtime-specific shape' }]
       }
     }
   }
@@ -89,7 +101,11 @@ const OPT_4: RubricItem<OptionalRubricContext> = {
   sources: ['SPEC'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Supply the intended license name or bundled-file reference as a non-empty YAML string, or remove the optional field if no declaration is intended.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ licensePresent, license }) => {
@@ -102,18 +118,32 @@ const OPT_4: RubricItem<OptionalRubricContext> = {
   }
 }
 
-const toolDeclarationFindings = (field: 'allowed-tools' | 'disallowed-tools', value: unknown) => {
+const allowedToolsFindings = (value: unknown) => {
   if (typeof value === 'string') {
     const rules = splitToolRules(value)
     return validToolRules(rules)
       ? []
-      : [{ status: 'VIOLATION' as const, message: `\`${field}\` must contain non-empty valid tool rules` }]
+      : [{ status: 'VIOLATION' as const, message: '`allowed-tools` must contain non-empty valid tool rules' }]
   }
+  return [
+    {
+      status: 'VIOLATION' as const,
+      message: '`allowed-tools` must be a non-empty YAML string scalar of valid tool rules'
+    }
+  ]
+}
+
+const disallowedToolsFindings = (value: unknown) => {
+  if (typeof value === 'string')
+    return allowedToolsFindings(value).map((finding) => ({
+      ...finding,
+      message: finding.message.replaceAll('allowed-tools', 'disallowed-tools')
+    }))
   if (Array.isArray(value) && value.every((rule) => typeof rule === 'string' && validToolRule(rule))) return []
   return [
     {
       status: 'VIOLATION' as const,
-      message: `\`${field}\` must be a non-empty YAML string scalar or sequence of non-empty valid tool rules`
+      message: '`disallowed-tools` must be a non-empty YAML string scalar or sequence of non-empty valid tool rules'
     }
   ]
 }

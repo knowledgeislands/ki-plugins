@@ -24,7 +24,7 @@ Curated illustrations of well-formed Decision Records. Use these when authoring 
 
 ### Well-formed KB-repo GDR (Governance Decision Record)
 
-`GDR-KI-ARCADIA-001-adopting-decision-records.md` is the reference implementation of the KB-repo shape and the root of a newly created collection. Note: frontmatter `id` and title compose the H1; `type`, `type_url`, and `decision_type` match the `GDR-` prefix; `status` tracks maintenance state (freshness), not a decision lifecycle — DRs have none; `decision_depends_on` is a YAML list of full DR codes; the body sections appear in canonical order; voice is active present tense; the References section uses relative Markdown links only.
+`GDR-KI-ARCADIA-001-adopting-decision-records.md` is the reference implementation of the KB-repo shape and the root of a newly created collection. Note: frontmatter `id` and title compose the H1; `decision_type` and `decision_type_url` match the `GDR-` prefix; `status` tracks maintenance state (freshness), not a decision lifecycle — DRs have none; `decision_depends_on` is a YAML list of full DR codes; the body sections appear in canonical order; voice is active present tense; the References section uses relative Markdown links only.
 
 ```markdown
 ---
@@ -32,8 +32,7 @@ id: GDR-KI-ARCADIA-001
 title: 'Adopting Decision Records'
 date: 2026-06-25
 status: current
-type: Governance Decision Record
-type_url: https://knowledgeislands.info/specifications/decision-records/gdr
+decision_type_url: https://knowledgeislands.info/specifications/decision-records/gdr
 decision_type: governance
 decision_depends_on: ['SDR-KI-ARCADIA-001']
 ---
@@ -71,8 +70,7 @@ id: SDR-KI-ARCADIA-001
 title: 'Knowledge Islands — The Strategy'
 date: 2026-06-25
 status: current
-type: Strategy Decision Record
-type_url: https://knowledgeislands.info/specifications/decision-records/sdr
+decision_type_url: https://knowledgeislands.info/specifications/decision-records/sdr
 decision_type: strategy
 ---
 
@@ -121,8 +119,7 @@ id: ADR-HARNESS-001
 title: 'Adopting Bun as the Package Manager'
 date: 2026-01-15
 status: current
-type: Architecture Decision Record
-type_url: https://knowledgeislands.info/specifications/decision-records/adr
+decision_type_url: https://knowledgeislands.info/specifications/decision-records/adr
 decision_type: architecture
 ---
 

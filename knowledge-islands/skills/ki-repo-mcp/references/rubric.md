@@ -26,8 +26,8 @@ Line-by-line criteria for auditing ki-repo-mcp. Classifications are derived from
 
 Scope activation and the keyless ki-repo-mcp governance declaration.
 
-- **KI-CONFIG [M] — MCP applicability and declaration** — A repository is applicable when it declares [skills.ki-repo-mcp] or contains src/mcp-server/. Otherwise the audit emits one NOT_APPLICABLE finding and stops; declared keys are rejected because this skill has no configuration options. (standards-mcp-servers.md#applicability)
-  - _Remediation:_ automatic
+- **KI-CONFIG [M] — MCP applicability and declaration** — Only [skills.ki-repo-mcp] declares this optional standard applicable. Detected MCP-shaped source is coverage evidence for ki-repo, not local selection authority; declared keys are rejected because this skill has no configuration options. (standards-mcp-servers.md#applicability)
+  - _Remediation:_ diagnostic — Declare the selected standard through the repository configuration owner.
 
 ## LAY — Source layout
 
@@ -96,7 +96,7 @@ Selected Vitest coverage excludes generated and pure-wiring MCP layers.
 
 Tool names, result envelopes, schemas, and registration order form a stable MCP surface.
 
-- **TOOL-1 [M + J] — MCP tool surface** — Registered tool names use snake-case app/resource/action forms; structured output declares outputSchema; and group registration order is stable. (standards-mcp-servers.md#3-tool-naming, standards-mcp-servers.md#12-spec-conformance-tool-results-errors--metadata)
+- **TOOL-1 [M + J] — MCP tool surface** — Registered tool names use snake-case app/resource/action forms; source-local structured output declarations are paired with outputSchema; and group registration order is stable. This is not runtime registration, security, or response evidence. (standards-mcp-servers.md#3-tool-naming, standards-mcp-servers.md#12-spec-conformance-tool-results-errors--metadata)
   - _Remediation:_ diagnostic — Correct the observed tool surface with the owning API and security decisions.
   - _Evidence scope:_ The full public MCP tool surface, result envelopes, annotations, documentation, and applicable OAuth requirements.
   - _Review prompt:_ Review plural/singular resource choices, CLI mirroring and README catalogues; confirm the annotation-driven access gate, annotation presets, dry-run defaults, read default, audit/error envelopes, path and subprocess hardening, bounded schemas, error aggregation, output sanitisation, and the applicable OAuth security requirements. Optional metadata remains opt-in.

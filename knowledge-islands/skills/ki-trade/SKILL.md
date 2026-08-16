@@ -37,7 +37,7 @@ Preparation, delivery, receiver decision, and sender observation are separate fa
 - **Release or prune** only copies whose governed eligibility is currently observable.
 - **Manage routes** by changing only the selected repository's declaration and preserving every route that still has a dependent local record.
 
-`ki-trades` owns the record, route, authority, and lifecycle contract. This skill runs its audit before and after a mutation and uses the host command as the transaction boundary.
+`ki-trades` owns the record, route, authority, and lifecycle contract. The operator must audit before and after a mutation, but this guidance does not claim that the current host makes those audits part of one transaction. Do not infer atomic file publication, preview/write equivalence, or post-write validation from this skill; those are host capabilities and require direct host evidence.
 
 ## Responsibility boundary
 
@@ -49,7 +49,7 @@ It never creates or prioritises roadmap work, retains knowledge, claims local co
 
 `help` / `-h` / `?` explains this skill and stops, taking no action.
 
-The remaining invocations map one-to-one to the local `ki trade` surface. Mutating operations resolve the physical repository root, run the `ki-trades` audit, present the exact local write or deletion, obtain any confirmation required by [the procedure](references/standards-trade-operations.md), execute once, and re-audit.
+The remaining invocations map one-to-one to the local `ki trade` surface. Before any mutation, resolve the physical repository root, run the `ki-trades` audit, inspect the host's exact local write or deletion preview, and obtain any confirmation required by [the procedure](references/standards-trade-operations.md). Re-audit afterward. Do not add an all-or-nothing interpretation to the asynchronous `receive --all` convenience operation, or treat this guidance as proof of any separate host capability.
 
 With no recognised operation, show the lifecycle, observation policies, available operations, and the `ki-next` disposition off-ramp, then stop.
 

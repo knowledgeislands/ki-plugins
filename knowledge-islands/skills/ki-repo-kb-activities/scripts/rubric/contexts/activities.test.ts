@@ -121,6 +121,28 @@ test('an index symlink is neither followed nor proposed for replacement', () => 
   expect(readFileSync(outside, 'utf8')).toBe('outside\n')
 })
 
+test('prose and code lookalikes do not satisfy index-link coverage', () => {
+  const repository = activityBase()
+  const activities = join(repository, 'Admin', 'Operations', 'Activities')
+  writeFileSync(
+    join(activities, 'Activities.md'),
+    '# Activities\n\nMorning Briefing.md is adopted.\n\n```md\n- [Morning Briefing](<Morning Briefing.md>)\n```\n'
+  )
+  const session = createActivitiesSession(options(repository, 'audit'))
+
+  expect(indexItem().audit.run(activityContext(session))[0]).toMatchObject({ status: 'VIOLATION' })
+})
+
+test('malformed YAML frontmatter fails rather than appearing as an unstructured note', () => {
+  const repository = activityBase()
+  const activities = join(repository, 'Admin', 'Operations', 'Activities')
+  writeFileSync(join(activities, 'Morning Briefing.md'), '---\nstatus: [active\n---\n# Morning Briefing\n')
+  const context = activityContext(createActivitiesSession(options(repository, 'audit')))
+  const status = ACT.items.find((item) => item.code === 'ACT-F-1')?.mechanical?.audit.run(context)
+
+  expect(status?.[0]).toMatchObject({ status: 'VIOLATION', message: expect.stringContaining('malformed') })
+})
+
 test('a configured collection cannot traverse an intermediate symlink', () => {
   const repository = temporaryDirectory('ki-repo-kb-activities-root-')
   const outside = temporaryDirectory('ki-repo-kb-activities-linked-')

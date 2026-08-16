@@ -6,16 +6,18 @@ The sources behind the [Specifications standard](standards-specs.md) and [rubric
 
 | Source                                                                      | last reviewed |
 | --------------------------------------------------------------------------- | ------------- |
-| [RFC 2119 / BCP 14 — normative keyword definitions][rfc2119]                | 2026-07-09    |
-| `vallearmonia-website` `docs/specs/` — the reference corpus this generalizes | 2026-07-09   |
+| [RFC 2119 — original normative keyword definitions][rfc2119]                 | 2026-08-12    |
+| [RFC 8174 — BCP 14 uppercase clarification][rfc8174]                         | 2026-08-12    |
+| Local sampled reference corpus — supporting discovery, not normative authority | 2026-08-12  |
 
 ## Notes
 
-- **RFC 2119 (BCP 14)** is the authority for the normative keyword set (`MUST`, `MUST NOT`, `SHALL`, `SHOULD`, `SHOULD NOT`, `MAY`, `REQUIRED`, `RECOMMENDED`, `OPTIONAL`) the checker recognises and the standard mandates. It is stable; re-derive the keyword set only if BCP 14 is revised.
-- **`vallearmonia-website/docs/specs/`** is the first real corpus this skill generalizes from: flat one-file-per-area, an `index.md` defining the ID scheme + areas, `### <PREFIX>-NNN — title` requirements with RFC-2119 statements and `_Verify:_` hooks, append-only IDs, and unnumbered `## Gaps` sections. It is not in the `knowledgeislands` org; sampled read-only. If it diverges from this standard, that divergence is a REFRESH signal — reconcile the standard and the corpus deliberately, not silently.
+- **RFC 2119 plus RFC 8174 are BCP 14.** RFC 8174 updates the original terminology with the uppercase-only interpretation and adds `NOT RECOMMENDED`; the checker and standard use this pair as their portable primary authority.
+- The initial `vallearmonia-website/docs/specs/` sample has no reproducible immutable locator in this source record. It remains supporting discovery only and cannot establish the house layout, serial, or verification contract. Reintroduce it as a reproducible source only with a stable URL and sampled revision.
 
 ## Last review
 
-- 2026-07-09 — Standard first authored (W4), generalized from the `vallearmonia-website` spec corpus. Keyword set anchored on RFC 2119. No open watch-items.
+- 2026-08-12 — Refreshed the BCP 14 authority pair. RFC 8174 confirms uppercase-only interpretation and `NOT RECOMMENDED`; the local standard and checker now name the pair. Demoted the unpinned reference corpus to supporting discovery. Serial scope and applicability remain owner-gated policy questions, not source-derived mechanics.
 
 [rfc2119]: https://www.rfc-editor.org/rfc/rfc2119
+[rfc8174]: https://www.rfc-editor.org/rfc/rfc8174

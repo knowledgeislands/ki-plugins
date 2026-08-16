@@ -3,6 +3,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileS
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { RubricEmitter, RubricFamily } from '../../shared/rubric.ts'
+import { inspectEngineeringCheckRecords } from '../contexts/audit-evidence.ts'
 import {
   createEngineeringSession,
   type EngineeringEvidenceInspector,
@@ -39,6 +40,8 @@ test('the structured catalogue preserves the engineering criteria', async () => 
     'SYNC',
     'DEPS',
     'GEN',
+    'DESIGN',
+    'REVIEW',
     'TEST',
     'BUILD',
     'ENV',
@@ -47,11 +50,13 @@ test('the structured catalogue preserves the engineering criteria', async () => 
   const codes = catalogue.families
     .filter((family) => family.code !== 'RUBRIC')
     .flatMap((family) => family.items.map((item) => item.code))
-  expect(codes).toHaveLength(49)
+  expect(codes).toHaveLength(52)
   expect(new Set(codes).size).toBe(codes.length)
   expect(codes[0]).toBe('PKG-1')
   expect(codes).toContain('TEST-7')
-  expect(codes.at(-1)).toBe('TOML-2')
+  expect(codes).toContain('DESIGN-1')
+  expect(codes).toContain('REVIEW-1')
+  expect(codes.at(-1)).toBe('TOML-3')
 
   const observableCoverage = catalogue.families
     .find((family) => family.code === 'TEST')
@@ -59,6 +64,36 @@ test('the structured catalogue preserves the engineering criteria', async () => 
   expect(observableCoverage?.mechanical).toBeUndefined()
   expect(observableCoverage?.sources).toEqual(['standards-engineering.md#testing-capability-the-repo-ships-tests'])
   expect(observableCoverage?.judgment?.prompt).toContain('nearest supported public boundary')
+
+  const changeAwareReview = catalogue.families
+    .find((family) => family.code === 'REVIEW')
+    ?.items.find((item) => item.code === 'REVIEW-1')
+  expect(changeAwareReview?.judgment?.prompt).toContain('warrant a focused review')
+  expect(changeAwareReview?.judgment?.outcomes).toEqual([
+    'not warranted',
+    'consistent',
+    'follow-up:<canonical-work-item-id>'
+  ])
+})
+
+test('engineering check records accept only known mechanical boolean entries', () => {
+  expect(
+    inspectEngineeringCheckRecords(
+      '[skills.ki-engineering]\n\n[skills.ki-engineering.checks]\nBUILD-2 = false # temporary exception record\n'
+    )
+  ).toEqual([{ level: 'PASS', message: 'engineering check record BUILD-2 = false (diagnostic only)' }])
+  expect(
+    inspectEngineeringCheckRecords(
+      '[skills.ki-engineering.checks]\nDESIGN-1 = false\nBUILD-2 = "false"\nUNKNOWN-1 = true\n'
+    )
+  ).toEqual([
+    { level: 'WARN', message: 'unknown engineering check record: DESIGN-1' },
+    {
+      level: 'WARN',
+      message: `engineering check record BUILD-2 must be boolean, got ${JSON.stringify('"false"')}`
+    },
+    { level: 'WARN', message: 'unknown engineering check record: UNKNOWN-1' }
+  ])
 })
 
 test('each family module exports one complete family', async () => {

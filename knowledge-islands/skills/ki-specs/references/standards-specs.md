@@ -4,6 +4,8 @@ This standard defines how a Specifications corpus is laid out and how each requi
 
 ## The four-doc split
 
+`ki-repo` owns applying the non-Knowledge-Base repository-wide documentation topology. This skill owns only the behaviour-level Specification concern.
+
 A non-Knowledge-Base repository's `docs/` separates four durable concerns, and a specification is exactly one of them:
 
 | Location          | Question | Instrument                               |
@@ -11,7 +13,7 @@ A non-Knowledge-Base repository's `docs/` separates four durable concerns, and a
 | `docs/decisions/` | Why      | Decision Records (`ki-decision-records`) |
 | `docs/specs/`  | What     | Specifications (**this skill**)     |
 | `docs/guides/`    | How      | Guides (`ki-guides`)                     |
-| `docs/roadmap/`   | When     | Repository work items (`ki-change-management-roadmap`)     |
+| `docs/roadmap/`   | When     | Repository work items (`ki-work-roadmap`)     |
 
 A requirement states **behaviour**, not rationale and not procedure. If a statement starts explaining _why_, that reasoning belongs in a Decision Record the requirement cites; if it explains _how to operate_, it belongs in a guide.
 
@@ -51,7 +53,7 @@ _Verify:_ a built page at `/culture/` has `<link rel="canonical" href="{site.url
 ```
 
 - **Heading** — `### <PREFIX>-NNN — <title>`. `PREFIX` is one or more uppercase alpha-leading segments joined by hyphens (`AUTH`, `SITE-SEO`); `NNN` is zero-padded, ≥ 3 digits; the separator before the title is an **em dash** (`—`). `NNN` is sequential within the file (grouped under H2s, but numbered across the whole file, not per H2).
-- **Statement** — one paragraph using an **RFC-2119** keyword in uppercase (`MUST`, `MUST NOT`, `SHALL`, `SHOULD`, `SHOULD NOT`, `MAY`, `REQUIRED`, `RECOMMENDED`, `OPTIONAL`). A requirement may pair a `MUST` with a `MUST NOT`; unrelated behaviours split into separate IDs so each verifies independently.
+- **Statement** — one paragraph using an uppercase **BCP 14** keyword (`MUST`, `MUST NOT`, `SHALL`, `SHALL NOT`, `SHOULD`, `SHOULD NOT`, `MAY`, `REQUIRED`, `RECOMMENDED`, `NOT RECOMMENDED`, or `OPTIONAL`). A requirement may pair a `MUST` with a `MUST NOT`; unrelated behaviours split into separate IDs so each verifies independently. RFC 8174 updates RFC 2119: these terms carry their defined meanings only when uppercase.
 - **`_Verify:_`** — one line, the italic label `_Verify:_` followed by the concrete check: a built-output assertion, a unit test, or a linked source file with the specific symbol/behaviour to inspect. This is the hook a test suite (or a reader) uses to confirm the requirement holds.
 
 ## Append-only IDs

@@ -17,6 +17,8 @@ const FORBIDDEN_KEY = /^(?:claude_|codex_)?(?:session|conversation|transcript)(?
 const TRANSCRIPT_LINE = /^(?:user|assistant|human|agent):\s+\S/im
 const SESSION_CONTINUITY =
   /\b(?:resume|reopen|reattach|reconnect|authenticate|connect)\b[^\n.]{0,60}\b(?:conversation|session)\b/i
+const SESSION_LOCATOR =
+  /\b(?:https?:\/\/\S*(?:conversation|session)\S*|(?:claude|codex)[_-]?(?:session|conversation)[_-]?[a-z0-9-]{8,})\b/i
 const HEADINGS = [
   'Objective',
   'Current state',
@@ -259,6 +261,12 @@ const recordEvidence = (
       boundary.push({
         status: 'VIOLATION',
         message: 'checkpoint body appears to claim continuity with the originating session',
+        subject: record.path
+      })
+    if (SESSION_LOCATOR.test(record.body))
+      boundary.push({
+        status: 'VIOLATION',
+        message: 'checkpoint body appears to carry a session or conversation locator',
         subject: record.path
       })
   }

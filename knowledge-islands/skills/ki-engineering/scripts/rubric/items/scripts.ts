@@ -13,31 +13,36 @@ const mechanical = (
   level: ViolationLevel,
   evidence: (context: ScriptsRubricContext) => EngineeringEvidence,
   options: { overrideLevels?: readonly ViolationLevel[]; conform?: boolean } = {}
-): RubricItem<ScriptsRubricContext> => ({
-  code,
-  title,
-  description,
-  sources: ['standards-engineering.md'],
-  mechanical: {
+): RubricItem<ScriptsRubricContext> => {
+  const base = { code, title, description, sources: ['standards-engineering.md'] as const }
+  const shared = {
     level,
     ...(options.overrideLevels ? { overrideLevels: options.overrideLevels } : {}),
-    remediation: options.conform
-      ? { class: 'automatic' }
-      : {
-          class: 'diagnostic',
-          guidance: 'Revise the package scripts to meet the governed script surface, then rerun the audit.'
-        },
-    audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), level, options.overrideLevels) },
-    ...(options.conform
-      ? {
-          conform: {
-            phase: 'PRIMARY' as const,
-            run: (context: ScriptsRubricContext) => context.synchronisePackage?.()
+    audit: {
+      phase: 'INSPECT' as const,
+      run: (context: ScriptsRubricContext) => auditEvidence(evidence(context), level, options.overrideLevels)
+    }
+  }
+  return options.conform
+    ? {
+        ...base,
+        mechanical: {
+          ...shared,
+          remediation: { class: 'automatic' },
+          conform: { phase: 'PRIMARY', run: (context) => context.synchronisePackage?.() }
+        }
+      }
+    : {
+        ...base,
+        mechanical: {
+          ...shared,
+          remediation: {
+            class: 'diagnostic',
+            guidance: 'Revise the package scripts to meet the governed script surface, then rerun the audit.'
           }
         }
-      : {})
-  }
-})
+      }
+}
 
 const judgment = (
   code: string,

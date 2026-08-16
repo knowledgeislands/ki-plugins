@@ -19,7 +19,7 @@ A finding is only **spec-driven** if it traces to the Authoritative table (Homeb
 
 † The required formula parts (`class < Formula`, `desc`, `homepage`, `url`, `sha256`, `license`, `install`, `test do`) and their idioms—the source of `TAP-2` and `TAP-3`.
 
-‡ What `brew audit --strict` enforces—reported by `TAP-7` as an explicit command for every formula.
+‡ What `brew audit --strict` enforces—separate package-manager evidence; never executed by static `TAP-7`.
 
 § The `desc` rules (≤ 80 chars, no leading "A"/"An"/"The") and RuboCop formula cops—the source of `TAP-4`, mirrored without invoking `brew`.
 

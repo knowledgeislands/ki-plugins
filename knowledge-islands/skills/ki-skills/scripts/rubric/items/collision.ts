@@ -1,5 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { judgment } from '../../shared/rubric.ts'
 import { type CollisionRubricContext, type KiSkillsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const triggerPhrases = (description: string): string[] => {
@@ -22,7 +22,11 @@ const COLL_1: RubricItem<CollisionRubricContext> = {
   sources: ['COMMUNITY', 'ki-agentic-harness README'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Decide which skill owns each shared trigger, redesign the competing scopes, and add reciprocal off-ramps only where genuine adjacency remains.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ targets }) => {

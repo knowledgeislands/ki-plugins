@@ -233,15 +233,15 @@ const PLUG_10 = mechanical('PLUG-10', 'MCP deferral', 'No `.mcp.json` appears in
 const PLUG_11 = judgment(
   'PLUG-11',
   'Projection freshness',
-  'The projected skill and agent set matches the current harness.',
-  'Does the projected skill and agent set match the current harness without stale or missing entries?'
+  'Separate harness evidence establishes whether the projected skill and agent set is current; this structural audit does not compare source trees.',
+  'Is separate, current harness-to-projection evidence available for stale or missing entries?'
 )
 
 const PLUG_12 = judgment(
   'PLUG-12',
   'Projection reproducibility',
-  'Running the canonical `ki-binding` generator leaves no diff.',
-  'Is the complete projection byte-for-byte reproducible from the current harness?'
+  'Separate generator evidence establishes reproducibility; this structural audit does not run or verify the generator.',
+  'Is separate generator evidence available that the complete projection is reproducible from the current harness?'
 )
 
 const PLUG_13 = mechanical(

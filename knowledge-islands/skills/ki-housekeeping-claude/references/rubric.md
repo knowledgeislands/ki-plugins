@@ -8,11 +8,31 @@ Line-by-line criteria for auditing ki-housekeeping-claude. Classifications are d
 
 ## Contents
 
+- [SELECT — Native-memory selection](#select--native-memory-selection)
+- [RUNTIME — Server-runtime boundary](#runtime--server-runtime-boundary)
 - [IDX — Index/file agreement](#idx--indexfile-agreement)
 - [FM — Frontmatter](#fm--frontmatter)
 - [LINK — Explicitly not checked](#link--explicitly-not-checked)
 - [DOC — Content doctrine](#doc--content-doctrine)
 - [RUBRIC — Generated rubric publication](#rubric--generated-rubric-publication)
+
+## SELECT — Native-memory selection
+
+→ [standard](standards-auto-memory.md)
+
+Evidence that bounds the local native-memory inspection.
+
+- **SELECT-1 [M] — Native memory location is established** — The audit establishes the selected native auto-memory directory from a readable local settings record. Missing, malformed, disabled, unsupported, or out-of-bounds override evidence is a FAIL; it never falls back to the default path. (standards-auto-memory.md)
+  - _Remediation:_ diagnostic — Resolve the native auto-memory settings evidence or explicitly keep the runtime unavailable, then rerun the audit.
+
+## RUNTIME — Server-runtime boundary
+
+→ [standard](standards-claude-state.md)
+
+Unavailable server state remains explicit in the local audit.
+
+- **RUNTIME-1 [M] — Server execution evidence is distinct** — This bounded local audit does not infer server registration, access exposure, or an executed server audit from a source payload or inventory declaration. Those runtime facts remain unavailable unless separately presented. (standards-claude-state.md)
+  - _Remediation:_ diagnostic — Obtain and report server registration, access exposure, and executed-audit evidence separately; do not treat source presence as runtime evidence.
 
 ## IDX — Index/file agreement
 
@@ -26,9 +46,9 @@ Memory index and file agreement.
   - _Remediation:_ diagnostic — Correct the dangling index entry, then rerun the audit.
 - **IDX-3 [M] — Memory files are indexed** — Every `memory/*.md` file other than `MEMORY.md` appears in the index. An unindexed file is a WARN because it is invisible to future recall. (standards-auto-memory.md)
   - _Remediation:_ automatic
-- **IDX-4 [M-heuristic] — Index line length** — Each index entry stays at or under 150 characters so it is not truncated in context. (standards-auto-memory.md)
-  - _Remediation:_ diagnostic — Shorten the index entry, then rerun the audit.
-- **IDX-5 [M] — Headroom block markers** — A Headroom auto-generated block, if present, has both `<!-- headroom:learn:start -->` and `<!-- headroom:learn:end -->` markers in order. A malformed pair is a WARN. (standards-auto-memory.md)
+- **IDX-4 [M-heuristic] — Index size is measured** — The audit reports the observed aggregate UTF-8 size of `MEMORY.md`. This is evidence only: the rubric does not infer an effective native loading limit from individual line length or a local file size. (standards-auto-memory.md)
+  - _Remediation:_ diagnostic — Use current native runtime evidence before selecting a size policy.
+- **IDX-5 [M] — Headroom block markers** — A Headroom auto-generated block, if present, has both `<!-- headroom:learn:start -->` and `<!-- headroom:learn:end -->` markers in order and a valid `YYYY-MM-DD` generation date. A malformed block is a WARN. (standards-auto-memory.md)
   - _Remediation:_ diagnostic — Correct the memory index entry, then rerun the audit.
 - **IDX-6 [M-heuristic] — Headroom learned entries are local** — Entries inside a `headroom:learn` block are not rooted in another repository. A foreign absolute `knowledgeislands/<repo>` path in the selected repository memory is stale cross-repo capture and a WARN. Repair the Headroom database source through the explicit list/show/delete procedure in the standard before clearing rendered output; relative sibling references remain valid. (standards-auto-memory.md)
   - _Remediation:_ diagnostic — Correct the index ordering, then rerun the audit.

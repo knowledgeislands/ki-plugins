@@ -37,7 +37,7 @@ const RECORD_3: RubricItem<RecordsContext> = {
   code: 'RECORD-3',
   title: 'a preparation title stays concise',
   description:
-    "A trade title is at most six words. The limit is deliberately looser than the four `ki-change-management-roadmap` allows a work item, because a work item title sits beside its theme, repository-coded identifier, and horizon, while a trade lands alone in another repository and carries its whole meaning to a reader with none of that context. The criterion binds only on a preparation, which is still the sender's to change; a submitted or received copy is immutable evidence, so enforcing a local convention there would demand exactly the rewrite `AUTH-1` exists to detect.",
+    "A trade title is at most six words. The limit is deliberately looser than the four `ki-work-roadmap` allows a work item, because a work item title sits beside its theme, repository-coded identifier, and horizon, while a trade lands alone in another repository and carries its whole meaning to a reader with none of that context. The criterion binds only on a preparation, which is still the sender's to change; a submitted or received copy is immutable evidence, so enforcing a local convention there would demand exactly the rewrite `AUTH-1` exists to detect.",
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',

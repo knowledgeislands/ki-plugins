@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import type { ConformWrite } from '../../shared/rubric.ts'
-import { frontmatterLine, frontmatterScalar, parseFrontmatter, replaceFrontmatterScalar } from './frontmatter.ts'
+import {
+  frontmatterLine,
+  frontmatterScalar,
+  insertFrontmatterLine,
+  parseFrontmatter,
+  replaceFrontmatterScalar
+} from './frontmatter.ts'
 import { hintVerbs } from './modes.ts'
 import type { SkillWritableCapabilities } from './skill.ts'
 
@@ -45,7 +51,7 @@ export const createSkillConformState = (directory: string, repository: string): 
       setName: (name) => {
         updateFrontmatter((block) => {
           const line = frontmatterLine(block, 'name')
-          return line ? block.replace(line, `name: ${name}`) : block
+          return line ? block.replace(line, `name: ${name}`) : insertFrontmatterLine(block, `name: ${name}`)
         })
       },
       addArgumentHintVerbs: (verbs) => {

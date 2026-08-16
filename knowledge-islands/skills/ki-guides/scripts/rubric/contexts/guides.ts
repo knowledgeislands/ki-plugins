@@ -4,7 +4,7 @@ import type { RubricContextOptions, RubricPublicationContext, RubricSession } fr
 
 const GUIDES_DIRECTORY = 'docs/guides'
 const INDEX_FILE = 'README.md'
-const RETIRED_ROOTS = ['docs/spec', 'docs/developer', 'docs/logs'] as const
+const RETIRED_ROOTS = ['docs/spec', 'docs/developer'] as const
 
 export type GuidesLayoutContext = {
   readonly directoryExists: boolean

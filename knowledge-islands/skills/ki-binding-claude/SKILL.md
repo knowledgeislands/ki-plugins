@@ -4,7 +4,7 @@ ki-kind: governance
 ki-depends-on: [ki-binding]
 ki-runtime-binding: true
 ki-supported-runtimes: [claude-code]
-ki-shared-dependencies: [ki-skills:rubric]
+ki-shared-dependencies: [ki-binding:binding, ki-skills:rubric]
 description: >
   Codify, audit, and safely conform Claude-native MCP binding: Claude Code and Desktop JSON surfaces, Claude Cowork marketplace/plugin enablement, the claude.ai web convention, and the KI Cowork plugin projection. Use when Claude MCP surfaces disagree, Cowork lacks the KI plugin, or the Cowork plugin must be rebuilt. The portable source belongs to `ki-binding`; Codex belongs to `ki-binding-codex`.
 argument-hint: 'audit [project] | conform [project] | help | educate [project] | refresh'
@@ -12,7 +12,7 @@ argument-hint: 'audit [project] | conform [project] | help | educate [project] |
 
 # Knowledge Islands Claude binding
 
-This runtime adapter composes `ki-binding` and owns the Claude-specific delta: Claude Code and Desktop JSON surfaces, Cowork's safe settings draft, the intentionally non-rendered claude.ai web convention, and generation of the Cowork plugin marketplace projection.
+This runtime adapter composes `ki-binding` and owns the Claude-specific delta: Claude Code and Desktop JSON definition comparison, Cowork registration evidence, the intentionally non-rendered claude.ai web convention, and generation of the Cowork plugin marketplace projection. Source projection, registration, installation, activation, and runtime health are reported separately.
 
 ## Operating modes
 
@@ -22,7 +22,7 @@ Run `ki repo audit --skill ki-binding-claude --repo <project>`. The host resolve
 
 ### Mode CONFORM
 
-Run AUDIT first. `ki repo conform --skill ki-binding-claude --repo <project>` drafts only safe regular Cowork settings files, preserving unrelated keys. Relaunch Cowork after publication. Rebuild the marketplace plugin with `bun skills/environment/ki-binding-claude/scripts/build-plugin.ts <ki-repo-plugins-checkout>`; it is a projection, never hand-maintained.
+Run AUDIT first. Cowork settings are report-only until product-specific external-edit and next-launch authority is recorded. Rebuild the marketplace plugin with `bun skills/environment/ki-binding-claude/scripts/build-plugin.ts <ki-repo-plugins-checkout>`; it is a projection, never hand-maintained. Registration, installation, activation, and runtime health require separate authorised evidence.
 
 ### Mode EDUCATE
 

@@ -9,7 +9,7 @@ describe('ki-repo-kb-live-artifacts rubric catalogue', () => {
     const codes = definition.families
       .filter((family) => family.code !== 'RUBRIC')
       .flatMap((family) => family.items.map((item) => item.code))
-    expect(codes).toHaveLength(11)
+    expect(codes).toHaveLength(12)
     expect(new Set(codes).size).toBe(codes.length)
   })
 

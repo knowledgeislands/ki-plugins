@@ -1,5 +1,4 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { DIAGNOSTIC_REMEDIATION } from '../../shared/rubric.ts'
 import {
   type FrontmatterRubricContext,
   type KiSkillsRubricContext,
@@ -14,7 +13,11 @@ const FM_1: RubricItem<FrontmatterRubricContext> = {
   sources: ['SPEC', 'CC'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Create or repair the opening YAML mapping without inventing the skill identity or discarding authored frontmatter values.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ hasBlock, isMapping }) => {

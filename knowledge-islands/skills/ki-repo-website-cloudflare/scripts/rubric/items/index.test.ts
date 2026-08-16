@@ -18,7 +18,9 @@ test('the catalogue exposes the complete ordered Cloudflare hosting family', () 
     'WCF-19',
     'WCF-20',
     'WCF-21',
-    'WCF-22'
+    'WCF-22',
+    'WCF-23',
+    'WCF-24'
   ])
   const families = definition.families as unknown as readonly {
     items: readonly {

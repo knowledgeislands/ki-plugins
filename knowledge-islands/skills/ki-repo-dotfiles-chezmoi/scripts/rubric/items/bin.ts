@@ -15,9 +15,10 @@ const BIN_1: RubricItem<BinContext> = {
     },
     audit: {
       phase: 'INSPECT',
-      run: ({ repositoryState, entries }) => {
+      run: ({ repositoryState, applicable, entries }) => {
         if (repositoryState !== 'physical')
           return [{ status: 'NOT_APPLICABLE', message: 'The target repository is not safely inspectable.' }]
+        if (!applicable) return [{ status: 'NOT_APPLICABLE', message: 'ki-repo-dotfiles-chezmoi is not applicable.' }]
         if (entries === null)
           return [{ status: 'NOT_APPLICABLE', message: 'No bin/ directory exists in the source tree.' }]
         if (!entries.length)

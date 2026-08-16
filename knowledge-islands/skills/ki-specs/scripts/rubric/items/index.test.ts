@@ -17,6 +17,7 @@ const expectedFamilies = [
 const expectedItems = [
   'INDEX-1',
   'INDEX-2',
+  'INDEX-3',
   'AREA-1',
   'AREA-2',
   'ID-1',

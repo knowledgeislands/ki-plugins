@@ -12,7 +12,7 @@
 - [Index](#index)
 - [Writing guidance](#writing-guidance)
 
-The normative standard behind [the generated rubric](rubric.md). Grounded in Michael Nygard's original 2011 ADR format (see [the source list](sources.md)) with house additions: universal decision metadata, type-specific prefixes, and `## References`. Unified from the former `ki-adrs` and `ki-kdrs` instruments. A DR is a **living present-state record** — it states the decision as it stands now and is edited in place; its metadata status records document currency, never a decision lifecycle, mutability marker, supersession chain, or changelog (see [Writing guidance](#writing-guidance)). Mode REFRESH re-reads the sources and proposes diffs here.
+The normative standard behind [the generated rubric](rubric.md). Grounded in Michael Nygard's original 2011 ADR format (see [the source list](sources.md)) with house additions: decision-specific metadata, type-specific prefixes, and `## References`. Unified from the former `ki-adrs` and `ki-kdrs` instruments. A DR is a concise, self-contained **living present-state record**: it states the decision as it stands now and is edited in place, without historical narrative, a supersession chain, or changelog (see [Writing guidance](#writing-guidance)). Mode REFRESH re-reads the sources and proposes diffs here.
 
 ## Naming convention
 
@@ -27,21 +27,21 @@ The normative standard behind [the generated rubric](rubric.md). Grounded in Mic
 
 ## Prefix table
 
-Each type maps to a fixed prefix, a human-readable record type, and a durable public specification URL. Required metadata must duplicate the canonical values encoded by the H1 prefix (FAIL check). Whether that prefix actually fits the decision is a human judgement, not a value the checker can derive.
+Each type maps to a fixed prefix and a house reference URL. Required decision-specific metadata duplicates the canonical values encoded by the H1 prefix (FAIL check). The URL is identifier metadata, not evidence that a public type page is available or authoritative. Whether that prefix actually fits the decision is a human judgement, not a value the checker can derive.
 
-| Prefix | `type` | `decision_type` | `type_url` | Covers |
-| --- | --- | --- | --- | --- |
-| `SDR-` | Strategy Decision Record | `strategy` | `.../sdr` | Direction, goals, positioning, scope |
-| `PDR-` | Product Decision Record | `product` | `.../pdr` | Purpose, outputs, scope of the repo or island |
-| `ADR-` | Architecture Decision Record | `architecture` | `.../adr` | Structure, topology, component relationships |
-| `DDR-` | Data Decision Record | `data` | `.../ddr` | Schemas, data governance, storage choices |
-| `XDR-` | Security Decision Record | `security` | `.../xdr` | Security posture, trust boundaries, access |
-| `ODR-` | Operations Decision Record | `operations` | `.../odr` | Operational procedures, deployment, maintenance |
-| `GDR-` | Governance Decision Record | `governance` | `.../gdr` | Processes, authority, change mechanisms |
-| `RDR-` | Research Decision Record | `research` | `.../rdr` | Methodology choices, investigation frameworks |
-| `KDR-` | Knowledge Decision Record | `knowledge` | `.../kdr` | Taxonomy, naming, classification, vocabularies |
+| Prefix | `decision_type` | `decision_type_url` | Covers |
+| --- | --- | --- | --- |
+| `SDR-` | `strategy` | `.../sdr` | Direction, goals, positioning, scope |
+| `PDR-` | `product` | `.../pdr` | Purpose, outputs, scope of the repo or island |
+| `ADR-` | `architecture` | `.../adr` | Structure, topology, component relationships |
+| `DDR-` | `data` | `.../ddr` | Schemas, data governance, storage choices |
+| `XDR-` | `security` | `.../xdr` | Security posture, trust boundaries, access |
+| `ODR-` | `operations` | `.../odr` | Operational procedures, deployment, maintenance |
+| `GDR-` | `governance` | `.../gdr` | Processes, authority, change mechanisms |
+| `RDR-` | `research` | `.../rdr` | Methodology choices, investigation frameworks |
+| `KDR-` | `knowledge` | `.../kdr` | Taxonomy, naming, classification, vocabularies |
 
-Each `type_url` expands from `https://knowledgeislands.info/specifications/decision-records/{prefix-lowercase}`. The URLs are stable metadata now, so the future public pages do not require a repository migration. `ADR-` aligns with the established ADR ecosystem (Nygard, adr.github.io). `KDR-` reclaims the former Knowledge Decision Records prefix with a precise `knowledge` scope.
+Each `decision_type_url` expands from `https://knowledgeislands.info/specifications/decision-records/{prefix-lowercase}`. These house reference URLs are not a claim that public type pages are currently published; publishing or verifying them is an external-site owner concern. `ADR-` aligns with the established ADR ecosystem (Nygard, adr.github.io). `KDR-` reclaims the former Knowledge Decision Records prefix with a precise `knowledge` scope.
 
 ## Placement
 
@@ -54,7 +54,7 @@ The repo type is declared in `.ki-config.toml` under `[skills.ki-decision-record
 
 ## Frontmatter
 
-Every Decision Record begins with YAML frontmatter. `id`, `title`, `date`, `status`, `type`, `type_url`, and `decision_type` are required in every repository. This makes the identifier and kind immediately legible without relying on an acronym alone, while retaining stable machine and public-reference values for tooling.
+Every Decision Record begins with YAML frontmatter. `id`, `title`, `date`, `status`, `decision_type`, and `decision_type_url` are required in every repository. Generic `type` and `type_url` are reserved for generic note metadata and are prohibited here. This keeps the decision classification explicit without creating a competing generic type taxonomy.
 
 **Universal template:**
 
@@ -64,9 +64,8 @@ id: GDR-<SCOPE>-NNN
 title: '<Title>'
 date: YYYY-MM-DD
 status: current
-type: Governance Decision Record
-type_url: https://knowledgeislands.info/specifications/decision-records/gdr
 decision_type: governance
+decision_type_url: https://knowledgeislands.info/specifications/decision-records/gdr
 ---
 ```
 
@@ -74,10 +73,10 @@ decision_type: governance
 - `title` exactly repeats the H1 title after `:`.
 - `date` uses `YYYY-MM-DD` and records the decision's current as-of date.
 - `status` tracks the note's maintenance state (for example `draft`, `current`, `outdated`, or `archive`) — never a decision lifecycle.
-- `type` exactly matches the human-readable prefix type in the table above (for example `Architecture Decision Record`).
-- `type_url` exactly matches the durable public specification URL in the table above.
 - `decision_type` must exactly match the canonical value encoded by the filename prefix in the table above.
+- `decision_type_url` exactly matches the house reference URL in the table above.
 - Choose the prefix by what the decision is actually about. If the filename and metadata disagree, a human resolves whether the canonical ID or the metadata is wrong; CONFORM never chooses by overwriting either side.
+- CONFORM may make only source-preserving scalar metadata repairs on a parseable, regular, non-symlink record whose filename is already canonical: remove generic `type`; rename a canonical legacy `type_url` when `decision_type_url` is absent; and add missing canonical decision-type fields derived from the existing prefix. It refuses malformed, ambiguous, conflicting, or non-canonical sources.
 - `decision_depends_on` is an optional YAML list of full DR codes that this decision logically depends on (e.g. `["GDR-KI-ARCADIA-001"]`). Cross-scope (cross-repo) references are permitted. Body prose cites only backward — no forward references to higher-numbered DRs of the same type. Omit the field when there are no dependencies.
 - `shared_record: true` is an optional, narrow marker for a deliberately byte-identical record mirrored across approved repositories. The record keeps its canonical foreign ID. It is excluded from a receiving collection’s serial series only when that prefix+scope has no ordinary local records; otherwise it remains part of the local sequence. Use it in every copy, including the canonical source copy, so the record remains identical and reviewers can recognise the exception. It does not make ordinary local records shareable or relax any other metadata, body, index, or identity rule.
 
@@ -95,7 +94,7 @@ The title is a short noun phrase — not a question, not a full sentence. The he
 
 ### 2. Frontmatter (before the heading)
 
-The required frontmatter carries the ID, title, date, maintenance status, human-readable type, type URL, and machine decision type. There is deliberately **no bold `Date`, `Status`, or `Mutability` line**: a DR is kept true by **editing it in place**, not by tracking a decision lifecycle or freezing-and-superseding. A change of direction edits the live record (see [Writing guidance](#writing-guidance)); there is no supersession chain and no retained history — the record reads as if written today.
+The required frontmatter carries the ID, title, date, maintenance status, and decision-specific classification. There is deliberately **no bold `Date`, `Status`, or `Mutability` line**: a DR is kept true by **editing it in place**. A change of direction edits the live record; historical wording is removed so the record reads as if written today.
 
 ### 3. `## Context`
 
@@ -129,9 +128,8 @@ id: GDR-<SCOPE>-NNN
 title: '<Title>'
 date: YYYY-MM-DD
 status: current
-type: Governance Decision Record
-type_url: https://knowledgeislands.info/specifications/decision-records/gdr
 decision_type: governance
+decision_type_url: https://knowledgeislands.info/specifications/decision-records/gdr
 ---
 
 # GDR-<SCOPE>-NNN: <Title>
@@ -178,12 +176,14 @@ The index file — `Decisions.md` in a KB, `README.md` in a code repo (GitHub re
 
 Each item links the record by its ID and gives a short gloss of what it decides. Per-record dates and maintenance status live in each record's frontmatter, not in the index. There is no decision lifecycle marker — records are living and present-state.
 
+CONFORM may append a missing entry or restore a link target only for a recognised, regular, non-symlink record whose canonical filename is deterministically known. It preserves existing entry order, numbering markers, and unrelated index prose; stale links, duplicates, ordering, unordered links, and entries for non-canonical records remain human review.
+
 ## Writing guidance
 
 - **Length**: one to two pages (roughly 200-500 words of body). A DR is a decision record, not a design document.
 - **Voice**: active, present tense. "This island adopts X" not "X was adopted".
 - **Scope**: one decision per DR. If a decision has multiple independently-reconsidered parts, split them.
-- **Edit in place**: a DR is a living record — clarifications, realignments, and changes of direction all **edit the existing record** so it always reads as written today. There is no supersession chain and no changelog; superseded wording simply goes. A significant change of direction is worth flagging to the human before applying, but it still lands as an in-place edit, not a new superseding record.
+- **Edit in place**: a DR is a living record — clarifications, realignments, and changes of direction all **edit the existing record** so it always reads as written today. There is no supersession chain, changelog, or historical account; obsolete wording simply goes. A significant change of direction is worth flagging to the human before applying, but it still lands as an in-place edit.
 - **No roadmap or TODO inside a DR**: a record states the decision as it currently stands. Forward-looking, still-to-do, or "revisit later" work is lifted to the repo's ROADMAP (code repo) or a stream (KB) — never narrated in the record as an "open roadmap item", "parked", or "not yet started".
 - **State the decision, not the enforcement detail**: a DR records what was decided and names the concept or standard that carries it — never the volatile identifiers the enforcing skill owns. Do not cite rubric or checker criterion IDs (a `SHAPE-N`, `SCRIPT-N`, `MEM-N` tag) or a standard's section numbers (`§4`): the enforcing skill renumbers them without the decision changing, silently staling the record. Say "the skills rubric enforces this" or "the ki-tokenomics standard covers model-tier selection", and let the skill own the specifics.
 - **Chaining**: the Consequences of one DR become the Context of the next. Write each as if handing off to a future author.

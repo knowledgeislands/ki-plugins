@@ -1,4 +1,4 @@
-import { type Dirent, lstatSync, readdirSync } from 'node:fs'
+import { type Dirent, lstatSync, readdirSync, readFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import type {
   ConformWrite,
@@ -18,6 +18,7 @@ export type IgnoreState = 'missing' | 'physical' | 'unsafe'
 export type ChezmoiShapeContext = {
   repository: string
   repositoryState: RepositoryState
+  applicable: boolean
   ignoreState: IgnoreState
   hasTemplateFiles: boolean
   hasTemplateSupport: boolean
@@ -32,17 +33,20 @@ export type BinEntry = {
 export type BinContext = {
   repository: string
   repositoryState: RepositoryState
+  applicable: boolean
   entries: readonly BinEntry[] | null
 }
 
 export type GitContext = {
   repository: string
   repositoryState: RepositoryState
+  applicable: boolean
   locks: readonly string[] | null
 }
 
 export type ReviewContext = {
   repository: string
+  applicable: boolean
 }
 
 export type ChezmoiRubricContext = {
@@ -89,6 +93,24 @@ const repositoryState = (repository: string): RepositoryState => {
   const state = pathState(repository)
   if (state === 'missing') return 'absent'
   return state === 'directory' ? 'physical' : 'unsafe'
+}
+
+const hasDeclaration = (repository: string, state: RepositoryState): boolean => {
+  if (state !== 'physical' || pathState(join(repository, '.ki-config.toml')) !== 'file') return false
+  try {
+    const document = Bun.TOML.parse(readFileSync(join(repository, '.ki-config.toml'), 'utf8')) as Record<
+      string,
+      unknown
+    >
+    const skills = document.skills
+    const table =
+      skills && typeof skills === 'object' && !Array.isArray(skills)
+        ? (skills as Record<string, unknown>)['ki-repo-dotfiles-chezmoi']
+        : undefined
+    return Boolean(table && typeof table === 'object' && !Array.isArray(table))
+  } catch {
+    return false
+  }
 }
 
 const inspectTemplates = (repository: string, state: RepositoryState): { files: boolean; support: boolean } => {
@@ -153,6 +175,7 @@ export const createChezmoiSession = ({
 }: RubricContextOptions): RubricSession<ChezmoiRubricContext> => {
   const root = resolve(repository)
   const state = repositoryState(root)
+  const applicable = hasDeclaration(root, state)
   const ignorePath = join(root, '.chezmoiignore')
   const rawIgnoreState = pathState(ignorePath)
   const ignoreState: IgnoreState =
@@ -162,10 +185,11 @@ export const createChezmoiSession = ({
   const shape: ChezmoiShapeContext = {
     repository: root,
     repositoryState: state,
+    applicable,
     ignoreState,
     hasTemplateFiles: templates.files,
     hasTemplateSupport: templates.support,
-    ...(mode === 'conform' && state === 'physical' && ignoreState === 'missing'
+    ...(mode === 'conform' && applicable && state === 'physical' && ignoreState === 'missing'
       ? {
           requestIgnoreCreate: () => {
             ignoreRequested = true
@@ -176,14 +200,14 @@ export const createChezmoiSession = ({
   const context: ChezmoiRubricContext = {
     rubric: { publication },
     shape,
-    bin: { repository: root, repositoryState: state, entries: inspectBin(root, state) },
-    git: { repository: root, repositoryState: state, locks: inspectGitLocks(root, state) },
-    review: { repository: root }
+    bin: { repository: root, repositoryState: state, applicable, entries: inspectBin(root, state) },
+    git: { repository: root, repositoryState: state, applicable, locks: inspectGitLocks(root, state) },
+    review: { repository: root, applicable }
   }
   return {
     subjects: [
       {
-        families: ['CHEZMOI', 'BIN', 'GIT', 'PATTERN', 'CONFIG', 'LAYER', 'ETIQ', 'SYNC'],
+        families: ['CHEZMOI', 'BIN', 'GIT', 'PATTERN', 'CONFIG', 'LAYER', 'SHELL', 'ETIQ', 'SYNC'],
         context: () => context,
         subject: root
       },

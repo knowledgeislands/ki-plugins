@@ -69,7 +69,7 @@ const ZONE_4 = mechanical(
 const ZONE_5 = mechanical(
   'ZONE-5',
   'produced outputs use outbound staging',
-  'Notes with type session-digest or handoff reside under the resolved -/ staging area.',
+  'Notes with note_type session-digest or handoff reside under the resolved -/ staging area.',
   'FAIL',
   (context) => context.outboundPlacement
 )

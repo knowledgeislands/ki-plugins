@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from 'bun:test'
+import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -42,12 +43,34 @@ test('the default export is the sole catalogue entrypoint and families are compl
     'MD-callout',
     'OWN-1',
     'OWN-2',
-    'TOML-keys',
     'TOML-values',
-    'TOML-tables',
     'TOML-comments',
     'SYNC-1'
   ])
+})
+
+test('the owned rumdl template enables repaired rules and prevents the standard-flavor MD056 destructive fix', () => {
+  expect(RUMDL_DEFAULT).not.toContain('"MD005"')
+  expect(RUMDL_DEFAULT).not.toContain('"MD075"')
+  expect(RUMDL_DEFAULT).not.toMatch(/disable = \[[^\]]*"MD056"/)
+  expect(RUMDL_DEFAULT).toContain('unfixable = ["MD056"]')
+})
+
+test('rumdl 0.2.54 reports a standard-flavor wikilink table without truncating it during fix', () => {
+  const repository = temporaryRepository()
+  const configuration = join(repository, 'rumdl.toml')
+  const markdown = join(repository, 'fixture.md')
+  const contents = '# Fixture\n\n| Link | Value |\n| --- | --- |\n| [[Target|Label]] | Keep me |\n'
+  writeFileSync(configuration, RUMDL_DEFAULT)
+  writeFileSync(markdown, contents)
+
+  const result = spawnSync('bunx', ['rumdl', 'check', '--config', configuration, '--fix', markdown], {
+    encoding: 'utf8'
+  })
+
+  expect(result.status).toBe(1)
+  expect(`${result.stdout}${result.stderr}`).toContain('[MD056]')
+  expect(readFileSync(markdown, 'utf8')).toBe(contents)
 })
 
 test('conform retains drafts, coalesces writes, and leaves publication to the host', () => {

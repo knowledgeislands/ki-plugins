@@ -1,5 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { judgment } from '../../shared/rubric.ts'
 import { type KiSkillsRubricContext, type SizeRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const BODY_MAX_LINES = 500
@@ -12,7 +12,11 @@ const SIZE_1: RubricItem<SizeRubricContext> = {
   sources: ['SPEC', 'BP', 'CC'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Reduce the body below the line budget by removing generic knowledge and routing rarely used authored detail into focused references without losing behaviour.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ bodyLines }) => {
@@ -38,7 +42,11 @@ const SIZE_2: RubricItem<SizeRubricContext> = {
   sources: ['SPEC'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Reduce the body below the token guide-rail while preserving selection, shared behaviour, and links to necessary on-demand detail.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ bodyTokens }) => {

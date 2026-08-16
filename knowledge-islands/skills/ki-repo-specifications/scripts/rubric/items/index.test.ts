@@ -53,7 +53,7 @@ test('each family module exports one complete family', async () => {
   }
 })
 
-test('the session keeps one configuration draft and proposes the marker once', () => {
+test('the session never infers a declaration from detected directories or proposes a write', () => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-repo-specifications-'))
   temporaryDirectories.push(repository)
   writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\n')
@@ -66,17 +66,20 @@ test('the session keeps one configuration draft and proposes the marker once', (
 
   expect(subject?.families).toEqual(['SPEC', 'SYNC'])
   expect(subject?.context()).toBe(context)
-  expect(marker?.mechanical?.audit.run(context as never)[0]?.status).toBe('VIOLATION')
+  expect(marker?.mechanical?.audit.run(context as never)[0]?.status).toBe('NOT_APPLICABLE')
   expect(session.proposal()).toEqual({ writes: [] })
+})
 
-  marker?.mechanical?.conform?.run(context as never)
-  marker?.mechanical?.conform?.run(context as never)
+test('detected authority directories without a declaration are not applicable', () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-repo-specifications-unselected-'))
+  temporaryDirectories.push(repository)
+  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\n')
+  for (const directory of ['proposals', 'specifications', 'schemas']) mkdirSync(join(repository, directory))
 
-  expect(session.proposal().writes).toEqual([
-    {
-      path: '.ki-config.toml',
-      content: expect.stringContaining('[skills.ki-repo-specifications]')
-    }
-  ])
-  expect(session.proposal().writes[0]?.content.match(/\[skills\.ki-repo-specifications\]/g)).toHaveLength(1)
+  const session = catalogue.createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
+  const subject = session.subjects[1]
+  const marker = items.find((item) => item.code === 'SPEC-1')
+
+  expect(subject?.families).toEqual(['SPEC', 'SYNC'])
+  expect(marker?.mechanical?.audit.run(subject?.context() as never)[0]?.status).toBe('NOT_APPLICABLE')
 })

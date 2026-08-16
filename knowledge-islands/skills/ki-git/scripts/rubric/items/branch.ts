@@ -3,23 +3,30 @@ import type { GitRubricContext } from '../contexts/git.ts'
 
 const BRANCH_1: RubricItem<GitRubricContext> = {
   code: 'BRANCH-1',
-  title: 'branch choice matches the change boundary',
-  description: 'Direct main and branch work each follow the repository policy and the change’s review needs.',
+  title: 'working approach matches the delivery boundary',
+  description:
+    'Single-main, branch-with-PR, and worktree-with-PR approaches follow repository policy, review needs, and concurrency.',
   sources: ['standards-git.md'],
   judgment: {
-    scope: 'The selected repository, requested change, protection policy, and review boundary.',
+    scope:
+      'The selected repository, requested change, current `git branch --show-current` and `git worktree list` evidence, protection policy, concurrency, and review boundary.',
     prompt:
-      'Assess whether direct main or a branch is appropriate for this repository’s protection policy, the user’s request, and the value of an isolated review boundary.',
-    outcomes: ['conforming', 'branch required', 'direct-main rationale required'],
+      'After checking branch, worktree, protection, concurrency, and review evidence, assess whether `single-working-copy-on-main`, `single-working-copy-on-branch-with-pr`, or `worktrees-with-pr` is the appropriate approach.',
+    outcomes: [
+      'conforming',
+      'use single-working-copy-on-main',
+      'use single-working-copy-on-branch-with-pr',
+      'use worktrees-with-pr'
+    ],
     guidance:
-      'Create an isolated branch where review or repository policy requires it, or record why a focused direct-main change is appropriate.'
+      'Use the least ceremonial approach that preserves the selected protection, review, and concurrency boundary; use separate worktrees when concurrent deliveries need isolated working files.'
   }
 }
 
 export const BRANCH: RubricFamily<GitRubricContext, GitRubricContext> = {
   code: 'BRANCH',
-  title: 'branch choice',
-  description: 'Branch use follows local protection and review needs without invented ceremony.',
+  title: 'working approach',
+  description: 'Working-copy topology and review flow follow local protection, review, and concurrency needs.',
   standard: 'standards-git.md',
   selectContext: (context) => context,
   items: [BRANCH_1]

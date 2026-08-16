@@ -5,6 +5,8 @@ import { FRONTMATTER } from './frontmatter.ts'
 import { INDEX } from './indexing.ts'
 import { LINK } from './link.ts'
 import { RUBRIC } from './publication.ts'
+import { RUNTIME } from './runtime.ts'
+import { SELECTION } from './selection.ts'
 
 type HousekeepingDefinition = SkillRubricDefinition<HousekeepingRubricContext> & {
   scope: {
@@ -19,5 +21,5 @@ export default {
   concern: 'Claude state housekeeping',
   scope: { kind: 'user-home', paths: ['.claude/projects'] },
   createSession: createHousekeepingSession,
-  families: [INDEX, FRONTMATTER, LINK, DOC, RUBRIC]
+  families: [SELECTION, RUNTIME, INDEX, FRONTMATTER, LINK, DOC, RUBRIC]
 } satisfies HousekeepingDefinition

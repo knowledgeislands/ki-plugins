@@ -10,7 +10,7 @@ const unavailable = (context: ShellToolsContext): readonly AuditOutcome[] | null
     ? null
     : one({
         status: 'NOT_APPLICABLE',
-        message: 'No qualified ki-repo-tools declaration or bin/ structural marker is present.'
+        message: 'ki-repo-tools is not applicable: its repository declaration is absent.'
       })
 
 const SHELL_LINT: RubricItem<ShellToolsContext> = {

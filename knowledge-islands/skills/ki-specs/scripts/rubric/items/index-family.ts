@@ -61,11 +61,38 @@ const INDEX_2: RubricItem<SpecIndexContext> = {
   }
 }
 
+const INDEX_3: RubricItem<SpecIndexContext> = {
+  code: 'INDEX-3',
+  title: 'each prefix has one registered area-file owner',
+  description:
+    'A prefix appears in one areas-table file cell only; duplicate registrations are reported rather than silently overwritten.',
+  sources: [SOURCE],
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Choose the prefix’s one owning area file and remove the duplicate registration before rerunning the audit.'
+    },
+    audit: {
+      phase: 'INSPECT',
+      run: (context) =>
+        context.duplicatePrefixRegistrations.length === 0
+          ? [{ status: 'PASS', message: 'Every specification prefix has one registered area-file owner.' }]
+          : context.duplicatePrefixRegistrations.map(({ prefix, firstFile, duplicateFile }) => ({
+              status: 'VIOLATION' as const,
+              message: `Prefix ${prefix} is registered to both ${firstFile} and ${duplicateFile}.`,
+              subject: 'index.md'
+            }))
+    }
+  }
+}
+
 export const INDEX: RubricFamily<SpecsRubricContext, SpecIndexContext> = {
   code: 'INDEX',
   title: 'specifications index',
   description: 'The corpus has a populated registry that maps prefixes to area files.',
   standard: SOURCE,
   selectContext: (context) => context.index,
-  items: [INDEX_1, INDEX_2]
+  items: [INDEX_1, INDEX_2, INDEX_3]
 }

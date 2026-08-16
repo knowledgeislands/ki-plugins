@@ -16,7 +16,7 @@
 ## 1. Preflight
 
 1. Resolve the selected physical Git root and its declared `ki-repo` identity.
-2. Run `ki repo audit --skill ki-trades --repo <root>` and stop on a failure or warning. A pending one-sided export route may support preparation but not receipt.
+2. Run `ki repo audit --skill ki-trades --repo <root>` and stop on a failure or warning. Re-run it after a mutation. These are operator checks: the current trade host does not establish them as pre/post transaction enforcement. A pending one-sided export route may support preparation but not receipt.
 3. Resolve every peer only through the registered repository inventory and canonical repository identity. Filesystem visibility alone grants no route or write authority.
 4. Inspect current committed state before any operation that reads a preparation. Uncommitted peer content is not an observable proposal.
 
@@ -58,7 +58,7 @@ Show the committed diff only when the cursor and current commit share comparable
 
 ## 4. Submit or abandon
 
-`ki trade submit <TRD>` validates one complete preparation, previews its canonical outbound path, then atomically moves the same identity into submitted state. Submission removes the preparation-only phase, freezes its envelope and payload, and consumes the preparation. It does not require an active reciprocal import and does not create the receiver copy.
+`ki trade submit <TRD>` must validate one complete preparation and preview its canonical outbound path before changing it. The operation is permitted only when the host demonstrates the transaction boundary it claims; this procedure does not certify atomicity merely because the command exists. Submission changes the same identity to submitted state, freezes its envelope and payload, and consumes the preparation. It does not require an active reciprocal import and does not create the receiver copy.
 
 `ki trade abandon <TRD>` applies only to one preparation. Present its exact path and require confirmation before deleting it because abandonment removes the current mutable artifact; committed Git history remains recoverable. Refuse after submission and never convert abandonment into sender release.
 
@@ -66,7 +66,7 @@ Show the committed diff only when the cursor and current commit share comparable
 
 `ki trade receive <TRD>` requires one explicit submitted identity and an active reciprocal route for its kind. Preview the sender source and receiver destination, preserve the immutable sender projection byte-for-byte, add only the receiver-owned fields, and record the committed sender reference when it is available.
 
-`ki trade receive --all` is an explicit batch operation. Resolve and preview the complete eligible set, including any skipped or conflicting records, then require confirmation before writing any receiver copy. Validate the whole set before publishing it; an invalid member prevents partial intake.
+`ki trade receive --all` is a convenience operation over independent asynchronous receipts. Its preview lists the identities receivable at that point; with confirmation, the host attempts each listed identity sequentially. A later failure does not retract an earlier receipt, and a preview neither promises that every outbound file was evaluated nor grants receiver authority. Report the actual local results; use one explicit identity when an operator needs a single-record boundary.
 
 Receipt begins at `unconsidered`. It is not acceptance, retention, adoption, priority, or completion. Hand the inbound record to `ki-next` for receiver disposition.
 
@@ -82,10 +82,10 @@ Receipt begins at `unconsidered`. It is not acceptance, retention, adoption, pri
 
 `ki trade prune <TRD>` removes only the selected receiver's inbound copy after matching sender release is observable. `--eligible` uses the same preview, complete-set validation, and confirmation boundary. Never infer release from a terminal decision alone.
 
-A completion-observation trade retains the linked adopted local work record until sender release is observable. Report that reference as a pruning guard; do not remove the work record as part of trade cleanup.
+A completion-observation trade retains the linked adopted local work record until sender release is observable. The local trade checker has no selected-adapter, owner-valid completion resolver, so an adopted completion trade is ineligible for release and pruning until that host-owned evidence exists. Report that reference as a pruning guard; do not remove the work record as part of trade cleanup.
 
 ## 8. Finish
 
-Run the local `ki-trades` audit after every mutation. Report the operation, exact local paths changed or removed, observation policy and next observable condition, pending reciprocity where relevant, and audit result.
+Run the local `ki-trades` audit after every mutation. Report the operation, exact local paths changed or removed, observation policy and next observable condition, pending reciprocity where relevant, and audit result. Do not report atomicity or pre/post-audit enforcement unless the host produced that evidence.
 
 For a received record, name `ki-next` as the next decision step. For an adopted work item that reached done, name sender release observation before either side prunes the remaining evidence.

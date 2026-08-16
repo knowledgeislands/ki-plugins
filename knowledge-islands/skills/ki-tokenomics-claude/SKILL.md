@@ -6,15 +6,15 @@ ki-runtime-binding: true
 ki-supported-runtimes: [claude-code]
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Audit Claude Code’s documented context-cost evidence for the selected repository and its bounded user layer: instructions, settings, skills, MCP configuration, memory, Headroom wiring, and effective versus default model where available. Use when a Claude Code repository has heavy context or needs runtime evidence for portable `ki-tokenomics` policy. Triggers: "audit Claude context", "why is Claude Code context big", "check Claude tokenomics". For portable budgets and model purpose use `ki-tokenomics`; for Codex use `ki-tokenomics-codex`.
+  Audit direct, non-secret Claude Code filesystem observations in the selected repository: project instructions, contained imports, rules, settings, and MCP declarations. Use when a Claude Code repository needs bounded runtime evidence for portable `ki-tokenomics` policy. Effective model, loaded context, active tools, trust, memory use, transcripts, and compaction remain unavailable without authorised session evidence. For portable budgets use `ki-tokenomics`; for Codex use `ki-tokenomics-codex`.
 argument-hint: 'audit | conform | educate | refresh | help'
 ---
 
 # Claude Code tokenomics
 
-`ki-tokenomics-claude` composes `ki-tokenomics` with Claude Code evidence only. It reads the selected repository and the bounded physical `~/.claude` / `~/.claude.json` user layer; it never scans another repository's project state and never follows a symlinked evidence root.
+`ki-tokenomics-claude` composes `ki-tokenomics` with direct Claude Code filesystem observations from the selected repository only. It does not read user-home state, another repository's state, live session state, or symlinked evidence roots.
 
-The audit inventories instruction files and contained imports, memory, installed-skill descriptions, MCP server names, and Claude settings. It distinguishes a configured user default model from a repository-effective model where the documented settings expose both. It reports Headroom presence and repository attribution without resetting, reconfiguring, or exposing secret values.
+The audit inventories project instruction files and contained imports, `.claude/CLAUDE.md`, project rules, parseable project settings, and parseable project MCP declarations. It reports structural presence only and never emits configuration values. Effective model, loaded context, active MCP tools, trust, approvals, memory use, transcript, compaction, billing, and token measurements remain unavailable.
 
 CONFORM is report-only unless a future item proves an existing safe, item-owned write. It currently emits no writes or commands.
 

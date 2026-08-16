@@ -13,7 +13,7 @@ argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
 
 You are helping audit, conform, or scaffold a **workspace MCP server** — one of the stdio MCP servers in the `knowledgeislands/` workspace (`mcp-git-audit`, `mcp-ki-repo-kb-fs`, `mcp-gsuite`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-ki-repo-kb-notion-mirror`). They all share one canonical shape, so a new one should be scaffolded to it and an existing one should be auditable against it. This skill carries that standard and the audit procedure.
 
-This skill audits the **server code** — `src/` layout, config injection, tool surface, security invariants, tooling. A repo's GitHub configuration and standard files, and a `SKILL.md`'s prose, are out of scope (other skills own those). How the skills divide the work is documented once in the ki-agentic-harness `README.md`.
+This skill audits declared **server source shape** — `src/` layout, config injection, tool declarations, and tooling. A structural result is not evidence that a server was registered, loaded, secured, or executed. A repo's GitHub configuration and standard files, and a `SKILL.md`'s prose, are out of scope (other skills own those). How the skills divide the work is documented once in the ki-agentic-harness `README.md`.
 
 The full, quotable standard lives in [Workspace MCP Standard](references/standards-mcp-servers.md); the line-by-line pass/fail items live in [Audit Rubric](references/rubric.md). The hosted rubric contract is [`scripts/rubric/items/index.ts`](scripts/rubric/items/index.ts), enforced by `ki repo audit --skill ki-repo-mcp`. Read those when you need detail; this file is the operating procedure.
 

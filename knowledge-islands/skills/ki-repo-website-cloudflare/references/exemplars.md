@@ -11,14 +11,11 @@ These examples are kept separate because they combine several governed artifacts
 
 | Source | URL | What it covers |
 | --- | --- | --- |
-| Workers — Static Assets | [Static Assets docs][assets] | `assets` block: `directory`, `binding`, `html_handling`, `not_found_handling` |
+| Workers Static Assets | [Static Assets docs][assets] | `assets` block: `directory`, `binding`, `html_handling`, `not_found_handling` |
 | wrangler configuration | [wrangler config docs][wrangler] | `name`, `compatibility_date`, `routes`/`custom_domain`, `observability` |
-| Pages → Workers migration | [migrate-from-pages guide][pages] | Why new static sites use Workers + Static Assets † |
 | ki-repo-website (in-house) | [ki-repo-website repo][arcadia] | Reference implementation ‡ |
 
-† Not `wrangler pages deploy`.
-
-‡ `wrangler.jsonc`, monorepo script family, Cloudflare Builds.
+‡ `wrangler.jsonc`, monorepo script family, Workers Builds.
 
 ## Selected patterns
 
@@ -29,7 +26,7 @@ The site Worker config lives at `site/wrangler.jsonc` in the monorepo layout (th
 ```jsonc
 {
   // ki-repo-website — Cloudflare Workers deployment.
-  // Model: Workers + Static Assets (not Pages — migrated off Pages; never use `wrangler pages deploy`).
+  // Model: Workers Static Assets for new projects; never use `wrangler pages deploy`.
   "name": "ki-repo-website",
   "compatibility_date": "2026-06-19",
 
@@ -47,7 +44,7 @@ The site Worker config lives at `site/wrangler.jsonc` in the monorepo layout (th
 }
 ```
 
-Optional per-site `assets` keys (`html_handling`, `not_found_handling`, `binding`, `run_worker_first`) are omitted when the defaults are acceptable. A site not yet on a custom domain may omit `routes` and deploy to the `*.workers.dev` subdomain — a judgment call, not a blocker.
+Optional per-site `assets` keys (`html_handling`, `binding`, `run_worker_first`) are omitted when the defaults are acceptable. `not_found_handling` is also optional for a content site, but an interactive app sets it to `"single-page-application"`. A site not yet on a custom domain may omit `routes` and use its `<name>.<account-subdomain>.workers.dev` URL.
 
 ### `package.json` — the hosting script family
 
@@ -112,5 +109,4 @@ The `/assets/*` rule sets a long-lived immutable cache on built assets (CSS, JS,
 
 [assets]: https://developers.cloudflare.com/workers/static-assets/
 [wrangler]: https://developers.cloudflare.com/workers/wrangler/configuration/
-[pages]: https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/
 [arcadia]: https://github.com/knowledgeislands/ki-website

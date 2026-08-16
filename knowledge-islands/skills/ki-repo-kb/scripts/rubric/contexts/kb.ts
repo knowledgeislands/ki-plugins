@@ -91,26 +91,27 @@ const markdownFiles = (directory: string, files: string[] = []): string[] => {
   return files
 }
 
-const frontmatter = (text: string): { keys: string[]; terminated: boolean; type: string | null } | null => {
+const frontmatter = (
+  text: string
+): { keys: string[]; terminated: boolean; valid: boolean; noteType: string | null } | null => {
   const lines = text.split(/\r?\n/)
   if (lines[0]?.trim() !== '---') return null
-  const keys: string[] = []
-  let type: string | null = null
-  for (let index = 1; index < lines.length; index++) {
-    const line = lines[index] as string
-    if (line.trim() === '---') return { keys, terminated: true, type }
-    if (/^\s/.test(line)) continue
-    const separator = line.indexOf(':')
-    if (separator <= 0) continue
-    const key = line.slice(0, separator).trim()
-    const value = line
-      .slice(separator + 1)
-      .trim()
-      .replace(/^['"]|['"]$/g, '')
-    keys.push(key)
-    if (key === 'type') type = value
+  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)
+  if (!match) return { keys: [], terminated: false, valid: false, noteType: null }
+  try {
+    const parsed = Bun.YAML.parse(match[1] ?? '')
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+      return { keys: [], terminated: true, valid: false, noteType: null }
+    const fields = parsed as Record<string, unknown>
+    return {
+      keys: Object.keys(fields),
+      terminated: true,
+      valid: true,
+      noteType: typeof fields.note_type === 'string' ? fields.note_type : null
+    }
+  } catch {
+    return { keys: [], terminated: true, valid: false, noteType: null }
   }
-  return { keys, terminated: false, type }
 }
 
 type KbCheck = RubricOutcomes<AuditOutcome>
@@ -126,6 +127,7 @@ export type KbZoneContext = {
 }
 
 export type KbConfigContext = {
+  readonly parseable: KbCheck
   readonly knownKeys: KbCheck
   readonly nonRedundantAliases: KbCheck
   readonly canonicalAliasKeys: KbCheck
@@ -145,6 +147,7 @@ export type KbNoteContext = {
   readonly requiredFrontmatter: KbCheck
   readonly frontmatterFences: KbCheck
   readonly frontmatterKeys: KbCheck
+  readonly noteType: KbCheck
 }
 
 export type KbMemoryContext = {
@@ -187,6 +190,12 @@ export const collectKbAuditEvidence = (target: string): readonly KbEvidenceFindi
   const config = parsed.value
   const zoneOf = (zone: string): string => config?.zones[zone] ?? zone
   if (!config) {
+    add(
+      parsed.malformed ? 'FAIL' : 'NOT_APPLICABLE',
+      'CONFIG-0',
+      parsed.malformed ? 'Cannot parse .ki-config.toml.' : '[skills.ki-repo-kb] is not declared.',
+      CONFIG
+    )
     for (const code of ['CONFIG-1', 'CONFIG-2', 'CONFIG-3', 'CONFIG-4', 'CONFIG-5'])
       add(
         'NOT_APPLICABLE',
@@ -196,6 +205,7 @@ export const collectKbAuditEvidence = (target: string): readonly KbEvidenceFindi
           : '[skills.ki-repo-kb] is not declared.'
       )
   } else {
+    add('PASS', 'CONFIG-0', 'The ki-repo-kb configuration table is parseable.', CONFIG)
     for (const key of Object.keys(config.keys))
       add('WARN', 'CONFIG-1', `Unrecognised scalar [skills.ki-repo-kb] key: ${key}.`, CONFIG)
     if (Object.keys(config.keys).length === 0)
@@ -294,28 +304,34 @@ export const collectKbAuditEvidence = (target: string): readonly KbEvidenceFindi
     )
   }
   const required = config?.requiredFrontmatter ?? []
-  const unterminated: string[] = []
+  const malformedFrontmatter: string[] = []
   const badKeys: string[] = []
   const missingRequired: string[] = []
+  const missingNoteType: string[] = []
+  const legacyType: string[] = []
   const misplacedOutputs: string[] = []
   const outbound = `${zoneOf('-')}/`
   for (const path of markdownFiles(root)) {
     const value = frontmatter(readFileSync(path, 'utf8'))
     if (!value) continue
     const relative = path.slice(root.length + 1)
-    if (!value.terminated) {
-      unterminated.push(relative)
+    if (!value.terminated || !value.valid) {
+      malformedFrontmatter.push(relative)
       continue
     }
     for (const key of value.keys) if (!SNAKE_CASE.test(key)) badKeys.push(`${relative}: ${key}`)
     for (const key of required) if (!value.keys.includes(key)) missingRequired.push(`${relative} (${key})`)
-    if ((value.type === 'session-digest' || value.type === 'handoff') && !relative.startsWith(outbound))
+    if (!value.noteType) missingNoteType.push(relative)
+    if (value.keys.includes('type')) legacyType.push(relative)
+    if ((value.noteType === 'session-digest' || value.noteType === 'handoff') && !relative.startsWith(outbound))
       misplacedOutputs.push(relative)
   }
   add(
-    unterminated.length ? 'FAIL' : 'PASS',
+    malformedFrontmatter.length ? 'FAIL' : 'PASS',
     'NOTE-1a',
-    unterminated.length ? `Unterminated frontmatter: ${sample(unterminated)}.` : 'Frontmatter fences are well formed.'
+    malformedFrontmatter.length
+      ? `Malformed or unterminated frontmatter: ${sample(malformedFrontmatter)}.`
+      : 'Frontmatter fences and YAML are well formed.'
   )
   add(
     missingRequired.length ? 'FAIL' : 'PASS',
@@ -330,6 +346,18 @@ export const collectKbAuditEvidence = (target: string): readonly KbEvidenceFindi
     badKeys.length ? 'WARN' : 'PASS',
     'NOTE-1b',
     badKeys.length ? `Non-snake_case frontmatter keys: ${sample(badKeys)}.` : 'Frontmatter keys use snake_case.'
+  )
+  add(
+    missingNoteType.length || legacyType.length ? 'FAIL' : 'PASS',
+    'NOTE-1c',
+    missingNoteType.length || legacyType.length
+      ? `Invalid note-type metadata: ${[
+          missingNoteType.length ? `missing note_type: ${sample(missingNoteType)}` : '',
+          legacyType.length ? `legacy type: ${sample(legacyType)}` : ''
+        ]
+          .filter(Boolean)
+          .join('; ')}.`
+      : 'Frontmatter uses note_type and does not use the legacy type field.'
   )
   add(
     misplacedOutputs.length ? 'FAIL' : 'PASS',
@@ -436,6 +464,7 @@ export const createKbSession = ({
         : {})
     },
     config: {
+      parseable: check('CONFIG-0'),
       knownKeys: check('CONFIG-1'),
       nonRedundantAliases: check('CONFIG-2'),
       canonicalAliasKeys: check('CONFIG-3'),
@@ -451,7 +480,8 @@ export const createKbSession = ({
     notes: {
       requiredFrontmatter: check('NOTE-1'),
       frontmatterFences: check('NOTE-1a'),
-      frontmatterKeys: check('NOTE-1b')
+      frontmatterKeys: check('NOTE-1b'),
+      noteType: check('NOTE-1c')
     },
     memory: { anchor: check('MEM-2') },
     links: {}

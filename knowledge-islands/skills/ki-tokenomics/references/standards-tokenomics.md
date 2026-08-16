@@ -1,16 +1,16 @@
 # Tokenomics standard
 
-This portable standard governs the context-cost policy shared by supported agent runtimes. A standing surface is the selected repository's instructions, durable memory, installed-skill descriptions, MCP definitions, and settings or output configuration that a runtime loads before or during work. Runtime adapters measure only their documented surfaces and attribute every measurement to the selected repository or bounded runtime-user layer.
+This portable standard governs declared context-cost policy shared by supported agent runtimes. A standing surface is the selected repository's instructions, durable memory, installed-skill descriptions, MCP definitions, and settings or output configuration that a runtime may load before or during work. Runtime adapters may report only documented, directly observed surfaces and their bounded layer. Attribution, measurement, and effective runtime state require separately authorised adapter evidence.
 
 ## Budget policy
 
-Budgets are guide-rails. Component and total overages are WARN, never FAIL. A FAIL is reserved for a malformed selected-repository configuration or a runtime adapter's explicit required integration that is absent. Token estimates are `chars / 4`, labelled `~`, and are not billing figures.
+Budgets are declared guide-rails. Any observed component or total overage is WARN, never FAIL. A portable policy check cannot observe an overage, usage, attribution, or billing. A FAIL is reserved for a malformed selected-repository configuration or a runtime adapter's explicit required integration that is absent. Token estimates, where an adapter is authorised to produce them, are labelled `~` and are not billing figures.
 
 The default component budgets are `instructions = 2500`, `memory_index = 1000`, `skills_surface = 4000`, `mcp_servers = 5`, and `total = 30000`. A runtime adapter reports only categories it can document and measure.
 
 ## Selected-repository configuration
 
-Only `[skills.ki-tokenomics]` is read, validate-down. Recognised scalar keys are `headroom` (`required`, `recommended`, or `off`), positive integer `context_window_tokens`, and `preferred_model_type` (`frontier`, `reasoning`, `standard`, or `fast`). `budgets` may contain only positive numeric values for the default budget categories. `model_tier_bindings` may contain only portable model-type keys with non-empty strings. Unknown keys WARN; malformed recognised values FAIL.
+Only `[skills.ki-tokenomics]` is read, validate-down. Recognised scalar keys are `headroom` (`required`, `recommended`, or `off`), positive integer `context_window_tokens`, and `preferred_model_type` (`frontier`, `reasoning`, `standard`, or `fast`). `budgets` and `model_tier_bindings`, when present, must be tables. `budgets` may contain only positive numeric values for the default budget categories. `model_tier_bindings` may contain only portable model-type keys with non-empty strings. Unknown keys WARN; malformed recognised values, including non-table nested values, FAIL.
 
 ## Model purpose
 

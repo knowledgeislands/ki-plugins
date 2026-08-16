@@ -8,9 +8,9 @@ const HYGIENE_1: RubricItem<GitRubricContext> = {
   sources: ['standards-git.md'],
   judgment: {
     scope:
-      'The shared working tree, worker-local Git indexes, staged paths, and Git write operations for the selected work.',
+      'The shared working tree (`git status --short`), worker-local Git indexes, staged paths, expected HEAD, and Git write operations for the selected work.',
     prompt:
-      'Assess whether the working tree was inspected, each delegated worker used its assigned Git index, staging is limited to intended paths, unrelated changes remain untouched, and shared-HEAD commits are safely serialised.',
+      'After recording current working-tree and expected-HEAD evidence, assess whether each delegated worker used its assigned Git index, staging is limited to intended paths, unrelated changes remain untouched, and shared-HEAD commits are safely serialised.',
     outcomes: [
       'conforming',
       'state inspection required',

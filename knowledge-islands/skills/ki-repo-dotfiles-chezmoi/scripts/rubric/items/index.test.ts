@@ -20,6 +20,7 @@ const fixture = (): string => {
   temporaryDirectories.push(repository)
   mkdirSync(join(repository, '.chezmoidata'))
   mkdirSync(join(repository, 'bin'))
+  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo-dotfiles-chezmoi]\n')
   writeFileSync(join(repository, 'dot_zshrc.tmpl'), '{{ .chezmoi.os }}\n')
   writeFileSync(join(repository, 'bin', 'executable_setup'), '#!/bin/sh\n')
   return repository
@@ -51,6 +52,7 @@ test('the catalogue preserves every chezmoi criterion in family order', () => {
     (family.items as readonly { code: string }[]).map((item) => item.code)
   )
   expect(codes).toEqual([
+    'CHEZMOI-0',
     'CHEZMOI-1',
     'CHEZMOI-2',
     'CHEZMOI-J1',
@@ -76,7 +78,7 @@ test('criteria declare complete v1 remediation and review metadata', () => {
   const mechanical = items.filter((item) => item.mechanical)
   const judgment = items.filter((item) => item.judgment)
 
-  expect(mechanical).toHaveLength(5)
+  expect(mechanical).toHaveLength(6)
   expect(mechanical.every((item) => item.mechanical?.remediation)).toBe(true)
   expect(judgment).toHaveLength(8)
   for (const item of judgment) {
@@ -127,6 +129,18 @@ test('audit is read-only and an existing ignore file is never proposed for repla
   const session = createChezmoiSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
   const root = session.subjects[0]?.context() as ChezmoiRubricContext
   expect(root.shape.ignoreState).toBe('physical')
+  expect(root.shape.requestIgnoreCreate).toBeUndefined()
+  expect(session.proposal().writes).toEqual([])
+})
+
+test('detected chezmoi shape without the declaration is not applicable and proposes no write', () => {
+  const repository = fixture()
+  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\n')
+  const session = createChezmoiSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
+  const root = session.subjects[0]?.context() as ChezmoiRubricContext
+  const declaration = shapeFamily().items.find((candidate) => candidate.code === 'CHEZMOI-0')
+
+  expect(declaration?.mechanical?.audit.run(shapeFamily().selectContext(root))[0]?.status).toBe('NOT_APPLICABLE')
   expect(root.shape.requestIgnoreCreate).toBeUndefined()
   expect(session.proposal().writes).toEqual([])
 })

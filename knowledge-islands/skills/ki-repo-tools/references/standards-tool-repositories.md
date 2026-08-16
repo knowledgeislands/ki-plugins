@@ -8,6 +8,7 @@ The full, quotable standard behind the `ki-repo-tools` skill. A `tools-*` repo h
 - [Repository layout](#repository-layout)
 - [The executable — `bin/<tool>`](#the-executable--bintool)
 - [Versioning & releases](#versioning--releases)
+- [Release readiness](#release-readiness)
 - [The distribution contract](#the-distribution-contract)
 - [Persisted configuration formats](#persisted-configuration-formats)
 - [Capability conditionals](#capability-conditionals)
@@ -44,15 +45,20 @@ tools-<name>/
 ## The executable — `bin/<tool>`
 
 - Lives at `bin/<tool>` and carries the **executable bit**. Git tracks the exec bit, so `chmod +x bin/<tool>` is committed once and travels with the repo — a bin file without it is a FAIL (the curl installer and Homebrew formula both rely on it).
-- Answers `--version` (and `-V` where the CLI convention allows), printing the tool name and version. The checker invokes the physical primary executable directly with `--version`, a five-second timeout, and a minimal environment; this is the machine-checkable contract behind the version marker below.
+- Answers `--version` (and `-V` where the CLI convention allows), printing the tool name and version. Hosted audit never executes the physical primary executable; a separately authorized isolated diagnostic supplies any runtime evidence.
 - Follows the XDG Base Directory spec for any config/state/cache it writes (`$XDG_CONFIG_HOME`, `$XDG_STATE_HOME`, `$XDG_CACHE_HOME` with the documented `$HOME`-relative fallbacks) rather than scattering dotfiles in `$HOME`.
 
 ## Versioning & releases
 
 - The tool carries a **version marker** — for example `MGIT_VERSION=0.1.0` in a shell entrypoint or the package metadata of a TS/Bun tool — that `--version` prints. One source of truth; no second copy to drift.
 - Releases are **`vX.Y.Z` git tags**, each with a **GitHub release**. The version marker, the tag, and the top `CHANGELOG.md` entry agree.
+- Before the package reaches `1.0.0`, the mechanical audit does not compare its version with the changelog's leading release marker. A pre-1.0 package may legitimately retain a proposed 1.0 baseline while the implementation version continues to advance. Changelog presence and judgmental release-readiness review still apply.
 - `CHANGELOG.md` names the current semantic-versioned release. It may use [Keep a Changelog](https://keepachangelog.com/) sections (`Unreleased`, then dated version entries grouped by Added / Changed / Fixed / Removed), or establish a declared current-release baseline that inventories the shipped command surface. A baseline does not backfill older releases: their tags and commit history remain the record of that run-up.
 - Tags and releases can't be seen from a checkout path — the checker hands this to the judgment pass (RELEASE, ADVISORY).
+
+## Release readiness
+
+Use [the release-readiness checklist](standards-release-readiness.md) to turn these requirements into a release-specific review. It orders the candidate's version and compatibility decision, public-surface documentation, applicable validation, and publication handoffs without adding a second release policy or a new repository mode.
 
 ## The distribution contract
 

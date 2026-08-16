@@ -4,17 +4,17 @@ ki-kind: governance
 ki-depends-on: [ki-repo-kb, ki-decision-records]
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Governs a principal Knowledge Islands knowledge base: the canonical shared island from which governance, durable knowledge, decisions, and cross-island routes are maintained. Use when auditing, establishing, or conforming a principal knowledge base; its governance home, Enactment gate, charter, memory root, canonical zones, or incoming and outgoing handoffs. A governance skill: it composes ki-repo-kb and ki-decision-records, while local identity and integrations remain declared in the principal repository.
+  Governs the structural overlay for a locally designated principal Knowledge Islands base: its governance home, Enactment gate, charter, memory root, canonical zones, and handoff entry points. It does not establish canonical-island identity, authority, or cross-island roles. Use when auditing, establishing, or conforming the local overlay. A governance skill: it composes ki-repo-kb and ki-decision-records, while identity and integrations remain declared by their owning contracts.
 argument-hint: 'audit | conform | educate | help | refresh'
 ---
 
 # Principal Knowledge Base
 
-This governance skill holds the portable contract for a principal Knowledge Islands base. Read [the principal standard](references/standards-principal.md) before acting and [the generated rubric](references/rubric.md) for the checkable floor.
+This governance skill holds the portable structural overlay for a repository that has been locally designated as principal. It does not prove that designation or any canonical authority. Read [the principal standard](references/standards-principal.md) before acting and [the generated rubric](references/rubric.md) for the checkable floor.
 
 ## Shared model
 
-A principal is a canonical, shared Knowledge Base. It uses the `ki-repo-kb` zones and `ki-decision-records` collection, then adds a governance home: `Admin/Governance/Charter.md`, `Admin/Governance/Known Lands.md`, `Admin/Governance/Conventions/Conventions.md`, and `Admin/Operations/Processes/Enactment Process.md`. `Admin/MEMORY.md` remains the root memory anchor.
+A locally designated principal base uses the `ki-repo-kb` zones and `ki-decision-records` collection, then adds a governance home: `Admin/Governance/Charter.md`, `Admin/Governance/Known Lands.md`, `Admin/Governance/Conventions/Conventions.md`, and `Admin/Operations/Processes/Enactment Process.md`. `Admin/MEMORY.md` remains the root memory anchor. The audit proves only readable, regular-file structural evidence and a routing anchor; it does not prove authority, approval, or identity.
 
 Substantive changes to `Admin/`, `Pillars/`, and `Resources/` must originate in a Stream proposal under the Enactment Process. This standing gate is anchored in the repository's always-loaded `CLAUDE.md` or `AGENTS.md`; the rubric verifies the anchor exists.
 
@@ -24,7 +24,7 @@ Repository identity, community language, integrations, and local operating detai
 
 ### Mode AUDIT
 
-Run `ki repo audit --skill ki-repo-kb-principal --repo <repo>`, then judge whether the charter, conventions, and Enactment Process actually describe the local principal rather than empty scaffolding.
+Run `ki repo audit --skill ki-repo-kb-principal --repo <repo>`, then judge whether the charter, conventions, and Enactment Process actually describe the local overlay rather than empty scaffolding.
 
 ### Mode CONFORM
 

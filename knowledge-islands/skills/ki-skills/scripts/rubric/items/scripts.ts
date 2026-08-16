@@ -1,5 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { judgment } from '../../shared/rubric.ts'
 import { type KiSkillsRubricContext, type ScriptsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const SCRIPT_1: RubricItem<ScriptsRubricContext> = {
@@ -68,7 +68,11 @@ const SCRIPT_8: RubricItem<ScriptsRubricContext> = {
   sources: ['AS', 'KI'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Decide whether each top-level script is a supported public command; add truthful command metadata, help, error handling, and tests, or relocate it to its actual ownership boundary.'
+    },
     heuristic: true,
     audit: {
       phase: 'INSPECT',

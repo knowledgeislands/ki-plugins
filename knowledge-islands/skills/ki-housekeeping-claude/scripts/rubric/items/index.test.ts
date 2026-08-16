@@ -6,9 +6,17 @@ describe('ki-housekeeping-claude rubric catalogue', () => {
     expect(definition.contract).toBe(1)
     expect(definition.name).toBe('ki-housekeeping-claude')
     expect(definition.scope).toEqual({ kind: 'user-home', paths: ['.claude/projects'] })
-    expect(definition.families.map((family) => family.code)).toEqual(['IDX', 'FM', 'LINK', 'DOC', 'RUBRIC'])
+    expect(definition.families.map((family) => family.code)).toEqual([
+      'SELECT',
+      'RUNTIME',
+      'IDX',
+      'FM',
+      'LINK',
+      'DOC',
+      'RUBRIC'
+    ])
     const codes = definition.families.flatMap((family) => family.items.map((item) => item.code))
-    expect(codes).toHaveLength(19)
+    expect(codes).toHaveLength(21)
     expect(new Set(codes).size).toBe(codes.length)
   })
 
@@ -19,5 +27,7 @@ describe('ki-housekeeping-claude rubric catalogue', () => {
     expect(Object.keys(await import('./link.ts'))).toEqual(['LINK'])
     expect(Object.keys(await import('./doc.ts'))).toEqual(['DOC'])
     expect(Object.keys(await import('./publication.ts'))).toEqual(['RUBRIC'])
+    expect(Object.keys(await import('./selection.ts'))).toEqual(['SELECTION'])
+    expect(Object.keys(await import('./runtime.ts'))).toEqual(['RUNTIME'])
   })
 })

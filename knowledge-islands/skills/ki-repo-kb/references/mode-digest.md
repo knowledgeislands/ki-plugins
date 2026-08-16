@@ -14,7 +14,7 @@ Once the content it holds is extracted, a digest can be deleted. Test: if you de
 ## Session digest
 
 1. Write the digest to `-/_DIGESTS/<UTC timestamp> <Short Topic>.md` (timestamp `YYYY-MM-DDTHHMMSSZ`; topic in Title Case).
-2. Carry `type: session-digest` and `retain_until: YYYY-MM-DD` (default 30 days out).
+2. Carry `note_type: session-digest` and `retain_until: YYYY-MM-DD` (default 30 days out).
 3. Structure: Context, Decisions, Facts Learned, Related Work, Keywords.
 
 ## Handoff
@@ -22,5 +22,5 @@ Once the content it holds is extracted, a digest can be deleted. Test: if you de
 A handoff is a digest directed at a specific recipient or base. The recipient routes it through their `+/` inbox. When the recipient is another KI repository, use the shared `+/_TRADES/` and `-/_TRADES/` direction and ownership convention defined by `ki-repo`; this skill continues to own the KB note's routing and frontmatter.
 
 1. Write the handoff to `-/_TRADES/<UTC timestamp> <Recipient or Topic>.md` (same timestamp format).
-2. Carry `type: handoff`, `intended_for: <base or person>`, and `retain_until: YYYY-MM-DD` (default 30 days out).
+2. Carry `note_type: handoff`, `intended_for: <base or person>`, and `retain_until: YYYY-MM-DD` (default 30 days out).
 3. Structure: Context, What Was Done, Open Threads, Next Actions, Assets Produced.

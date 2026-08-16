@@ -46,7 +46,8 @@ const notApplicable = (context: ToolRepositoryContext): readonly AuditOutcome[] 
     ? null
     : one({
         status: 'NOT_APPLICABLE',
-        message: 'No qualified ki-repo-tools declaration or bin/ structural marker is present.'
+        message:
+          'ki-repo-tools is not applicable: its repository declaration is absent. Detected tool shape is handled by ki-repo coverage.'
       })
 
 const TOOL_BIN = mechanical(
@@ -182,29 +183,16 @@ const TOOL_INSTALL_QUALITY = judgment(
 const TOOL_VERSION = mechanical(
   'TOOL-VERSION',
   'Version flag',
-  'The primary executable successfully runs with `--version`.',
+  'Runtime `--version` execution is an explicit, isolated diagnostic outside this static audit.',
   'WARN',
   (context) => {
     const skipped = notApplicable(context)
     if (skipped) return skipped
-    if (!context.primary) return one({ status: 'NOT_APPLICABLE', message: 'No primary executable is available.' })
-    if (context.version === 'unavailable')
-      return one({
-        status: 'NOT_APPLICABLE',
-        message: 'Primary executable is not executable, so --version cannot run.',
-        subject: `bin/${context.primary}`
-      })
-    return context.version === 'passed'
-      ? one({
-          status: 'PASS',
-          message: 'Primary executable runs successfully with --version.',
-          subject: `bin/${context.primary}`
-        })
-      : one({
-          status: 'VIOLATION',
-          message: 'Primary executable does not complete --version successfully.',
-          subject: `bin/${context.primary}`
-        })
+    return one({
+      status: 'INFO',
+      message: 'Static audit does not execute target binaries; obtain isolated opt-in --version evidence separately.',
+      ...(context.primary ? { subject: `bin/${context.primary}` } : {})
+    })
   }
 )
 
@@ -212,6 +200,36 @@ const TOOL_VERSION_SOURCE = judgment(
   'TOOL-VERSION-SOURCE',
   'Version source',
   'The version marker has one source of truth aligned with the latest tag and changelog.'
+)
+
+const TOOL_RELEASE_MARKERS = mechanical(
+  'TOOL-RELEASE-MARKERS',
+  'Release marker alignment',
+  'From package version 1.0.0 onward, package.json and CHANGELOG.md current local release markers agree.',
+  'WARN',
+  (context) => {
+    const skipped = notApplicable(context)
+    if (skipped) return skipped
+    if (context.releaseVersion?.startsWith('0.'))
+      return one({
+        status: 'NOT_APPLICABLE',
+        message: `Package ${context.releaseVersion} is pre-1.0; changelog release-marker alignment is not evaluated.`
+      })
+    if (!context.releaseVersion || !context.changelogVersion)
+      return one({
+        status: 'NOT_APPLICABLE',
+        message: 'No comparable local package and changelog release markers are available.'
+      })
+    return context.releaseVersion === context.changelogVersion
+      ? one({
+          status: 'PASS',
+          message: `Local package and changelog release markers agree at ${context.releaseVersion}.`
+        })
+      : one({
+          status: 'VIOLATION',
+          message: `Local release markers disagree: package ${context.releaseVersion}, changelog ${context.changelogVersion}.`
+        })
+  }
 )
 
 const TOOL_CHANGELOG = mechanical(
@@ -332,6 +350,7 @@ export const TOOL: RubricFamily<ToolsRubricContext, ToolRepositoryContext> = {
     TOOL_INSTALL_QUALITY,
     TOOL_VERSION,
     TOOL_VERSION_SOURCE,
+    TOOL_RELEASE_MARKERS,
     TOOL_CHANGELOG,
     TOOL_CHANGELOG_FORMAT,
     TOOL_CLI,

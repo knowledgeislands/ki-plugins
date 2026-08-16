@@ -38,7 +38,7 @@ Use this readable report shape:
 
 ## Reconcile and route
 
-1. Read the target repository's canonical roadmap and run its read-only `ki-change-management-roadmap` audit before proposing a durable route.
+1. Read the target repository's canonical roadmap and run its read-only `ki-work-roadmap` audit before proposing a durable route.
 2. Compare each candidate against existing items by concern, scope, and evidence; treat a similar title as a review prompt, not proof of duplication.
 3. Present only the deduplicated candidate set, including whether each is a new item, an amendment, or no roadmap work. Stop for the user's explicit decision.
 4. After the user confirms a roadmap change, use the repository's ordinary roadmap process to make it. Let `ki-next` select and promote eligible work; let `ki-plan` create and progress a plan only when the user requests planned execution.

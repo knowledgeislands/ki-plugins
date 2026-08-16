@@ -2,19 +2,20 @@
 
 **Refresh:** external-spec · 180d
 
-Four tracked sources cover the two mechanical arms (see [the Claude-state standard](standards-claude-state.md) §3): **Headroom's memory-feature behavior** — the `MEMORY.md` index format, `memory/*.md` frontmatter schema, `headroom:learn` auto-block markers, and installed memory-database CLI contract the memory-area standard and rubric encode — and the **`mcp-claude-housekeeping` server's tool surface**, the mechanical arm for the session / artifact / storage areas, whose per-surface audits and area coverage the standard's area table tracks. Update `last reviewed` on every REFRESH, whether or not anything changed.
+Recorded sources cover independent evidence surfaces (see [the Claude-state standard](standards-claude-state.md) §3): native Claude memory selection and loading, Headroom-rendered output and optional database operations, and the `mcp-claude-housekeeping` source payload. A source record never proves a current server registration, access exposure, or executed audit. Update `last reviewed` on every REFRESH, whether or not anything changed.
 
-| Source                                                                  | last reviewed |
+| Source                                                                  | Last reviewed |
 | ----------------------------------------------------------------------- | ------------- |
+| Recorded native Claude settings evidence (`autoMemoryDirectory`)         | 2026-08-12    |
 | [extraheadroom.com/reduce-claude-code-costs][headroom-tools]            | 2026-07-04    |
-| The auto-memory system prompt injected into this harness's own sessions | 2026-07-04    |
-| Installed Headroom 0.31.0 CLI help (`memory`, `learn`)                  | 2026-07-16    |
-| `@knowledgeislands/mcp-claude-housekeeping` — README + tool surface     | 2026-07-09    |
+| Recorded Headroom CLI evidence: tracked 0.31.0; installed 0.34.0        | 2026-08-12    |
+| `@knowledgeislands/mcp-claude-housekeeping` source README + tool surface | 2026-07-09    |
 
 ## Notes
 
-- **Headroom** is the proxy this harness runs (per ADR-KI-HARNESS-TOOLCHAIN-002); its `--learn` flag is what writes the `headroom:learn` block into `MEMORY.md`. The index/frontmatter format itself is asserted by the auto-memory system prompt Headroom injects into every session — there is no separate public spec page for the format as of 2026-07-04; this skill's `standards-auto-memory.md` is the transcribed source of truth pending one.
-- The installed CLI is the primary source for the operational memory-store procedure. REFRESH records `headroom --version` and rechecks `headroom memory list/show/delete --help` plus `headroom learn --help`; do not assume default database selection, confirmation, or dry-run behavior stays stable across versions.
+- Native Claude owns the selected memory location and effective loading. The local resolver needs readable settings evidence before it selects the default directory; it reports missing, malformed, disabled or unsupported, and out-of-bounds override evidence unavailable rather than assuming a default. This record does not assert a serialized disabled-value syntax.
+- Headroom rendered output and native Claude memory are distinct. The recorded version drift (tracked 0.31.0 versus installed 0.34.0) means the local format and database-operation wording are not a claim about the installed runtime. REFRESH rechecks the exact version and documented command behavior before changing those claims.
+- The server README and tool surface establish a source payload only. REFRESH must record registration, access exposure, and executed-audit evidence independently if a runtime claim is needed.
 - If Headroom ships a documented, versioned schema for `MEMORY.md` / frontmatter, replace this row with that URL and re-derive `standards-auto-memory.md` and the checker from it directly.
 
 [headroom-tools]: https://extraheadroom.com/reduce-claude-code-costs

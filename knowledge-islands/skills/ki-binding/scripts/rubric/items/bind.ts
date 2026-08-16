@@ -1,165 +1,107 @@
 import type { AuditOutcome, RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { type BindingRubricContext, RECOGNISED } from '../contexts/binding.ts'
+import { type BindingRubricContext, mcporterMatches } from '../contexts/binding.ts'
 
 const BIND_1: RubricItem<BindingRubricContext> = {
   code: 'BIND-1',
-  title: 'mcporter agrees with the source',
-  description: 'The vendor-neutral mcporter target contains exactly the KI servers targeting `mcporter`.',
+  title: 'mcporter agrees with source definitions',
+  description:
+    'An explicitly selected mcporter target has the complete non-secret definitions for each mcporter-targeted server.',
   sources: ['standards-cross-surface-binding.md'],
   mechanical: {
     level: 'WARN',
     remediation: {
       class: 'diagnostic',
       guidance:
-        'Reconcile the canonical source and mcporter target through the binding workflow; do not infer client exposure from the target alone.'
+        'Select an authoritative mcporter config through MCPORTER_CONFIG, then reconcile its full non-secret targeted definitions through the binding workflow.'
     },
     audit: {
       phase: 'INSPECT',
-      run: ({ sourceState, mcporterPath, mcporterServerKeys }) => {
+      run: ({ sourceState, mcporter }) => {
         if (sourceState.kind !== 'valid')
           return [{ status: 'NOT_APPLICABLE', message: 'The source could not be read, so mcporter was not compared.' }]
-        if (mcporterServerKeys === null)
+        if (mcporter.kind === 'unavailable')
           return [
             {
               status: 'INFO',
-              message: 'The mcporter configuration is absent or unreadable; it was not compared.',
-              subject: mcporterPath
+              message:
+                'No explicit readable mcporter target is available; definition and runtime parity are unavailable.',
+              ...(mcporter.path ? { subject: mcporter.path } : {})
             }
           ]
-        const universe = new Set(sourceState.entries.flatMap((entry) => (entry.name ? [entry.name] : [])))
-        const expected = new Set(
-          sourceState.entries.flatMap((entry) =>
-            entry.name && entry.clients?.includes('mcporter') ? [entry.name] : []
-          )
-        )
-        const present = new Set([...mcporterServerKeys].filter((name) => universe.has(name)))
-        const missing = [...expected].filter((name) => !present.has(name)).sort()
-        const stray = [...present].filter((name) => !expected.has(name)).sort()
-        if (!missing.length && !stray.length)
+        if (mcporter.kind === 'invalid')
           return [
             {
-              status: 'PASS',
-              message: `mcporter agrees with the source (${expected.size} server(s)).`,
-              subject: mcporterPath
+              status: 'VIOLATION',
+              message: 'The explicit mcporter target is malformed or unsupported for non-secret comparison.',
+              subject: mcporter.path
             }
           ]
-        return [
-          ...missing.map((name) => ({
-            status: 'VIOLATION' as const,
-            message: `mcporter is missing expected server ${name}.`,
-            subject: mcporterPath
-          })),
-          ...stray.map((name) => ({
-            status: 'VIOLATION' as const,
-            message: `mcporter has stray KI-governed server ${name}.`,
-            subject: mcporterPath
-          }))
-        ]
+        const expected = sourceState.entries.filter((entry) => entry.clients.includes('mcporter'))
+        const outcomes: AuditOutcome[] = []
+        for (const entry of expected)
+          outcomes.push(
+            mcporterMatches(entry, mcporter.servers[entry.name])
+              ? {
+                  status: 'PASS',
+                  message: `mcporter matches the full non-secret definition for ${entry.name}.`,
+                  subject: mcporter.path
+                }
+              : {
+                  status: 'VIOLATION',
+                  message: `mcporter does not match the full non-secret definition for ${entry.name}.`,
+                  subject: mcporter.path
+                }
+          )
+        return outcomes.length
+          ? outcomes
+          : [{ status: 'PASS', message: 'No server targets mcporter.', subject: mcporter.path }]
       }
     }
   }
 }
+
 const BIND_2: RubricItem<BindingRubricContext> = {
   code: 'BIND-2',
   title: 'Single MCP source is valid',
-  description: 'The canonical source exists, parses, and gives each entry a valid client target.',
+  description: 'The resolved canonical source is a physical file with a closed, portable server schema.',
   sources: ['standards-cross-surface-binding.md'],
   mechanical: {
     level: 'FAIL',
-    overrideLevels: ['WARN'],
     remediation: {
       class: 'diagnostic',
       guidance:
-        'Correct the canonical MCP source so every server has one transport and valid, intentional client targets before regenerating bindings.'
+        'Correct the canonical MCP source so every server has one valid transport definition and current, intentional client targets.'
     },
     audit: {
       phase: 'PREPARE',
-      run: ({ source, sourceState }) => {
-        if (sourceState.kind === 'absent')
-          return [
-            {
-              status: 'VIOLATION',
-              message: 'The canonical MCP source is absent; create it or set KI_MCP_SOURCE.',
-              subject: source
-            }
-          ]
-        if (sourceState.kind === 'invalid')
-          return [
-            {
-              status: 'VIOLATION',
-              message: `The canonical MCP source cannot be parsed: ${sourceState.message}`,
-              subject: source
-            }
-          ]
-        const names = new Set<string>()
-        const outcomes: AuditOutcome[] = sourceState.entries.flatMap((entry, index) => {
-          const label = entry.name ? `Server ${JSON.stringify(entry.name)}` : `Entry ${index + 1}`
-          const duplicate = entry.name ? names.has(entry.name) : false
-          if (entry.name) names.add(entry.name)
-          return [
-            ...(!entry.name
-              ? [
-                  {
-                    status: 'VIOLATION' as const,
-                    level: 'WARN' as const,
-                    message: `${label} has no name.`,
-                    subject: source
-                  }
-                ]
-              : []),
-            ...(duplicate
-              ? [
-                  {
-                    status: 'VIOLATION' as const,
-                    level: 'WARN' as const,
-                    message: `${label} repeats an existing name.`,
-                    subject: source
-                  }
-                ]
-              : []),
-            ...((entry.clients ?? []).length === 0
-              ? [
-                  {
-                    status: 'VIOLATION' as const,
-                    level: 'WARN' as const,
-                    message: `${label} targets no client.`,
-                    subject: source
-                  }
-                ]
-              : []),
-            ...(Boolean(entry.command) === Boolean(entry.url)
-              ? [
-                  {
-                    status: 'VIOLATION' as const,
-                    level: 'WARN' as const,
-                    message: `${label} must define exactly one command or URL.`,
-                    subject: source
-                  }
-                ]
-              : []),
-            ...(entry.clients ?? [])
-              .filter((client) => !RECOGNISED.has(client))
-              .map((client) => ({
-                status: 'VIOLATION' as const,
-                level: 'WARN' as const,
-                message: `${label} names unrecognised client ${JSON.stringify(client)}.`,
-                subject: source
-              }))
-          ]
-        })
-        return outcomes.length
-          ? outcomes
-          : [
+      run: ({ source, sourceState }) =>
+        sourceState.kind === 'absent'
+          ? [
               {
-                status: 'PASS',
-                message: `The source is valid with ${sourceState.entries.length} declared server(s).`,
+                status: 'VIOLATION',
+                message: 'The canonical MCP source is absent; create it or set KI_MCP_SOURCE.',
                 subject: source
               }
             ]
-      }
+          : sourceState.kind === 'invalid'
+            ? [
+                {
+                  status: 'VIOLATION',
+                  message: `The canonical MCP source is invalid: ${sourceState.message}`,
+                  subject: source
+                }
+              ]
+            : [
+                {
+                  status: 'PASS',
+                  message: `The source is valid with ${sourceState.entries.length} declared server(s).`,
+                  subject: source
+                }
+              ]
     }
   }
 }
+
 const BIND_J1: RubricItem<BindingRubricContext> = {
   code: 'BIND-J1',
   title: 'Client targeting is right for use',
@@ -176,7 +118,7 @@ const BIND_J1: RubricItem<BindingRubricContext> = {
 export const BIND: RubricFamily<BindingRubricContext, BindingRubricContext> = {
   code: 'BIND',
   title: 'Canonical MCP binding',
-  description: 'Portable source validity, client targeting, and mcporter drift evidence.',
+  description: 'Portable source validity, client targeting, and non-secret mcporter definition evidence.',
   standard: 'standards-cross-surface-binding.md',
   selectContext: (context) => context,
   items: [BIND_1, BIND_2, BIND_J1]

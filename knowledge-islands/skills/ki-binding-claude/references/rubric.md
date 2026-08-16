@@ -15,12 +15,12 @@ Line-by-line criteria for auditing ki-binding-claude. Classifications are derive
 
 → [standard](standards-claude-binding.md)
 
-Claude-native JSON and Cowork plugin evidence.
+Claude-native JSON definition, Cowork-registration, and unavailable-runtime evidence.
 
-- **CLAUDEBIND-1 [M] — Claude Code and Desktop surface agreement** — Claude Code and Desktop JSON surfaces contain the canonical servers targeting each client. (standards-claude-binding.md)
-  - _Remediation:_ diagnostic — Reconcile the affected Claude JSON surface with the canonical targeted server set, then rerun the audit.
-- **CLAUDEBIND-2 [M] — Cowork plugin integrity** — Every safe Cowork workspace registers and enables the KI plugin. (standards-claude-binding.md)
-  - _Remediation:_ automatic
+- **CLAUDEBIND-1 [M] — Claude Code and Desktop definition agreement** — Configured Claude JSON surfaces have the complete non-secret source definition for each targeted server. (standards-claude-binding.md)
+  - _Remediation:_ diagnostic — Reconcile the affected Claude JSON surface with the canonical targeted definitions, then rerun the audit.
+- **CLAUDEBIND-2 [M] — Cowork registration remains unavailable without product-specific evidence** — Cowork registration is recorded separately from source projection, activation, and runtime health. (standards-claude-binding.md)
+  - _Remediation:_ diagnostic — Obtain a product-specific Cowork external-edit and next-launch evidence contract before automating settings changes.
 - **CLAUDEBIND-J1 [J] — Web convention is intentional** — claude.ai web use is documented as a convention rather than a local render target. (standards-claude-binding.md)
   - _Evidence scope:_ The documented claude.ai web convention and every claimed Claude runtime surface.
   - _Review prompt:_ Is the web convention explicit without claiming a local file or renderer exists?

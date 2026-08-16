@@ -15,6 +15,7 @@ export type ActivityNote = {
   readonly indexLink: string
   readonly title: string
   readonly frontmatter: Readonly<Record<string, string>> | null
+  readonly malformedFrontmatter: boolean
 }
 
 export type ActivitiesContext = {
@@ -73,22 +74,32 @@ const safeDirectory = (root: string, path: string): boolean => {
   return true
 }
 
-const parseFrontmatter = (text: string): Readonly<Record<string, string>> | null => {
-  if (text.split(/\r?\n/, 1)[0]?.trim() !== '---') return null
-  const end = text.indexOf('\n---', 3)
-  if (end === -1) return null
-  const fields: Record<string, string> = {}
-  for (const line of text.slice(3, end).split('\n')) {
-    const colon = line.indexOf(':')
-    if (colon === -1) continue
-    const key = line.slice(0, colon).trim()
-    const value = line
-      .slice(colon + 1)
-      .trim()
-      .replace(/^['"]|['"]$/g, '')
-    if (key && value) fields[key] = value
+const parseFrontmatter = (text: string): { value: Readonly<Record<string, string>> | null; malformed: boolean } => {
+  if (text.split(/\r?\n/, 1)[0]?.trim() !== '---') return { value: null, malformed: false }
+  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)
+  if (!match) return { value: null, malformed: true }
+  try {
+    const parsed = Bun.YAML.parse(match[1] ?? '')
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { value: null, malformed: true }
+    const fields = Object.fromEntries(
+      Object.entries(parsed as Record<string, unknown>).filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string'
+      )
+    )
+    return { value: fields, malformed: false }
+  } catch {
+    return { value: null, malformed: true }
   }
-  return fields
+}
+
+export const markdownLinkTargets = (text: string): ReadonlySet<string> => {
+  const targets = new Set<string>()
+  const prose = text.replace(/^```[\s\S]*?^```\s*$/gm, '')
+  for (const match of prose.matchAll(/\[[^\]]+\]\((?:<([^>]+)>|([^\s)]+))(?:\s+['"][^)]*['"])?\)/g)) {
+    const target = (match[1] ?? match[2] ?? '').trim()
+    if (target) targets.add(target.replace(/^\.\//, ''))
+  }
+  return targets
 }
 
 const walkMarkdown = (directory: string, results: string[] = []): string[] => {
@@ -145,11 +156,13 @@ export const createActivitiesSession = ({
         .map((path): ActivityNote => {
           const text = readFileSync(path, 'utf8')
           const link = relative(activitiesPath, path)
+          const frontmatter = parseFrontmatter(text)
           return {
             relative: relative(root, path),
             indexLink: link,
             title: titleFromNote(text, link),
-            frontmatter: parseFrontmatter(text)
+            frontmatter: frontmatter.value,
+            malformedFrontmatter: frontmatter.malformed
           }
         })
     : []
@@ -190,7 +203,8 @@ export const createActivitiesSession = ({
             ensureIndex: () => {
               if (!activitiesAvailable || unsafeIndexEntry || notes.length === 0) return
               const content = indexDraft || '# Activities'
-              const missing = notes.filter((note) => !content.includes(note.indexLink))
+              const targets = markdownLinkTargets(content)
+              const missing = notes.filter((note) => !targets.has(note.indexLink))
               if (missing.length === 0) return
               const prefix = content.trimEnd()
               indexDraft = `${prefix}${prefix === '# Activities' ? '\n\n' : '\n'}${missing.map(indexEntry).join('\n')}\n`

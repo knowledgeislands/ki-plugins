@@ -22,7 +22,7 @@ A Knowledge Islands base is one markdown store with a fixed set of five zones, f
 | `Calendar/`  | Time-stamped records: daily, meeting, session, weekly, monthly notes.                           |
 | `Pillars/`   | Internal canonical knowledge - the base's primary subject matter. One folder per pillar.†       |
 | `Resources/` | External reference material that exists independently of this base.                             |
-| `Streams/`   | Work in motion - active workstreams run as proposals. ※                                         |
+| `Streams/`   | Work in motion — adapter-owned records and recurring-work templates. ※                         |
 | `-/`         | Outbound staging - produced artefacts (session digests, compiled outputs).‡ Not a zone.         |
 | `Admin/`     | Base-agnostic governance and operations.                                                        |
 
@@ -71,7 +71,7 @@ Produced outputs (session digests, compiled artefacts, handoffs) **bypass this t
 For all other notes, most-specific match wins:
 
 1. Time-bound record -> `Calendar/`.
-2. Active, in-progress work -> `Streams/` (the `ki-repo-kb-streams` skill owns sub-routing within the zone — Focus, the proposal layout, the lifecycle).
+2. Active, in-progress work -> `Streams/` (the `ki-repo-kb-streams` skill owns sub-routing within the zone and its adapter-owned lifecycle).
 3. Canonical internal knowledge -> `Pillars/<Pillar>/`.
 4. External reference (would exist without this base) -> `Resources/`.
 5. Unsure -> `+/<Title>.md` at the most specific applicable level.
@@ -137,4 +137,4 @@ The memory cascade and the canonical-zone Enactment gate are part of the shared 
 
 Normative detail: [the Knowledge Islands knowledge-base standard](references/standards-knowledge-base.md). Checkable criteria: [the generated rubric](references/rubric.md), enforced mechanically by `ki repo audit --skill ki-repo-kb`. After changing the catalogue under `scripts/rubric/items/`, regenerate the published catalogue with `ki dev skill rubric ki-repo-kb --write`.
 
-KI-wide frontmatter standard (universal fields and the `type` taxonomy): [the frontmatter standard](references/standards-frontmatter.md).
+KI-wide frontmatter standard (universal fields and the `note_type` taxonomy): [the frontmatter standard](references/standards-frontmatter.md).

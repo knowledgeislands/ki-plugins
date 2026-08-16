@@ -12,7 +12,7 @@ argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
 
 You are helping audit, conform, or scaffold the **Homebrew tap** repo — `homebrew-tap` under `knowledgeislands/`, the distribution repo that carries `Formula/*.rb` so `brew install knowledgeislands/tap/<tool>` resolves. The tools whose formulae live here are governed by the sibling `ki-repo-tools` skill; this skill governs the **tap** and the **formulae inside it**.
 
-This skill **wraps an external standard.** Homebrew already defines what a valid tap and formula are (the Formula Cookbook, `brew audit`, `brew style`); this skill does not re-invent that. It checks the tap's **shape**—the things a tap needs beyond a single valid formula—and reports the `brew audit --strict` / `brew style` commands that an operator runs explicitly. So a finding is either **shape** (this skill's house convention for the tap: a `Formula/` directory, a README formulae table, a versioned-tarball source) or **spec** (Homebrew's own rule, surfaced by `brew`). Never present a shape preference as a Homebrew "MUST"; when unsure which a rule is, run Mode REFRESH against the Cookbook.
+This skill **wraps an external standard.** Homebrew already defines what a valid tap and formula are (the Formula Cookbook, `brew audit`, `brew style`); this skill does not re-invent that. Its hosted audit checks only the tap's **static shape**—the things a tap needs beyond a single valid formula. `brew style` and `brew audit --strict` are explicit, isolated opt-in diagnostics, never hosted-audit execution. A static finding is source-shape evidence, not package-manager validation. Never present a shape preference as a Homebrew "MUST"; when unsure which a rule is, run Mode REFRESH against the Cookbook.
 
 The full, quotable standard lives in [Homebrew tap standard](references/standards-homebrew-tap.md); the line-by-line pass/fail items in [Audit Rubric](references/rubric.md). `ki repo audit` and `ki repo conform` execute the mechanical contract. Read those when you need detail; this file is the operating procedure.
 
@@ -62,7 +62,7 @@ Unlike the other repo-structure skills, this skill does **not** govern the repo 
 
 Every governance skill carries the universal four **AUDIT · CONFORM · EDUCATE · REFRESH**; EDUCATE here scaffolds a new tap. Invoked as `help` / `-h` / `?`, it explains itself and stops — the generated HELP block (name, purpose, invocation, modes, off-ramps), taking no action. With no mode it does the same, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows.
 
-The four procedures remain on demand because each coordinates work outside the hosted rubric: AUDIT and CONFORM sequence separate `ki-repo` and explicit Homebrew checks, EDUCATE scaffolds a new repository, and REFRESH reconciles a moving external specification. Each file owns one mode so invoking one never loads an unrelated procedure.
+The four procedures remain on demand because each coordinates work outside the hosted rubric: AUDIT and CONFORM sequence the repository layer and judgment review, EDUCATE scaffolds a new repository, and REFRESH reconciles a moving external specification. Each file owns one mode so invoking one never loads an unrelated procedure.
 
 ### Mode AUDIT
 
@@ -90,6 +90,6 @@ This skill **rides `ki-repo`** (the tap is first a git repo: README, LICENSE, `.
 ## Notes
 
 - The standard sits on top of a **moving external spec** (Homebrew's Formula Cookbook, `brew audit`, `brew style`/rubocop). When citing a formula requirement, know whether it is **spec-driven** (traces to a Homebrew source in [the source list](references/sources.md)) or **house shape**—never present a tap-shape preference as a Homebrew "MUST". Run Mode REFRESH when in doubt.
-- Hosted execution is deliberately shell-free. `TAP-7` reports the exact `brew style` and `brew audit --strict` commands for every formula; an operator runs them explicitly, or verifies the tap's `brew test-bot` CI when Homebrew is unavailable locally.
+- `TAP-7` never runs Homebrew from hosted audit. Obtain `brew style`, `brew audit --strict`, and `brew test-bot` evidence through an explicitly authorized isolated diagnostic; unavailable package-manager evidence is not a structural PASS.
 - Marker `[skills.ki-repo-homebrew-tap]` is a **keyless opt-in table**, validate-down (like `[skills.ki-repo-mcp]`): its presence is the whole config; any key under it is unknown and WARNed.
 - No `exemplars.md` is bundled: the compact complete formula above and the README table in the standard already illustrate the only reusable output shapes, so a separate exemplar would duplicate them.

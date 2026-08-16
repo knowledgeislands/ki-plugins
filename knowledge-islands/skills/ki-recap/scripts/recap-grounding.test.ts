@@ -1,13 +1,13 @@
 #!/usr/bin/env bun
 import { describe, expect, test } from 'bun:test'
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const helper = join(dirname(fileURLToPath(import.meta.url)), 'recap-grounding.ts')
-const fixture = () => mkdtempSync(join(tmpdir(), 'ki-change-management-recap-'))
+const fixture = () => mkdtempSync(join(tmpdir(), 'ki-work-recap-'))
 const claudeToolUse = (name: string, input: unknown) =>
   JSON.stringify({ message: { content: [{ type: 'tool_use', name, input }] } })
 const claudeToolResult = (text: string) =>
@@ -26,7 +26,9 @@ const codexOutput = (text: string) =>
     payload: { type: 'custom_tool_call_output', output: [{ type: 'input_text', text }] }
   })
 const evidence = (repo: string, head: string | null, worktree: 'clean' | 'dirty') =>
-  JSON.stringify({ 'ki-change-management-recap-repository-evidence/v1': { repo, head, worktree } })
+  JSON.stringify({ 'ki-work-recap-repository-evidence/v1': { repo, head, worktree } })
+
+const physical = (path: string): string => realpathSync(resolve(path))
 
 const run = (repo: string, transcripts: string, args: readonly string[] = []) => {
   const result = spawnSync('bun', [helper, repo, '--json', '--transcripts-dir', transcripts, ...args], {
@@ -64,15 +66,18 @@ describe('recap grounding runtime selection', () => {
     const codex = join(transcripts, '2026', '07', 'codex.jsonl')
     const irrelevant = join(transcripts, '2026', '07', 'other.jsonl')
     try {
-      mkdirSync(repo, { recursive: true })
-      mkdirSync(otherRepo, { recursive: true })
+      initialiseRepository(repo)
+      initialiseRepository(otherRepo)
       mkdirSync(dirname(codex), { recursive: true })
       writeFileSync(claude, `${claudeToolUse('Read', { file_path: '/x/claude.md' })}\n`)
       writeFileSync(
         codex,
-        `${codexMeta(repo)}\nmalformed JSON\n${codexFunction('Bash', { command: 'pwd' })}\n${codexCustom('Read', { file_path: '/x/codex.md' })}\n`
+        `${codexMeta(physical(repo))}\nmalformed JSON\n${codexFunction('Bash', { command: 'pwd' })}\n${codexCustom('Read', { file_path: '/x/codex.md' })}\n`
       )
-      writeFileSync(irrelevant, `${codexMeta(otherRepo)}\n${codexFunction('Edit', { file_path: '/x/other.md' })}\n`)
+      writeFileSync(
+        irrelevant,
+        `${codexMeta(physical(otherRepo))}\n${codexFunction('Edit', { file_path: '/x/other.md' })}\n`
+      )
       const now = Date.now() / 1000
       utimesSync(claude, now - 20, now - 20)
       utimesSync(codex, now, now)
@@ -101,11 +106,11 @@ describe('recap grounding runtime selection', () => {
     const codexOld = join(transcripts, 'sessions', 'codex-old.jsonl')
     const codexNew = join(transcripts, 'sessions', 'codex-new.jsonl')
     try {
-      mkdirSync(repo, { recursive: true })
+      initialiseRepository(repo)
       mkdirSync(dirname(codexOld), { recursive: true })
       writeFileSync(claude, `${claudeToolUse('Read', { file_path: '/x/claude.md' })}\n`)
-      writeFileSync(codexOld, `${codexMeta(repo)}\n${codexFunction('Bash', { command: 'old' })}\n`)
-      writeFileSync(codexNew, `${codexMeta(repo)}\n${codexFunction('Bash', { command: 'new' })}\n`)
+      writeFileSync(codexOld, `${codexMeta(physical(repo))}\n${codexFunction('Bash', { command: 'old' })}\n`)
+      writeFileSync(codexNew, `${codexMeta(physical(repo))}\n${codexFunction('Bash', { command: 'new' })}\n`)
       const now = Date.now() / 1000
       utimesSync(claude, now - 30, now - 30)
       utimesSync(codexOld, now - 20, now - 20)
@@ -136,11 +141,17 @@ describe('recap grounding runtime selection', () => {
     const matching = join(transcripts, 'matching.jsonl')
     const other = join(transcripts, 'other.jsonl')
     try {
-      mkdirSync(repo, { recursive: true })
-      mkdirSync(otherRepo, { recursive: true })
+      initialiseRepository(repo)
+      initialiseRepository(otherRepo)
       mkdirSync(transcripts, { recursive: true })
-      writeFileSync(matching, `${codexMeta(repo)}\n${codexFunction('Read', { file_path: '/x/matching.md' })}\n`)
-      writeFileSync(other, `${codexMeta(otherRepo)}\n${codexFunction('Read', { file_path: '/x/other.md' })}\n`)
+      writeFileSync(
+        matching,
+        `${codexMeta(physical(repo))}\n${codexFunction('Read', { file_path: '/x/matching.md' })}\n`
+      )
+      writeFileSync(
+        other,
+        `${codexMeta(physical(otherRepo))}\n${codexFunction('Read', { file_path: '/x/other.md' })}\n`
+      )
       const result = run(repo, transcripts, ['--runtime', 'codex'])
       const grounded = JSON.parse(result.stdout) as { runtime: string; transcript: string }
       expect(result.status).toBe(0)
@@ -197,14 +208,14 @@ describe('recap grounding runtime selection', () => {
     try {
       const baseline = initialiseRepository(repo)
       mkdirSync(transcripts, { recursive: true })
-      writeFileSync(codex, [codexMeta(repo), codexOutput(evidence(repo, baseline, 'clean')), ''].join('\n'))
+      writeFileSync(codex, [codexMeta(repo), codexOutput(evidence(physical(repo), baseline, 'clean')), ''].join('\n'))
 
       const unchanged = JSON.parse(run(repo, transcripts, ['--runtime', 'codex']).stdout) as {
-        'ki-change-management-recap-repository-evidence/v1': { repo: string; head: string; worktree: string }
+        'ki-work-recap-repository-evidence/v1': { repo: string; head: string; worktree: string }
         transcriptEvidence: { status: string; baseline: { head: string } }
       }
-      expect(unchanged['ki-change-management-recap-repository-evidence/v1']).toEqual({
-        repo,
+      expect(unchanged['ki-work-recap-repository-evidence/v1']).toEqual({
+        repo: physical(repo),
         head: baseline,
         worktree: 'clean'
       })
@@ -238,8 +249,8 @@ describe('recap grounding runtime selection', () => {
         claude,
         [
           claudeToolResult('{not json}'),
-          claudeToolResult(evidence(otherRepo, baseline, 'clean')),
-          claudeToolResult(evidence(repo, baseline, 'dirty')),
+          claudeToolResult(evidence(physical(otherRepo), baseline, 'clean')),
+          claudeToolResult(evidence(physical(repo), baseline, 'dirty')),
           ''
         ].join('\n')
       )
@@ -251,6 +262,59 @@ describe('recap grounding runtime selection', () => {
         status: 'unavailable',
         baseline: { head: baseline, worktree: 'dirty' }
       })
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test('grounds the physical Git root and separates staged, unstaged, and untracked changes', () => {
+    const root = fixture()
+    const repo = join(root, 'repo')
+    const nested = join(repo, 'nested')
+    const transcripts = join(root, 'transcripts')
+    try {
+      initialiseRepository(repo)
+      mkdirSync(nested)
+      writeFileSync(join(repo, 'evidence.txt'), 'staged\n')
+      git(repo, ['add', 'evidence.txt'])
+      writeFileSync(join(repo, 'unstaged.txt'), 'unstaged\n')
+      writeFileSync(join(repo, 'untracked.txt'), 'untracked\n')
+      mkdirSync(transcripts)
+
+      const grounded = JSON.parse(run(nested, transcripts).stdout) as {
+        repo: string
+        repository: { status: string; root: string }
+        stagedFiles: string[]
+        unstagedFiles: string[]
+        untrackedFiles: string[]
+        diffStat: string
+      }
+      expect(grounded.repo).toBe(physical(repo))
+      expect(grounded.repository).toMatchObject({ status: 'available', root: physical(repo) })
+      expect(grounded.stagedFiles).toEqual(['evidence.txt'])
+      expect(grounded.unstagedFiles).toEqual([])
+      expect(grounded.untrackedFiles).toEqual(['unstaged.txt', 'untracked.txt'])
+      expect(grounded.diffStat).toContain('evidence.txt')
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test('reports Git failure as unavailable rather than clean', () => {
+    const root = fixture()
+    const transcripts = join(root, 'transcripts')
+    try {
+      mkdirSync(transcripts, { recursive: true })
+      const grounded = JSON.parse(run(root, transcripts).stdout) as {
+        repository: { status: string; root: null; reason: string }
+        filesTouched: string[]
+        'ki-work-recap-repository-evidence/v1': null
+        transcriptEvidence: { status: string; current: null }
+      }
+      expect(grounded.repository).toMatchObject({ status: 'unavailable', root: null })
+      expect(grounded.filesTouched).toEqual([])
+      expect(grounded['ki-work-recap-repository-evidence/v1']).toBeNull()
+      expect(grounded.transcriptEvidence).toMatchObject({ status: 'unavailable', current: null })
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

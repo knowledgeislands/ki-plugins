@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { NAME } from '../items/name.ts'
 import { createKiSkillsSession } from './subjects.ts'
 
 const temporaryDirectories: string[] = []
@@ -88,6 +89,65 @@ describe('ki-skills session evidence', () => {
     expect(session.proposal().writes[0]?.content).toContain(
       "argument-hint: 'audit | conform | educate | refresh | help'"
     )
+  })
+
+  test('inserts the physical directory name without changing unrelated skill bytes', () => {
+    const repository = createRepository()
+    const skillFile = join(repository, 'skills', 'ki-example', 'SKILL.md')
+    const original = readFileSync(skillFile, 'utf8').replace('name: ki-example\n', '')
+    writeFileSync(skillFile, original)
+    const session = createKiSkillsSession({
+      mode: 'conform',
+      repository,
+      userHome: tmpdir(),
+      configuration: {}
+    })
+    const subject = session.subjects.find((candidate) => candidate.subject === 'skills/ki-example')
+    const context = subject?.context().name
+    const item = NAME.items.find(({ code }) => code === 'NAME-1')
+    if (!context || !item?.mechanical?.conform) throw new Error('NAME-1 conform context is unavailable')
+
+    item.mechanical.conform.run(context)
+
+    const [write] = session.proposal().writes
+    expect(write?.path).toBe('skills/ki-example/SKILL.md')
+    expect(write?.content).toBe(original.replace('ki-depends-on: []', 'ki-depends-on: []\nname: ki-example'))
+    if (!write) throw new Error('NAME-1 did not produce its expected write')
+    writeFileSync(skillFile, write.content)
+
+    const repeated = createKiSkillsSession({
+      mode: 'conform',
+      repository,
+      userHome: tmpdir(),
+      configuration: {}
+    })
+    const repeatedSubject = repeated.subjects.find((candidate) => candidate.subject === 'skills/ki-example')
+    const repeatedContext = repeatedSubject?.context().name
+    if (!repeatedContext) throw new Error('repeated NAME-1 context is unavailable')
+    item.mechanical.conform.run(repeatedContext)
+    expect(item.mechanical.audit.run(repeatedContext)).toEqual([{ status: 'PASS', message: 'name is present' }])
+    expect(repeated.proposal()).toEqual({ writes: [] })
+  })
+
+  test('does not expose name conformance through a symbolic SKILL.md', () => {
+    const repository = createRepository()
+    const skillFile = join(repository, 'skills', 'ki-example', 'SKILL.md')
+    const outside = join(repository, 'outside.md')
+    const content = readFileSync(skillFile, 'utf8').replace('name: ki-example\n', '')
+    writeFileSync(outside, content)
+    rmSync(skillFile)
+    symlinkSync('../../outside.md', skillFile)
+
+    const session = createKiSkillsSession({
+      mode: 'conform',
+      repository,
+      userHome: tmpdir(),
+      configuration: {}
+    })
+    const subject = session.subjects.find((candidate) => candidate.subject === 'skills/ki-example')
+    expect(subject?.context().name?.setName).toBeUndefined()
+    expect(session.proposal()).toEqual({ writes: [] })
+    expect(readFileSync(outside, 'utf8')).toBe(content)
   })
 
   test('routes the host publication capability to one dedicated rubric subject', () => {

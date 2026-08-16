@@ -1,6 +1,7 @@
 import type { AuditOutcome, RubricFamily, RubricItem } from '../../shared/rubric.ts'
 import {
   configDirectory,
+  isExactSiteOutput,
   type WebsiteCloudflareContext,
   type WebsiteCloudflareRubricContext
 } from '../contexts/website-cloudflare.ts'
@@ -27,7 +28,7 @@ const WCF_1: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-1',
   title: 'site Worker config',
   description: 'A site Worker configuration with static assets exists.',
-  sources: [`${SOURCE}#1-model--workers--static-assets-not-pages`],
+  sources: [`${SOURCE}#1-model--workers-static-assets-not-pages`],
   mechanical: {
     level: 'FAIL',
     remediation: DIAGNOSTIC,
@@ -62,8 +63,8 @@ const WCF_1: RubricItem<WebsiteCloudflareContext> = {
 const WCF_2: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-2',
   title: 'Workers deploy',
-  description: 'Deployment uses Workers + Static Assets, not Pages.',
-  sources: [`${SOURCE}#1-model--workers--static-assets-not-pages`],
+  description: 'Deployment uses Workers Static Assets and contains no legacy Pages marker or Pages deploy command.',
+  sources: [`${SOURCE}#1-model--workers-static-assets-not-pages`],
   mechanical: {
     level: 'FAIL',
     remediation: DIAGNOSTIC,
@@ -74,18 +75,26 @@ const WCF_2: RubricItem<WebsiteCloudflareContext> = {
         if (skip) return skip
         if (context.package.state === 'unsafe' || context.package.state === 'malformed')
           return [{ status: 'VIOLATION', message: 'package.json scripts could not be safely inspected.' }]
-        const pages = Object.entries(context.package.scripts).filter(([, script]) =>
+        const legacyConfigs = context.configs.filter((config) => config.hasPagesBuildOutputDir)
+        const pagesScripts = Object.entries(context.package.scripts).filter(([, script]) =>
           /\bwrangler\s+pages\s+deploy\b/.test(script)
         )
-        return pages.length === 0
-          ? [{ status: 'PASS', message: 'No package script uses wrangler pages deploy.', subject: 'package.json' }]
-          : [
-              {
-                status: 'VIOLATION',
-                message: `Pages deployment remains in script(s): ${pages.map(([name]) => name).join(', ')}.`,
-                subject: 'package.json'
-              }
-            ]
+        const results: AuditOutcome[] = legacyConfigs.map((config) => ({
+          status: 'VIOLATION',
+          message:
+            'pages_build_output_dir is the legacy Cloudflare Pages marker. Remove it and use "assets": { "directory": "./dist" } for Workers Static Assets.',
+          subject: config.path
+        }))
+        results.push(
+          ...pagesScripts.map(([name]) => ({
+            status: 'VIOLATION' as const,
+            message: `Pages deployment remains in script ${name}; replace wrangler pages deploy with wrangler deploy.`,
+            subject: 'package.json'
+          }))
+        )
+        return results.length > 0
+          ? results
+          : [{ status: 'PASS', message: 'No legacy Pages marker or Pages deploy command remains.' }]
       }
     }
   }
@@ -95,7 +104,7 @@ const WCF_3: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-3',
   title: 'single site Worker',
   description: 'Exactly one site Worker carries an assets block.',
-  sources: [`${SOURCE}#1-model--workers--static-assets-not-pages`],
+  sources: [`${SOURCE}#1-model--workers-static-assets-not-pages`],
   mechanical: {
     level: 'WARN',
     remediation: DIAGNOSTIC,
@@ -120,7 +129,7 @@ const WCF_3: RubricItem<WebsiteCloudflareContext> = {
 const WCF_4: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-4',
   title: 'assets directory',
-  description: 'Assets point at the build dist directory.',
+  description: 'Parsed assets.directory is the exact contained dist output adjacent to its Wrangler config.',
   sources: [`${SOURCE}#2-the-dist-seam`],
   mechanical: {
     level: 'FAIL',
@@ -134,18 +143,18 @@ const WCF_4: RubricItem<WebsiteCloudflareContext> = {
         if (!site) return []
         if (!site.assetsDirectory)
           return [{ status: 'VIOLATION', message: 'The assets block has no directory.', subject: site.path }]
-        return /(?:^|\/)dist\/?$/.test(site.assetsDirectory)
+        return isExactSiteOutput(site)
           ? [
               {
                 status: 'PASS',
-                message: `assets.directory points at dist (${site.assetsDirectory}).`,
+                message: `assets.directory consumes the exact local dist seam (${site.assetsDirectory}).`,
                 subject: site.path
               }
             ]
           : [
               {
                 status: 'VIOLATION',
-                message: `assets.directory points at ${site.assetsDirectory}, not the build dist directory.`,
+                message: `assets.directory ${site.assetsDirectory} is not the exact contained local dist seam.`,
                 subject: site.path
               }
             ]
@@ -153,8 +162,78 @@ const WCF_4: RubricItem<WebsiteCloudflareContext> = {
     }
   },
   judgment: judgment(
-    'Confirm the declared dist path is the exact output directory produced by the separately audited ki-repo-website build.'
+    'Confirm the declared dist path is the exact output directory produced by the separately audited generator-neutral website build.'
   )
+}
+
+const WCF_23: RubricItem<WebsiteCloudflareContext> = {
+  code: 'WCF-23',
+  title: 'assets-only Worker',
+  description: 'A static website Worker has no main field and therefore executes no server-side code.',
+  sources: [`${SOURCE}#1-model--workers-static-assets-not-pages`],
+  mechanical: {
+    level: 'FAIL',
+    remediation: DIAGNOSTIC,
+    audit: {
+      phase: 'INSPECT',
+      run: (context) => {
+        const skip = skipped(context)
+        if (skip) return skip
+        const sitesWithMain = context.siteConfigs.filter((config) => config.hasMain)
+        return sitesWithMain.length === 0
+          ? [
+              {
+                status: 'PASS',
+                message: 'The assets-only Worker has no main field, so published requests execute no server-side code.'
+              }
+            ]
+          : sitesWithMain.map((config) => ({
+              status: 'VIOLATION' as const,
+              message:
+                'Static site config has a main field. Remove main so this remains an assets-only Worker with no server-side execution; otherwise it cannot claim that the published deployment has no control plane.',
+              subject: config.path
+            }))
+      }
+    }
+  }
+}
+
+const WCF_24: RubricItem<WebsiteCloudflareContext> = {
+  code: 'WCF-24',
+  title: 'SPA fallback',
+  description: 'An interactive app uses Workers Static Assets single-page-application fallback.',
+  sources: [`${SOURCE}#3-the-site-wranglerjsonc-shape`],
+  mechanical: {
+    level: 'FAIL',
+    remediation: DIAGNOSTIC,
+    audit: {
+      phase: 'INSPECT',
+      run: (context) => {
+        const skip = skipped(context)
+        if (skip) return skip
+        if (!context.configuration.appDeclared)
+          return [{ status: 'PASS', message: 'The repository does not select the interactive app implementation.' }]
+        const site = firstSite(context)
+        if (!site) return []
+        return site.notFoundHandling === 'single-page-application'
+          ? [
+              {
+                status: 'PASS',
+                message: 'assets.not_found_handling is single-page-application.',
+                subject: site.path
+              }
+            ]
+          : [
+              {
+                status: 'VIOLATION',
+                message:
+                  'Interactive app hosting must set assets.not_found_handling to "single-page-application" so client-side routes resolve to index.html.',
+                subject: site.path
+              }
+            ]
+      }
+    }
+  }
 }
 
 const WCF_6: RubricItem<WebsiteCloudflareContext> = {
@@ -392,7 +471,7 @@ const WCF_20: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-20',
   title: 'hosting opt-in',
   description: 'The Cloudflare opt-in table is present.',
-  sources: [`${SOURCE}#1-model--workers--static-assets-not-pages`],
+  sources: [`${SOURCE}#1-model--workers-static-assets-not-pages`],
   mechanical: {
     level: 'WARN',
     remediation: DIAGNOSTIC,
@@ -434,7 +513,7 @@ const WCF_21: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-21',
   title: 'opt-in validation',
   description: 'The opt-in site root is valid.',
-  sources: [`${SOURCE}#1-model--workers--static-assets-not-pages`],
+  sources: [`${SOURCE}#1-model--workers-static-assets-not-pages`],
   mechanical: {
     level: 'WARN',
     remediation: DIAGNOSTIC,
@@ -502,7 +581,7 @@ const WCF_22: RubricItem<WebsiteCloudflareContext> = {
           {
             status: 'INFO',
             message:
-              'Run ki-engineering and ki-repo-website audits separately; Cloudflare account, domain, Wrangler, and deployment operations remain explicit report-only work.'
+              'Run ki-repo-website and the selected content or app implementation audit separately; Cloudflare account, domain, Wrangler, and deployment operations remain explicit report-only work.'
           }
         ]
       }
@@ -516,8 +595,25 @@ const WCF_22: RubricItem<WebsiteCloudflareContext> = {
 export const WCF: RubricFamily<WebsiteCloudflareRubricContext, WebsiteCloudflareContext> = {
   code: 'WCF',
   title: 'Cloudflare hosting',
-  description: 'Workers + Static Assets hosting standard.',
+  description: 'Workers Static Assets hosting standard.',
   standard: SOURCE,
   selectContext: (context) => context.hosting,
-  items: [WCF_1, WCF_2, WCF_3, WCF_4, WCF_6, WCF_8, WCF_9, WCF_10, WCF_13, WCF_14, WCF_19, WCF_20, WCF_21, WCF_22]
+  items: [
+    WCF_1,
+    WCF_2,
+    WCF_3,
+    WCF_4,
+    WCF_6,
+    WCF_8,
+    WCF_9,
+    WCF_10,
+    WCF_13,
+    WCF_14,
+    WCF_19,
+    WCF_20,
+    WCF_21,
+    WCF_22,
+    WCF_23,
+    WCF_24
+  ]
 }

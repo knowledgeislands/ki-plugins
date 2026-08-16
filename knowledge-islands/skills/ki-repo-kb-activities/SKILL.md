@@ -32,7 +32,7 @@ Modes: **AUDIT · CONFORM · EDUCATE · NEW · REFRESH** (named, alphabetical). 
 
 ### Mode EDUCATE
 
-→ Activate this skill with `ki skill repo add ki-repo-kb-activities`; `ki repo audit` and `ki repo conform` then execute its native rubric. To establish the collection itself, scaffold `Admin/Operations/Activities/` with its `Activities.md` index; **NEW** then authors individual activity notes into it.
+→ Activate this skill with `ki repo skill add ki-repo-kb-activities`; `ki repo audit` and `ki repo conform` then execute its native rubric. To establish the collection itself, scaffold `Admin/Operations/Activities/` with its `Activities.md` index; **NEW** then authors individual activity notes into it.
 
 ### Mode NEW
 

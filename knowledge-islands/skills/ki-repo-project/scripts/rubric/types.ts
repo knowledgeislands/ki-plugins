@@ -8,6 +8,4 @@ import type {
 
 export type { AuditOutcome, RubricContextOptions, RubricFamily, RubricSession, SkillRubricDefinition }
 
-export type ProjectRubricContext = {
-  primary: { outcomes: readonly AuditOutcome[] }
-}
+export type ProjectRubricContext = Record<never, never>

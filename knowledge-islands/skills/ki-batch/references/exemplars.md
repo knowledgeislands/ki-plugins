@@ -3,7 +3,20 @@
 Use this as a reviewable record, not as a new tracker or a substitute for the canonical work items.
 
 ```md
-# BATCH-2026-07-01 — Harden compatible-harness release evidence
+---
+id: KI-EXAMPLE-BATCH-001
+repository: https://github.com/knowledgeislands/ki-example
+approved: true
+approved_at: 2026-07-01T09:00:00Z
+approved_payload_sha256: <SHA-256 of the approved frontmatter and body before Run ledger>
+run_id: KI-EXAMPLE-BATCH-001-RUN-001
+timebox_ends_at: 2026-07-01T11:00:00Z
+item_ids: [KI-EXAMPLE-001, KI-EXAMPLE-002]
+completion_target: awaiting-review
+mandatory_stops: [public-contract-change, unapproved-decision, verification-failure, push-or-release]
+---
+
+# KI-EXAMPLE-BATCH-001 — Harden compatible-harness release evidence
 
 ## Purpose
 
@@ -18,7 +31,7 @@ FND-002 may start only after FND-001 has recorded its shared host result.
 
 ## Scope
 
-- Repositories: `knowledgeislands/tools-ki`, `knowledgeislands/ki-agentic-harness`
+- Repository: `knowledgeislands/ki-example`
 - Files: the named plans, their stated implementation files, and generated rubric publications
 - Excluded: releases, pushes, website changes, new dependencies, and unrelated refactors
 
@@ -50,7 +63,7 @@ FND-002 may start only after FND-001 has recorded its shared host result.
 Approved by: <human name and timestamp>
 ```
 
-The approval must be explicit and must cover this exact record.
+The approval must be explicit and cover this exact one-repository record. Calculate `approved_payload_sha256` from every frontmatter field except itself plus this body before `## Run ledger`; do not amend that payload after approval.
 
 If closure authority is intended, name the exact records and state it separately under **Allowed decisions and delegation**.
 
@@ -58,10 +71,12 @@ Pruning needs its own explicit adapter-root path or glob selection even when bat
 
 ## Parked-item and post-gate example
 
-Append the outcome to the approved authorisation; do not create a parallel tracking system.
+Append the outcome to the approved authorisation; do not create a parallel tracking system. Start the one optional ledger with the approval-bound run marker.
 
 ```md
 ## Run ledger
+
+<!-- ki-batch-run: KI-EXAMPLE-BATCH-001-RUN-001 <approved-payload-sha256> -->
 
 | Item | Start | Result | Evidence | Next human action |
 | --- | --- | --- | --- | --- |

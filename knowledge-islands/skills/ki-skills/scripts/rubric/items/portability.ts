@@ -1,5 +1,4 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { DIAGNOSTIC_REMEDIATION } from '../../shared/rubric.ts'
 import {
   type KiSkillsRubricContext,
   type PortabilityRubricContext,
@@ -15,7 +14,11 @@ const PORT_1: RubricItem<PortabilityRubricContext> = {
   sources: ['KI'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Decide whether each runtime reference is policy, a binding, source attribution, or comparison, then qualify or relocate it without changing the portable contract.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context) => {

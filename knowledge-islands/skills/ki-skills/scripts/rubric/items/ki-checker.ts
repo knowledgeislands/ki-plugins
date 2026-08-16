@@ -1,5 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { judgment } from '../../shared/rubric.ts'
 import { type KiCheckerRubricContext, type KiSkillsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const KI_CHECKER_1: RubricItem<KiCheckerRubricContext> = {
@@ -24,7 +24,11 @@ const KI_CHECKER_2: RubricItem<KiCheckerRubricContext> = {
   sources: ['KI'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Move the dependency inside the skill payload, materialise an explicitly declared shared module, or remove the import after resolving which component owns that code.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ imports }) => {
@@ -51,7 +55,11 @@ const KI_CHECKER_3: RubricItem<KiCheckerRubricContext> = {
   sources: ['ADR-KI-HARNESS-SKILLS-012'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Align ki-skills frontmatter and its owned scripts/shared/rubric.ts with the sole provider contract, removing any self-dependency without overwriting authored module content.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ rootSkill, declaredSharedModules, sharedDependencies, rubricModuleExists }) => {
@@ -91,7 +99,11 @@ const KI_CHECKER_4: RubricItem<KiCheckerRubricContext> = {
   sources: ['standards-rubric-authoring.md#rubric-families-and-items'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Refactor the catalogue index to wiring only and move each rule into the correct semantic family module while preserving criterion order and behaviour.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ structuredRubricRequired, itemsIndexExists, itemsIndexDefinesRules, familyModules }) => {
@@ -146,7 +158,11 @@ const KI_CHECKER_5: RubricItem<KiCheckerRubricContext> = {
   sources: ['KI'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Classify legacy scripts/lib code as private or shared, relocate it, and reconcile scripts/shared/ with the authored module and dependency declarations.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ declaredSharedModules, legacyLibPresent, presentSharedModules, sharedDependencies }) => {

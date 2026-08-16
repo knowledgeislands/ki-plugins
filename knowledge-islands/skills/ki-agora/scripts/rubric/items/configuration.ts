@@ -7,7 +7,7 @@ const CONFIG_1: RubricItem<OutcomeContext> = {
   code: 'CONFIG-1',
   title: 'Agora homes are canonical',
   description:
-    'A declared Agora home uses a stable identifier, explicitly names the canonical identity of its declaring owner repository, and records only its non-empty purpose, duplicate-free permitted target-policy categories, and canonical HTTPS GitHub member repositories with lower-case hyphenated roles. The owner is an automatic projection participant, not a reciprocal member.',
+    'A declared Agora home uses a stable identifier, explicitly names the canonical identity of its declaring owner repository, and records only its non-empty purpose and canonical HTTPS GitHub member repositories with lower-case hyphenated roles. Unknown fields fail closed. The owner is an automatic projection participant, not a reciprocal member, and local declaration shape is not reciprocal-consent evidence.',
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
@@ -23,7 +23,7 @@ const CONFIG_1: RubricItem<OutcomeContext> = {
 export const CONFIG: RubricFamily<AgoraRubricContext, OutcomeContext> = {
   code: 'CONFIG',
   title: 'Agora home declaration',
-  description: 'Owner identity, purpose, target policy, and approved member roles are explicit and portable.',
+  description: 'Owner identity, purpose, and approved member roles are explicit and portable.',
   standard: SOURCE,
   selectContext: (context) => context.configuration,
   items: [CONFIG_1]

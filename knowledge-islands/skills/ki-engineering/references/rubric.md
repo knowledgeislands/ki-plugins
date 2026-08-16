@@ -20,6 +20,8 @@ Line-by-line criteria for auditing ki-engineering. Classifications are derived f
 - [SYNC — Dependency synchronisation](#sync--dependency-synchronisation)
 - [DEPS — Dependency freshness](#deps--dependency-freshness)
 - [GEN — Generated surfaces](#gen--generated-surfaces)
+- [DESIGN — Code design](#design--code-design)
+- [REVIEW — Change-aware consistency review](#review--change-aware-consistency-review)
 - [TEST — Tests](#test--tests)
 - [BUILD — Compiled builds](#build--compiled-builds)
 - [ENV — Environment configuration](#env--environment-configuration)
@@ -197,7 +199,32 @@ Available dependency updates are surfaced and deliberately applied.
 Managed discovery surfaces carry consistent tool exclusions.
 
 - **GEN-1 [M] — Managed discovery surfaces share exclusions** — Known generated or managed discovery surfaces have matching Biome, Knip, and Markdown exclusions, and no legacy `.ki` runtime exclusion remains. (standards-engineering.md)
-  - _Remediation:_ diagnostic — Align the generated-surface exclusions with the managed paths and remove the legacy runtime exclusion, then rerun the audit.
+  - _Remediation:_ diagnostic — Align the Engineering-owned Biome and Knip exclusions deliberately, use ki-authoring for its wholly owned `.rumdl.toml`, remove legacy runtime exclusions, then rerun the audit.
+
+## DESIGN — Code design
+
+→ [standard](standards-engineering.md)
+
+Comprehension-first modularity and deliberately restrained abstraction.
+
+- **DESIGN-1 [J] — Comprehension-first design** — Code keeps modules cohesive, makes important policies and ordinary control flow clear, and extracts reuse only for a stable shared concept. (standards-engineering.md#code-design)
+  - _Evidence scope:_ Source modules, their imports and callers, public boundaries, and the corresponding contract tests.
+  - _Review prompt:_ Do module boundaries match domain concerns and reasons to change; can a maintainer follow ordinary control flow and policy from clear names and interfaces; and does each shared abstraction retain the same meaning, lifecycle, and error semantics for every caller?
+  - _Outcomes:_ conforming; gap; exception
+  - _Conforming guidance:_ Split a mixed-responsibility module at a domain seam, simplify or name an obscuring abstraction, or retain documented local duplication where it makes the domain clearer.
+
+## REVIEW — Change-aware consistency review
+
+→ [standard](standards-engineering.md)
+
+Advisory evidence for a focused review of accumulated code changes.
+
+- **REVIEW-1 [M + J] — Change-aware consistency review** — Git trailers may identify the newest usable review boundary, but a reviewer decides whether the change since that boundary warrants a focused consistency review. (standards-engineering.md#change-aware-consistency-review)
+  - _Remediation:_ diagnostic — Treat unavailable trailer evidence as unavailable, not as a freshness signal; inspect the explicit Git range before deciding whether to record a new review.
+  - _Evidence scope:_ The newest usable KI-Consistency-Review trailer block, its exclusive-base-to-result Git range, the stated scope, and the affected source, public surfaces, and contract tests.
+  - _Review prompt:_ Does the accumulated change since the explicit boundary warrant a focused review; if it does, do module structure, naming, ownership, duplication, and public-surface treatment remain coherent in the examined range and scope?
+  - _Outcomes:_ not warranted; consistent; follow-up:<canonical-work-item-id>
+  - _Conforming guidance:_ Do not record a review when it is not warranted. When a review completes, put one final Base, Scope, Outcome trailer block on its outcome commit: use consistent, or follow-up:<canonical-work-item-id> and create that ordinary work item.
 
 ## TEST — Tests
 
@@ -272,3 +299,5 @@ The repository selector and validate-down configuration boundary.
   - _Remediation:_ automatic
 - **TOML-2 [M] — Engineering configuration validates down** — Every key under `[skills.ki-engineering]` is known to the checker; an unknown key is drift. (standards-engineering.md)
   - _Remediation:_ diagnostic — Remove or correct the unknown engineering configuration key, then rerun the audit.
+- **TOML-3 [M] — Engineering check records validate** — Every optional `[skills.ki-engineering.checks]` entry names a known mechanical rubric ID and has a boolean value; entries remain diagnostic records, not audit waivers. (standards-engineering.md)
+  - _Remediation:_ diagnostic — Remove or correct the check-record key or value; retain any exception rationale in the repository change record, then rerun the audit.

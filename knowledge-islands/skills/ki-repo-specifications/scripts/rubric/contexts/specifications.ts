@@ -40,7 +40,6 @@ export type SpecificationsContext = {
 }
 
 export const createSpecificationsSession = ({
-  mode,
   repository,
   publication
 }: RubricContextOptions): RubricSession<SpecificationsContext> => {
@@ -67,17 +66,6 @@ export const createSpecificationsSession = ({
     path,
     exists: targetExists && isPhysicalDirectory(join(target, path))
   }))
-  let draft = mode === 'conform' && configExists && !malformed && !table ? configSource : undefined
-  let markerAdded = false
-  const addMarker =
-    draft === undefined
-      ? undefined
-      : (): void => {
-          if (asTable(document?.skills)?.[SECTION] !== undefined || draft === undefined || markerAdded) return
-          draft = `${draft.trimEnd()}\n\n# This repo carries the KI Specifications repository structure.\n[skills.${SECTION}]\n`
-          markerAdded = true
-        }
-
   const context: SpecificationsContext = {
     rubric: { publication },
     target,
@@ -85,10 +73,11 @@ export const createSpecificationsSession = ({
     configExists,
     malformed,
     table,
-    applicable: Boolean(table || malformed || coreEvidence.some((entry) => entry.exists)),
+    // The repository declaration selects this optional structural standard.  A discovered
+    // directory is evidence for ki-repo's coverage cascade, not authority to audit it here.
+    applicable: table !== null,
     core: coreEvidence,
-    supporting: supportingEvidence,
-    ...(addMarker ? { addMarker } : {})
+    supporting: supportingEvidence
   }
 
   return {
@@ -97,10 +86,7 @@ export const createSpecificationsSession = ({
       { families: ['SPEC', 'SYNC'], subject: target, context: () => context }
     ],
     proposal: () => ({
-      writes:
-        draft === undefined || draft === configSource
-          ? []
-          : ([{ path: '.ki-config.toml', content: draft }] satisfies readonly ConformWrite[])
+      writes: [] satisfies readonly ConformWrite[]
     })
   }
 }

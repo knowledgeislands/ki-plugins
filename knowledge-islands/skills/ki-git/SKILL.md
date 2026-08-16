@@ -4,7 +4,7 @@ ki-kind: governance
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Governs portable Knowledge Islands Git working and commit conventions: Conventional Commit messages, direct-main versus branch selection, safe Git hygiene, and the stale-lock guard's semantics. Use when preparing or reviewing a commit, deciding whether work needs a branch, recovering a stale Git lock, or clarifying who owns hook payload versus runtime registration. Does not configure GitHub repository settings, install hooks, or write agent settings; use ki-repo for repository configuration and ki-repo-dotfiles-chezmoi for runtime bindings.
+  Governs portable Knowledge Islands Git working and commit conventions: Conventional Commit messages, selection between single-working-copy main, single-working-copy branch with PR, and worktrees with PRs, safe Git hygiene, and the stale-lock guard's semantics. Use when preparing or reviewing a commit, choosing a working and review approach, recovering a stale Git lock, or clarifying who owns hook payload versus runtime registration. Does not configure GitHub repository settings, install hooks, or write agent settings; use ki-repo for repository configuration and ki-repo-dotfiles-chezmoi for runtime bindings.
 argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 ---
 
@@ -12,11 +12,11 @@ argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 
 `ki-git` is the portable policy owner for Git and commit practice across Knowledge Islands repositories.
 
-For concurrent delegated work in one worktree, it also owns the split between worker-local staging and coordinated commits: a worker uses its assigned `GIT_INDEX_FILE` on each Git write command, while the orchestrator serialises commits that advance shared `HEAD`.
+It names three working approaches so branch choice and working-copy topology are explicit: `single-working-copy-on-main`, `single-working-copy-on-branch-with-pr`, and `worktrees-with-pr`. For concurrent delegated work that is explicitly kept in one worktree, it also owns the fallback split between worker-local staging and coordinated commits: a worker uses its assigned `GIT_INDEX_FILE` on each Git write command, while the orchestrator serialises commits that advance shared `HEAD`.
 
 Read [the Git standard](references/standards-git.md) before preparing a commit, choosing a branch boundary, or assessing a stale lock.
 
-The hosted native rubric records the portable review prompts below. It deliberately has no mechanical policy checks yet.
+The hosted native rubric records the portable review prompts below. Its four policy families are **judgment-only**: an AUDIT renders them as unassessed review work, not as a clean Git result. Before recording a judgment, gather the named read-only evidence (for example `git status --short`, `git branch --show-current`, and the proposed commit diff/message) and retain its outcome with the review. It deliberately has no mechanical policy checks or private Git executor yet.
 
 It does not install a hook, write runtime settings, or add a compatibility execution path.
 
@@ -32,7 +32,7 @@ It does not install a hook, write runtime settings, or add a compatibility execu
 
 Read the selected repository's commit history and working-state evidence against the Git standard.
 
-Run `ki repo audit --skill ki-git --repo <repo>` to render the portable review prompts. It does not infer a missing configuration table or run a private wrapper.
+Run `ki repo audit --skill ki-git --repo <repo>` to render the portable review prompts. Treat the result as an unassessed judgment checklist until a reviewer records outcomes against the focused read-only evidence; it is not a pass/fail audit of Git state. It does not infer a missing configuration table or run a private wrapper.
 
 ### Mode CONFORM
 

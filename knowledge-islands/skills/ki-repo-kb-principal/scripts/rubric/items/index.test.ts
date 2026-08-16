@@ -26,6 +26,7 @@ test('the principal checker distinguishes a missing surface from a complete one'
 
   expect(context).toMatchObject({
     missing: expect.arrayContaining(['Admin/MEMORY.md']),
+    empty: [],
     enactmentAnchor: false
   })
 
@@ -37,14 +38,43 @@ test('the principal checker distinguishes a missing surface from a complete one'
     'Admin/Operations/Processes/Enactment Process.md'
   ]) {
     mkdirSync(join(repository, path, '..'), { recursive: true })
-    writeFileSync(join(repository, path), '# Record\n')
+    writeFileSync(join(repository, path), '# Record\n\nLocal structural orientation.\n')
   }
-  writeFileSync(join(repository, 'AGENTS.md'), '# Guidance\n\nUse the Enactment Process.\n')
+  writeFileSync(
+    join(repository, 'AGENTS.md'),
+    '# Guidance\n\nSubstantive changes to Admin, Pillars, and Resources must use the Enactment Process through Streams/Roadmap.\n'
+  )
 
   const complete = catalogue
     .createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
     .subjects[1]?.context()
-  const principal = family?.selectContext(complete as never) as { missing: readonly string[]; enactmentAnchor: boolean }
+  const principal = family?.selectContext(complete as never) as {
+    missing: readonly string[]
+    empty: readonly string[]
+    enactmentAnchor: boolean
+  }
   expect(principal.missing).toEqual([])
+  expect(principal.empty).toEqual([])
   expect(principal.enactmentAnchor).toBe(true)
+})
+
+test('empty structural entries and keyword-only orientation do not pass', () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-repo-kb-principal-empty-'))
+  for (const path of [
+    'Admin/MEMORY.md',
+    'Admin/Governance/Charter.md',
+    'Admin/Governance/Known Lands.md',
+    'Admin/Governance/Conventions/Conventions.md',
+    'Admin/Operations/Processes/Enactment Process.md'
+  ]) {
+    mkdirSync(join(repository, path, '..'), { recursive: true })
+    writeFileSync(join(repository, path), '\n')
+  }
+  writeFileSync(join(repository, 'AGENTS.md'), 'Use the Enactment Process.\n')
+  const context = catalogue
+    .createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
+    .subjects[1]?.context() as { empty: readonly string[]; enactmentAnchor: boolean }
+
+  expect(context.empty).toHaveLength(5)
+  expect(context.enactmentAnchor).toBe(false)
 })

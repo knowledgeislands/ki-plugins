@@ -3,7 +3,7 @@ name: ki-bootstrap
 ki-kind: process
 ki-depends-on: []
 description: >
-  Explains first-time Knowledge Islands activation through the `ki` CLI: bootstrap a user, select a verified canonical harness, and distinguish user skills from repository-declared governance (kind: process). Use for guidance on `ki bootstrap`, `ki harness`, `ki skill user`, and `ki skill repo`; the CLI itself owns all mechanics. Triggers: "set up KI", "what does ki bootstrap do", "activate a KI skill", "why won't ki repo audit run". For repository coverage use `ki-repo`; for command behaviour use `ki help`.
+  Explains first-time Knowledge Islands activation through the `ki` CLI: bootstrap a user, select a verified canonical harness, and distinguish user skills from repository-declared governance. Use for guidance on `ki bootstrap`, `ki harness`, `ki skill add/remove`, `ki repo skill add/remove`, and `ki dev local`; the CLI itself owns all mechanics. Triggers: "set up KI", "what does ki bootstrap do", "activate a KI skill", "why won't ki repo audit run". For repository coverage use `ki-repo`; for command behaviour use `ki help`.
 argument-hint: 'help | refresh'
 ---
 
@@ -27,9 +27,11 @@ The user configuration and installed harness payloads are separate from a reposi
 
 `ki harness list`, `ki harness info <id>`, `ki harness install <id>`, and `ki harness uninstall <id>` manage compatible installed harnesses. The canonical harness is always retained.
 
-`ki skill user add <skill>` and `ki skill user remove <skill>` manage a skill in configured user agent spaces.
+`ki skill add <skill>` and `ki skill remove <skill>` manage a skill in configured user agent spaces.
 
-`ki skill repo add <skill>` and `ki skill repo remove <skill>` manage a skill's repository declaration and runtime link. They affect only the selected repository; they never alter user activation.
+`ki repo skill add <skill>` and `ki repo skill remove <skill>` manage a skill's repository declaration and runtime link. They affect only the selected repository; they never alter user activation.
+
+Managed activation is fail-closed. If a link, installed payload, or development projection is unfamiliar, altered, escaping, or otherwise unsafe, use the owning `ki` diagnostic and repair command; do not copy or delete files across source, installed, and runtime-discovery surfaces. Start a new agent session after changing activation or the selected development source so the runtime re-scans its discovery directories.
 
 ## Repository operations
 
@@ -37,11 +39,9 @@ The user configuration and installed harness payloads are separate from a reposi
 
 Missing, incompatible, undeclared, or ambiguous skills fail before an audit or conform operation runs. The CLI executes native rubric catalogues; it never uses repository-vendored runners or `.ki/bin` wrappers.
 
-## Development and legacy boundaries
+## Development boundary
 
-An installed harness is the authoritative source of capabilities. A nearby checkout is used only through `ki dev on <path>` during development; `ki dev off` restores the installed canonical payload.
-
-Do not create `.ki` wrappers or copy scripts into repositories. If a repository still carries one, follow the maintainer [retirement guide](../../../docs/guides/developer/retiring-repository-vendored-ki.md).
+An installed verified payload is the authoritative source of capabilities. Local development is explicit: `ki dev local set <path>` validates and records a checkout, `ki dev local on` selects it, and `ki dev local off` restores the verified canonical archive. A selected local checkout is a mutable development source, not a verified installed payload; activation and loaded runtime capability remain separate host evidence.
 
 For command grammar, run `ki help`. For repository coverage, use `ki-repo`.
 

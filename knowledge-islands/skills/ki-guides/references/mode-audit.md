@@ -1,5 +1,7 @@
 # Mode AUDIT — check guides
 
+Where a guide depends on stable behaviour, follow its applicable existing Specification; otherwise record the contract gap for `ki-specs` without demanding an unrelated Specification corpus.
+
 Read the [Guides standard](standards-guides.md) and [rubric](rubric.md) first.
 
 1. Run `ki repo audit --skill ki-guides --repo <repo>`. It checks the guide root, collection entry point, guide H1s, retired sibling roots, and generated rubric publication.

@@ -1,12 +1,9 @@
 import { type Dirent, existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs'
-import { basename, join, relative, resolve } from 'node:path'
+import { join, relative, resolve } from 'node:path'
+import { readSource, type SourceState } from '../../shared/binding.ts'
 import type { RubricContextOptions, RubricPublicationContext, RubricSession } from '../../shared/rubric.ts'
 
-export type RenderDataEvidence = {
-  path: string
-  pattern: 'data-merge' | 'managed-source'
-}
-
+export type RenderDataEvidence = { path: string; pattern: 'data-merge' | 'managed-source'; source: SourceState }
 export type BindingChezMoiContext = {
   rubric: RubricPublicationContext
   repository: string
@@ -17,16 +14,16 @@ export type BindingChezMoiContext = {
   unsafePaths: readonly string[]
 }
 
+const physical = (path: string): boolean =>
+  existsSync(path) && lstatSync(path).isFile() && !lstatSync(path).isSymbolicLink()
+const include = (content: string, data: string, partial: string): boolean =>
+  new RegExp(
+    `{{-?\\s*(?:template\\s+${JSON.stringify(partial)}\\s+\\.|include\\s+${JSON.stringify(data)})\\s*-?}}`
+  ).test(content)
+
 const inspectRepository = (repository: string): Omit<BindingChezMoiContext, 'rubric'> => {
   if (!existsSync(repository))
-    return {
-      repository,
-      repositoryState: 'absent',
-      data: [],
-      templates: [],
-      wiredTargets: [],
-      unsafePaths: []
-    }
+    return { repository, repositoryState: 'absent', data: [], templates: [], wiredTargets: [], unsafePaths: [] }
   const rootState = lstatSync(repository)
   if (!rootState.isDirectory() || rootState.isSymbolicLink())
     return {
@@ -37,12 +34,10 @@ const inspectRepository = (repository: string): Omit<BindingChezMoiContext, 'rub
       wiredTargets: [],
       unsafePaths: [repository]
     }
-
-  const data: RenderDataEvidence[] = []
-  const templates: string[] = []
-  const wiredTargets: string[] = []
-  const unsafePaths: string[] = []
-
+  const data: RenderDataEvidence[] = [],
+    templates: string[] = [],
+    targets: { path: string; content: string }[] = [],
+    unsafePaths: string[] = []
   const walk = (directory: string, depth = 0): void => {
     if (depth > 6) return
     let entries: Dirent[]
@@ -54,8 +49,8 @@ const inspectRepository = (repository: string): Omit<BindingChezMoiContext, 'rub
     }
     for (const entry of entries) {
       if (entry.name === '.git' || entry.name === 'node_modules') continue
-      const path = join(directory, entry.name)
-      const subject = relative(repository, path)
+      const path = join(directory, entry.name),
+        subject = relative(repository, path)
       let state: ReturnType<typeof lstatSync>
       try {
         state = lstatSync(path)
@@ -78,42 +73,41 @@ const inspectRepository = (repository: string): Omit<BindingChezMoiContext, 'rub
         continue
       }
       if (!state.isFile()) {
-        if (/mcp/i.test(entry.name) || entry.name.endsWith('.tmpl')) unsafePaths.push(subject)
+        if (entry.name.endsWith('.tmpl')) unsafePaths.push(subject)
         continue
       }
-      const filename = basename(path)
-      if (/mcp/i.test(filename) && /\.(ya?ml|toml|json)$/i.test(filename)) {
-        const pattern = subject.startsWith('.chezmoidata/') ? 'data-merge' : 'managed-source'
-        data.push({ path: subject, pattern })
-      }
-      if (/mcp-servers-json/i.test(filename)) templates.push(subject)
-      if (path.endsWith('.tmpl')) {
-        try {
-          if (/mcp-servers-json/i.test(readFileSync(path, 'utf8'))) wiredTargets.push(subject)
-        } catch {
-          unsafePaths.push(subject)
-        }
-      }
+      if (subject.startsWith('.chezmoidata/') && /\.ya?ml$/i.test(entry.name))
+        data.push({ path: subject, pattern: 'data-merge', source: readSource(path) })
+      if (entry.name === 'mcp-servers.yaml')
+        data.push({ path: subject, pattern: 'managed-source', source: readSource(path) })
+      if (subject === '.chezmoitemplates/mcp-servers-json.tmpl') templates.push(subject)
+      if (entry.name.endsWith('.tmpl') && subject !== '.chezmoitemplates/mcp-servers-json.tmpl' && physical(path))
+        targets.push({ path: subject, content: readFileSync(path, 'utf8') })
     }
   }
-
   walk(repository)
+  const wiredTargets = targets
+    .filter(
+      ({ content }) =>
+        data.some(({ path }) => include(content, path, 'mcp-servers-json.tmpl')) && templates.length === 1
+    )
+    .map(({ path }) => path)
+    .sort()
   return {
     repository,
     repositoryState: 'physical',
     data: data.sort((left, right) => left.path.localeCompare(right.path)),
     templates: templates.sort(),
-    wiredTargets: wiredTargets.sort(),
+    wiredTargets,
     unsafePaths: [...new Set(unsafePaths)].sort()
   }
 }
-
 export const createBindingChezMoiSession = ({
   repository,
   publication
 }: RubricContextOptions): RubricSession<BindingChezMoiContext> => {
-  const root = resolve(repository)
-  const context = { ...inspectRepository(root), rubric: { publication } }
+  const root = resolve(repository),
+    context = { ...inspectRepository(root), rubric: { publication } }
   return {
     subjects: [
       { families: ['BINDCHEZ'], context: () => context, subject: root },

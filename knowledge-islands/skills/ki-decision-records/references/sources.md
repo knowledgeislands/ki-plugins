@@ -8,8 +8,8 @@ Tracked sources for Mode REFRESH. Re-fetch before proposing changes to the forma
 
 | Source                         | URL                                              | Last reviewed |
 | ------------------------------ | ------------------------------------------------ | ------------- |
-| Nygard ADR format (original)   | [Documenting architecture decisions][nygard-adr] | 2026-07-04    |
-| ADR GitHub community resources | [adr.github.io][adr-github]                      | 2026-07-04    |
+| Nygard ADR format (original)   | [Documenting architecture decisions][nygard-adr] | 2026-08-12    |
+| ADR GitHub community resources | [adr.github.io][adr-github]                      | 2026-08-12    |
 
 ## What to look for on refresh
 
@@ -19,12 +19,13 @@ Tracked sources for Mode REFRESH. Re-fetch before proposing changes to the forma
 
 ## Last review
 
-REFRESH last run **2026-07-04**.
+REFRESH last run **2026-08-12**.
 
-- **Nygard ADR format** — confirmed unchanged upstream (page live, footer copyright 2025, Cognitect/Nu Holdings). Nygard's original carries five sections including a Status line; the house standard deliberately keeps only Title/Context/Decision/Consequences and **drops Status**, treating DRs as living present-state records (see [the Decision Records standard](standards-decision-records.md)). An intentional divergence, not drift.
-- **ADR GitHub community (adr.github.io)** — confirmed unchanged for anything the standard depends on. MADR's optional "Considered Options + Pros/Cons" pattern is unchanged and still deliberately not adopted (the house standard keeps Title, Context, Decision, and Consequences while omitting Nygard's Status section). Only new signal is a non-actionable JavaLand-2026 "ADR, MADR, eADR" talk (2026-03-10). No new multi-type naming or scoping convention has been published.
+- **Nygard ADR format** — current primary page remains available. It recommends a short single-decision record with Context, active-voice Decision, Status, and Consequences; the house living-record model intentionally diverges from its historical-status treatment.
+- **ADR GitHub community** — remains supporting community evidence for optional record patterns, not authority for the house taxonomy, serial scope, or living-record policy.
+- **House metadata** — the nine-prefix taxonomy, `decision_type_url`, and living-record policy remain house conventions. Current primary discovery did not verify public `decision_type_url` targets, so the standard labels them non-authoritative house reference metadata rather than published external specifications.
 
-External sources are current. **Internal note:** the house DR format moved to a **living present-state record** — the former Status lifecycle, Mutability axis, supersession chain, and `## Changelog` were dropped, and `SKILL.md`, the Decision Records standard, the rubric, and the checker were realigned together. Serial uniqueness remains per-prefix within scope.
+External sources are current. **Internal note:** the house DR format is a **living present-state record** — lifecycle axes, historical narrative, supersession chains, and `## Changelog` are excluded, and `SKILL.md`, the Decision Records standard, the rubric, and the checker align on that form. Serial uniqueness remains per-prefix within scope.
 
 Open watch-items:
 

@@ -33,6 +33,22 @@ export const TOML: RubricFamily<EngineeringRubricContext, TomlRubricContext> = {
         },
         audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.toml2, 'WARN') }
       }
+    },
+    {
+      code: 'TOML-3',
+      title: 'Engineering check records validate',
+      description:
+        'Every optional `[skills.ki-engineering.checks]` entry names a known mechanical rubric ID and has a boolean value; entries remain diagnostic records, not audit waivers.',
+      sources: ['standards-engineering.md'],
+      mechanical: {
+        level: 'WARN',
+        remediation: {
+          class: 'diagnostic',
+          guidance:
+            'Remove or correct the check-record key or value; retain any exception rationale in the repository change record, then rerun the audit.'
+        },
+        audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.toml3, 'WARN') }
+      }
     }
   ]
 }

@@ -5,12 +5,14 @@ import { BUILD } from './build.ts'
 import { BUN } from './bun.ts'
 import { CI } from './ci.ts'
 import { DEPENDENCIES } from './dependencies.ts'
+import { DESIGN } from './design.ts'
 import { ENVIRONMENT } from './environment.ts'
 import { GENERATED } from './generated.ts'
 import { KNIP } from './knip.ts'
 import { MISE } from './mise.ts'
 import { PACKAGE } from './package.ts'
 import { RUBRIC } from './publication.ts'
+import { REVIEW } from './review.ts'
 import { SCRIPTS } from './scripts.ts'
 import { SYNC } from './sync.ts'
 import { TEST } from './test.ts'
@@ -35,6 +37,8 @@ export default {
     SYNC,
     DEPENDENCIES,
     GENERATED,
+    DESIGN,
+    REVIEW,
     TEST,
     BUILD,
     ENVIRONMENT,

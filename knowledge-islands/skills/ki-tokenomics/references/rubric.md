@@ -27,11 +27,11 @@ Selected-repository tokenomics configuration.
 
 Budget semantics, purpose taxonomy, and owner routing.
 
-- **POL-1 [M] — Budgets remain guide-rails** — A token budget overage is always WARN, never FAIL. (standards-tokenomics.md)
+- **POL-1 [M] — Declared budget guide-rail policy** — The declared portable policy says that any observed token-budget overage is WARN, not FAIL. (standards-tokenomics.md)
   - _Remediation:_ diagnostic — Revise the selected budget guide-rail or record its intended overage, then rerun the audit.
-- **POL-2 [M] — Model purpose is portable** — Model choice uses the portable frontier, reasoning, standard, and fast purpose taxonomy. (standards-tokenomics.md)
+- **POL-2 [M] — Declared portable model purpose** — The declared portable policy defines frontier, reasoning, standard, and fast purpose taxonomy; it does not observe a model. (standards-tokenomics.md)
   - _Remediation:_ diagnostic — Use a declared portable model purpose rather than a provider-specific model choice, then rerun the audit.
-- **POL-3 [M] — Standing-surface findings have an owner** — Selected-repository standing surfaces are attributed and routed to their artifact owner or runtime adapter. (standards-tokenomics.md)
+- **POL-3 [M] — Declared standing-surface ownership** — The declared policy routes standing-surface findings to artifact owners or runtime adapters; attribution requires adapter observation. (standards-tokenomics.md)
   - _Remediation:_ diagnostic — Route the standing-surface finding to its owning artifact or runtime adapter, then rerun the audit.
 
 ## RUBRIC — Generated rubric publication

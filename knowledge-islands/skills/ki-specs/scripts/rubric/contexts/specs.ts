@@ -26,6 +26,12 @@ export type SpecRequirement = {
   readonly hasVerify: boolean
 }
 
+export type DuplicatePrefixRegistration = {
+  readonly prefix: string
+  readonly firstFile: string
+  readonly duplicateFile: string
+}
+
 export type SpecHeadingIssue = {
   readonly file: string
   readonly heading: string
@@ -37,6 +43,7 @@ type CanonicalHeadingIssue = SpecHeadingIssue & { readonly canonical: string }
 export type SpecIndexContext = {
   readonly exists: boolean
   readonly prefixToFile: ReadonlyMap<string, string>
+  readonly duplicatePrefixRegistrations: readonly DuplicatePrefixRegistration[]
 }
 
 export type SpecAreaContext = {
@@ -101,8 +108,11 @@ const splitRow = (line: string): string[] | null => {
     .map((cell) => cell.trim())
 }
 
-const parseAreasTables = (indexContent: string): Map<string, string> => {
+const parseAreasTables = (
+  indexContent: string
+): { prefixToFile: Map<string, string>; duplicatePrefixRegistrations: DuplicatePrefixRegistration[] } => {
   const prefixToFile = new Map<string, string>()
+  const duplicatePrefixRegistrations: DuplicatePrefixRegistration[] = []
   let prefixColumn = -1
   let fileColumn = -1
   for (const line of indexContent.split('\n')) {
@@ -131,10 +141,14 @@ const parseAreasTables = (indexContent: string): Map<string, string> => {
     for (const prefix of prefixCell
       .split(/[·,/]|\s+/)
       .map((value) => value.trim())
-      .filter(Boolean))
-      prefixToFile.set(prefix, fileCell)
+      .filter(Boolean)) {
+      const owner = prefixToFile.get(prefix)
+      if (owner && owner !== fileCell)
+        duplicatePrefixRegistrations.push({ prefix, firstFile: owner, duplicateFile: fileCell })
+      else prefixToFile.set(prefix, fileCell)
+    }
   }
-  return prefixToFile
+  return { prefixToFile, duplicatePrefixRegistrations }
 }
 
 const specsDirectory = (target: string): string => {
@@ -159,7 +173,7 @@ export const createSpecsSession = ({
   const indexPath = join(directory, INDEX_FILE)
   const indexExists = entries.some((entry) => entry.name === INDEX_FILE && entry.isFile()) && isFile(indexPath)
   const indexContent = indexExists ? readFileSync(indexPath, 'utf8') : ''
-  const prefixToFile = parseAreasTables(indexContent)
+  const { prefixToFile, duplicatePrefixRegistrations } = parseAreasTables(indexContent)
   const areaFiles = entries
     .filter((entry) => entry.isFile() && entry.name.endsWith('.md') && entry.name !== INDEX_FILE)
     .map((entry) => entry.name)
@@ -221,7 +235,11 @@ export const createSpecsSession = ({
       })
     }
     for (const [position, requirement] of fileRequirements.entries()) {
-      const block = lines.slice(requirement.index + 1, fileRequirements[position + 1]?.index ?? lines.length).join('\n')
+      const nextRequirement = fileRequirements[position + 1]?.index ?? lines.length
+      const nextH2 = lines.findIndex(
+        (line, index) => index > requirement.index && index < nextRequirement && /^##\s+/.test(line)
+      )
+      const block = lines.slice(requirement.index + 1, nextH2 >= 0 ? nextH2 : nextRequirement).join('\n')
       requirements.push({
         file,
         id: requirement.id,
@@ -238,7 +256,7 @@ export const createSpecsSession = ({
   const drafts = new Map(originals)
   const context: SpecsRubricContext = {
     rubric: { publication },
-    index: { exists: indexExists, prefixToFile },
+    index: { exists: indexExists, prefixToFile, duplicatePrefixRegistrations },
     area: { registeredMissingFiles, unregisteredFiles },
     identity: {
       headingIssues,

@@ -1,5 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { AUTOMATIC_REMEDIATION, DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { AUTOMATIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
 import { type KiSkillsRubricContext, type NameRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 import { containsXmlTag } from '../contexts/text.ts'
 
@@ -13,13 +13,19 @@ const NAME_1: RubricItem<NameRubricContext> = {
   sources: ['SPEC', 'CC'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: AUTOMATIC_REMEDIATION,
     audit: {
       phase: 'INSPECT',
       run: ({ name }) =>
         !name
           ? [{ status: 'VIOLATION', message: '`name` is missing from frontmatter' }]
           : [{ status: 'PASS', message: 'name is present' }]
+    },
+    conform: {
+      phase: 'NORMALISE',
+      run: ({ name, directoryName, setName }) => {
+        if (!name) setName?.(directoryName)
+      }
     }
   }
 }
@@ -31,7 +37,11 @@ const NAME_2: RubricItem<NameRubricContext> = {
   sources: ['SPEC', 'BP'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Choose a shorter canonical name that preserves the capability’s meaning, then coordinate its frontmatter, directory, dependencies, and references.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ name }) =>
@@ -51,7 +61,11 @@ const NAME_3: RubricItem<NameRubricContext> = {
   sources: ['SPEC', 'BP'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Choose the intended lowercase hyphenated name rather than mechanically transliterating identity, then coordinate every name-bearing path and reference.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ name }) =>
@@ -76,7 +90,11 @@ const NAME_4: RubricItem<NameRubricContext> = {
   sources: ['SPEC'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Choose a canonical name without edge or consecutive hyphens, then coordinate the frontmatter, directory, dependencies, and references.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ name }) =>
@@ -136,7 +154,11 @@ const NAME_6: RubricItem<NameRubricContext> = {
   sources: ['BP', 'KI'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Confirm whether the skill is an explicit matching runtime adapter; otherwise choose a non-reserved name and coordinate every identity reference.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ name, reservedVendorNameAllowed }) => {

@@ -86,8 +86,8 @@ Coverage-selected governance is different: if two independently declared standar
 ```yaml
 ---
 name: ki-repo-website-cloudflare
-ki-depends-on: [skills.ki-repo-website]
+ki-depends-on: [ki-repo-website]
 ---
 ```
 
-Here `ki-repo-website` is a prerequisite because the hosting capability consumes the site capability's built output. `ki-engineering` may also govern the repository, but coverage selects it separately rather than implying a dependency from either website skill.
+Here `ki-repo-website` is a prerequisite because the hosting capability consumes the neutral site's built output. The independently selected content or app implementation produces that output; Cloudflare does not depend on either implementation. `ki-engineering` may also govern the repository, but coverage selects it separately.

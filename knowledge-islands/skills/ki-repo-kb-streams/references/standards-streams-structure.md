@@ -28,13 +28,13 @@ The container does not prescribe a topical-folder or `groups` vocabulary. Where 
 
 ## Roadmap
 
-`Streams/Roadmap/` is the KB placement equivalent of a project repository’s `docs/roadmap/`. It contains flat finite work records and its `_ISSUES.md` allocation ledger. The [repository roadmap standard](../../../change-management/ki-change-management-roadmap/references/standards-repository-roadmaps.md) owns the record format, lifecycle, identifier grammar, and horizon metadata.
+`Streams/Roadmap/` is the KB placement equivalent of a project repository’s `docs/roadmap/`. It contains flat finite work records and its `_ISSUES.md` allocation ledger. The [repository roadmap standard](../../../change-management/ki-work-roadmap/references/standards-repository-roadmaps.md) owns the record format, lifecycle, identifier grammar, and horizon metadata.
 
 Roadmap horizons and lifecycle are frontmatter fields. Do not represent `Now`, `Next`, `Soon`, `Waiting for`, `Parked`, or `Future` with paths below `Streams/Roadmap/`.
 
 ## Housekeeping
 
-`Streams/Housekeeping/` is the KB placement equivalent of `docs/housekeeping/`. It contains recurring-work templates, not a permanent set of delivery work. The [housekeeping template standard](../../../change-management/ki-change-management-housekeeping/references/standards-housekeeping.md) owns template identity, cadence, due-run spawning, and retained run evidence.
+`Streams/Housekeeping/` is the KB placement equivalent of `docs/housekeeping/`. It contains recurring-work templates, not a permanent set of delivery work. The [housekeeping template standard](../../../change-management/ki-work-housekeeping/references/standards-housekeeping.md) owns template identity, cadence, due-run spawning, and retained run evidence.
 
 A due run is a linked ordinary roadmap record in `Streams/Roadmap/`. Its horizon and lifecycle remain record metadata; it is not moved into a Streams state folder.
 

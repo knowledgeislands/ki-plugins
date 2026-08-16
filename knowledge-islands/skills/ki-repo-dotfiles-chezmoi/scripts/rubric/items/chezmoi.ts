@@ -3,6 +3,48 @@ import type { ChezmoiRubricContext, ChezmoiShapeContext } from '../contexts/chez
 
 const STANDARD = ['standards-chezmoi-dotfiles.md'] as const
 
+const CHEZMOI_0: RubricItem<ChezmoiShapeContext> = {
+  code: 'CHEZMOI-0',
+  title: 'Repository declaration',
+  description:
+    'Only a physical `[skills.ki-repo-dotfiles-chezmoi]` declaration selects this optional standard; detected chezmoi shape is coverage evidence for ki-repo.',
+  sources: STANDARD,
+  mechanical: {
+    level: 'WARN',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Declare the selected standard through the repository configuration owner.'
+    },
+    audit: {
+      phase: 'INSPECT',
+      run: ({ repository, repositoryState, applicable }) => {
+        if (repositoryState === 'absent')
+          return [{ status: 'VIOLATION', message: 'The audit target does not exist.', subject: repository }]
+        if (repositoryState === 'unsafe')
+          return [
+            { status: 'VIOLATION', message: 'The audit target is not a physical directory.', subject: repository }
+          ]
+        return applicable
+          ? [
+              {
+                status: 'PASS',
+                message: '[skills.ki-repo-dotfiles-chezmoi] selects this standard.',
+                subject: '.ki-config.toml'
+              }
+            ]
+          : [
+              {
+                status: 'NOT_APPLICABLE',
+                message:
+                  'ki-repo-dotfiles-chezmoi is not applicable: its repository declaration is absent. Detected chezmoi shape is handled by ki-repo coverage.',
+                subject: '.ki-config.toml'
+              }
+            ]
+      }
+    }
+  }
+}
+
 const CHEZMOI_1: RubricItem<ChezmoiShapeContext> = {
   code: 'CHEZMOI-1',
   title: 'Managed ignore file',
@@ -13,13 +55,14 @@ const CHEZMOI_1: RubricItem<ChezmoiShapeContext> = {
     remediation: { class: 'automatic' },
     audit: {
       phase: 'INSPECT',
-      run: ({ repository, repositoryState, ignoreState }) => {
+      run: ({ repository, repositoryState, applicable, ignoreState }) => {
         if (repositoryState === 'absent')
           return [{ status: 'VIOLATION', message: 'The audit target does not exist.', subject: repository }]
         if (repositoryState === 'unsafe')
           return [
             { status: 'VIOLATION', message: 'The audit target is not a physical directory.', subject: repository }
           ]
+        if (!applicable) return [{ status: 'NOT_APPLICABLE', message: 'ki-repo-dotfiles-chezmoi is not applicable.' }]
         if (ignoreState === 'physical')
           return [{ status: 'PASS', message: 'The managed ignore file is present.', subject: '.chezmoiignore' }]
         if (ignoreState === 'unsafe')
@@ -62,9 +105,10 @@ const CHEZMOI_2: RubricItem<ChezmoiShapeContext> = {
     },
     audit: {
       phase: 'INSPECT',
-      run: ({ repositoryState, hasTemplateFiles, hasTemplateSupport }) => {
+      run: ({ repositoryState, applicable, hasTemplateFiles, hasTemplateSupport }) => {
         if (repositoryState !== 'physical')
           return [{ status: 'NOT_APPLICABLE', message: 'The target repository is not safely inspectable.' }]
+        if (!applicable) return [{ status: 'NOT_APPLICABLE', message: 'ki-repo-dotfiles-chezmoi is not applicable.' }]
         if (!hasTemplateFiles)
           return [
             { status: 'NOT_APPLICABLE', message: 'No template files exist, so support directories are not required.' }
@@ -104,5 +148,5 @@ export const CHEZMOI: RubricFamily<ChezmoiRubricContext, ChezmoiShapeContext> = 
   description: 'Required repository-shape files and template support.',
   standard: 'standards-chezmoi-dotfiles.md',
   selectContext: (context) => context.shape,
-  items: [CHEZMOI_1, CHEZMOI_2, CHEZMOI_J1]
+  items: [CHEZMOI_0, CHEZMOI_1, CHEZMOI_2, CHEZMOI_J1]
 }

@@ -53,7 +53,7 @@ export type ConformProposal = {
   commands?: readonly ConformCommand[]
 }
 
-export type MechanicalRubric<Context> = {
+type MechanicalRubricBase<Context> = {
   level: ViolationLevel
   /**
    * Relative expected effort against the other criteria in the same catalogue, used to
@@ -65,18 +65,38 @@ export type MechanicalRubric<Context> = {
   cost?: number
   overrideLevels?: readonly ViolationLevel[]
   heuristic?: boolean
-  remediation: MechanicalRemediation
   audit: RubricExecution<Context, RubricOutcomes<AuditOutcome>>
+}
+
+export type AutomaticMechanicalRubric<Context> = MechanicalRubricBase<Context> & {
+  remediation: { class: 'automatic' }
   /**
    * The canonical CONFORM action. It changes only the operation-scoped
    * in-memory context; the host publishes the session's final proposal.
    */
-  conform?: RubricExecution<Context, void>
+  conform: RubricExecution<Context, void>
   /** Additional neutral outcomes that this conform action may safely address. */
   conformOn?: readonly Extract<AuditOutcomeStatus, 'INFO'>[]
 }
 
-export type MechanicalRemediation = { class: 'automatic' } | { class: 'diagnostic' | 'guarded'; guidance: string }
+export type DiagnosticMechanicalRubric<Context> = MechanicalRubricBase<Context> & {
+  remediation: { class: 'diagnostic'; guidance: string }
+  conform?: never
+  conformOn?: never
+}
+
+export type GuardedMechanicalRubric<Context> = MechanicalRubricBase<Context> & {
+  remediation: { class: 'guarded'; guidance: string }
+  conform?: never
+  conformOn?: never
+}
+
+export type MechanicalRubric<Context> =
+  | AutomaticMechanicalRubric<Context>
+  | DiagnosticMechanicalRubric<Context>
+  | GuardedMechanicalRubric<Context>
+
+export type MechanicalRemediation = MechanicalRubric<never>['remediation']
 
 /** A deterministic finding whose correct repair needs authorship or a local decision. */
 export const DIAGNOSTIC_REMEDIATION = {
@@ -112,8 +132,12 @@ export type RubricItemBase = {
 export type RubricItem<Context> = RubricItemBase &
   (
     | {
-        mechanical: MechanicalRubric<Context>
+        mechanical: AutomaticMechanicalRubric<Context> | DiagnosticMechanicalRubric<Context>
         judgment?: JudgmentRubric
+      }
+    | {
+        mechanical: GuardedMechanicalRubric<Context>
+        judgment: JudgmentRubric
       }
     | {
         mechanical?: never
@@ -146,6 +170,24 @@ export type RubricDefinition<RootContext> = {
   families: readonly CatalogueRubricFamily<RootContext>[]
 }
 
+export type RepositorySkillActivationState = {
+  name: string
+  status: 'active' | 'missing' | 'blocked'
+  message: string
+}
+
+/**
+ * Host-owned evidence and proposal seam for managed repository-skill activation.
+ *
+ * A rubric may derive the exact required skill names, inspect their host-resolved state,
+ * and request one native activation proposal. It receives no filesystem or subprocess
+ * capability and cannot select a provider or alter user configuration.
+ */
+export type RepositorySkillActivation = {
+  inspect: (names: readonly string[]) => readonly RepositorySkillActivationState[]
+  propose: (names: readonly string[]) => void
+}
+
 export type RubricContextOptions = {
   mode: RubricMode
   repository: string
@@ -159,6 +201,8 @@ export type RubricContextOptions = {
   emit?: RubricEmitter
   /** Host-validated generated-publication evidence for this skill's catalogue, when requested. */
   publication?: RubricPublication
+  /** Host-resolved repository-skill activation evidence and native proposal capability. */
+  repositorySkills?: RepositorySkillActivation
 }
 
 /**

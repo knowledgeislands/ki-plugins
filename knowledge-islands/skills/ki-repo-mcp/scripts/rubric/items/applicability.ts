@@ -10,12 +10,15 @@ const KI_CONFIG: RubricItem<McpApplicabilityContext> = {
   code: 'KI-CONFIG',
   title: 'MCP applicability and declaration',
   description:
-    'A repository is applicable when it declares [skills.ki-repo-mcp] or contains src/mcp-server/. Otherwise the audit emits one NOT_APPLICABLE finding and stops; declared keys are rejected because this skill has no configuration options.',
+    'Only [skills.ki-repo-mcp] declares this optional standard applicable. Detected MCP-shaped source is coverage evidence for ki-repo, not local selection authority; declared keys are rejected because this skill has no configuration options.',
   sources: [STANDARD],
   mechanical: {
     level: 'WARN',
     overrideLevels: ['FAIL'],
-    remediation: { class: 'automatic' },
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Declare the selected standard through the repository configuration owner.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context) => {
@@ -28,7 +31,7 @@ const KI_CONFIG: RubricItem<McpApplicabilityContext> = {
         if (!context.applicable)
           return outcome(
             'NOT_APPLICABLE',
-            'ki-repo-mcp not applicable: no [skills.ki-repo-mcp] declaration or src/mcp-server/ structural marker.',
+            'ki-repo-mcp not applicable: [skills.ki-repo-mcp] is not declared. Detected MCP-shaped source is handled by ki-repo coverage.',
             context.root
           )
         if (context.config === 'missing')
@@ -63,10 +66,6 @@ const KI_CONFIG: RubricItem<McpApplicabilityContext> = {
             )
           : outcome('PASS', '[skills.ki-repo-mcp] table is present.', '.ki-config.toml')
       }
-    },
-    conform: {
-      phase: 'PRIMARY',
-      run: (context) => context.addMarker?.()
     }
   }
 }

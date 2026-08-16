@@ -13,6 +13,7 @@ const REQUIRED = [
 export type PrincipalContext = {
   readonly rubric: RubricPublicationContext
   readonly missing: readonly string[]
+  readonly empty: readonly string[]
   readonly enactmentAnchor: boolean
 }
 
@@ -31,7 +32,11 @@ export const createPrincipalSession = ({
   const context: PrincipalContext = {
     rubric: { publication },
     missing: REQUIRED.filter((path) => !regular(join(root, path))),
-    enactmentAnchor: /Enactment Process|enactment gate/i.test(orientation)
+    empty: REQUIRED.filter((path) => regular(join(root, path)) && !readFileSync(join(root, path), 'utf8').trim()),
+    enactmentAnchor:
+      /(?:must|require|do not|go through)[^.\n]*(?:Enactment Process|Streams\/Roadmap|canonical)/i.test(orientation) &&
+      /(?:Enactment Process|Streams\/Roadmap)/i.test(orientation) &&
+      /(?:Admin|Pillars|Resources)/i.test(orientation)
   }
   return {
     subjects: [

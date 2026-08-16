@@ -1,98 +1,74 @@
-import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
+import {
+  physicalFile,
+  readSource,
+  resolveSource,
+  type ServerEntry,
+  type SourceState,
+  targeted
+} from '../../shared/binding.ts'
 import type { RubricContextOptions, RubricPublicationContext, RubricSession } from '../../shared/rubric.ts'
 
-type CoworkFile = {
-  path: string
-  subject: string
-  status: 'already' | 'pending' | 'unsafe'
-  enable?: () => void
-  proposal: () => { path: string; content: string } | undefined
-}
+type ClaudeTarget =
+  | { kind: 'unavailable'; path: string }
+  | { kind: 'invalid'; path: string }
+  | { kind: 'valid'; path: string; servers: Readonly<Record<string, Record<string, unknown>>> }
+type CoworkFile = { path: string; subject: string; status: 'already' | 'pending' | 'unsafe' }
 export type ClaudeBindingContext = {
   rubric: RubricPublicationContext
-  codePath: string
-  desktopPath: string
-  codeServers: ReadonlySet<string> | null
-  desktopServers: ReadonlySet<string> | null
-  expectedCode: ReadonlySet<string>
-  expectedDesktop: ReadonlySet<string>
+  source: string
+  sourceState: SourceState
+  code: ClaudeTarget
+  desktop: ClaudeTarget
   coworkBase: string
   cowork: readonly CoworkFile[]
 }
+
 const COWORK_MARKETPLACE = 'ki-repo-plugins',
   COWORK_PLUGIN = 'knowledge-islands',
   COWORK_REPO = 'knowledgeislands/ki-plugins'
-const physicalFile = (path: string) => existsSync(path) && lstatSync(path).isFile() && !lstatSync(path).isSymbolicLink()
-const servers = (path: string): ReadonlySet<string> | null => {
-  if (!physicalFile(path)) return null
+const target = (path: string): ClaudeTarget => {
+  if (!physicalFile(path)) return { kind: 'unavailable', path }
   try {
-    const json = JSON.parse(readFileSync(path, 'utf8')) as { mcpServers?: unknown }
-    return json.mcpServers && typeof json.mcpServers === 'object'
-      ? new Set(Object.keys(json.mcpServers as Record<string, unknown>))
-      : new Set()
+    const parsed = JSON.parse(readFileSync(path, 'utf8')) as { mcpServers?: unknown }
+    if (!parsed.mcpServers || typeof parsed.mcpServers !== 'object' || Array.isArray(parsed.mcpServers))
+      return { kind: 'invalid', path }
+    const servers: Record<string, Record<string, unknown>> = {}
+    for (const [name, value] of Object.entries(parsed.mcpServers as Record<string, unknown>)) {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return { kind: 'invalid', path }
+      servers[name] = value as Record<string, unknown>
+    }
+    return { kind: 'valid', path, servers }
   } catch {
-    return null
+    return { kind: 'invalid', path }
   }
 }
-declare const Bun: { YAML: { parse(input: string): unknown } }
-const expected = (path: string, client: string): ReadonlySet<string> => {
-  if (!physicalFile(path)) return new Set()
-  try {
-    const source = Bun.YAML.parse(readFileSync(path, 'utf8')) as { mcpServers?: unknown }
-    return new Set(
-      Array.isArray(source?.mcpServers)
-        ? source.mcpServers.flatMap((entry) => {
-            const value = entry as { name?: unknown; clients?: unknown }
-            return typeof value?.name === 'string' && Array.isArray(value.clients) && value.clients.includes(client)
-              ? [value.name]
-              : []
-          })
-        : []
-    )
-  } catch {
-    return new Set()
-  }
+const same = (entry: ServerEntry, actual: Record<string, unknown> | undefined): boolean => {
+  if (!actual) return false
+  if ('url' in entry) return actual.type === entry.transports['claude-code'] && actual.url === entry.url
+  return (
+    actual.type === 'stdio' &&
+    actual.command === entry.command &&
+    JSON.stringify(actual.args ?? []) === JSON.stringify(entry.args) &&
+    JSON.stringify(actual.env ?? {}) === JSON.stringify(entry.env)
+  )
 }
 const enabled = (json: Record<string, unknown>) =>
   ((json.enabledPlugins ?? {}) as Record<string, unknown>)[`${COWORK_PLUGIN}@${COWORK_MARKETPLACE}`] === true &&
   ((json.extraKnownMarketplaces ?? {}) as Record<string, { source?: { repo?: string } }>)[COWORK_MARKETPLACE]?.source
     ?.repo === COWORK_REPO
-const coworkFile = (path: string, home: string, mutable: boolean): CoworkFile => {
+const coworkFile = (path: string, home: string): CoworkFile => {
   const subject = relative(home, path)
-  if (!physicalFile(path)) return { path, subject, status: 'unsafe', proposal: () => undefined }
-  let json: Record<string, unknown>
+  if (!physicalFile(path)) return { path, subject, status: 'unsafe' }
   try {
-    json = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>
-  } catch {
-    return { path, subject, status: 'unsafe', proposal: () => undefined }
-  }
-  const original = JSON.stringify(json)
-  let on = enabled(json)
-  const enable = () => {
-    if (on) return
-    json = {
-      ...json,
-      enabledPlugins: {
-        ...((json.enabledPlugins as Record<string, unknown>) ?? {}),
-        [`${COWORK_PLUGIN}@${COWORK_MARKETPLACE}`]: true
-      },
-      extraKnownMarketplaces: {
-        ...((json.extraKnownMarketplaces as Record<string, unknown>) ?? {}),
-        [COWORK_MARKETPLACE]: { source: { source: 'github', repo: COWORK_REPO } }
-      }
+    return {
+      path,
+      subject,
+      status: enabled(JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>) ? 'already' : 'pending'
     }
-    on = true
-  }
-  return {
-    path,
-    subject,
-    status: on ? 'already' : 'pending',
-    ...(mutable ? { enable } : {}),
-    proposal: () =>
-      on && original !== JSON.stringify(json)
-        ? { path: subject, content: `${JSON.stringify(json, null, 2)}\n` }
-        : undefined
+  } catch {
+    return { path, subject, status: 'unsafe' }
   }
 }
 const find = (directory: string, depth = 0): string[] =>
@@ -106,40 +82,39 @@ const find = (directory: string, depth = 0): string[] =>
             ? find(path, depth + 1)
             : []
       })
+
 export const createClaudeBindingSession = ({
-  mode,
   repository,
   userHome,
   publication
 }: RubricContextOptions): RubricSession<ClaudeBindingContext> => {
   const home = resolve(userHome),
+    source = resolveSource({ home }),
     base = join(home, 'Library', 'Application Support', 'Claude', 'local-agent-mode-sessions')
-  const source = process.env.KI_MCP_SOURCE
-    ? resolve(process.env.KI_MCP_SOURCE)
-    : join(home, '.config', 'ki', 'mcp-servers.yaml')
   const context: ClaudeBindingContext = {
     rubric: { publication },
-    codePath: join(home, '.claude.json'),
-    desktopPath: join(home, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json'),
-    codeServers: servers(join(home, '.claude.json')),
-    desktopServers: servers(join(home, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json')),
-    expectedCode: expected(source, 'claude-code'),
-    expectedDesktop: expected(source, 'claude-desktop'),
+    source,
+    sourceState: readSource(source),
+    code: target(join(home, '.claude.json')),
+    desktop: target(join(home, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json')),
     coworkBase: base,
     cowork: find(base)
       .sort()
-      .map((path) => coworkFile(path, home, mode === 'conform'))
+      .map((path) => coworkFile(path, home))
   }
   return {
     subjects: [
       { families: ['CLAUDEBIND'], context: () => context, subject: resolve(repository) },
       { families: ['RUBRIC'], context: () => context, subject: resolve(repository) }
     ],
-    proposal: () => ({
-      writes: context.cowork.flatMap((file) => {
-        const write = file.proposal()
-        return write ? [write] : []
-      })
-    })
+    proposal: () => ({ writes: [] })
   }
 }
+export const targetMatches = (
+  sourceState: SourceState,
+  client: 'claude-code' | 'claude-desktop',
+  targetState: ClaudeTarget
+): ReturnType<typeof targeted> | null =>
+  sourceState.kind === 'valid' && targetState.kind === 'valid'
+    ? targeted(sourceState.entries, client).filter((entry) => !same(entry, targetState.servers[entry.name]))
+    : null

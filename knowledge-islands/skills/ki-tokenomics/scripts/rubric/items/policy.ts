@@ -4,8 +4,8 @@ import type { TokenomicsConfigContext, TokenomicsRubricContext } from '../contex
 const SOURCE = 'standards-tokenomics.md'
 const POL_1: RubricItem<TokenomicsConfigContext> = {
   code: 'POL-1',
-  title: 'Budgets remain guide-rails',
-  description: 'A token budget overage is always WARN, never FAIL.',
+  title: 'Declared budget guide-rail policy',
+  description: 'The declared portable policy says that any observed token-budget overage is WARN, not FAIL.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
@@ -18,8 +18,9 @@ const POL_1: RubricItem<TokenomicsConfigContext> = {
 }
 const POL_2: RubricItem<TokenomicsConfigContext> = {
   code: 'POL-2',
-  title: 'Model purpose is portable',
-  description: 'Model choice uses the portable frontier, reasoning, standard, and fast purpose taxonomy.',
+  title: 'Declared portable model purpose',
+  description:
+    'The declared portable policy defines frontier, reasoning, standard, and fast purpose taxonomy; it does not observe a model.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
@@ -33,9 +34,9 @@ const POL_2: RubricItem<TokenomicsConfigContext> = {
 }
 const POL_3: RubricItem<TokenomicsConfigContext> = {
   code: 'POL-3',
-  title: 'Standing-surface findings have an owner',
+  title: 'Declared standing-surface ownership',
   description:
-    'Selected-repository standing surfaces are attributed and routed to their artifact owner or runtime adapter.',
+    'The declared policy routes standing-surface findings to artifact owners or runtime adapters; attribution requires adapter observation.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',

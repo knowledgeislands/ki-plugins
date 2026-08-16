@@ -3,15 +3,14 @@ name: ki-repo-project
 ki-kind: governance
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
-contributes: ['.ki-config.toml']
 description: >
-  Defines a Project repository as the explicit default Knowledge Islands primary structure: a git repository whose work is governed through a selected change-management adapter and which may compose specialised ki-repo-* structures. Use when declaring, auditing, or converting a non-Knowledge-Base repository, or deciding whether a repository is Project or Knowledge Base. For KBs use ki-repo-kb; for tracker choice use ki-change-management.
+  Explains the Project repository baseline for a non-Knowledge-Base Knowledge Islands repository and its composable ki-repo-* structures. Primary-kind declaration and mutual exclusion belong to ki-repo; forward-work adapter selection belongs to ki-work. Use when orienting a Project migration or its relationship to a specialised repository structure. For KBs use ki-repo-kb; for tracker choice use ki-work.
 argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
 ---
 
 # KI Project repository
 
-`ki-repo-project` is the explicit primary structure for every non-Knowledge-Base KI repository. It supplies the common repository baseline; specialised `ki-repo-*` standards compose with it but do not replace it. A Knowledge Base instead selects `ki-repo-kb` as its primary structure.
+`ki-repo-project` describes the common baseline for a non-Knowledge-Base KI repository. `ki-repo` is the sole owner of primary-kind declaration and Project/KB mutual exclusion; specialised `ki-repo-*` standards compose with that baseline but do not replace it. A Knowledge Base instead uses the `ki-repo-kb` structure contract.
 
 Read [the Project repository standard](references/standards-project-repository.md) when declaring or changing primary structure. Read [the generated rubric](references/rubric.md) for the checkable configuration boundary and [the sources](references/sources.md) when refreshing it.
 
@@ -21,11 +20,11 @@ Carries the universal **AUDIT · CONFORM · EDUCATE · REFRESH** modes. `help` /
 
 ### Mode AUDIT
 
-Run `ki repo audit --skill ki-repo-project --repo <repo>`. It verifies that this repository explicitly declares Project primary structure and does not also declare the mutually exclusive KB primary structure.
+Run `ki repo audit --skill ki-repo --repo <repo>` for the declared primary kind, then `ki repo audit --skill ki-work --repo <repo>` for the selected forward-work adapter. This skill adds no duplicate primary-kind audit.
 
 ### Mode CONFORM
 
-Run `ki repo conform --skill ki-repo-project --repo <repo> --dry-run`. It may propose only an unambiguous missing primary declaration; it never reclassifies a Knowledge Base or removes a conflicting declaration without explicit authority.
+Run the owner audits in AUDIT first. This skill proposes no primary declaration, adapter selection, or migration mutation; those remain owner- and user-authority-bound.
 
 ### Mode EDUCATE
 

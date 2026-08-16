@@ -141,4 +141,29 @@ describe('ki-repo-kb-live-artifacts session', () => {
 
     expect(session.proposal().writes[0]?.path).toBe('Operational/Boards/Live Artifacts.md')
   })
+
+  test('fails closed for malformed configuration and proposes no derived writes', () => {
+    const { root } = fixture()
+    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo-kb-live-artifacts]\nartifacts_dir =\n')
+    const session = createLiveArtifactsSession(options(root, 'conform'))
+    const context = rootContext(session)
+
+    expect(context.structure.configuration[0]).toMatchObject({ status: 'VIOLATION' })
+    context.structure.ensureIndex?.()
+    expect(session.proposal()).toEqual({ writes: [] })
+  })
+
+  test('fails closed for a configured directory reached through a symlink', () => {
+    const root = repository()
+    const outside = repository()
+    mkdirSync(join(outside, 'Boards'), { recursive: true })
+    symlinkSync(outside, join(root, 'linked'))
+    writeFileSync(
+      join(root, '.ki-config.toml'),
+      '[skills.ki-repo-kb-live-artifacts]\nartifacts_dir = "linked/Boards"\n'
+    )
+    const context = rootContext(createLiveArtifactsSession(options(root, 'audit')))
+
+    expect(context.structure.index[0]).toMatchObject({ status: 'NOT_APPLICABLE' })
+  })
 })

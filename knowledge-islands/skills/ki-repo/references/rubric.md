@@ -27,6 +27,7 @@ Line-by-line criteria for auditing ki-repo. Classifications are derived from ite
 - [KIND — Repository kind](#kind--repository-kind)
 - [RUNTIMES — Runtime support](#runtimes--runtime-support)
 - [DESCFIT — Description fitness](#descfit--description-fitness)
+- [DOC — Documentation topology](#doc--documentation-topology)
 - [OVR — Override rationale](#ovr--override-rationale)
 - [SYNC — Standard synchronisation](#sync--standard-synchronisation)
 - [WORK — Working areas](#work--working-areas)
@@ -182,6 +183,10 @@ Primary repository structure, with composable specialisations.
   - _Remediation:_ diagnostic — Align the repository structure declaration with the applicable standard or record an explicit exemption, then rerun the audit.
 - **STRUCT-2 [M] — Primary repository structure presence** — A repository declares a Project or Knowledge Base primary structure. (standards-repository.md)
   - _Remediation:_ diagnostic — Align the repository structure declaration with the applicable standard or record an explicit exemption, then rerun the audit.
+- **STRUCT-3 [M] — Single website implementation** — A website declares at most one mutually exclusive content or app implementation. (standards-repository.md)
+  - _Remediation:_ diagnostic — Align the repository structure declaration with the applicable standard or record an explicit exemption, then rerun the audit.
+- **STRUCT-4 [M] — Website implementation presence** — A declared website core selects a content or app implementation. (standards-repository.md)
+  - _Remediation:_ diagnostic — Align the repository structure declaration with the applicable standard or record an explicit exemption, then rerun the audit.
 
 ## ACCESS — Repository access
 
@@ -212,7 +217,7 @@ Declared agent-runtime support and orientation.
 - **RUNTIMES-1 [M] — Supported runtime declaration** — ki-repo declares a non-empty, duplicate-free list containing only supported runtimes. (standards-repository.md)
   - _Remediation:_ diagnostic — Declare the supported runtimes as a non-empty duplicate-free supported set, then rerun the audit.
 - **RUNTIMES-2 [M] — Runtime environment coverage** — Every repository declares portable tokenomics and the real housekeeping and tokenomics capabilities required by its supported runtimes. (standards-repository.md)
-  - _Remediation:_ diagnostic — Add the required tokenomics and runtime capabilities for each declared runtime, then rerun the audit.
+  - _Remediation:_ automatic
 - **RUNTIMES-3 [M] — Repository-local ki-self projection** — An optional repository-local ki-self has one canonical .agents source and a relative Claude projection exactly when Claude Code is supported. (standards-repository.md)
   - _Remediation:_ diagnostic — Restore the canonical ki-self source and applicable runtime projection, then rerun the audit.
 - **RUNTIMES-J1 [J] — Runtime orientation split** — Multi-runtime repositories use a shared AGENTS.md orientation with a thin Claude import unless a justified exception applies. (standards-repository.md)
@@ -232,6 +237,18 @@ Human assessment of repository purpose.
   - _Review prompt:_ Read the repository and judge whether its one-sentence description fits its actual purpose.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Update the description, record a named gap, or record an explicit repository-level exclusion.
+
+## DOC — Documentation topology
+
+→ [standard](standards-documentation-topology.md)
+
+Repository-level ownership of durable documentation concerns.
+
+- **DOC-1 [J] — Documentation concern ownership** — In a non-Knowledge-Base repository, durable documentation is routed to Decision Records, Specifications, Guides, or the Roadmap; specialist skills retain the content contract for their concern. (standards-documentation-topology.md)
+  - _Evidence scope:_ Repository documentation topology and the durable material routed to each concern.
+  - _Review prompt:_ Does each durable documentation concern have the right owner, with decisions explaining choices, Specifications defining behaviour, Guides helping people operate or contribute, and roadmap records tracking planned change?
+  - _Outcomes:_ conforming; gap; exclusion
+  - _Conforming guidance:_ Route the material to its owning concern, record a named gap where the required contract is absent, or record an explicit repository-level exclusion.
 
 ## OVR — Override rationale
 

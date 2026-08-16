@@ -25,6 +25,8 @@ Line-by-line criteria for auditing ki-repo-dotfiles-chezmoi. Classifications are
 
 Required repository-shape files and template support.
 
+- **CHEZMOI-0 [M] — Repository declaration** — Only a physical `[skills.ki-repo-dotfiles-chezmoi]` declaration selects this optional standard; detected chezmoi shape is coverage evidence for ki-repo. (standards-chezmoi-dotfiles.md)
+  - _Remediation:_ diagnostic — Declare the selected standard through the repository configuration owner.
 - **CHEZMOI-1 [M] — Managed ignore file** — A physical `.chezmoiignore` exists at the repository root. (standards-chezmoi-dotfiles.md)
   - _Remediation:_ automatic
 - **CHEZMOI-2 [M] — Template support directory** — When `*.tmpl` files exist, a physical `.chezmoidata/` or `.chezmoitemplates/` also exists. (standards-chezmoi-dotfiles.md)

@@ -6,6 +6,36 @@ const SOURCE = 'standards-decision-records.md'
 const outcomes = (values: AuditOutcome[], passMessage: string): RubricOutcomes<AuditOutcome> =>
   (values.length > 0 ? values : [{ status: 'PASS', message: passMessage }]) as RubricOutcomes<AuditOutcome>
 
+const FILENAME_0: RubricItem<FilenameRubricContext> = {
+  code: 'FILENAME-0',
+  title: 'Every decision-directory Markdown file has a canonical record heading',
+  description:
+    'Every Markdown file other than the collection index under the selected decisions directory has a parseable `# <PREFIX>-<SCOPE>-NNN: <title>` heading. Files that do not expose an identity are reported rather than silently skipped.',
+  sources: [SOURCE],
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Move supporting material outside the decisions directory or add the canonical Decision Record heading before rerunning the audit.'
+    },
+    audit: {
+      phase: 'INSPECT',
+      run: (context) =>
+        outcomes(
+          context.unparseableFiles.map(
+            (file): AuditOutcome => ({
+              status: 'VIOLATION',
+              message: 'Decision-directory Markdown file has no parseable canonical Decision Record heading.',
+              subject: file
+            })
+          ),
+          'Every Markdown file in the selected decisions directory exposes a canonical Decision Record identity.'
+        )
+    }
+  }
+}
+
 const FILENAME_1: RubricItem<FilenameRubricContext> = {
   code: 'FILENAME-1',
   title: 'Canonical decision-record filename',
@@ -100,5 +130,5 @@ export const FILENAME: RubricFamily<DecisionRecordsRubricContext, FilenameRubric
   description: 'Canonical decision-record filenames and serial namespaces.',
   standard: SOURCE,
   selectContext: (context) => context.filename,
-  items: [FILENAME_1, FILENAME_2, FILENAME_3]
+  items: [FILENAME_0, FILENAME_1, FILENAME_2, FILENAME_3]
 }

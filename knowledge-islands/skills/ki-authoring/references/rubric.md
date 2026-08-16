@@ -76,21 +76,11 @@ Configuration files wholly owned by the authoring convention.
 
 Reviewer-applied TOML formatting conventions.
 
-- **TOML-keys [J] — TOML keys are concise lowercase nouns** — Keys are lowercase, use `snake_case` for multiple words, and name the noun their value holds (`visibility`, not `repo_visibility_setting`). (standards-toml.md#keys-and-values)
-  - _Evidence scope:_ Every authored TOML key in the convention scope.
-  - _Review prompt:_ Assess whether TOML keys are concise lowercase nouns, using snake_case for multiple words.
-  - _Outcomes:_ conforming; rename required; exception required
-  - _Conforming guidance:_ Rename the key to a concise lowercase noun using snake_case where needed, or record the external-contract exception.
 - **TOML-values [J] — TOML values use the house formatting** — Strings are double-quoted and short lists remain inline (`["a", "b"]`). (standards-toml.md#keys-and-values)
   - _Evidence scope:_ Every authored TOML string and short list in the convention scope.
   - _Review prompt:_ Assess whether TOML strings and short lists follow the house formatting.
   - _Outcomes:_ conforming; reformat required; exception required
   - _Conforming guidance:_ Use double-quoted strings and inline short lists, or record the external-contract exception.
-- **TOML-tables [J] — TOML uses one table per skill** — One table appears per skill, named for that skill, with subtables nested under it; `ki-repo` owns the `.ki-config.toml` contract behind this convention. (standards-toml.md#keys-and-values)
-  - _Evidence scope:_ Every shared `.ki-config.toml` skill declaration and its subtables.
-  - _Review prompt:_ Assess whether the TOML uses one table per skill with nested subtables where appropriate.
-  - _Outcomes:_ conforming; restructure required; contract exception
-  - _Conforming guidance:_ Restructure declarations into one table per skill with nested subtables, or record the ki-repo contract exception.
 - **TOML-comments [J] — non-obvious TOML keys explain their rationale** — Non-obvious keys carry a preceding `#` comment explaining why they exist. (standards-toml.md#keys-and-values)
   - _Evidence scope:_ Every non-obvious authored TOML key in the convention scope.
   - _Review prompt:_ Assess whether non-obvious TOML keys carry a preceding rationale comment.

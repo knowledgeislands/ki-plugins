@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, statSync } from 'node:fs'
-import { basename, dirname, extname, join, relative, resolve } from 'node:path'
+import { existsSync, lstatSync, readFileSync, realpathSync, statSync } from 'node:fs'
+import { basename, dirname, extname, join, relative, resolve, sep } from 'node:path'
 import type { RubricContextOptions, RubricSession, RubricSubject } from '../../shared/rubric.ts'
 import { type ConformDocumentState, createConformDocumentState, createSkillConformState } from './conform.ts'
 import { createKiShapeContext, type KiSkillsRubricContext } from './contexts.ts'
@@ -92,6 +92,25 @@ const ownershipCollisions = (directories: readonly string[]): { file: string; sk
   return [...byFile].flatMap(([file, skills]) => (skills.size > 1 ? [{ file, skills: [...skills] }] : []))
 }
 
+const isSafeSkillSource = (repository: string, directory: string): boolean => {
+  const skillFile = join(directory, 'SKILL.md')
+  try {
+    const root = realpathSync(repository)
+    const resolvedDirectory = realpathSync(directory)
+    const directoryState = lstatSync(directory)
+    const fileState = lstatSync(skillFile)
+    return (
+      directoryState.isDirectory() &&
+      !directoryState.isSymbolicLink() &&
+      fileState.isFile() &&
+      !fileState.isSymbolicLink() &&
+      (resolvedDirectory === root || resolvedDirectory.startsWith(`${root}${sep}`))
+    )
+  } catch {
+    return false
+  }
+}
+
 /** Build one operation-scoped repository session for the generic KI rubric host. */
 export const createKiSkillsSession = ({
   mode,
@@ -125,7 +144,10 @@ export const createKiSkillsSession = ({
   }
 
   for (const skillDirectory of skillDirectories) {
-    const conform = mode === 'conform' ? createSkillConformState(skillDirectory, reportTarget) : undefined
+    const conform =
+      mode === 'conform' && isSafeSkillSource(reportTarget, skillDirectory)
+        ? createSkillConformState(skillDirectory, reportTarget)
+        : undefined
     const skill = createSkillRubricContext(skillDirectory, conform?.capabilities, publication)
     const skillSubject = relative(reportTarget, skillDirectory) || '.'
     subjects.push(rubricSubject(skill.validFrontmatter ? 'skill' : 'invalidSkill', skill.context, skillSubject))

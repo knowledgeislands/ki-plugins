@@ -7,25 +7,34 @@ const item = (
   description: string,
   evidence: (context: MiseRubricContext) => MiseRubricContext['mise1'],
   conform = false
-): RubricItem<MiseRubricContext> => ({
-  code,
-  title,
-  description,
-  sources: ['standards-engineering.md'],
-  mechanical: {
-    level: 'WARN',
-    remediation: conform
-      ? { class: 'automatic' }
-      : {
-          class: 'diagnostic',
-          guidance: 'Align the declared toolchain pins and remove obsolete pin files, then rerun the audit.'
-        },
-    audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), 'WARN') },
-    ...(conform
-      ? { conform: { phase: 'PREPARE' as const, run: (context: MiseRubricContext) => context.scaffold?.() } }
-      : {})
+): RubricItem<MiseRubricContext> => {
+  const base = { code, title, description, sources: ['standards-engineering.md'] as const }
+  const audit = {
+    phase: 'INSPECT' as const,
+    run: (context: MiseRubricContext) => auditEvidence(evidence(context), 'WARN')
   }
-})
+  return conform
+    ? {
+        ...base,
+        mechanical: {
+          level: 'WARN',
+          remediation: { class: 'automatic' },
+          audit,
+          conform: { phase: 'PREPARE', run: (context) => context.scaffold?.() }
+        }
+      }
+    : {
+        ...base,
+        mechanical: {
+          level: 'WARN',
+          remediation: {
+            class: 'diagnostic',
+            guidance: 'Align the declared toolchain pins and remove obsolete pin files, then rerun the audit.'
+          },
+          audit
+        }
+      }
+}
 
 export const MISE: RubricFamily<EngineeringRubricContext, MiseRubricContext> = {
   code: 'MISE',

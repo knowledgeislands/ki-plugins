@@ -22,7 +22,7 @@ const LANG_DEFER: RubricItem<LanguageToolsContext> = {
           return [
             {
               status: 'NOT_APPLICABLE',
-              message: 'No qualified ki-repo-tools declaration or bin/ structural marker is present.'
+              message: 'ki-repo-tools is not applicable: its repository declaration is absent.'
             }
           ]
         if (context.packageJson === 'unsafe')

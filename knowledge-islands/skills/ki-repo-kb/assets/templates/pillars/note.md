@@ -1,5 +1,5 @@
 ---
-type: pillars/note
+note_type: pillars/note
 created: <YYYY-MM-DDTHH:MM:SSZ>
 updated: <YYYY-MM-DDTHH:MM:SSZ>
 reviewed:

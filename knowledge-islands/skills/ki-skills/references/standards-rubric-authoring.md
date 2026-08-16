@@ -114,6 +114,8 @@ A family groups criteria that assess one coherent concern, such as `NAME`, `DESC
 
 The family catalogue owns its stable family code, readable title, standard section, explanatory introduction, ordered item list, and any presentation metadata needed to reproduce the readable rubric.
 
+Before adding a criterion to an existing family, scan every criterion in that complete family and allocate the next unused numeric suffix. Never infer the next code from one item file, a partial search result, or the generated publication. The family source remains authoritative even when item constants are private and the readable rubric presents the same codes.
+
 The files under `scripts/rubric/items/` MUST have one uniform responsibility:
 
 - `index.ts` is catalogue wiring only. It imports each ordered family and default-exports the complete `SkillRubricDefinition`. It MUST NOT define rubric items, family metadata, execution callbacks, evidence builders, adapters, casts, or write capabilities.
@@ -191,14 +193,29 @@ type RubricExecution<Context, Result> = {
 
 type RubricType = 'MECHANICAL' | 'JUDGMENT'
 
-type MechanicalRubric<Context> = {
+type MechanicalRubricBase<Context> = {
   level: ViolationLevel // default for VIOLATION outcomes
   overrideLevels?: readonly ViolationLevel[] // exceptional alternatives this item explicitly permits
   heuristic?: boolean // presentation metadata for deterministic evidence with known limits
   audit: RubricExecution<Context, readonly AuditOutcome[]>
-  conform?: RubricExecution<Context, void>
-  conformOn?: readonly 'INFO'[]
 }
+
+type MechanicalRubric<Context> =
+  | (MechanicalRubricBase<Context> & {
+      remediation: { class: 'automatic' }
+      conform: RubricExecution<Context, void>
+      conformOn?: readonly 'INFO'[]
+    })
+  | (MechanicalRubricBase<Context> & {
+      remediation: { class: 'diagnostic'; guidance: string }
+      conform?: never
+      conformOn?: never
+    })
+  | (MechanicalRubricBase<Context> & {
+      remediation: { class: 'guarded'; guidance: string }
+      conform?: never
+      conformOn?: never
+    })
 
 type JudgmentRubric = {
   prompt: string
@@ -213,12 +230,27 @@ type RubricItemBase = {
 
 type RubricItem<Context> = RubricItemBase &
   (
-    | { mechanical: MechanicalRubric<Context>; judgment?: JudgmentRubric }
+    | {
+        mechanical: Exclude<MechanicalRubric<Context>, { remediation: { class: 'guarded' } }>
+        judgment?: JudgmentRubric
+      }
+    | {
+        mechanical: Extract<MechanicalRubric<Context>, { remediation: { class: 'guarded' } }>
+        judgment: JudgmentRubric
+      }
     | { mechanical?: never; judgment: JudgmentRubric }
   )
 ```
 
 Every item contains a mechanical aspect, a judgment aspect, or both; it MUST contain at least one.
+
+Evaluation and remediation are independent axes. A mechanical aspect is evaluated by AUDIT regardless of whether CONFORM can act on it. Its remediation class states what the host may do after a violation:
+
+- `automatic` means the desired local state is fully derivable and the item supplies a bounded, preserving, idempotent conform action;
+- `diagnostic` means AUDIT is deterministic but correction still requires authorship, a local implementation choice, unavailable capability, or external state, so the item supplies specific guidance and no conform action; and
+- `guarded` means correction requires explicit human judgment or authority, so the item is hybrid, supplies the decision boundary and specific guidance, and has no conform action.
+
+The type and dynamically loaded catalogue validator MUST enforce the same combinations: `automatic` requires `conform`; `diagnostic` and `guarded` forbid `conform` and `conformOn`; `guarded` requires a judgment aspect; and every report-only class requires non-empty specific guidance. A safe deterministic, locally owned repair is `automatic` by default. Do not relabel unfinished automation as `diagnostic`, manufacture judgment to enable a write, or remove a useful audit merely because its repair is unavailable.
 
 Its published `RubricType` values are derived from the aspects it carries rather than repeated as authored metadata.
 
@@ -309,7 +341,7 @@ The definition is the one object passed to host validation, execution, and rubri
 
 A rubric execution is the executable side of a mechanical rubric aspect.
 
-A mechanical item always declares an AUDIT execution and may add a conform action.
+A mechanical item always declares an AUDIT execution and one remediation class. Only `automatic` adds a conform action; `diagnostic` and `guarded` remain report-only with specific guidance.
 
 A judgment aspect declares its review prompt and has no execution or phase.
 

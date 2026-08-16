@@ -35,9 +35,9 @@ bun skills/change-management/ki-recap/scripts/recap-grounding.ts --json --transc
 
 The selector is a basename, not a path. It must name exactly one eligible regular `.jsonl` candidate; absolute paths, traversal, other extensions, symlinks, files for another repository, and ambiguous duplicate basenames are rejected.
 
-This emits `filesTouched` (git status), `diffStat`, `toolTally`, `highCostCandidates` (repeated identical calls, large-file re-reads), and the exact `ki-change-management-recap-repository-evidence/v1` marker. The marker records only the resolved repository root, full `HEAD` or `null`, and observed clean/dirty worktree state. On a later run, the helper recovers only a type-valid marker from the selected runtime's helper-output record and reports `transcriptEvidence.status` as `unchanged`, `changed`, or `unavailable`.
+This emits a `repository` object with `available` or `unavailable` status, the physical Git root when available, staged/unstaged/untracked `filesTouched`, a combined staged-and-unstaged `diffStat`, `toolTally`, `highCostCandidates` (repeated identical calls, large-file re-reads), and the exact `ki-work-recap-repository-evidence/v1` marker. The marker records only the resolved repository root, full `HEAD` or `null`, and observed clean/dirty worktree state. On a later run, the helper recovers only a type-valid marker from the selected runtime's helper-output record and reports `transcriptEvidence.status` as `unchanged`, `changed`, or `unavailable`.
 
-The comparison qualifies transcript-derived tool tallies and high-cost suggestions; it never replaces fresh Git checks. A missing, malformed, foreign-repository, unresolvable, or same-commit-dirty marker is `unavailable`, not a guessed result. It is a **helper**, not a checker — treat its output as raw signal to combine with warm in-session context, not a verdict.
+The comparison qualifies transcript-derived tool tallies and high-cost suggestions; it never replaces fresh Git checks. A missing, malformed, foreign-repository, unresolvable, or same-commit-dirty marker is `unavailable`, not a guessed result. Local Claude and Codex JSONL is a version-sensitive convenience format; parse failure or no selected transcript is `unavailable`, never transcript completeness. It is a **helper**, not a checker — treat its output as raw signal to combine with warm in-session context, not a verdict.
 
 ## 2. Summarise
 
@@ -45,12 +45,12 @@ Using warm context plus the helper's `filesTouched` / `diffStat`: state what cha
 
 ## 3. Surface what is outstanding
 
-**Always check whether everything is committed** — even if the session felt "done", verify the working tree is clean for the files this session touched (staged, unstaged, and untracked). Uncommitted session work is the most common silently-dropped outstanding item. Files dirty from _other_ threads of work are out of scope (per the stay-scoped rule) — note their existence in one line at most, never enumerate or adopt them.
+**Always check whether everything is committed** — even if the session felt "done", verify the working tree is clean for the files this session touched (staged, unstaged, and untracked). If `repository.status` is `unavailable`, say that Git evidence is unavailable and do not claim clean, committed, or no-actions status. Uncommitted session work is the most common silently-dropped outstanding item. Files dirty from _other_ threads of work are out of scope (per the stay-scoped rule) — note their existence in one line at most, never enumerate or adopt them.
 
 Then look only for threads left mid-change by this session: uncommitted edits, a failing gate, a decision still open, or an explicitly deferred fix. Do not use a recap to inventory repository backlog, peer-repository state, or plausible future work; those are outside the thread and `ki-next` owns future-work selection. **Ground every "uncommitted" or "still dirty" claim in the `filesTouched` from the grounding helper run at the start of _this_ recap, never in a `git status`/`git diff` seen earlier in the conversation** — commits (yours or a concurrent process's) can land between that earlier look and the recap itself, and stale context reads as a false outstanding item. If `transcriptEvidence.status` is `changed` or `unavailable`, describe transcript-derived tool tallies only as historical or omit their recommendation. If meaningful time has passed since step 1 ran, re-run it before finalizing this section. Apply the house rule:
 
 - A roadmap item or Stream **added during this session** counts as **what happened** (placing work in the repository's durable forward-work structure is a completed action), not as outstanding.
-- An in-session non-KB `ki-plan` with unchecked Steps or KB proposal with unchecked Checklist entries **is** outstanding — cite its identifier and lifecycle state. An unrelated plan or proposal is not.
+- An in-session `ki-plan` record with unchecked Steps, whether under `docs/roadmap/` or `Streams/Roadmap/`, **is** outstanding — cite its identifier and lifecycle state. An unrelated record is not.
 - If an explicitly deferred in-session thread has no durable home, offer its correct local route: `ki-next` capture into the shared queue, then `ki-plan` when it is selected; use the roadmap adapter for a non-KB repository and the Streams adapter for a Knowledge Base. Do not manufacture a route for work merely noticed during the recap.
 
 ## 4. Harvest the learnings, and route each
@@ -65,7 +65,7 @@ The standard owns the placement ladder, promotion evidence, and duplicate-reconc
 | Checker, rubric, shared rule, or reusable operation | Its owning skill, standard, reference, agent, or hook — add a criterion only after scanning the relevant catalogue and linter |
 | A bounded procedure | An existing appropriate guide, rather than new standing orientation |
 | Durable personal fact or user preference | Runtime memory or synchronised personal configuration, according to its scope |
-| Deferred work with no home yet | Non-KB: `ROADMAP.md`, or a `ki-plan` if it is multi-step. KB: Streams, or a proposal Checklist for governed change. |
+| Deferred work with no home yet | Non-KB: `ROADMAP.md`, or a `ki-plan` if it is multi-step. KB: `Streams/Roadmap/`, or a `ki-plan` if it is multi-step. |
 
 Use `highCostCandidates` from the grounding helper as a starting list, not the full set — warm context surfaces things the helper cannot see (a design dead-end, a rejected approach).
 
@@ -108,7 +108,7 @@ Apply these scenario checks before presenting the matrix:
 Close the recap with an **Actions** section: a short, concrete, imperative list of only the unfinished work that emerged from this session's steps 3–5 — each item something that could be done right now, with the exact command, file, or artefact named. Do not add generic backlog, peer-repository state, a proposed feature, or a future-work choice merely because it is actionable; those are `ki-next` concerns, not recap actions. Prefix each item with a short, unique, uppercase hyphenated label that names the work (usually two to four words), so the user can respond in chat by label ("do `COMMIT-DOCS` and `FIX-AUTHORING-AUDIT`") instead of restating the action. Do not use arbitrary sequence labels such as `A1`, `A2`, or `A3`; labels are ephemeral recap handles, not roadmap identifiers. Typical entries:
 
 - `COMMIT-SESSION-CHANGES` — Commit (or explicitly discard) the session's uncommitted files — name the paths and suggest the commit message.
-- `PRESERVE-SESSION-DEFERRAL` — Create the offered roadmap / plan or Stream / proposal Checklist for a thread explicitly deferred during this session that has no home.
+- `PRESERVE-SESSION-DEFERRAL` — Create the offered roadmap record or plan for a thread explicitly deferred during this session that has no home.
 - `APPLY-LEARNING-ROUTE` — Apply an approved learning route from the knowledge-promotion standard (for example, a repository rule, skill criterion, hook, memory, or personal configuration update).
 - `RERUN-FAILING-GATE` — Re-run a gate that was left failing, or finish a mid-change thread.
 
@@ -139,7 +139,7 @@ Identify the next work cycle's scope first. The goal is to reduce active context
 
 Two conditions withhold the default. **Safety:** do not compact in the middle of an active implementation unit, a pending user decision, an unfinished tool operation, or uncommitted work whose recovery information is not yet recorded. **Minimum footprint:** do not compact when no substantive work has entered context since the last compaction. Judge that by work done, not by tokens counted — a recap that runs immediately after a compaction, or a recap followed straight into `ki-next`, compacts once at the later boundary rather than twice across an unchanged span. This floor exists to stop thrashing; it is not licence to defer compaction across real work.
 
-Runtimes differ in what they expose. Claude Code offers an invocable compaction mechanism, so the default action is available at this boundary. Codex compacts automatically around its own `PreCompact` / `PostCompact` events but exposes no equivalent command to invoke, so there the boundary is reached, stated, and passed without invocation. Where no mechanism can be invoked, say so plainly and continue with the digest as the bounded handoff; it is not a substitute for reducing the live context.
+Runtimes differ in what they expose and permit. Current Claude Code and Codex documentation each expose a user-invocable `/compact` command as well as automatic compaction/hook events. A documented user command is not standing agent authority: offer it or obtain the applicable runtime/user approval; do not invoke it autonomously. Where no mechanism can be invoked or authority is unavailable, say so plainly and continue with the digest as the bounded handoff; it is not a substitute for reducing the live context.
 
 Write a carry-forward digest of the recapped span:
 
@@ -173,4 +173,4 @@ Write a carry-forward digest of the recapped span:
 <comma-separated terms for future retrieval>
 ```
 
-State plainly that this digest is a **carry-forward artefact**, not a context-window reduction. Runtime- or vendor-specific compaction remains the applicable `ki-tokenomics` adapter's boundary; this procedure invokes the documented mechanism at the safe recap-to-new-work boundary, with the aim of retaining only the next cycle's scope.
+State plainly that this digest is a **carry-forward artefact**, not a context-window reduction. Runtime- or vendor-specific compaction remains the applicable `ki-tokenomics` adapter's boundary; this procedure offers the documented mechanism at the safe recap-to-new-work boundary, with the aim of retaining only the next cycle's scope.

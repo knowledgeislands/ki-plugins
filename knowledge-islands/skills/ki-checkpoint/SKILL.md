@@ -21,7 +21,7 @@ This governance skill owns the portable checkpoint contract: one concise reposit
 - **Reconstruction, not continuity** — a checkpoint carries only enough state for a fresh agent to continue. It is never a transcript, vendor-session identifier, conversation locator, completion signal, roadmap, decision log, or memory system.
 - **Explicit write authority** — create or update only at the user's request or a documented repository-local trigger. Retire only on explicit user direction after durable facts have reached their canonical owners. When the selected thread or content is uncertain, do not write.
 
-`ki-recap` remains the user-facing judgment-led session summary. Runtime-specific discovery and Stop-hook adapters are optional consumers of this contract and cannot invent, select, update, or retire a record outside these rules.
+`ki-checkpoint` remains the portable reconstruction record; `ki-recap` is the user-facing judgment-led session summary. A runtime-specific Stop reminder cannot invoke recap or its transcript-grounding helper: it may only address an already-selected valid checkpoint under `ki-checkpoint`'s separate opt-in contract. It cannot invent, select, update, or retire a record, fabricate recap prose, or infer a summary from vendor-session material.
 
 ## Operating modes
 
@@ -49,15 +49,15 @@ REFRESH writes only this skill's canonical files in `ki-agentic-harness`. When i
 
 ### Mode RESUME
 
-Require the user-selected `<thread>`, resolve only `+/_CHECKPOINTS/<thread>.md`, and read it in full. Verify that the filename, `thread`, H1, and `state: active` agree before using `Next step` to continue in the fresh context. Never fall back to `_RETIRED`, search by a vendor identifier, or claim to reopen the original session. If the named active record is absent or invalid, stop and report the exact problem.
+RESUME is an agent procedure, not a current `ki repo` host command. Require the user-selected `<thread>`, resolve only `+/_CHECKPOINTS/<thread>.md`, and read it in full. Verify that the filename, `thread`, H1, and `state: active` agree before using `Next step` to continue in the fresh context. Never fall back to `_RETIRED`, search by a vendor identifier, or claim to reopen the original session. If the named active record is absent or invalid, stop and report the exact problem.
 
 ### Mode RETIRE
 
-Require explicit user direction and one valid active `<thread>` record. Confirm that durable decisions, work status, and knowledge have reached their canonical owners; then move the record to `_RETIRED/<thread>.md`, set `state: retired`, and add `retired_at` without rewriting its reconstruction content. Stop on uncertainty or a conflicting destination. Retirement preserves evidence but does not infer completion or impose deletion.
+RETIRE is an agent procedure, not a current `ki repo` host command. Require explicit user direction and one valid active `<thread>` record. Confirm that durable decisions, work status, and knowledge have reached their canonical owners; then move the record to `_RETIRED/<thread>.md`, set `state: retired`, and add `retired_at` without rewriting its reconstruction content. Stop on uncertainty or a conflicting destination. Retirement preserves evidence but does not infer completion or impose deletion.
 
 ### Mode UPDATE
 
-Require the user-selected `<thread>` plus an explicit request or documented local trigger. Write the exact active record structure from [the checkpoint standard](references/standards-checkpoints.md), preserving `created_at` on an existing record and advancing `updated_at`; replace the snapshot in place rather than appending history. Record only current reconstruction state and references to durable owners. Never manufacture decisions, copy a transcript, add a runtime-session identifier, or create a checkpoint from an unqualified Stop event.
+UPDATE is an agent procedure, not a current `ki repo` host command. Require the user-selected `<thread>` plus an explicit request or documented local trigger. Write the exact active record structure from [the checkpoint standard](references/standards-checkpoints.md), preserving `created_at` on an existing record and advancing `updated_at`; replace the snapshot in place rather than appending history. Record only current reconstruction state and references to durable owners. Never manufacture decisions, copy a transcript, add a runtime-session identifier, or create a checkpoint from an unqualified Stop event.
 
 ## Verification boundary
 

@@ -24,21 +24,25 @@ Choose the narrowest type that describes the committed unit rather than combinin
 
 Historic messages are not rewritten merely to conform to this current convention.
 
-## Direct main and branches
+Other skills MAY define a narrowly-scoped trailer block as durable evidence for their own concern. For example, `ki-engineering` owns the `KI-Consistency-Review-*` block for an advisory code-consistency review. That block is portable commit metadata, not a new Git-hygiene policy: `ki-git` neither interprets its engineering outcome nor requires it on ordinary commits.
+
+## Working-copy and review approaches
 
 `main` is open by default in Knowledge Islands repositories.
 
-A small, focused, independently verified change may commit directly to `main` when the repository's local instructions permit it.
+Select one of three approaches from repository policy, the requested review boundary, and whether work must proceed concurrently:
 
-Use a branch when a protected repository requires one, when an isolated review boundary is valuable, or when the user requests it.
+- **`single-working-copy-on-main`** — use for a small, focused, independently verified change when local instructions permit direct commits and no isolated review boundary is needed.
+- **`single-working-copy-on-branch-with-pr`** — use when one delivery is active in the working copy and protection, the user, or a useful isolated review boundary calls for a branch and pull request.
+- **`worktrees-with-pr`** — use when concurrent or independently isolated deliveries need separate branches, indexes, and working files. Give each branch its own worktree and PR, then integrate through the repository's review and merge policy.
 
-Do not invent a branch or pull-request requirement where the target repository has not selected one.
+Do not invent a branch or pull-request requirement where protection, the user, the review boundary, or concurrent isolation does not call for one. Conversely, do not keep concurrent branch work in one working copy merely because separate indexes are possible.
 
 ## Safe Git hygiene
 
 Treat the working tree as shared state: inspect it before staging, stage only the intended paths, and keep unrelated changes out of a commit.
 
-Read-only Git commands may run independently. For concurrent delegated work in one worktree, assign each worker a unique temporary index path and pass it explicitly on every Git write command: `GIT_INDEX_FILE=<worker-index> git <write-command>`. This isolates staging and permits each worker to inspect its own intended commit without changing another worker's index.
+Read-only Git commands may run independently. Worktrees are the clear approach when concurrent deliveries need separate working files and PRs. If explicitly coordinating concurrent delegated work in one worktree instead, assign each worker a unique temporary index path and pass it on every Git write command: `GIT_INDEX_FILE=<worker-index> git <write-command>`. This isolates staging but does not isolate working files or branches.
 
 Separate indexes do not serialize shared `HEAD`. The orchestrator must serialize commits, re-check the expected `HEAD` before each commit, and integrate one verified explicit-path commit at a time. A worker must stop and report if its expected baseline changes; it must not rebase, reset, or repair another worker's index or history.
 
@@ -68,6 +72,8 @@ The harness publishes hook payload sources; `ki-repo-dotfiles-chezmoi` may regis
 
 `ki-git` neither installs hooks nor writes runtime settings.
 
-No compatible native rubric, `.ki-config.toml` activation, user-skill activation, or commit-message enforcement exists yet.
+The native rubric exposes these four policy families as **judgment-only** review prompts. A rendered audit therefore leaves them unassessed until a reviewer records an outcome; it must never be interpreted as a Git-state pass. Gather the criterion's focused read-only evidence first: current status and intended paths for hygiene, current branch, worktree, protection, concurrency, and review evidence for the working approach, proposed diff and message for commit shape, and physical-worktree/process/file-type evidence for a lock candidate. The rubric does not execute Git commands or a private wrapper on the reviewer's behalf.
+
+No compatible mechanical enforcement, `.ki-config.toml` activation, user-skill activation, or commit-message enforcement exists yet.
 
 Any future enforcement must be limited to deterministic rules explicitly added to this standard after its host execution contract is designed.

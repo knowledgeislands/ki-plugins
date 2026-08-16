@@ -12,14 +12,22 @@ const CONFIG_1: RubricItem<TapConfigContext> = {
   mechanical: {
     level: 'WARN',
     overrideLevels: ['FAIL'],
-    remediation: { class: 'automatic' },
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Declare the selected standard through the repository configuration owner.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context) => {
         if (!context.targetExists)
           return [{ status: 'VIOLATION', level: 'FAIL', message: 'Audit target must be an existing directory.' }]
         if (!context.applicable)
-          return [{ status: 'NOT_APPLICABLE', message: 'No tap declaration or Formula/ structural marker is present.' }]
+          return [
+            {
+              status: 'NOT_APPLICABLE',
+              message: 'The tap declaration is absent; detected Formula/ shape is handled by ki-repo coverage.'
+            }
+          ]
         if (context.config === 'unsafe')
           return [
             {
@@ -52,10 +60,6 @@ const CONFIG_1: RubricItem<TapConfigContext> = {
               }
         ]
       }
-    },
-    conform: {
-      phase: 'PRIMARY',
-      run: (context) => context.addMarker?.()
     }
   }
 }

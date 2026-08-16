@@ -13,7 +13,7 @@ const VERIFY_1: RubricItem<SpecVerificationContext> = {
   description: 'Each active requirement has a `_Verify:_` line.',
   sources: [SOURCE],
   mechanical: {
-    level: 'WARN',
+    level: 'FAIL',
     remediation: {
       class: 'diagnostic',
       guidance: 'Add a concrete _Verify:_ hook for the requirement, then rerun the audit.'

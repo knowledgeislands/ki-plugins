@@ -48,22 +48,23 @@ const BINDCHEZ_1: RubricItem<BindingChezMoiContext> = {
 
 const BINDCHEZ_2: RubricItem<BindingChezMoiContext> = {
   code: 'BINDCHEZ-2',
-  title: 'Surface agreement remains renderer-neutral',
-  description:
-    'The renderer-neutral ki-binding audit, composed separately, remains the authority for rendered surface agreement.',
+  title: 'Render state is distinct from source structure',
+  description: 'Structure evidence does not claim a rendered target, applied state, activation, or runtime health.',
   sources: STANDARD,
   mechanical: {
     level: 'WARN',
     remediation: {
       class: 'diagnostic',
-      guidance: 'Run the preceding ki-binding audit; its renderer-neutral findings own surface agreement.'
+      guidance:
+        'Use authorised, secret-safe renderer evidence for render parity; configuration structure alone cannot prove it.'
     },
     audit: {
       phase: 'DERIVED',
       run: () => [
         {
-          status: 'NOT_APPLICABLE',
-          message: 'Surface agreement is owned by ki-binding; run its audit as the preceding composition step.'
+          status: 'INFO',
+          message:
+            'Source structure is present or absent independently; render, apply, activation, and runtime health remain unavailable without authorised evidence.'
         }
       ]
     }
@@ -94,11 +95,19 @@ const BINDCHEZ_3: RubricItem<BindingChezMoiContext> = {
               message: 'No MCP source data was found in either supported render pattern.'
             }
           ]
-        return data.map((entry) => ({
-          status: 'PASS' as const,
-          message: `MCP source data uses the ${entry.pattern} pattern.`,
-          subject: entry.path
-        }))
+        return data.map((entry) =>
+          entry.source.kind === 'valid'
+            ? {
+                status: 'PASS' as const,
+                message: `MCP source data uses the ${entry.pattern} pattern and has a valid canonical schema.`,
+                subject: entry.path
+              }
+            : {
+                status: 'VIOLATION' as const,
+                message: `MCP source data uses the ${entry.pattern} pattern but is malformed or unsafe.`,
+                subject: entry.path
+              }
+        )
       }
     }
   }

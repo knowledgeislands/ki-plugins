@@ -5,9 +5,9 @@ const SOURCE = 'standards-trades.md'
 
 const CONFIG_1: RubricItem<OutcomeContext> = {
   code: 'CONFIG-1',
-  title: 'typed routes are canonical',
+  title: 'typed routes use supported canonical identities',
   description:
-    'A participating repository names each trade partner exactly once with its own `[skills.ki-trades.routes."owner/name"]` table, whose `export` and `import` arrays are duplicate-free and drawn from the closed trade-kind set; a direction carrying no kinds is absent rather than empty, and the repository identity comes only from `ki-repo.repository`.',
+    'A participating repository names each trade partner exactly once with its own `[skills.ki-trades.routes."owner/name"]` table, whose `export` and `import` arrays are duplicate-free and drawn from the closed trade-kind set; a direction carrying no kinds is absent rather than empty, an optional presentation-only `map_bonus` is an integer from 0 through 3, and the repository identity comes only from the currently representable GitHub `owner/name` form of `ki-repo.repository`. Unsupported identities are refused.',
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',

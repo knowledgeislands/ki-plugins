@@ -32,7 +32,7 @@ Operational-area layout, legacy migration, and adapter routing.
   - _Remediation:_ diagnostic — Establish Roadmap and Housekeeping, then classify any legacy or unexpected folders with the receiving base owner.
 - **STREAM-2 [M] — legacy state folders** — Legacy state and Focus folders are migration inputs, not target Streams structure. (standards-streams-structure.md)
   - _Remediation:_ diagnostic — Classify each retained legacy record before removing or replacing a legacy navigation folder.
-- **STREAM-4 [J] — adapter-owned records** — Roadmap and housekeeping records follow their owning adapters rather than a generic Streams proposal model. (standards-streams-structure.md)
+- **STREAM-4 [J] — adapter-owned records** — Roadmap and housekeeping records follow their owning adapters rather than a generic Streams record model. (standards-streams-structure.md)
   - _Evidence scope:_ Roadmap and housekeeping records sampled from the two Streams areas.
   - _Review prompt:_ Does each sampled record follow its owning roadmap or housekeeping adapter?
   - _Outcomes:_ conforming; adapter migration required; classification decision required
@@ -63,7 +63,9 @@ The canonical-change gate anchor.
 
 The skill-owned ki-repo-kb-streams table.
 
+- **CONFIG-0 [M] — parseable Streams configuration** — The shared configuration file parses before Streams bindings are used. (standards-streams-structure.md)
+  - _Remediation:_ diagnostic — Correct the TOML syntax before relying on Streams configuration.
 - **CONFIG-1 [M] — known Streams configuration** — Only documented Streams container bindings are recognised under ki-repo-kb-streams. (standards-streams-structure.md)
   - _Remediation:_ diagnostic — Remove or document unsupported configuration keys after confirming the Streams behaviour they were intended to express.
-- **CONFIG-2 [M] — legacy note classification** — A declared legacy note_type_scheme remains valid only while a base migrates old Streams records. (standards-streams-structure.md)
-  - _Remediation:_ diagnostic — Use the documented `type` or `tags` scheme, or record the governing decision for a different note classification.
+- **CONFIG-2 [M] — contained process note binding** — When process_note is declared, it resolves to a regular file beneath the base without symlink traversal. (standards-streams-structure.md)
+  - _Remediation:_ diagnostic — Correct or remove the process_note binding; do not follow a link or substitute a local authority note.

@@ -15,12 +15,12 @@ Line-by-line criteria for auditing ki-binding. Classifications are derived from 
 
 → [standard](standards-cross-surface-binding.md)
 
-Portable source validity, client targeting, and mcporter drift evidence.
+Portable source validity, client targeting, and non-secret mcporter definition evidence.
 
-- **BIND-1 [M] — mcporter agrees with the source** — The vendor-neutral mcporter target contains exactly the KI servers targeting `mcporter`. (standards-cross-surface-binding.md)
-  - _Remediation:_ diagnostic — Reconcile the canonical source and mcporter target through the binding workflow; do not infer client exposure from the target alone.
-- **BIND-2 [M] — Single MCP source is valid** — The canonical source exists, parses, and gives each entry a valid client target. (standards-cross-surface-binding.md)
-  - _Remediation:_ diagnostic — Correct the canonical MCP source so every server has one transport and valid, intentional client targets before regenerating bindings.
+- **BIND-1 [M] — mcporter agrees with source definitions** — An explicitly selected mcporter target has the complete non-secret definitions for each mcporter-targeted server. (standards-cross-surface-binding.md)
+  - _Remediation:_ diagnostic — Select an authoritative mcporter config through MCPORTER_CONFIG, then reconcile its full non-secret targeted definitions through the binding workflow.
+- **BIND-2 [M] — Single MCP source is valid** — The resolved canonical source is a physical file with a closed, portable server schema. (standards-cross-surface-binding.md)
+  - _Remediation:_ diagnostic — Correct the canonical MCP source so every server has one valid transport definition and current, intentional client targets.
 - **BIND-J1 [J] — Client targeting is right for use** — The clients set reflects intended, least-surprising client availability. (standards-cross-surface-binding.md)
   - _Evidence scope:_ Every canonical MCP server and its intended client availability.
   - _Review prompt:_ Does each server target the clients that need it, without exposing it on clients that do not?

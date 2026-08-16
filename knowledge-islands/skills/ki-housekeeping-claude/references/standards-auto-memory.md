@@ -1,6 +1,6 @@
 # The auto-memory standard
 
-_External-spec-derived standard for `ki-housekeeping-claude`. Sourced from the auto-memory system prompt injected into every Claude Code session in this harness (written by Headroom); dated citations tracked in [sources.md](sources.md)._
+_A bounded local-format standard for `ki-housekeeping-claude`. Native Claude settings establish the memory location; Headroom-rendered output is separate evidence and does not establish native selection or loading. Recorded source decisions and dates are tracked in [sources.md](sources.md)._
 
 ## Layout
 
@@ -15,7 +15,7 @@ _External-spec-derived standard for `ki-housekeeping-claude`. Sourced from the a
 
 ## Repair boundary
 
-The structured rubric is user-home scoped to the selected repository's `.claude/projects/<selected-repository-slug>/memory` directory. It never enumerates or reports foreign project memories, and never follows a symlinked Claude root, projects root, selected memory directory, memory file, or `MEMORY.md`.
+The structured rubric first requires a readable native settings record. When it contains no `autoMemoryDirectory` override, it selects the documented default `.claude/projects/<selected-repository-slug>/memory` directory. A contained string override selects that directory instead, including a worktree-specific location. Missing or malformed settings, disabled or unsupported override values, and overrides outside `.claude/` are unavailable evidence, not a default-path clean result. Once selected, the rubric never enumerates or reports foreign project memories and never follows a symlinked Claude root, selected directory, memory file, or `MEMORY.md`.
 
 Two repairs are safe enough to propose through one operation-scoped draft: align a frontmatter `name` to an already-safe kebab-case physical filename, and append a contained unindexed memory file to an existing physical `MEMORY.md`. The host validates and publishes the coalesced proposal.
 
@@ -29,7 +29,7 @@ An index, not a memory: one line per memory file, in this exact shape —
 - [Title](filename.md) — one-line hook
 ```
 
-- Each line should stay under **~150 characters** — lines run long get truncated in context.
+- The checker reports the aggregate UTF-8 bytes in the index but does not infer a native effective loading limit from an individual line or local file size.
 - Organized **semantically by topic**, not chronologically.
 - May carry a trailing Headroom-managed block, verbatim:
 
@@ -47,7 +47,7 @@ An index, not a memory: one line per memory file, in this exact shape —
 
 ## Repairing a regenerated cross-repo learned pattern
 
-Editing or clearing the rendered `headroom:learn` block is not a durable fix when a stale pattern remains in Headroom's memory database: the next learn sweep can render it again. Remove the source memory deliberately:
+The rendered block proves only that text exists in `MEMORY.md`; it does not prove a Headroom installation, version, database, configured sweep, or executed command. When separately authorized runtime evidence identifies a stale source record, edit or clear neither the rendered block nor an unverified database blindly: the next learn sweep can render it again. Use the recorded Headroom procedure only after independently confirming the selected database and runtime authority:
 
 1. Choose the database explicitly. Headroom defaults to `./.headroom/memory.db` when that project store exists and otherwise falls back to `~/.headroom/memory.db`, so a command run from the wrong directory can inspect or mutate the wrong store. Check the plausible project and global paths, then use `--db-path` on every command.
 2. Locate the USER-scope memory using distinctive text, then inspect the full record before deletion:
@@ -84,6 +84,8 @@ metadata:
   - **project** — ongoing work, goals, decisions, incidents; body structured the same way, with relative dates converted to absolute ones at save time.
   - **reference** — pointers to where information lives in external systems.
 - Body may link to other memories with `[[name]]`, where `name` is the target's `name:` slug. A `[[name]]` with no matching file is a valid forward reference, not an error — the doctrine explicitly allows marking something worth writing later.
+
+The checker parses this frontmatter as YAML and fails malformed mappings instead of silently skipping them.
 
 ## What does not belong in a memory
 

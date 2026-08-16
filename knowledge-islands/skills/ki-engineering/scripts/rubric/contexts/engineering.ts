@@ -11,6 +11,7 @@ import type {
   ViolationLevel
 } from '../../shared/rubric.ts'
 import { collectAuditEvidence, type EngineeringEvidenceFinding } from './audit-evidence.ts'
+import { inspectConsistencyReviewEvidence } from './review-evidence.ts'
 
 const ENGINEERING_TABLE = 'ki-engineering'
 
@@ -64,6 +65,8 @@ export type KnipRubricContext = {
 export type SyncRubricContext = { sync1: EngineeringEvidence; normalise?: () => void }
 export type DependenciesRubricContext = { deps1: EngineeringEvidence }
 export type GeneratedRubricContext = { gen1: EngineeringEvidence }
+export type DesignRubricContext = Record<string, never>
+export type ReviewRubricContext = { review1: EngineeringEvidence }
 export type TestRubricContext = {
   test1: EngineeringEvidence
   test2: EngineeringEvidence
@@ -81,6 +84,7 @@ export type EnvironmentRubricContext = { env1: EngineeringEvidence; env2: Engine
 export type TomlRubricContext = {
   toml1: EngineeringEvidence
   toml2: EngineeringEvidence
+  toml3: EngineeringEvidence
   declare?: () => void
 }
 
@@ -97,6 +101,8 @@ export type EngineeringRubricContext = {
   sync: SyncRubricContext
   dependencies: DependenciesRubricContext
   generated: GeneratedRubricContext
+  design: DesignRubricContext
+  review: ReviewRubricContext
   test: TestRubricContext
   build: BuildRubricContext
   environment: EnvironmentRubricContext
@@ -139,12 +145,12 @@ export const auditEvidence = (
 
 const requiredDev = ['@biomejs/biome', 'knip', 'rumdl', 'husky', 'lint-staged', 'syncpack', 'typescript']
 const versions: Record<string, string> = {
-  '@biomejs/biome': '^2.5.4',
-  knip: '^6.27.0',
+  '@biomejs/biome': '^2.5.7',
+  knip: '^6.32.0',
   rumdl: '^0.2.52',
   husky: '^9.1.7',
   'lint-staged': '^17.1.0',
-  syncpack: '^15.3.2',
+  syncpack: '^15.3.3',
   typescript: '^7.0.2'
 }
 const lintStaged = {
@@ -171,7 +177,7 @@ const defaults = {
 }
 `,
   'biome.json': `{
-  "$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -297,7 +303,10 @@ export const createEngineeringSession = async (
   const target = resolve(repository)
   const mutable = mode === 'conform'
   emit?.({ kind: 'stage', edge: 'start', label: 'engineering evidence' })
-  const evidence = evidenceByCode(await inspect(target, emit))
+  const evidence = evidenceByCode([
+    ...(await inspect(target, emit)),
+    ...(await inspectConsistencyReviewEvidence(target))
+  ])
   emit?.({ kind: 'stage', edge: 'end', label: 'engineering evidence' })
   const packagePath = join(target, 'package.json')
   const packageSource = isSafeRegularFile(packagePath) ? readFileSync(packagePath, 'utf8') : undefined
@@ -393,6 +402,8 @@ export const createEngineeringSession = async (
     },
     dependencies: { deps1: evidence('DEPS-1') },
     generated: { gen1: evidence('GEN-1') },
+    design: {},
+    review: { review1: evidence('REVIEW-1') },
     test: {
       test1: evidence('TEST-1'),
       test2: evidence('TEST-2'),
@@ -410,6 +421,7 @@ export const createEngineeringSession = async (
     toml: {
       toml1: evidence('TOML-1'),
       toml2: evidence('TOML-2'),
+      toml3: evidence('TOML-3'),
       ...(mutable ? { declare: requestEngineeringTable } : {})
     }
   }
@@ -430,6 +442,8 @@ export const createEngineeringSession = async (
           'SYNC',
           'DEPS',
           'GEN',
+          'DESIGN',
+          'REVIEW',
           'TEST',
           'BUILD',
           'ENV',

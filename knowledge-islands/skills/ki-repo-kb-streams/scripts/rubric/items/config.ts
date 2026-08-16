@@ -21,17 +21,32 @@ const CONFIG_1: RubricItem<ConfigRubricContext> = {
 
 const CONFIG_2: RubricItem<ConfigRubricContext> = {
   code: 'CONFIG-2',
-  title: 'legacy note classification',
-  description: 'A declared legacy note_type_scheme remains valid only while a base migrates old Streams records.',
+  title: 'contained process note binding',
+  description:
+    'When process_note is declared, it resolves to a regular file beneath the base without symlink traversal.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
     remediation: {
       class: 'diagnostic',
-      guidance:
-        'Use the documented `type` or `tags` scheme, or record the governing decision for a different note classification.'
+      guidance: 'Correct or remove the process_note binding; do not follow a link or substitute a local authority note.'
     },
-    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.noteTypeScheme, 'WARN') }
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.processNote, 'WARN') }
+  }
+}
+
+const CONFIG_0: RubricItem<ConfigRubricContext> = {
+  code: 'CONFIG-0',
+  title: 'parseable Streams configuration',
+  description: 'The shared configuration file parses before Streams bindings are used.',
+  sources: [SOURCE],
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Correct the TOML syntax before relying on Streams configuration.'
+    },
+    audit: { phase: 'PREPARE', run: (context) => auditEvidence(context.parseable, 'FAIL') }
   }
 }
 
@@ -41,5 +56,5 @@ export const CONFIG: RubricFamily<StreamsRubricContext, ConfigRubricContext> = {
   description: 'The skill-owned ki-repo-kb-streams table.',
   standard: SOURCE,
   selectContext: (context) => context.config,
-  items: [CONFIG_1, CONFIG_2]
+  items: [CONFIG_0, CONFIG_1, CONFIG_2]
 }

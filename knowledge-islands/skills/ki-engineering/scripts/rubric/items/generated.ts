@@ -19,7 +19,7 @@ export const GENERATED: RubricFamily<EngineeringRubricContext, GeneratedRubricCo
         remediation: {
           class: 'diagnostic',
           guidance:
-            'Align the generated-surface exclusions with the managed paths and remove the legacy runtime exclusion, then rerun the audit.'
+            'Align the Engineering-owned Biome and Knip exclusions deliberately, use ki-authoring for its wholly owned `.rumdl.toml`, remove legacy runtime exclusions, then rerun the audit.'
         },
         audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.gen1, 'FAIL') }
       }

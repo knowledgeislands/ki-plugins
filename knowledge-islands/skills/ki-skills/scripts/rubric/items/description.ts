@@ -1,5 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { judgment } from '../../shared/rubric.ts'
 import {
   type DescriptionRubricContext,
   type KiSkillsRubricContext,
@@ -16,7 +16,11 @@ const DESC_1: RubricItem<DescriptionRubricContext> = {
   sources: ['SPEC', 'CC'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Author a truthful description that states the skill scope and when to select it; the intended capability cannot be inferred safely from an empty value.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ description }) =>
@@ -34,7 +38,11 @@ const DESC_2: RubricItem<DescriptionRubricContext> = {
   sources: ['SPEC', 'BP'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Shorten the description below the hard cap while preserving its scope, primary triggers, and essential collision guidance.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ description }) =>
@@ -59,7 +67,11 @@ const DESC_3: RubricItem<DescriptionRubricContext> = {
   sources: ['BP'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Rewrite or escape the XML-like text while preserving the author’s intended meaning and any literal placeholder syntax.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ description }) =>

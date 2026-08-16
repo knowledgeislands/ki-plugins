@@ -88,7 +88,6 @@ export const createPluginsSession = ({
   }
   const configTable = table(table(config?.skills)?.[CONFIG_TABLE])
   const marketplaceFile = '.claude-plugin/marketplace.json'
-  const marketplacePath = at('.claude-plugin', 'marketplace.json')
   const marketplace = jsonDocument(read('.claude-plugin', 'marketplace.json'))
   const pluginEntries = Array.isArray(marketplace.value?.plugins)
     ? (marketplace.value.plugins as Record<string, unknown>[])
@@ -98,8 +97,9 @@ export const createPluginsSession = ({
   const pluginDescription = typeof entry?.description === 'string' ? entry.description : ''
   const pluginFile = pluginName ? `${pluginName}/.claude-plugin/plugin.json` : ''
   const plugin = jsonDocument(pluginFile ? read(pluginName, '.claude-plugin', 'plugin.json') : '')
-  const applicable =
-    available && (configTable !== null || malformedConfig || existsSync(marketplacePath) || Boolean(marketplace.raw))
+  // The declaration, not a marketplace-shaped directory, selects this optional standard.
+  // Discovery remains coverage evidence for ki-repo.
+  const applicable = available && configTable !== null
 
   const skillRoot = pluginName ? at(pluginName, 'skills') : ''
   const projectedSkills =

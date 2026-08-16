@@ -174,12 +174,12 @@ const BODY_10: RubricItem<RecordsRubricContext> = {
   code: 'BODY-10',
   title: 'Present-state record',
   description:
-    'The record is written as now and carries no historic, superseding, or forward-looking narration. Such content belongs in the ROADMAP or a KB stream, not in a present-state record.',
+    'The record is concise, self-contained, and written as now, without historic, superseding, or forward-looking narration. Such content belongs in the ROADMAP or a KB stream, not in a present-state record.',
   sources: [SOURCE],
   judgment: {
     scope: 'The narrative body of every active decision record.',
     prompt:
-      'Assess whether the record states the present decision without historic, superseding, forward-looking, parked, or not-yet-started narration.',
+      'Assess whether the record is concise and self-contained, stating the present decision without historic, superseding, forward-looking, parked, or not-yet-started narration.',
     outcomes: ['conforming', 'gap', 'exclusion'],
     guidance:
       'Move lifecycle narration to its appropriate record, revise to present state, record a named Gap, or record an explicit exclusion.'

@@ -22,7 +22,7 @@ const MAN_LINT: RubricItem<ManualToolsContext> = {
         if (!context.applicable)
           return one({
             status: 'NOT_APPLICABLE',
-            message: 'No qualified ki-repo-tools declaration or bin/ structural marker is present.'
+            message: 'ki-repo-tools is not applicable: its repository declaration is absent.'
           })
         if (context.manual === 'missing')
           return one({ status: 'NOT_APPLICABLE', message: `No ${context.manualPath} source page is present.` })

@@ -1,5 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { judgment } from '../../shared/rubric.ts'
 import { type KiSkillsRubricContext, type LongevityRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const REFRESH_GRACE_DAYS = 14
@@ -32,7 +32,11 @@ const LONG_3: RubricItem<LongevityRubricContext> = {
   sources: ['COMMUNITY'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Run the skill’s authored REFRESH procedure against its declared sources, reconcile any changes, and record the actual review date.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context) => {
@@ -61,7 +65,11 @@ const LONG_4: RubricItem<LongevityRubricContext> = {
   sources: ['COMMUNITY'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Choose the source class and cadence that match the skill’s volatility, then author a parseable **Refresh:** marker; external specifications require a clock cadence.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context) => {

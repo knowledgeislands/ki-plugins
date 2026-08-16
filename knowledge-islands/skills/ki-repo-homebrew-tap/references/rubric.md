@@ -25,7 +25,7 @@ The tracked readable rubric is the exact publication of the structured catalogue
 
 → [standard](standards-homebrew-tap.md)
 
-Formula layout, explicit Homebrew validation, and judgment review of tap correctness.
+Formula layout, static source evidence, and judgment review of tap correctness.
 
 - **TAP-1 [M] — formula directory** — `Formula/` exists and contains at least one Ruby formula. (standards-homebrew-tap.md)
   - _Remediation:_ diagnostic — Correct the tap formula or release evidence through the responsible maintainer; hosted conform does not infer release or package semantics.
@@ -39,7 +39,7 @@ Formula layout, explicit Homebrew validation, and judgment review of tap correct
   - _Remediation:_ diagnostic — Correct the tap formula or release evidence through the responsible maintainer; hosted conform does not infer release or package semantics.
 - **TAP-6 [M] — formula discoverability** — README.md lists every formula by name. (standards-homebrew-tap.md)
   - _Remediation:_ diagnostic — Correct the tap formula or release evidence through the responsible maintainer; hosted conform does not infer release or package semantics.
-- **TAP-7 [M] — Homebrew audit** — Homebrew style and strict audit are run explicitly for every formula. (standards-homebrew-tap.md)
+- **TAP-7 [M] — Homebrew audit** — Homebrew style and strict audit are explicit external diagnostics; this static audit never executes Homebrew. (standards-homebrew-tap.md)
   - _Remediation:_ diagnostic — Correct the tap formula or release evidence through the responsible maintainer; hosted conform does not infer release or package semantics.
 - **TAP-J1 [J] — tap naming** — The repository name follows Homebrew tap naming conventions. (standards-homebrew-tap.md)
   - _Evidence scope:_ The Homebrew tap, its formulae, release evidence, and CI configuration.
@@ -79,4 +79,4 @@ Formula layout, explicit Homebrew validation, and judgment review of tap correct
 The repository declares the keyless Homebrew-tap governance marker.
 
 - **CONFIG-1 [M] — identity marker** — `.ki-config.toml` contains a keyless `[skills.ki-repo-homebrew-tap]` marker with no unknown keys. (standards-homebrew-tap.md)
-  - _Remediation:_ automatic
+  - _Remediation:_ diagnostic — Declare the selected standard through the repository configuration owner.

@@ -11,4 +11,4 @@ The [Guides standard](standards-guides.md) is Knowledge Islands house policy, de
 
 ## Last review
 
-- 2026-08-02 — Standard first authored. It promotes guides to a governed `docs/guides/` concern, preserves the existing Decision Record, Feature Definition, and roadmap owners, and gives legacy `spec`, `developer`, and generic `logs` roots explicit migration destinations.
+- 2026-08-12 — Confirmed the documentation map and GDR-004 remain the house authority. Replaced obsolete Feature Definition references with Specifications and narrowed the `docs/logs/` claim: path presence alone cannot establish that an operational area is a generic archive. `docs/spec/` and `docs/developer/` remain retired parallel roots.

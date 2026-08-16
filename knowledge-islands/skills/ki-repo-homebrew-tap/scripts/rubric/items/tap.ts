@@ -31,7 +31,12 @@ const TAP_1: RubricItem<TapContext> = {
         if (!context.targetExists)
           return [{ status: 'VIOLATION', message: 'Audit target must be an existing directory.' }]
         if (!context.applicable)
-          return [{ status: 'NOT_APPLICABLE', message: 'No tap declaration or Formula/ structural marker is present.' }]
+          return [
+            {
+              status: 'NOT_APPLICABLE',
+              message: 'The tap declaration is absent; detected Formula/ shape is handled by ki-repo coverage.'
+            }
+          ]
         if (context.formulaDirectory === 'unsafe')
           return [{ status: 'VIOLATION', message: 'Formula/ is not a regular directory.', subject: 'Formula/' }]
         if (context.formulaDirectory !== 'present')
@@ -234,7 +239,8 @@ const TAP_6: RubricItem<TapContext> = {
 const TAP_7: RubricItem<TapContext> = {
   code: 'TAP-7',
   title: 'Homebrew audit',
-  description: 'Homebrew style and strict audit are run explicitly for every formula.',
+  description:
+    'Homebrew style and strict audit are explicit external diagnostics; this static audit never executes Homebrew.',
   sources: SOURCE,
   mechanical: {
     level: 'WARN',
@@ -246,11 +252,14 @@ const TAP_7: RubricItem<TapContext> = {
           return [{ status: 'NOT_APPLICABLE', message: 'ki-repo-homebrew-tap is not applicable.' }]
         if (context.formulae.length === 0)
           return [{ status: 'NOT_APPLICABLE', message: 'No formulae are available for Homebrew checks.' }]
-        return context.formulae.map((formula) => ({
-          status: 'VIOLATION',
-          message: `Run Homebrew validation explicitly: brew style Formula/${formula.file} and brew audit --strict ${formula.name}.`,
-          subject: `Formula/${formula.file}`
-        }))
+        return [
+          {
+            status: 'INFO',
+            message:
+              'Static audit does not execute Homebrew; obtain isolated opt-in brew style/audit evidence separately.',
+            subject: 'Formula/'
+          }
+        ]
       }
     }
   }
@@ -301,7 +310,7 @@ const TAP_J6: RubricItem<TapContext> = {
 export const TAP: RubricFamily<HomebrewTapRubricContext, TapContext> = {
   code: 'TAP',
   title: 'tap structure',
-  description: 'Formula layout, explicit Homebrew validation, and judgment review of tap correctness.',
+  description: 'Formula layout, static source evidence, and judgment review of tap correctness.',
   standard: STANDARD,
   selectContext: (context) => context.tap,
   items: [TAP_1, TAP_2, TAP_3, TAP_4, TAP_5, TAP_6, TAP_7, TAP_J1, TAP_J2, TAP_J3, TAP_J4, TAP_J5, TAP_J6]

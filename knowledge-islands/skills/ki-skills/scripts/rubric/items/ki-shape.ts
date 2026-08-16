@@ -1,5 +1,5 @@
 import type { AuditOutcome, RubricFamily, RubricItem, RubricOutcomes } from '../../shared/rubric.ts'
-import { AUTOMATIC_REMEDIATION, DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { AUTOMATIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
 import { type KiShapeRubricContext, type KiSkillsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const UNIVERSAL_VERBS = ['AUDIT', 'CONFORM', 'EDUCATE', 'REFRESH', 'HELP'] as const
@@ -20,7 +20,11 @@ const KI_SHAPE_2: RubricItem<KiShapeRubricContext> = {
   sources: ['ki-agentic-harness README', '`ki-engineering`'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Replace the retired extension claim with the actual relationship: required composition, optional augmentation, routing, shared packaging, or repository-local configuration.'
+    },
     heuristic: true,
     audit: {
       phase: 'INSPECT',
@@ -51,7 +55,11 @@ const KI_SHAPE_3: RubricItem<KiShapeRubricContext> = {
   sources: ['ki-agentic-harness README', 'ADR-KI-HARNESS-SKILLS-006'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Decide whether the skill holds a governance standard or drives a process lifecycle, then declare exactly ki-kind: governance or ki-kind: process.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
@@ -96,7 +104,11 @@ const KI_SHAPE_6: RubricItem<KiShapeRubricContext> = {
   sources: ['ki-agentic-harness README'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Classify each nonstandard reference by reader need, rename or relocate it into the closed vocabulary or assets/, and repair every affected link.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
@@ -130,7 +142,11 @@ const KI_SHAPE_7: RubricItem<KiShapeRubricContext> = {
   sources: ['standards-knowledge-islands.md §2', 'standards-rubric-authoring.md#context-and-evidence'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Confirm that the skill changes default behaviour, then choose an appropriate always-loaded anchor and add rubric evidence that verifies that specific anchor.'
+    },
     heuristic: true,
     audit: {
       phase: 'INSPECT',
@@ -164,7 +180,11 @@ const KI_SHAPE_9: RubricItem<KiShapeRubricContext> = {
   sources: ['[Rubric authoring](standards-rubric-authoring.md)'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Implement each genuinely deterministic criterion in the structured rubric, or document the actual skill-scoped toolchain owner; retain judgment only where review is necessary.'
+    },
     heuristic: true,
     audit: {
       phase: 'INSPECT',
@@ -272,7 +292,11 @@ const KI_SHAPE_13: RubricItem<KiShapeRubricContext> = {
   sources: ['ADR-KI-HARNESS-SKILLS-001'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Restructure the authored mode prose under one Operating modes section and reconcile argument-hint with the modes that remain, preserving each procedure’s meaning.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
@@ -318,7 +342,11 @@ const KI_SHAPE_14: RubricItem<KiShapeRubricContext> = {
   sources: ['ADR-KI-HARNESS-SKILLS-001', 'ADR-KI-HARNESS-SKILLS-006'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Author the REFRESH ownership precondition for the actual source location, including the correct stop-and-redirect or promotion boundary.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
@@ -376,7 +404,11 @@ const KI_SHAPE_15: RubricItem<KiShapeRubricContext> = {
   sources: ['standards-knowledge-islands.md §2', 'ADR-KI-HARNESS-007'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Migrate any still-required behaviour to its catalogue, context, host, or EDUCATE owner before removing the retired governance runner entrypoint.'
+    },
     audit: { phase: 'INSPECT', run: auditKiShape15 }
   }
 }
@@ -389,7 +421,11 @@ const KI_SHAPE_16: RubricItem<KiShapeRubricContext> = {
   sources: ['KI'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Trace the skill’s real target-file reads and writes, choose requires, contributes, or owns accordingly, and resolve exclusive ownership collisions with the affected skills.'
+    },
     heuristic: true,
     audit: {
       phase: 'INSPECT',
@@ -430,7 +466,11 @@ const KI_SHAPE_17: RubricItem<KiShapeRubricContext> = {
   sources: ['ADR-KI-HARNESS-SKILLS-006'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Determine the skill’s genuine governance prerequisites and author ki-depends-on as a single-line flow list, using [] only when none are required.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {
@@ -465,7 +505,11 @@ const KI_SHAPE_18: RubricItem<KiShapeRubricContext> = {
   sources: ['standards-knowledge-islands.md §2'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Decide whether the skill is portable or vendor-bound; for a binding, declare the recognised runtime list and ki-runtime-binding: true without duplicates.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ skill }) => {

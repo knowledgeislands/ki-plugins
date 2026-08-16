@@ -3,21 +3,21 @@ name: ki-next
 ki-kind: process
 ki-depends-on: []
 description: >
-  Selects, captures, promotes, defers, and spawns the next work through one shared queue: now, next, soon, future, waiting-for, and parked. It also records the receiver's confirmed disposition of validated inbound trades, including direct application of a trivial local work change versus a separately prioritised work record. Use when asked "what should we do next", "review these inbound trades", "apply this trade directly", "promote this work", or "defer this". It applies the transition rules owned by ki-change-management-roadmap and the ki-repo-kb-streams adapter; local trade transport belongs to ki-trade.
-argument-hint: 'next [--review] | defer <item> <horizon-or-focus> | help'
+  Selects, captures, promotes, defers, and spawns the next work through one shared queue: now, next, soon, future, waiting-for, and parked. It also records the receiver's confirmed disposition of validated inbound trades, including direct application of a trivial local work change versus a separately prioritised work record. Use when asked "what should we do next", "review these inbound trades", "apply this trade directly", "promote this work", or "defer this". It resolves the selected local roadmap or KB Streams adapter and refuses unavailable remote execution; local trade transport belongs to ki-trades.
+argument-hint: 'next [--review] | defer <item> <horizon> | help'
 ---
 
 # ki-next
 
 **Kind:** process.
 
-Selects and prepares forward work through the shared queue and either adapter's canonical record.
+Selects and prepares forward work through the configured local adapter's canonical record. GitHub Issues and Linear remain configuration and safety guidance only, so this process stops without writes when either is selected.
 
 The full procedure is in [the next-work standard](references/standards-next-work.md).
 
 ## What this skill does
 
-1. **Ground** the generated repository roadmap index and canonical work items, or Streams Focus and proposal index, plus active `ki-change-management-housekeeping` templates and any inbound records validated by declared `ki-trades` governance.
+1. **Ground** the configured local adapter's canonical records and issue ledger, active `ki-work-housekeeping` templates, and inbound records validated by declared `ki-trades` governance.
 2. **Triage** incoming submissions through an exact human-confirmed receiver disposition, including the proportionate direct-application gate for a work trade, without treating adoption as roadmap authority.
 3. **Review** relevance when asked or when a material stale signal is evident.
 4. **Screen for synergy** across dependency-ready candidates: propose a batch only when the items share a bounded delivery advantage and remain independently executable. A shared theme alone is not enough.
@@ -38,17 +38,14 @@ ki-recap (optional current-session context)
                     └─> one fresh-grounded authorised cycle
                           └─> ki-implement (each named Ready item through Awaiting review)
 
-ki-change-management-roadmap governs the shared forward-work contract and the non-KB adapter.
-ki-repo-kb-streams governs the KB Streams adapter and Enactment gate.
+The base selector governs adapter choice; `ki-work-roadmap` governs the local record model and `ki-repo-kb-streams` its KB Streams container.
 ```
 
 `ki-recap` is optional.
 
 `ki-next` works without it and never mines historical transcripts.
 
-When a recap precedes it, `ki-next` begins only after that recap has preserved its bounded handoff and reached its compaction boundary. It then re-grounds the repository rather than trusting the carry-forward digest as current state.
-
-Selection is itself a compaction boundary. Once the selected work and its confirmed disposition are recorded, `ki-next` compacts by default so the following plan or implementation cycle starts on a clean slate carrying the selected item and nothing else. The same two conditions withhold it as in `ki-recap`: an unsafe boundary, or no substantive work entering context since the last compaction — a recap running straight into `ki-next` compacts once here, not twice.
+When a recap precedes it, `ki-next` begins only after its bounded handoff is complete. It re-grounds repository facts rather than trusting carry-forward context as current state. Runtime context management remains outside this process contract.
 
 `ki-batch` prepares and coordinates an explicitly authorised independent Ready set. It does not change `ki-next` ownership of selection, priority, or an individual item's lifecycle.
 
@@ -73,6 +70,6 @@ With no argument or `next`, run the full procedure.
 - This is a process skill, not a universal AUDIT / CONFORM / EDUCATE / REFRESH checker.
 - A housekeeping template may create a due run only under its declared spawning policy; every other capture, selection, and queue transition follows the applicable confirmed promotion rule.
 - `ki-next` does not start or authorise a batch from similarity alone. A confirmed candidate group proceeds only to `ki-batch`; implementation still requires that skill's reviewed authorisation.
-- `ki-change-management-roadmap` owns the common transition rules; `ki-repo-kb-streams` supplies the KB adapter; `ki-next` applies them consistently.
+- Resolve `[skills.ki-work].adapter` and require its matching declared owner table before reading any local root. The base audit remains the authority for semantic selection validation; this process makes no shape fallback. `roadmap` uses `docs/roadmap/`; `kb-streams` uses `Streams/Roadmap/`; `github-issues` and `linear` stop without writes until their remote execution is separately implemented.
 - `ki-next` may recommend `status: done` records for pruning, but it never deletes them. `ki-accept` owns explicit path or glob selection; `ki repo roadmap prune` is the separate deterministic selected-repository sweep.
 - Installed as a core user skill by `ki bootstrap`; it is not a repository-governance root.

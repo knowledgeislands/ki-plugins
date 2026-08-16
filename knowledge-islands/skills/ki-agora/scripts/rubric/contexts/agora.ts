@@ -10,14 +10,6 @@ import type {
 const REPOSITORY = /^https:\/\/github\.com\/[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\/[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/
 const AGORA_ID = /^[a-z][a-z0-9-]*[a-z0-9]$/
 const ROLE = /^[a-z][a-z0-9-]*[a-z0-9]$/
-const TARGETS = new Set([
-  'zed-workspace',
-  'vscode-workspace',
-  'claude-code-trust',
-  'claude-desktop-trust',
-  'chatgpt-codex-trust'
-])
-
 type AgoraConfiguration = Record<string, unknown>
 
 export type OutcomeContext = {
@@ -37,13 +29,6 @@ const pass = (message: string): readonly AuditOutcome[] => [{ status: 'PASS', me
 
 const violation = (message: string): AuditOutcome => ({ status: 'VIOLATION', message, subject: '.ki-config.toml' })
 
-const warning = (message: string): AuditOutcome => ({
-  status: 'VIOLATION',
-  level: 'WARN',
-  message,
-  subject: '.ki-config.toml'
-})
-
 const parsedRepository = (root: string): unknown => {
   const configuration = join(root, '.ki-config.toml')
   if (!existsSync(configuration)) return undefined
@@ -60,9 +45,6 @@ const repositoryIdentity = (root: string): string | undefined => {
   return typeof repo?.repository === 'string' && REPOSITORY.test(repo.repository) ? repo.repository : undefined
 }
 
-const distinctStrings = (value: unknown): value is readonly string[] =>
-  Array.isArray(value) && value.every((entry) => typeof entry === 'string') && new Set(value).size === value.length
-
 const parseHomes = (value: unknown, local: string | undefined): AuditOutcome[] => {
   const outcomes: AuditOutcome[] = []
   const homes = table(value)
@@ -76,18 +58,14 @@ const parseHomes = (value: unknown, local: string | undefined): AuditOutcome[] =
       outcomes.push(violation(`home ${identifier} must be a table`))
       continue
     }
-    for (const key of Object.keys(home).filter((key) => !['owner', 'purpose', 'targets', 'members'].includes(key)))
-      outcomes.push(warning(`home ${identifier} has unrecognised key ${key}`))
+    for (const key of Object.keys(home).filter((key) => !['owner', 'purpose', 'members'].includes(key)))
+      outcomes.push(violation(`home ${identifier} has unrecognised key ${key}`))
     if (typeof home.owner !== 'string' || !REPOSITORY.test(home.owner))
       outcomes.push(violation(`home ${identifier} owner must be a canonical HTTPS GitHub repository`))
     else if (home.owner !== local)
       outcomes.push(violation(`home ${identifier} owner must match its declaring repository`))
     if (typeof home.purpose !== 'string' || !home.purpose.trim())
       outcomes.push(violation(`home ${identifier} requires a non-empty purpose`))
-    if (!distinctStrings(home.targets) || home.targets.some((target) => !TARGETS.has(target)))
-      outcomes.push(
-        violation(`home ${identifier} targets must be a duplicate-free array from the target-policy vocabulary`)
-      )
     const members = table(home.members)
     if (!members) {
       outcomes.push(violation(`home ${identifier} members must be a repository-to-role table`))
@@ -121,7 +99,7 @@ const parseMemberships = (value: unknown): AuditOutcome[] => {
       continue
     }
     for (const key of Object.keys(membership).filter((key) => !['home', 'role'].includes(key)))
-      outcomes.push(warning(`membership ${identifier} has unrecognised key ${key}`))
+      outcomes.push(violation(`membership ${identifier} has unrecognised key ${key}`))
     if (typeof membership.home !== 'string' || !REPOSITORY.test(membership.home))
       outcomes.push(violation(`membership ${identifier} home must be a canonical HTTPS GitHub repository`))
     if (typeof membership.role !== 'string' || !ROLE.test(membership.role))
@@ -136,7 +114,7 @@ const parseConfiguration = (configuration: Readonly<AgoraConfiguration>, root: s
   const local = repositoryIdentity(root)
   if (!local) configurationOutcomes.push(violation('ki-repo repository must be a canonical HTTPS GitHub home'))
   for (const key of Object.keys(configuration).filter((key) => !['homes', 'memberships'].includes(key)))
-    configurationOutcomes.push(warning(`unrecognised ki-agora configuration key ${key}`))
+    configurationOutcomes.push(violation(`unrecognised ki-agora configuration key ${key}`))
   configurationOutcomes.push(...parseHomes(configuration.homes, local))
   membershipsOutcomes.push(...parseMemberships(configuration.memberships))
 
@@ -145,7 +123,7 @@ const parseConfiguration = (configuration: Readonly<AgoraConfiguration>, root: s
     configuration: {
       outcomes: configurationOutcomes.length
         ? configurationOutcomes
-        : pass('Agora homes use canonical owner identity, purpose, policy, and approved member shape.')
+        : pass('Agora homes use canonical owner identity, purpose, and approved member shape.')
     },
     memberships: {
       outcomes: membershipsOutcomes.length

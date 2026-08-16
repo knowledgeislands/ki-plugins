@@ -6,7 +6,6 @@ describe('Claude tokenomics catalogue', () => {
     expect(definition.families.flatMap((family) => family.items.map((item) => item.code))).toEqual([
       'CLAUDE-SURF-1',
       'CLAUDE-RUN-1',
-      'CLAUDE-RUN-2',
       'RUBRIC-1'
     ]))
 
@@ -19,7 +18,7 @@ describe('Claude tokenomics catalogue', () => {
       .flatMap((family) => family.items)
       .filter((item) => item.mechanical)
 
-    expect(mechanical).toHaveLength(4)
+    expect(mechanical).toHaveLength(3)
     expect(
       mechanical
         .filter((item) => item.code !== 'RUBRIC-1')

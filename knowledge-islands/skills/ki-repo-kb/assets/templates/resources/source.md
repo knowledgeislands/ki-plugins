@@ -1,5 +1,5 @@
 ---
-type: resources/note
+note_type: resources/note
 created: <YYYY-MM-DDTHH:MM:SSZ>
 updated: <YYYY-MM-DDTHH:MM:SSZ>
 reviewed:

@@ -57,13 +57,15 @@ Layout, executable, distribution, versioning, and judgment criteria.
   - _Review prompt:_ The installer is POSIX-ish, honours overrides, verifies downloads, and is idempotent.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Revise the tool repository through its responsible maintainer, record a named gap, or record an explicit justified exclusion.
-- **TOOL-VERSION [M] — Version flag** — The primary executable successfully runs with `--version`. (standards-tool-repositories.md)
+- **TOOL-VERSION [M] — Version flag** — Runtime `--version` execution is an explicit, isolated diagnostic outside this static audit. (standards-tool-repositories.md)
   - _Remediation:_ diagnostic — Correct the evidenced tool-repository issue through the responsible maintainer; hosted conform does not infer tool, release, or documentation semantics.
 - **TOOL-VERSION-SOURCE [J] — Version source** — The version marker has one source of truth aligned with the latest tag and changelog. (standards-tool-repositories.md)
   - _Evidence scope:_ The target command-line tool repository and the evidence named by this criterion.
   - _Review prompt:_ The version marker has one source of truth aligned with the latest tag and changelog.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Revise the tool repository through its responsible maintainer, record a named gap, or record an explicit justified exclusion.
+- **TOOL-RELEASE-MARKERS [M] — Release marker alignment** — From package version 1.0.0 onward, package.json and CHANGELOG.md current local release markers agree. (standards-tool-repositories.md)
+  - _Remediation:_ diagnostic — Correct the evidenced tool-repository issue through the responsible maintainer; hosted conform does not infer tool, release, or documentation semantics.
 - **TOOL-CHANGELOG [M] — Changelog presence** — `CHANGELOG.md` is a physical regular file. (standards-tool-repositories.md)
   - _Remediation:_ diagnostic — Correct the evidenced tool-repository issue through the responsible maintainer; hosted conform does not infer tool, release, or documentation semantics.
 - **TOOL-CHANGELOG-FORMAT [J] — Changelog format** — The changelog identifies the current semantic-versioned release through either Keep a Changelog entries or a declared current-release baseline. (standards-tool-repositories.md)

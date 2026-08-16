@@ -1,7 +1,7 @@
 ---
 name: ki-binding-chezmoi
 ki-kind: governance
-ki-shared-dependencies: [ki-skills:rubric]
+ki-shared-dependencies: [ki-binding:binding, ki-skills:rubric]
 ki-depends-on: [ki-binding, ki-repo-dotfiles-chezmoi]
 description: >
   Codify, audit, and conform the chezmoi renderer path for the KI MCP binding — the canonical `mcp-servers.yaml` source data, a renderer partial, and `chezmoi apply`. A composition skill over `ki-binding` and `ki-repo-dotfiles-chezmoi`; it owns renderer evidence, never a vendor-specific renderer cross-product. Use when rendering the MCP source through chezmoi, wiring a partial, or checking a renderer path is complete.
@@ -33,8 +33,8 @@ The AUDIT is a **composition**, declared here and run in sequence — it does no
 
 1. Run `ki repo audit --repo <chezmoi-repo> --skill ki-repo-dotfiles-chezmoi` for generic chezmoi repository shape.
 2. Run `ki repo audit --repo <chezmoi-repo> --skill ki-binding` for the canonical source and mcporter evidence.
-3. Run `ki repo audit --repo <chezmoi-repo> --skill ki-binding-chezmoi` for this skill's delta: the target is safely inspectable (`BINDCHEZ-1`), sibling surface agreement remains explicitly delegated (`BINDCHEZ-2`), MCP render data exists (`BINDCHEZ-3`), the `mcp-servers-json` partial exists (`BINDCHEZ-4`), and at least one target template uses it (`BINDCHEZ-5`).
-4. Judge the [J] criteria by reading: does a reviewed `chezmoi diff` prove render parity (`BINDCHEZ-6`), and do the standard, rubric, provenance, and sibling boundaries remain coherent (`BINDCHEZ-7`)?
+3. Run `ki repo audit --repo <chezmoi-repo> --skill ki-binding-chezmoi` for this skill's delta: the target is safely inspectable (`BINDCHEZ-1`), source structure is distinguished from rendered and applied state (`BINDCHEZ-2`), valid MCP render data exists (`BINDCHEZ-3`), the exact `mcp-servers-json` partial exists (`BINDCHEZ-4`), and at least one target template uses it (`BINDCHEZ-5`).
+4. Judge the [J] criteria by reading: does separately authorised, secret-safe evidence establish render parity (`BINDCHEZ-6`), and do the standard, rubric, provenance, and sibling boundaries remain coherent (`BINDCHEZ-7`)?
 5. Report sibling findings under their owning skill and BINDCHEZ findings under this one. Its mechanical violations are WARN-level because the external render choice requires an operator decision.
 
 ### Mode CONFORM — bring the render path into step

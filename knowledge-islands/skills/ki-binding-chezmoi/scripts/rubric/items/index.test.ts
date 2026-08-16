@@ -23,7 +23,7 @@ const fixture = (): string => {
   mkdirSync(join(repository, 'dot_config'), { recursive: true })
   writeFileSync(join(repository, '.chezmoidata', 'mcps.yaml'), 'mcpServers: []\n')
   writeFileSync(join(repository, '.chezmoitemplates', 'mcp-servers-json.tmpl'), '{{/* render partial */}}\n')
-  writeFileSync(join(repository, 'dot_config', 'surface.json.tmpl'), '{{ template "mcp-servers-json" . }}\n')
+  writeFileSync(join(repository, 'dot_config', 'surface.json.tmpl'), '{{ template "mcp-servers-json.tmpl" . }}\n')
   return repository
 }
 
@@ -77,7 +77,9 @@ test('the session prepares stable render evidence once and remains report-only',
   const context = session.subjects[0]?.context() as BindingChezMoiContext
   expect(session.subjects[0]?.context()).toBe(context)
   expect(context.repositoryState).toBe('physical')
-  expect(context.data).toEqual([{ path: '.chezmoidata/mcps.yaml', pattern: 'data-merge' }])
+  expect(context.data).toMatchObject([
+    { path: '.chezmoidata/mcps.yaml', pattern: 'data-merge', source: { kind: 'valid' } }
+  ])
   expect(context.templates).toEqual(['.chezmoitemplates/mcp-servers-json.tmpl'])
   expect(context.wiredTargets).toEqual(['dot_config/surface.json.tmpl'])
   expect(session.proposal()).toEqual({ writes: [] })
@@ -103,4 +105,38 @@ test('the session reports symlinked evidence without traversing it', () => {
   const family = catalogue.families[0] as RubricFamily<BindingChezMoiContext, BindingChezMoiContext>
   const outcome = family.items.find((item) => item.code === 'BINDCHEZ-1')?.mechanical?.audit.run(context)[0]
   expect(outcome?.status).toBe('VIOLATION')
+})
+
+test('comment-only or ambiguous template references do not count as wiring', () => {
+  const repository = fixture()
+  writeFileSync(join(repository, 'dot_config', 'surface.json.tmpl'), '{{/* template "mcp-servers-json.tmpl" . */}}\n')
+  const context = createBindingChezMoiSession({
+    mode: 'audit',
+    repository,
+    userHome: tmpdir(),
+    configuration: {}
+  }).subjects[0]?.context() as BindingChezMoiContext
+  const family = catalogue.families[0] as RubricFamily<BindingChezMoiContext, BindingChezMoiContext>
+  expect(context.wiredTargets).toEqual([])
+  expect(family.items.find((item) => item.code === 'BINDCHEZ-5')?.mechanical?.audit.run(context)[0]?.status).toBe(
+    'VIOLATION'
+  )
+})
+
+test('malformed renderer data cannot pass as source structure', () => {
+  const repository = fixture()
+  writeFileSync(
+    join(repository, '.chezmoidata', 'mcps.yaml'),
+    'mcpServers:\n  - name: missing-clients\n    command: node\n'
+  )
+  const context = createBindingChezMoiSession({
+    mode: 'audit',
+    repository,
+    userHome: tmpdir(),
+    configuration: {}
+  }).subjects[0]?.context() as BindingChezMoiContext
+  const family = catalogue.families[0] as RubricFamily<BindingChezMoiContext, BindingChezMoiContext>
+  expect(family.items.find((item) => item.code === 'BINDCHEZ-3')?.mechanical?.audit.run(context)[0]?.status).toBe(
+    'VIOLATION'
+  )
 })

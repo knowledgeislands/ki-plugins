@@ -47,7 +47,6 @@ test('canonical home and membership declarations pass local shape validation', (
         'knowledge-islands': {
           owner: 'https://github.com/knowledgeislands/home',
           purpose: 'Knowledge Islands maintained repositories',
-          targets: ['zed-workspace', 'claude-code-trust'],
           members: { 'https://github.com/knowledgeislands/tools-ki': 'maintainer' }
         }
       },
@@ -61,7 +60,7 @@ test('canonical home and membership declarations pass local shape validation', (
   )
 
   expect(outcomes(session, CONFIG)).toEqual([
-    { status: 'PASS', message: 'Agora homes use canonical identity, purpose, policy, and approved member shape.' }
+    { status: 'PASS', message: 'Agora homes use canonical owner identity, purpose, and approved member shape.' }
   ])
   expect(outcomes(session, MEMBERSHIP)).toEqual([
     { status: 'PASS', message: 'Agora memberships use canonical home and role shape.' }
@@ -76,7 +75,6 @@ test('local shape rejects malformed declarations without observing a peer', () =
         Knowledge_Islands: {
           owner: 'not a repository',
           purpose: '',
-          targets: ['zed-workspace', 'zed-workspace', 'not-a-target'],
           members: {
             'not a repository': 'not a role',
             'https://github.com/knowledgeislands/home': 'owner'
@@ -91,19 +89,49 @@ test('local shape rejects malformed declarations without observing a peer', () =
     'home Knowledge_Islands must use a stable lower-case hyphenated identifier',
     'home Knowledge_Islands owner must be a canonical HTTPS GitHub repository',
     'home Knowledge_Islands requires a non-empty purpose',
-    'home Knowledge_Islands targets must be a duplicate-free array from the target-policy vocabulary',
     'home Knowledge_Islands member not a repository must be a canonical HTTPS GitHub repository',
     'home Knowledge_Islands member not a repository role must be a lower-case hyphenated identifier',
     'home Knowledge_Islands must not list its own repository as a member'
   ])
   expect(outcomes(session, MEMBERSHIP)).toContainEqual({
     status: 'VIOLATION',
-    level: 'WARN',
     message: 'membership knowledge-islands has unrecognised key extra',
     subject: '.ki-config.toml'
   })
   expect(outcomes(session, MEMBERSHIP).map((outcome) => outcome.message)).toContain(
     'membership knowledge-islands home must be a canonical HTTPS GitHub repository'
+  )
+})
+
+test('unknown fields fail closed and a local declaration never becomes reciprocal consent', () => {
+  const root = fixture()
+  const session = createAgoraSession(
+    options(root, {
+      target_policy: ['editor'],
+      homes: {
+        team: {
+          owner: 'https://github.com/knowledgeislands/home',
+          purpose: 'Team work',
+          members: {},
+          target_policy: ['editor']
+        }
+      }
+    })
+  )
+
+  expect(outcomes(session, CONFIG)).toEqual(
+    expect.arrayContaining([
+      {
+        status: 'VIOLATION',
+        message: 'unrecognised ki-agora configuration key target_policy',
+        subject: '.ki-config.toml'
+      },
+      {
+        status: 'VIOLATION',
+        message: 'home team has unrecognised key target_policy',
+        subject: '.ki-config.toml'
+      }
+    ])
   )
 })
 
@@ -115,7 +143,6 @@ test('local shape requires each home to name its declaring owner', () => {
         team: {
           owner: 'https://github.com/knowledgeislands/other',
           purpose: 'Team work',
-          targets: ['zed-workspace'],
           members: {}
         }
       }
@@ -124,7 +151,6 @@ test('local shape requires each home to name its declaring owner', () => {
 
   expect(outcomes(session, CONFIG)).toContainEqual({
     status: 'VIOLATION',
-    level: 'FAIL',
     message: 'home team owner must match its declaring repository',
     subject: '.ki-config.toml'
   })

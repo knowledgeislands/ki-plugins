@@ -12,7 +12,10 @@ const SPEC_1: RubricItem<SpecificationsContext> = {
   mechanical: {
     level: 'WARN',
     overrideLevels: ['FAIL'],
-    remediation: { class: 'automatic' },
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Declare the selected standard through the repository configuration owner.'
+    },
     audit: {
       phase: 'INSPECT',
       run: (context): readonly AuditOutcome[] => {
@@ -27,7 +30,7 @@ const SPEC_1: RubricItem<SpecificationsContext> = {
           return [
             {
               status: 'NOT_APPLICABLE',
-              message: 'ki-repo-specifications is not applicable: no declaration or core structural marker is present.'
+              message: 'ki-repo-specifications is not applicable: its repository declaration is absent.'
             }
           ]
         if (context.malformed)
@@ -57,10 +60,6 @@ const SPEC_1: RubricItem<SpecificationsContext> = {
               }
         ]
       }
-    },
-    conform: {
-      phase: 'NORMALISE',
-      run: (context): void => context.addMarker?.()
     }
   }
 }
@@ -126,14 +125,15 @@ const SPEC_3: RubricItem<SpecificationsContext> = {
 const SPEC_J1: RubricItem<SpecificationsContext> = {
   code: 'SPEC-J1',
   title: 'Minimal floor',
-  description: 'Every asserted structure has proved stable enough to govern across time.',
+  description:
+    'Every asserted structure has proved stable enough to govern; this audit observes only the current source tree.',
   sources: SOURCE,
   judgment: {
     scope: 'Each asserted repository structure and the evidence of its sustained use.',
     prompt: 'Has every asserted structure proved stable enough to govern across time?',
     outcomes: ['conforming', 'reduce the floor', 'stability evidence required'],
     guidance:
-      'Remove speculative structure from the governed floor, or record the sustained repository evidence that makes the assertion stable.'
+      'Remove speculative structure from the governed floor, or record sustained evidence separately; a clean structural audit is not longitudinal evidence.'
   }
 }
 

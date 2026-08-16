@@ -1,5 +1,10 @@
 import type { AuditOutcome, RubricFamily, RubricItem, RubricOutcomes } from '../../shared/rubric.ts'
-import type { ActivitiesContext, ActivitiesRubricContext, ActivityNote } from '../contexts/activities.ts'
+import {
+  type ActivitiesContext,
+  type ActivitiesRubricContext,
+  type ActivityNote,
+  markdownLinkTargets
+} from '../contexts/activities.ts'
 
 const SOURCE = 'standards-activities.md'
 const KNOWN_REALIZATIONS = ['slash-command', 'scheduled-task', 'conversational', 'manual', 'workflow'] as const
@@ -59,7 +64,8 @@ const ACT_S_1: RubricItem<ActivitiesContext> = {
               subject: context.index.relative
             }
           ]
-        const missing = context.notes.filter((note) => !context.index.content.includes(note.indexLink))
+        const targets = markdownLinkTargets(context.index.content)
+        const missing = context.notes.filter((note) => !targets.has(note.indexLink))
         return missing.length
           ? oneOrMore(
               missing.map((note) => ({
@@ -198,7 +204,13 @@ const ACT_F_1: RubricItem<ActivitiesContext> = {
         if (stop) return stop
         const outcomes: AuditOutcome[] = []
         for (const note of context.notes) {
-          if (!note.frontmatter)
+          if (note.malformedFrontmatter)
+            outcomes.push({
+              status: 'VIOLATION',
+              message: 'frontmatter is malformed and cannot be validated safely',
+              subject: note.relative
+            })
+          else if (!note.frontmatter)
             outcomes.push({
               status: 'INFO',
               message: 'no frontmatter block — judgment check only',

@@ -24,7 +24,7 @@ const CONFIG_1: RubricItem<ToolsConfigContext> = {
           return [
             {
               status: 'NOT_APPLICABLE',
-              message: `No [skills.${TABLE}] declaration or bin/ structural marker is present.`
+              message: `[skills.${TABLE}] declaration is absent; detected tool shape is handled by ki-repo coverage.`
             }
           ]
         if (context.config === 'unsafe')

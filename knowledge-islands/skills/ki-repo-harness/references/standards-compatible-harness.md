@@ -33,6 +33,8 @@ A **compatible installed harness** is a verified regular-file payload acquired a
 
 The installed payload, not a checkout, runtime projection, cache, or repository-local `.ki/` directory, is the operation source. A nearby checkout never becomes authoritative because a name matches or a symlink points to it.
 
+A source-harness audit proves only physical source layout and source capability identity. It cannot establish a verified installed payload, selected local-development source, runtime activation link, declared-capability resolution, component conformance, or executed runtime capability. Those evidence states are host-owned and must be reported separately as observed or unavailable.
+
 The source repository therefore defines capability semantics and carries their source files. The `ki` host owns acquisition evidence, installation layout, registry state, runtime activation links, repository activation, public CLI grammar, generic rubric execution, reporting, transactions, migration, and support diagnostics.
 
 ## Capability publication
@@ -44,6 +46,10 @@ The installed harness identity derives from its verified `<owner>/<repository>` 
 An installed skill's physical source directory and `SKILL.md` frontmatter are authoritative. A file does not become executable merely because it appears beneath the payload root. A governed skill contributes only its rubric definition, evidence builders, and declared safe repairs to the generic host.
 
 Runtime activation is a separate managed projection. Only the host creates or verifies activation links to a verified installed source. A source-harness script must not install a harness, activate user or repository capabilities, or link runtime discovery directly to its checkout.
+
+A populated skills shelf publishes one generated capability catalogue between the `ki-repo-harness:capability-catalogue:start` and `ki-repo-harness:capability-catalogue:end` markers in `skills/README.md`. The private harness context parses canonical `SKILL.md` YAML frontmatter and derives exact governance/process counts, source-domain groups, full descriptions, runtime-neutral argument hints, required dependencies, and runtime bindings. Per-skill dependency lists publish formal `ki-depends-on` facts without adding a dense generated diagram.
+
+AUDIT compares the marker-bounded bytes with the deterministic rendering. Missing, renamed, removed, or changed skills therefore stale the publication mechanically. CONFORM may add a missing generated section or replace one exact marker-bounded section while preserving authored content around it. It refuses malformed skill frontmatter, unknown dependencies, duplicate capability names, unsafe files, and missing, duplicate, partial, or reversed markers rather than guessing at a repair. `ki-skills` remains the owner of individual skill quality and frontmatter semantics; this standard uses those source facts only to publish the Harness inventory.
 
 ## Source-harness layout
 
@@ -85,7 +91,7 @@ It must not present removed package aliases, repository-vendored runners, or che
 
 ## Root roadmap
 
-A source harness carries `ROADMAP.md` as its open-work register. The `ki-change-management-roadmap` skill owns roadmap profiles, horizon vocabulary, generated projections, and content discipline; this standard checks only the root file's physical presence.
+A source harness carries `ROADMAP.md` as its open-work register. The `ki-work-roadmap` skill owns roadmap profiles, horizon vocabulary, generated projections, and content discipline; this standard checks only the root file's physical presence.
 
 ## Harness declaration
 
@@ -108,9 +114,9 @@ This standard governs the source container and compatible-payload boundary. Cont
 | Skill quality                                | `ki-skills`      |
 | Agent definition quality                     | `ki-subagents`   |
 | MCP server code                              | `ki-repo-mcp`         |
-| Repository roadmap content                   | `ki-change-management-roadmap`     |
+| Repository roadmap content                   | `ki-work-roadmap`     |
 | Engineering toolchain and package scripts    | `ki-engineering` |
 | Repository declaration and GitHub settings   | `ki-repo`        |
 | Harness install, activation, and CLI runtime | `tools-ki`       |
 
-Selecting `ki-repo-harness` also selects its declared prerequisites: `ki-skills`, `ki-subagents`, `ki-decision-records`, and `ki-change-management-roadmap`. Coverage selects `ki-repo-mcp`, `ki-engineering`, and `ki-repo` separately when their concerns apply. This standard adds only the container and publication delta defined here.
+Selecting `ki-repo-harness` also selects its declared prerequisites: `ki-skills`, `ki-subagents`, `ki-decision-records`, and `ki-work-roadmap`. Coverage selects `ki-repo-mcp`, `ki-engineering`, and `ki-repo` separately when their concerns apply. This standard adds only the container and publication delta defined here.

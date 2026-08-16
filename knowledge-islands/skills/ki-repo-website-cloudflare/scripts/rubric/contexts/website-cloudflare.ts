@@ -1,5 +1,5 @@
 import { lstatSync, readdirSync, readFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, isAbsolute, join, normalize, relative, resolve } from 'node:path'
 import type { RubricContextOptions, RubricPublicationContext, RubricSession } from '../../shared/rubric.ts'
 
 const CONFIG_FILE = '.ki-config.toml'
@@ -18,7 +18,9 @@ export type WranglerConfigEvidence = {
   readonly text: string | null
   readonly hasAssets: boolean
   readonly hasMain: boolean
+  readonly hasPagesBuildOutputDir: boolean
   readonly assetsDirectory: string | null
+  readonly notFoundHandling: string | null
   readonly hasName: boolean
   readonly hasCompatibilityDate: boolean
   readonly observabilityEnabled: boolean
@@ -35,6 +37,7 @@ export type WebsiteCloudflareContext = {
     readonly state: ConfigurationState
     readonly keys: readonly string[]
     readonly siteRoot: string | null
+    readonly appDeclared: boolean
   }
   readonly package: {
     readonly state: PackageState
@@ -71,28 +74,63 @@ const readRegularText = (path: string): string | null => {
   }
 }
 
+const parsedJsonc = (source: string): Record<string, unknown> | null => {
+  const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')
+  const json = withoutComments.replace(/,\s*([}\]])/g, '$1')
+  try {
+    const value = JSON.parse(json) as unknown
+    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+
+const configValue = (path: string, source: string): Record<string, unknown> | null => {
+  if (path.endsWith('.toml')) {
+    try {
+      const value = Bun.TOML.parse(source) as unknown
+      return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+    } catch {
+      return null
+    }
+  }
+  return parsedJsonc(source)
+}
+
 const inspectWranglerConfig = (root: string, path: string): WranglerConfigEvidence | null => {
   const absolute = join(root, path)
   const kind = nodeKind(absolute)
   if (kind === 'missing') return null
   const text = kind === 'file' ? readRegularText(absolute) : null
   const state = text === null ? 'unsafe' : 'present'
-  const source = text ?? ''
+  const value = text === null ? null : configValue(path, text)
+  const assets = value?.assets
+  const assetTable =
+    assets && typeof assets === 'object' && !Array.isArray(assets) ? (assets as Record<string, unknown>) : null
+  const routes = value?.routes
+  const observability = value?.observability
+  const observable =
+    observability && typeof observability === 'object' && !Array.isArray(observability)
+      ? (observability as Record<string, unknown>)
+      : null
   return {
     path,
     state,
     text,
-    hasAssets: /"assets"\s*:|\[assets\]|^\s*assets\s*=/m.test(source),
-    hasMain: /"main"\s*:|^\s*main\s*=/m.test(source),
-    assetsDirectory:
-      source.match(/"directory"\s*:\s*"([^"]+)"/)?.[1] ?? source.match(/^\s*directory\s*=\s*"([^"]+)"/m)?.[1] ?? null,
-    hasName: /"name"\s*:\s*"[^"]+"|^\s*name\s*=\s*"[^"]+"/m.test(source),
+    hasAssets: assetTable !== null,
+    hasMain: value !== null && Object.hasOwn(value, 'main'),
+    hasPagesBuildOutputDir: value !== null && Object.hasOwn(value, 'pages_build_output_dir'),
+    assetsDirectory: typeof assetTable?.directory === 'string' ? assetTable.directory : null,
+    notFoundHandling: typeof assetTable?.not_found_handling === 'string' ? assetTable.not_found_handling : null,
+    hasName: typeof value?.name === 'string' && value.name.length > 0,
     hasCompatibilityDate:
-      /"compatibility_date"\s*:\s*"\d{4}-\d{2}-\d{2}"|^\s*compatibility_date\s*=\s*"\d{4}-\d{2}-\d{2}"/m.test(source),
-    observabilityEnabled:
-      /"observability"\s*:\s*\{[\s\S]*?"enabled"\s*:\s*true/.test(source) ||
-      /\[observability\][\s\S]*?^\s*enabled\s*=\s*true/m.test(source),
-    hasCustomDomain: /"custom_domain"\s*:\s*true|^\s*custom_domain\s*=\s*true/m.test(source)
+      typeof value?.compatibility_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.compatibility_date),
+    observabilityEnabled: observable?.enabled === true,
+    hasCustomDomain:
+      Array.isArray(routes) &&
+      routes.some(
+        (route) => route && typeof route === 'object' && (route as Record<string, unknown>).custom_domain === true
+      )
   }
 }
 
@@ -118,26 +156,30 @@ const inspectConfiguration = (
   readonly state: ConfigurationState
   readonly keys: readonly string[]
   readonly siteRoot: string | null
+  readonly appDeclared: boolean
 } => {
   const kind = nodeKind(path)
-  if (kind === 'missing') return { state: 'missing', keys: [], siteRoot: null }
-  if (kind !== 'file') return { state: 'unsafe', keys: [], siteRoot: null }
+  if (kind === 'missing') return { state: 'missing', keys: [], siteRoot: null, appDeclared: false }
+  if (kind !== 'file') return { state: 'unsafe', keys: [], siteRoot: null, appDeclared: false }
   const text = readRegularText(path)
-  if (text === null) return { state: 'unsafe', keys: [], siteRoot: null }
+  if (text === null) return { state: 'unsafe', keys: [], siteRoot: null, appDeclared: false }
   try {
     const parsed = Bun.TOML.parse(text) as Record<string, unknown>
-    const candidate = (parsed.skills as Record<string, unknown> | undefined)?.[CONFIG_SECTION]
-    if (candidate === undefined) return { state: 'absent', keys: [], siteRoot: null }
+    const skills = parsed.skills as Record<string, unknown> | undefined
+    const appDeclared = skills?.['ki-repo-website-app'] !== undefined
+    const candidate = skills?.[CONFIG_SECTION]
+    if (candidate === undefined) return { state: 'absent', keys: [], siteRoot: null, appDeclared }
     if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate))
-      return { state: 'malformed', keys: [], siteRoot: null }
+      return { state: 'malformed', keys: [], siteRoot: null, appDeclared }
     const table = candidate as Record<string, unknown>
     return {
       state: 'present',
       keys: Object.keys(table),
-      siteRoot: typeof table['site-root'] === 'string' ? table['site-root'] : null
+      siteRoot: typeof table['site-root'] === 'string' ? table['site-root'] : null,
+      appDeclared
     }
   } catch {
-    return { state: 'malformed', keys: [], siteRoot: null }
+    return { state: 'malformed', keys: [], siteRoot: null, appDeclared: false }
   }
 }
 
@@ -186,17 +228,12 @@ export const createWebsiteCloudflareSession = ({
   const configs = targetExists ? collectWranglerConfigs(target) : []
   const configuration = targetExists
     ? inspectConfiguration(join(target, CONFIG_FILE))
-    : { state: 'missing' as const, keys: [], siteRoot: null }
+    : { state: 'missing' as const, keys: [], siteRoot: null, appDeclared: false }
   const siteConfigs = configs.filter((config) => config.state === 'present' && config.hasAssets)
   const companionConfigs = configs.filter((config) => config.state === 'present' && !config.hasAssets && config.hasMain)
   const hosting: WebsiteCloudflareContext = {
     targetExists,
-    applicable:
-      !targetExists ||
-      configs.length > 0 ||
-      configuration.state === 'present' ||
-      configuration.state === 'malformed' ||
-      configuration.state === 'unsafe',
+    applicable: configuration.state === 'present' || configs.length > 0,
     configs,
     siteConfigs,
     companionConfigs,
@@ -216,3 +253,10 @@ export const createWebsiteCloudflareSession = ({
 }
 
 export const configDirectory = (config: WranglerConfigEvidence): string => dirname(config.path)
+
+export const isExactSiteOutput = (config: WranglerConfigEvidence): boolean => {
+  if (!config.assetsDirectory) return false
+  const expected = join(configDirectory(config), 'dist')
+  const resolved = normalize(join(configDirectory(config), config.assetsDirectory))
+  return !isAbsolute(config.assetsDirectory) && relative(expected, resolved) === ''
+}

@@ -26,11 +26,9 @@ const RUNTIMES_2: RubricItem<RuntimesRubricContext> = {
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
-    remediation: {
-      class: 'diagnostic',
-      guidance: 'Add the required tokenomics and runtime capabilities for each declared runtime, then rerun the audit.'
-    },
-    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.runtimes2, 'FAIL') }
+    remediation: { class: 'automatic' },
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.runtimes2, 'FAIL') },
+    conform: { phase: 'PRIMARY', run: ({ requestRuntimeSkills }) => requestRuntimeSkills?.() }
   }
 }
 

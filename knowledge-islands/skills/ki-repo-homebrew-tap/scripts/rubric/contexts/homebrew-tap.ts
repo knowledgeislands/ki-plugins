@@ -1,6 +1,7 @@
 import { lstatSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import type {
+  AuditOutcome,
   ConformWrite,
   RubricContextOptions,
   RubricPublicationContext,
@@ -26,6 +27,7 @@ export type TapContext = {
   readonly applicable: boolean
   readonly formulaDirectory: FormulaDirectoryState
   readonly formulae: readonly FormulaEvidence[]
+  readonly homebrewValidation: readonly AuditOutcome[]
   readonly readme: string | null
 }
 
@@ -73,11 +75,10 @@ const inspectConfig = (
   }
 }
 
-export const createHomebrewTapSession = ({
-  mode,
+export const createHomebrewTapSession = async ({
   repository,
   publication
-}: RubricContextOptions): RubricSession<HomebrewTapRubricContext> => {
+}: RubricContextOptions): Promise<RubricSession<HomebrewTapRubricContext>> => {
   const target = resolve(repository)
   const targetExists = nodeKind(target) === 'directory'
   const formulaPath = join(target, FORMULA_DIRECTORY)
@@ -100,15 +101,10 @@ export const createHomebrewTapSession = ({
   const configEvidence = targetExists
     ? inspectConfig(configPath, nodeKind(configPath))
     : { state: 'missing' as const, keys: [], content: null }
-  const applicable =
-    configEvidence.state === 'present' ||
-    configEvidence.state === 'malformed' ||
-    configEvidence.state === 'unsafe' ||
-    formulaDirectory !== 'missing'
+  const applicable = configEvidence.state === 'present'
+  const homebrewValidation: readonly AuditOutcome[] = []
   const readmePath = join(target, 'README.md')
   const readme = targetExists && nodeKind(readmePath) === 'file' ? readFileSync(readmePath, 'utf8') : null
-  const originalConfig = configEvidence.content
-  let configDraft = originalConfig
 
   const context: HomebrewTapRubricContext = {
     rubric: { publication },
@@ -117,24 +113,14 @@ export const createHomebrewTapSession = ({
       applicable,
       formulaDirectory,
       formulae,
+      homebrewValidation,
       readme
     },
     config: {
       targetExists,
       applicable,
       config: configEvidence.state,
-      configKeys: configEvidence.keys,
-      ...(mode === 'conform' &&
-      formulaDirectory === 'present' &&
-      configEvidence.state === 'absent' &&
-      originalConfig !== null
-        ? {
-            addMarker: () => {
-              if (configDraft !== originalConfig) return
-              configDraft = `${originalConfig.replace(/\n*$/, '\n')}\n# This repo is a Knowledge Islands Homebrew tap.\n[skills.${CONFIG_SECTION}]\n`
-            }
-          }
-        : {})
+      configKeys: configEvidence.keys
     }
   }
 
@@ -143,12 +129,6 @@ export const createHomebrewTapSession = ({
       { families: ['RUBRIC'], context: () => context },
       { families: ['TAP', 'CONFIG'], context: () => context }
     ],
-    proposal: () => {
-      const writes: ConformWrite[] =
-        configDraft !== null && originalConfig !== null && configDraft !== originalConfig
-          ? [{ path: CONFIG_FILE, content: configDraft }]
-          : []
-      return { writes }
-    }
+    proposal: () => ({ writes: [] satisfies readonly ConformWrite[] })
   }
 }

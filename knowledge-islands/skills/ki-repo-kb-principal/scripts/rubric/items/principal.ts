@@ -17,12 +17,20 @@ const PRINCIPAL_1: RubricItem<PrincipalContext> = {
     audit: {
       phase: 'INSPECT',
       run: (context) =>
-        context.missing.length
-          ? context.missing.map((subject) => ({
-              status: 'VIOLATION',
-              message: 'Missing or unsafe principal entry point.',
-              subject
-            }))
+        context.missing.length || context.empty.length
+          ? context.missing
+              .map((subject) => ({
+                status: 'VIOLATION' as const,
+                message: 'Missing or unsafe principal entry point.',
+                subject
+              }))
+              .concat(
+                context.empty.map((subject) => ({
+                  status: 'VIOLATION' as const,
+                  message: 'Principal entry point is empty and cannot provide structural orientation.',
+                  subject
+                }))
+              )
           : [{ status: 'PASS', message: 'The principal governance surface is present.' }]
     }
   }

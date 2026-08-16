@@ -38,6 +38,20 @@ test('judgment criteria expose complete v1 review metadata', () => {
   }
 })
 
+test('judgment prompts name focused evidence without inventing a Git executor', () => {
+  const items = (
+    catalogue.families.filter((family) => family.code !== 'RUBRIC') as unknown as readonly {
+      items: readonly { mechanical?: unknown; judgment?: { scope: string; prompt: string } }[]
+    }[]
+  ).flatMap((family) => family.items)
+  const metadata = items.map((item) => `${item.judgment?.scope}\n${item.judgment?.prompt}`).join('\n')
+
+  expect(metadata).toContain('git diff --cached')
+  expect(metadata).toContain('git branch --show-current')
+  expect(metadata).toContain('git status --short')
+  expect(items.every((item) => item.mechanical === undefined)).toBeTrue()
+})
+
 test('family modules expose only one complete family', async () => {
   const files = readdirSync(import.meta.dir)
     .filter((file) => file.endsWith('.ts') && file !== 'index.ts' && !file.endsWith('.test.ts'))

@@ -27,6 +27,8 @@ The tracked readable rubric is the exact publication of the structured catalogue
 
 Artifact pairing, index, freshness, and judgment prompts.
 
+- **LA-S-0 [M] — safe artifact configuration** — The artifact table parses and any configured directory remains beneath the base without symlink traversal. (standards-live-artifacts.md)
+  - _Remediation:_ diagnostic — Correct the artifact configuration before auditing or proposing changes.
 - **LA-S-1 [M] — artifact index** — The index note exists when artifact sources are present and may safely gain omitted source names. (standards-live-artifacts.md)
   - _Remediation:_ automatic
 - **LA-S-2 [M] — published sources** — Every Markdown artifact has a same-stem HTML render. (standards-live-artifacts.md)

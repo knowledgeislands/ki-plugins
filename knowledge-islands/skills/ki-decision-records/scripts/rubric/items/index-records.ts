@@ -101,6 +101,53 @@ const INDEX_3: RubricItem<IndexRubricContext> = {
   }
 }
 
+const INDEX_4: RubricItem<IndexRubricContext> = {
+  code: 'INDEX-4',
+  title: 'Index links resolve to their named record',
+  description:
+    'Every ordered Decision Record index entry links its displayed record ID to that record’s canonical filename, and decision links are not hidden in unordered bullets or other prose.',
+  sources: [SOURCE],
+  mechanical: {
+    level: 'FAIL',
+    remediation: { class: 'automatic' },
+    audit: {
+      phase: 'DERIVED',
+      run: (context) => {
+        if (!context.indexExists)
+          return [{ status: 'NOT_APPLICABLE', message: 'The index is absent.', subject: context.indexFile }] as const
+        const expectedFiles = new Map(context.records.map((record) => [record.id, record.file]))
+        return outcomes(
+          [
+            ...context.unorderedIndexLinks.map(
+              (line): AuditOutcome => ({
+                status: 'VIOLATION',
+                message: 'Decision Record links must appear in the index’s ordered list form.',
+                subject: line.trim()
+              })
+            ),
+            ...context.indexLinks
+              .filter(({ id, target }) => expectedFiles.get(id) !== target)
+              .map(
+                ({ id, target }): AuditOutcome => ({
+                  status: 'VIOLATION',
+                  message: `Index link target ${target} does not match ${expectedFiles.get(id) ?? 'a current record file'}.`,
+                  subject: id
+                })
+              )
+          ],
+          'Every Decision Record index link resolves to its named canonical record file.'
+        )
+      }
+    },
+    conform: {
+      phase: 'DERIVED',
+      run: (context) => {
+        context.repairCanonicalLinks?.()
+      }
+    }
+  }
+}
+
 const INDEX_6: RubricItem<IndexRubricContext> = {
   code: 'INDEX-6',
   title: 'Reveal order',
@@ -163,5 +210,5 @@ export const INDEX: RubricFamily<DecisionRecordsRubricContext, IndexRubricContex
   description: 'Complete, current, and readable decision-record indexes.',
   standard: SOURCE,
   selectContext: (context) => context.index,
-  items: [INDEX_1, INDEX_2, INDEX_3, INDEX_6, INDEX_7, INDEX_8]
+  items: [INDEX_1, INDEX_2, INDEX_3, INDEX_4, INDEX_6, INDEX_7, INDEX_8]
 }

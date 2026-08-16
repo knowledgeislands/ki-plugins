@@ -46,6 +46,9 @@ export const createTokenomicsSession = ({
     invalid.push('context_window_tokens')
   if (table?.preferred_model_type !== undefined && !MODEL_TYPES.has(String(table.preferred_model_type)))
     invalid.push('preferred_model_type')
+  if (table?.budgets !== undefined && !object(table.budgets)) invalid.push('budgets')
+  if (table?.model_tier_bindings !== undefined && !object(table.model_tier_bindings))
+    invalid.push('model_tier_bindings')
   for (const [key, value] of Object.entries(object(table?.budgets) ?? {}))
     if (!BUDGETS.has(key) || typeof value !== 'number' || value <= 0) invalid.push(`budgets.${key}`)
   for (const [key, value] of Object.entries(object(table?.model_tier_bindings) ?? {}))
@@ -58,10 +61,23 @@ export const createTokenomicsSession = ({
         : unknown.length
           ? one(outcome('VIOLATION', `Unknown [skills.ki-tokenomics] key(s): ${unknown.join(', ')}`, 'WARN'))
           : one(outcome('PASS', 'Selected repository [skills.ki-tokenomics] configuration validates down.')),
-      budgetPolicy: one(outcome('PASS', 'Budget overages are guide-rail WARNs; they never become FAIL findings.')),
-      modelPurpose: one(outcome('PASS', 'Portable model purposes are frontier, reasoning, standard, and fast.')),
+      budgetPolicy: one(
+        outcome(
+          'INFO',
+          'Declared policy: budget overages are guide-rail WARNs; no measurement or overage was observed.'
+        )
+      ),
+      modelPurpose: one(
+        outcome(
+          'INFO',
+          'Declared policy: frontier, reasoning, standard, and fast are portable purposes; no effective model was observed.'
+        )
+      ),
       routing: one(
-        outcome('PASS', 'Standing-surface findings route to their artifact owner and selected runtime adapter.')
+        outcome(
+          'INFO',
+          'Declared policy routes standing-surface findings to artifact owners and runtime adapters; no attribution was observed.'
+        )
       )
     }
   }

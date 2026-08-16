@@ -39,6 +39,8 @@ The corpus has a populated registry that maps prefixes to area files.
   - _Remediation:_ diagnostic — Create the Specifications index with an authoritative areas table, then rerun the audit.
 - **INDEX-2 [M] — index.md contains a populated areas table** — `index.md` contains at least one areas table with `Prefix` and `File` columns and at least one row. (standards-specs.md)
   - _Remediation:_ diagnostic — Add a populated Prefix and File areas table to the index, then rerun the audit.
+- **INDEX-3 [M] — each prefix has one registered area-file owner** — A prefix appears in one areas-table file cell only; duplicate registrations are reported rather than silently overwritten. (standards-specs.md)
+  - _Remediation:_ diagnostic — Choose the prefix’s one owning area file and remove the duplicate registration before rerunning the audit.
 
 ## AREA — area registration
 

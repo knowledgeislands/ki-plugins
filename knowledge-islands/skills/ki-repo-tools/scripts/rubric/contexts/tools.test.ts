@@ -47,7 +47,7 @@ const fixture = (): {
   mkdirSync(join(repository, 'tests'))
   writeFileSync(join(repository, 'tests', 'demo.bats'), '@test "version" { run bin/demo --version; }\n')
   const config = join(repository, '.ki-config.toml')
-  writeFileSync(config, '[skills.ki-repo]\n')
+  writeFileSync(config, '[skills.ki-repo]\n[skills.ki-repo-tools]\n')
   return { repository, config, executable, install }
 }
 
@@ -81,14 +81,14 @@ test('audit is read-only and prepares one stable focused repository context', ()
   expect(context.tool.requestInstallExecutable).toBeUndefined()
   expect(context.config.requestMarker).toBeUndefined()
   expect(toolItem('TOOL-BIN').audit.run(TOOL.selectContext(context))[0]?.status).toBe('PASS')
-  expect(configItem().audit.run(CONFIG.selectContext(context))[0]?.status).toBe('VIOLATION')
+  expect(configItem().audit.run(CONFIG.selectContext(context))[0]?.status).toBe('PASS')
   expect(session.proposal()).toEqual({ writes: [] })
   expect(lstatSync(executable).mode & 0o111).toBe(0)
   expect(lstatSync(install).mode & 0o111).toBe(0)
-  expect(readFileSync(config, 'utf8')).toBe('[skills.ki-repo]\n')
+  expect(readFileSync(config, 'utf8')).toBe('[skills.ki-repo]\n[skills.ki-repo-tools]\n')
 })
 
-test('item-owned actions coalesce bounded chmod commands and one marker draft', () => {
+test('item-owned actions coalesce bounded chmod commands without changing declaration ownership', () => {
   const { repository, config, executable, install } = fixture()
   const session = createToolsSession(options(repository, 'conform'))
   const context = session.subjects[0]?.context()
@@ -99,16 +99,8 @@ test('item-owned actions coalesce bounded chmod commands and one marker draft', 
     action?.run(TOOL.selectContext(context))
     action?.run(TOOL.selectContext(context))
   }
-  configItem().conform?.run(CONFIG.selectContext(context))
-  configItem().conform?.run(CONFIG.selectContext(context))
-
   expect(session.proposal()).toEqual({
-    writes: [
-      {
-        path: '.ki-config.toml',
-        content: '[skills.ki-repo]\n\n[skills.ki-repo-tools]\n'
-      }
-    ],
+    writes: [],
     commands: [
       { program: 'chmod', arguments: ['+x', 'bin/demo'] },
       { program: 'chmod', arguments: ['+x', 'install.sh'] }
@@ -116,10 +108,10 @@ test('item-owned actions coalesce bounded chmod commands and one marker draft', 
   })
   expect(lstatSync(executable).mode & 0o111).toBe(0)
   expect(lstatSync(install).mode & 0o111).toBe(0)
-  expect(readFileSync(config, 'utf8')).toBe('[skills.ki-repo]\n')
+  expect(readFileSync(config, 'utf8')).toBe('[skills.ki-repo]\n[skills.ki-repo-tools]\n')
 })
 
-test('version evidence invokes the executable and accepts a physical src/tests directory', () => {
+test('static audit never invokes the executable and accepts a physical src/tests directory', () => {
   const { repository, executable } = fixture()
   rmSync(join(repository, 'tests'), { recursive: true })
   mkdirSync(join(repository, 'src', 'tests'), { recursive: true })
@@ -129,13 +121,12 @@ test('version evidence invokes the executable and accepts a physical src/tests d
   const context = session.subjects[0]?.context()
   if (!context) throw new Error('ki-repo-tools session has no repository context')
 
-  expect(context.tool.version).toBe('passed')
   expect(context.tool.testDirectories).toEqual(['src/tests/'])
-  expect(toolItem('TOOL-VERSION').audit.run(TOOL.selectContext(context))[0]?.status).toBe('PASS')
+  expect(toolItem('TOOL-VERSION').audit.run(TOOL.selectContext(context))[0]?.status).toBe('INFO')
   expect(toolItem('TOOL-TESTS').audit.run(TOOL.selectContext(context))[0]?.status).toBe('PASS')
 })
 
-test('version evidence reports an executable that rejects --version', () => {
+test('static version evidence remains unavailable even for a rejecting executable', () => {
   const { repository, executable } = fixture()
   writeFileSync(executable, '#!/bin/sh\nexit 1\n')
   chmodSync(executable, 0o755)
@@ -144,8 +135,32 @@ test('version evidence reports an executable that rejects --version', () => {
   const context = session.subjects[0]?.context()
   if (!context) throw new Error('ki-repo-tools session has no repository context')
 
-  expect(context.tool.version).toBe('failed')
-  expect(toolItem('TOOL-VERSION').audit.run(TOOL.selectContext(context))[0]?.status).toBe('VIOLATION')
+  expect(toolItem('TOOL-VERSION').audit.run(TOOL.selectContext(context))[0]?.status).toBe('INFO')
+})
+
+test('release-marker alignment starts at package version 1.0.0', () => {
+  const { repository } = fixture()
+  writeFileSync(join(repository, 'package.json'), JSON.stringify({ version: '0.2.20' }))
+  writeFileSync(join(repository, 'CHANGELOG.md'), '# Changelog\n\n## [1.0.0] - in progress\n')
+
+  const preOne = createToolsSession(options(repository, 'audit')).subjects[0]?.context()
+  if (!preOne) throw new Error('ki-repo-tools session has no repository context')
+  expect(toolItem('TOOL-RELEASE-MARKERS').audit.run(TOOL.selectContext(preOne))).toEqual([
+    {
+      status: 'NOT_APPLICABLE',
+      message: 'Package 0.2.20 is pre-1.0; changelog release-marker alignment is not evaluated.'
+    }
+  ])
+
+  writeFileSync(join(repository, 'package.json'), JSON.stringify({ version: '1.0.0' }))
+  const aligned = createToolsSession(options(repository, 'audit')).subjects[0]?.context()
+  if (!aligned) throw new Error('ki-repo-tools session has no repository context')
+  expect(toolItem('TOOL-RELEASE-MARKERS').audit.run(TOOL.selectContext(aligned))[0]?.status).toBe('PASS')
+
+  writeFileSync(join(repository, 'package.json'), JSON.stringify({ version: '1.0.1' }))
+  const drifted = createToolsSession(options(repository, 'audit')).subjects[0]?.context()
+  if (!drifted) throw new Error('ki-repo-tools session has no repository context')
+  expect(toolItem('TOOL-RELEASE-MARKERS').audit.run(TOOL.selectContext(drifted))[0]?.status).toBe('VIOLATION')
 })
 
 test('a physical manual page requires a mandoc lint workflow gate', () => {

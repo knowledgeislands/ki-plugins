@@ -1,12 +1,20 @@
 # Delegation-packet standard
 
+## Contents
+
+- [Scope](#scope)
+- [Packet shape](#packet-shape)
+- [Authority and isolation](#authority-and-isolation)
+- [Quality bar](#quality-bar)
+- [Mechanical boundary](#mechanical-boundary)
+
 ## Scope
 
-A delegation packet is an explicit, durable brief for bounded agent work inside one approved roadmap record.
+A delegation packet is an explicit, durable brief for high-risk delegated work inside one approved roadmap record.
 
 It translates a runtime subagent brief into a reviewable artifact before workers are dispatched.
 
-It is not required for a focused task that remains with the orchestrator, and it does not replace the work item’s plan, authority, baseline, review packet, or acceptance decision.
+Use it only when mutation risk, cross-agent handoff, or later audit need makes durable authority and escalation evidence valuable. It is not required for routine runtime delegation, and it does not replace the work item’s plan, authority, baseline, review packet, or acceptance decision. The standard defines the durable packet; the executing runtime and process supply worker creation, task selection, sandbox, permissions, model choice, scheduling, and result integration.
 
 ## Packet shape
 
@@ -23,52 +31,50 @@ An opted-in packet uses this structure inside the work item’s `## Delegation` 
 
 - Decision that workers must return to the orchestrator.
 
-### Rounds
-
-- Round 1: `research-sources`.
-- Round 2: `apply-contract` after Round 1 is gated.
-
 ### Worker: research-sources
 
 - **Deliverable:** Primary-source evidence for the named unknown.
-- **Files:** None; read-only research.
-- **Definition of done:** Findings cite the source and state remaining uncertainty.
-- **Model:** fast — bounded factual discovery.
-- **Verify:** Orchestrator checks every source and conclusion.
+- **Inputs:** The named questions and authoritative source locators.
+- **Scope:** Named primary sources only; no repository or external writes.
+- **Authority:** Read the named sources; perform no repository or external writes.
+- **Isolation:** Read-only worker context with no write-capable tools.
+- **Verify:** Coordinator checks every source and conclusion.
+- **Return:** Concise findings, source links, and unresolved conflicts; no raw browsing transcript.
 - **Checkpoint:** Return after the source set is complete.
 ```
 
-The packet contains non-empty `Locked decisions`, `Escalate`, and `Rounds` sections and at least one `Worker:` subsection.
+The packet contains non-empty `Locked decisions` and `Escalate` sections and at least one `Worker:` subsection.
 
-Each worker subsection names a bounded deliverable, file or system boundary, pass/fail definition of done, explicit model choice, verification gate, and completion checkpoint.
+Each worker subsection contains these non-empty fields:
+
+- **Deliverable:** one bounded outcome;
+- **Inputs:** source artifacts, locators, conventions, and decisions the cold worker needs;
+- **Scope:** the exact file or external-system boundary and excluded side effects, including `None` for read-only research;
+- **Authority:** allowed actions and prohibited side effects;
+- **Isolation:** the runtime-neutral sandbox or worktree boundary;
+- **Verify:** the check the coordinator will apply;
+- **Return:** the concise result and evidence format;
+- **Checkpoint:** the condition at which the worker stops and returns control.
+
+## Authority and isolation
+
+Grant the least authority and tool access that can complete the lane. The worker brief may narrow inherited runtime permissions but never expands the work record’s authority. State external effects explicitly; filesystem scope alone does not govern network calls, messages, deployments, or other systems.
+
+Choose the strongest practical isolation for the lane: read-only for research, an exclusive non-overlapping write boundary in a shared worktree, or an isolated worktree or sandbox when writes could interfere. If the runtime cannot enforce the required boundary, reduce the lane to a safer read-only task or keep it with the coordinator.
 
 When a worker will run Git write commands in a shared worktree, its brief also names a unique temporary Git index path. The worker passes it explicitly on every Git write command, for example `GIT_INDEX_FILE=<worker-index> git add -- <paths>`. The path is a worker-local staging boundary, not authority to commit concurrently; `ki-git` owns the matching shared-`HEAD` serialization rule.
-
-The rounds record genuine ordering and dependency boundaries; no two workers may be assigned overlapping write scope in the same round. They are not a batch barrier: once the orchestrator verifies and integrates a completed worker result, it should assign that worker the next independent bounded lane without waiting for every worker named in the current round.
-
-## Rolling worker utilisation
-
-Independent delegation uses a rolling worker pool. Dispatch the currently safe non-overlapping lanes up to available capacity, then replenish a freed worker immediately with the next independent lane after its result has been reviewed and integrated. This matters especially when capacity is small, such as three worker slots: do not leave a slot idle while an independent lane is ready. Report each completion, verification result, and atomic commit as it lands.
-
-Use a later round only when one lane genuinely depends on another's result or would otherwise overlap its write scope. Do not use rounds to make independent work wait for a nominal batch to finish.
-
-`ki-batch` is different: it coordinates an explicitly authorised, synergistic set of separate Ready work records. A delegation packet may support an individual member's implementation, but ordinary replenishment of a worker slot does not create or require a `ki-batch` batch.
 
 ## Quality bar
 
 The packet must be cold-agent ready: a worker with no hidden conversation context can begin from the brief, knows what is fixed, and knows when to stop.
 
-Choose the minimum viable model for each worker; stronger reasoning responds to decision risk, not habit or retained context.
-
-Split a task that mixes research, judgment, and mechanical implementation when the split makes ownership and gates clearer. Keep the next independent lane ready so a completed worker can be replenished without reopening a completed boundary.
-
-The orchestrator reviews every result and the stated verification before integrating or committing it.
+The packet makes only its durable governance boundaries explicit. Runtime and process guidance owns model selection, orchestration, worker capacity, and result integration.
 
 ## Mechanical boundary
 
-The native rubric checks only the opt-in marker, required headings, and non-empty labeled worker fields.
+The native rubric checks only the opt-in marker, exact required headings, and non-empty labelled worker fields.
 
-It cannot decide whether a model is actually sufficient, a split is sensible, a decision is truly locked, or a verification gate is adequate; those are judgment review.
+It cannot decide whether the durable-packet threshold is met, authority is appropriately narrow, isolation is enforceable, a decision is truly locked, or a verification gate is adequate; those are judgment review.
 
 CONFORM does not rewrite authored packet content.
 

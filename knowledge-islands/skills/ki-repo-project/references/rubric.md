@@ -1,6 +1,6 @@
 <!-- GENERATED FILE: produced by `ki dev skill rubric`. Do not hand-edit; edit scripts/rubric/items/, then rerun `ki dev skill rubric <skill> --write`. -->
 
-# Generated rubric — Project primary repository structure
+# Generated rubric — Project repository orientation
 
 > **Generated publication.** The TypeScript rubric items under `scripts/rubric/items/` are canonical. Edit those definitions, then rerun `ki dev skill rubric ki-repo-project --write`.
 
@@ -8,13 +8,16 @@ Line-by-line criteria for auditing ki-repo-project. Classifications are derived 
 
 ## Contents
 
-- [PRIMARY — primary structure](#primary--primary-structure)
+- [PROJECT — Project orientation](#project--project-orientation)
 
-## PRIMARY — primary structure
+## PROJECT — Project orientation
 
 → [standard](standards-project-repository.md)
 
-One explicit, non-KB primary repository structure.
+A non-duplicating Project baseline and its owner boundaries.
 
-- **PRIMARY-1 [M] — Project declaration** — Project is declared without the KB primary. (standards-project-repository.md)
-  - _Remediation:_ diagnostic — Declare one deliberate primary repository structure.
+- **PROJECT-1 [J] — owner-bound Project orientation** — Project orientation delegates primary-kind and forward-work selection to their respective owners. (standards-project-repository.md)
+  - _Evidence scope:_ The repository’s declared kind and selected change-management adapter, reviewed through their owner audits.
+  - _Review prompt:_ Do the owner-owned kind and adapter declarations support the intended Project orientation?
+  - _Outcomes:_ conforming; owner-audit required; migration decision required
+  - _Conforming guidance:_ Use ki-repo for primary-kind evidence and ki-work for adapter evidence; decide a Project/KB migration explicitly rather than inferring it here.

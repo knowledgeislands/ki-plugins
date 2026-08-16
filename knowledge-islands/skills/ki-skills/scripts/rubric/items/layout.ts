@@ -1,5 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { AUTOMATIC_REMEDIATION, DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { AUTOMATIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
 import { type KiSkillsRubricContext, type LayoutRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const hasBackslashLink = (markdown: string): boolean => /\[[^\]]*\]\([^)]*\\[^)]*\)/.test(markdown)
@@ -15,7 +15,11 @@ const LAY_1: RubricItem<LayoutRubricContext> = {
   sources: ['SPEC', 'CC'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Create the missing SKILL.md only after establishing the intended skill identity and authored instructions for that root.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ missingSkillRoot, noSkillsFound }) => {
@@ -34,7 +38,11 @@ const LAY_2: RubricItem<LayoutRubricContext> = {
   sources: ['SPEC', 'CC'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Choose the intended skill name, create its directory, and move or rewrite the standalone Markdown as that directory’s SKILL.md.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ standaloneMarkdownFile }) =>
@@ -58,7 +66,11 @@ const LAY_3: RubricItem<LayoutRubricContext> = {
   sources: ['SPEC', 'KI'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Classify each nonstandard support directory by purpose, then rename or relocate it to references/, scripts/, assets/, or .ki-meta/ and repair affected links.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ supportDirectories }) => {

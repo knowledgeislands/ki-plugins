@@ -1,5 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { judgment } from '../../shared/rubric.ts'
 import {
   type KiSkillsRubricContext,
   type ReferencesRubricContext,
@@ -39,7 +39,11 @@ const REF_3: RubricItem<ReferencesRubricContext> = {
   sources: ['BP', 'COMMUNITY'],
   mechanical: {
     level: 'WARN',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Author a concise table of contents near the top using the reference’s actual section structure and stable anchors.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ lineCount, content }) => [

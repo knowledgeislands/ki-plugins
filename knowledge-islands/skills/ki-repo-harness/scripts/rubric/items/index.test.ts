@@ -3,7 +3,12 @@ import { mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { RubricFamily } from '../../shared/rubric.ts'
-import type { HarnessConfigContext, HarnessRubricContext } from '../contexts/harness.ts'
+import type {
+  HarnessCapabilityPublicationContext,
+  HarnessConfigContext,
+  HarnessReviewContext,
+  HarnessRubricContext
+} from '../contexts/harness.ts'
 import catalogue from './index.ts'
 
 const temporaryDirectories: string[] = []
@@ -26,7 +31,10 @@ const fixture = (): string => {
   writeFileSync(join(repository, 'ROADMAP.md'), '# Roadmap\n')
   writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\n')
   mkdirSync(join(repository, 'skills', 'group', 'example'), { recursive: true })
-  writeFileSync(join(repository, 'skills', 'group', 'example', 'SKILL.md'), '---\nname: example\n---\n\n# Example\n')
+  writeFileSync(
+    join(repository, 'skills', 'group', 'example', 'SKILL.md'),
+    '---\nname: example\nki-kind: governance\nki-depends-on: []\ndescription: Use example for fixture work.\nargument-hint: help\n---\n\n# Example\n'
+  )
   return repository
 }
 
@@ -39,12 +47,22 @@ const configItem = () => {
   return { family, item }
 }
 
+const capabilityPublicationItem = () => {
+  const family = catalogue.families.find((candidate) => candidate.code === 'CAP') as
+    | RubricFamily<HarnessRubricContext, HarnessReviewContext & { publication: HarnessCapabilityPublicationContext }>
+    | undefined
+  const item = family?.items.find((candidate) => candidate.code === 'CAP-2')
+  if (!family || !item) throw new Error('CAP-2 is missing')
+  return { family, item }
+}
+
 test('the catalogue preserves the current compatible-harness criteria', () => {
   expect(catalogue.contract).toBe(1)
   expect(catalogue.name).toBe('ki-repo-harness')
   expect(catalogue.createSession).toBeFunction()
   expect(catalogue.families.map((family) => family.code)).toEqual([
     'CAP',
+    'PAYLOAD',
     'LAY',
     'CLAUDE',
     'CONFIG',
@@ -56,6 +74,8 @@ test('the catalogue preserves the current compatible-harness criteria', () => {
   const codes = catalogue.families.flatMap((family) => family.items.map((item) => item.code))
   expect(codes).toEqual([
     'CAP-1',
+    'CAP-2',
+    'PAYLOAD-1',
     'LAY-1',
     'LAY-2',
     'LAY-3',
@@ -117,6 +137,39 @@ test('audit is read-only and an existing marker produces no proposal', () => {
   expect(context.config.hasHarnessTable).toBe(true)
   expect(context.config.requestHarnessMarker).toBeUndefined()
   expect(session.proposal().writes).toEqual([])
+})
+
+test('a missing catalogue produces an exact finding and one marker-bounded conform write', () => {
+  const repository = fixture()
+  const session = catalogue.createSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
+  const context = session.subjects[0]?.context() as HarnessRubricContext
+  const { family, item } = capabilityPublicationItem()
+  const capability = family.selectContext(context)
+  expect(item.mechanical?.audit.run(capability)).toEqual([
+    {
+      status: 'VIOLATION',
+      message: 'The generated capability catalogue is missing from skills/README.md.',
+      subject: 'skills/README.md'
+    }
+  ])
+  item.mechanical?.conform?.run(capability)
+  const proposal = session.proposal().writes.find((write) => write.path === 'skills/README.md')
+  expect(proposal?.content).toStartWith('# skills\n\n')
+  expect(proposal?.content).toContain('<!-- ki-repo-harness:capability-catalogue:start -->')
+  expect(proposal?.content).toContain('This source harness publishes 1 skill: 1 governance skill and 0 process skills.')
+  expect(proposal?.content).toContain('<!-- ki-repo-harness:capability-catalogue:end -->')
+})
+
+test('source conformance does not inherit payload or runtime assurance', () => {
+  const repository = fixture()
+  const session = catalogue.createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
+  const context = session.subjects[0]?.context() as HarnessRubricContext
+  expect(context.provenance.payload).toEqual([
+    expect.objectContaining({
+      status: 'NOT_APPLICABLE',
+      message: expect.stringContaining('verified installed payload')
+    })
+  ])
 })
 
 test('conform refuses a symlinked or dangling configuration path', () => {

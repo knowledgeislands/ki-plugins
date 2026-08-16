@@ -15,12 +15,12 @@ AUDIT runs the two sibling audits in that order, then this skill's rubric. Findi
 ## The render contract
 
 1. **The source repository is inspectable.** Rubric evidence comes only from a physical repository directory and physical files within it. Symlinked or non-regular evidence is reported and not traversed.
-2. **MCP render data is present.** The repository uses one of two supported patterns:
-   - **Data-merge pattern:** `.chezmoidata/` contains an MCP YAML, TOML, or JSON input merged into template data by chezmoi.
+2. **MCP render data is present and valid.** The repository uses one of two supported patterns:
+   - **Data-merge pattern:** `.chezmoidata/` contains one MCP YAML input with the portable canonical schema, merged into template data by chezmoi.
    - **Managed-source pattern:** a plain, non-templated `mcp-servers.yaml` is applied to the canonical XDG path and read from the chezmoi source tree by the render partial.
-3. **The render partial exists.** An `mcp-servers-json` partial expands client-targeted data into a surface's `mcpServers` representation.
-4. **At least one target is wired.** A target `.tmpl` references the render partial.
-5. **A reviewed apply proves renderer parity.** `chezmoi diff` is reviewed before `chezmoi apply`; the result reproduces the renderer targets selected by the repository without claiming ownership of any vendor-native merge boundary.
+3. **The render partial exists.** The sole `.chezmoitemplates/mcp-servers-json.tmpl` partial expands client-targeted data into a surface's `mcpServers` representation.
+4. **At least one target is wired.** A physical target `.tmpl` calls that partial with `template "mcp-servers-json.tmpl" .` or includes the selected managed source; substrings and comments do not count.
+5. **Render, apply, activation, and health remain separate.** `chezmoi diff` is reviewed before `chezmoi apply`, but source structure cannot claim a render, applied target, client activation, or runtime health. Those require separately authorised, secret-safe evidence.
 
 Both data patterns are valid. Choosing between them, selecting a partial location, deciding which targets to render, and executing `chezmoi apply` are external repository policy. The rubric reports the available evidence and missing links but deliberately proposes no files or commands.
 

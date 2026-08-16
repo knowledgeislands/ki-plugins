@@ -30,3 +30,15 @@ test('the session identifies the controlled root, guides, and retired roots', ()
   expect(context.boundary.retiredRoots).toEqual(['docs/spec'])
   expect(session.proposal()).toEqual({ writes: [] })
 })
+
+test('a docs/logs path is left to its specialised owner', () => {
+  const repository = temporaryRepository()
+  mkdirSync(join(repository, 'docs/guides'), { recursive: true })
+  mkdirSync(join(repository, 'docs/logs'), { recursive: true })
+  writeFileSync(join(repository, 'docs/guides/README.md'), '# Guides\n')
+  const session = createGuidesSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
+  const context = session.subjects[1]?.context()
+  if (!context) throw new Error('ki-guides session did not expose its repository subject')
+
+  expect(context.boundary.retiredRoots).toEqual([])
+})

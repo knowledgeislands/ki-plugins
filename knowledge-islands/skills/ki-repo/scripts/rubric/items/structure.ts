@@ -45,6 +45,20 @@ export const STRUCT: RubricFamily<RepoRubricContext, StructureRubricContext> = {
       'A repository declares a Project or Knowledge Base primary structure.',
       'WARN',
       (context) => context.structure2
+    ),
+    item(
+      'STRUCT-3',
+      'Single website implementation',
+      'A website declares at most one mutually exclusive content or app implementation.',
+      'FAIL',
+      (context) => context.structure3
+    ),
+    item(
+      'STRUCT-4',
+      'Website implementation presence',
+      'A declared website core selects a content or app implementation.',
+      'WARN',
+      (context) => context.structure4
     )
   ]
 }

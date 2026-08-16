@@ -16,7 +16,7 @@ const TOOL_1: RubricItem<McpToolsContext> = {
   code: 'TOOL-1',
   title: 'MCP tool surface',
   description:
-    'Registered tool names use snake-case app/resource/action forms; structured output declares outputSchema; and group registration order is stable.',
+    'Registered tool names use snake-case app/resource/action forms; source-local structured output declarations are paired with outputSchema; and group registration order is stable. This is not runtime registration, security, or response evidence.',
   sources: [STANDARD, RESULT_STANDARD],
   mechanical: {
     level: 'WARN',
@@ -51,23 +51,16 @@ const TOOL_1: RubricItem<McpToolsContext> = {
             subject: 'src/tools'
           })
         }
-        const source = context.resultFiles.map((file) => file.content).join('\n')
-        const structured = /\bstructuredContent\b/.test(source)
-        const json = /\bjsonResult\b/.test(source)
-        const schema = /\boutputSchema\b/.test(source)
-        if (structured)
+        const resultFiles = context.resultFiles.filter((file) =>
+          /\b(?:structuredContent|jsonResult)\b/.test(file.content)
+        )
+        for (const file of resultFiles)
           checks.push({
-            status: schema ? 'PASS' : 'VIOLATION',
-            message: schema
-              ? 'structuredContent is paired with outputSchema.'
-              : 'Tools return structuredContent but declare no outputSchema.',
-            subject: 'src/tools'
-          })
-        if (json && !schema)
-          checks.push({
-            status: 'VIOLATION',
-            message: 'Tools use jsonResult but declare no outputSchema.',
-            subject: 'src/tools'
+            status: /\boutputSchema\b/.test(file.content) ? 'PASS' : 'VIOLATION',
+            message: /\boutputSchema\b/.test(file.content)
+              ? 'Source-local result helper use is paired with outputSchema.'
+              : 'Source-local result helper use has no outputSchema in the same file.',
+            subject: file.path
           })
         for (const file of context.files.filter((candidate) => /^src\/tools\/[^/]+\/index\.ts$/.test(candidate.path))) {
           const group = [...file.content.matchAll(/server\.registerTool\(\s*['"]([^'"]+)['"]/g)].map(

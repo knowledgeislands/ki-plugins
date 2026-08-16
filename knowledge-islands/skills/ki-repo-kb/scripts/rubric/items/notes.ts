@@ -51,6 +51,21 @@ const NOTE_1B: RubricItem<KbNoteContext> = {
   }
 }
 
+const NOTE_1C: RubricItem<KbNoteContext> = {
+  code: 'NOTE-1c',
+  title: 'explicit note type metadata',
+  description: 'Every governed KB note frontmatter uses note_type and never the legacy generic type field.',
+  sources: [FRONTMATTER],
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Replace the generic type field with note_type, preserving its value, then rerun the audit.'
+    },
+    audit: { phase: 'INSPECT', run: (context) => context.noteType }
+  }
+}
+
 const NOTE_2: RubricItem<KbNoteContext> = {
   code: 'NOTE-2',
   title: 'note naming convention',
@@ -84,5 +99,5 @@ export const NOTE: RubricFamily<KbRubricContext, KbNoteContext> = {
   description: 'Frontmatter mechanics and note-authoring judgment.',
   standard: FRONTMATTER,
   selectContext: (context) => context.notes,
-  items: [NOTE_1, NOTE_1A, NOTE_1B, NOTE_2, NOTE_3]
+  items: [NOTE_1, NOTE_1A, NOTE_1B, NOTE_1C, NOTE_2, NOTE_3]
 }

@@ -6,6 +6,7 @@ import { COLL } from './collision.ts'
 import { CONFIG } from './config.ts'
 import { LAY } from './layout.ts'
 import { LONG } from './longevity.ts'
+import { PAYLOAD } from './payload.ts'
 import { RUBRIC } from './publication.ts'
 import { SKILLS } from './skills.ts'
 
@@ -14,5 +15,5 @@ export default {
   name: 'ki-repo-harness',
   concern: 'Knowledge Islands compatible harnesses',
   createSession: createHarnessSession,
-  families: [CAP, LAY, CLAUDE, CONFIG, SKILLS, LONG, COLL, RUBRIC]
+  families: [CAP, PAYLOAD, LAY, CLAUDE, CONFIG, SKILLS, LONG, COLL, RUBRIC]
 } satisfies SkillRubricDefinition<HarnessRubricContext>

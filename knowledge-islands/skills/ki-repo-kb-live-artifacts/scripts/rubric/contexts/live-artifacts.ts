@@ -24,6 +24,7 @@ type ArtifactSource = {
 }
 
 export type LiveArtifactsStructureContext = {
+  configuration: readonly AuditOutcome[]
   index: readonly AuditOutcome[]
   publishedSources: readonly AuditOutcome[]
   orphanedRenders: readonly AuditOutcome[]
@@ -47,6 +48,7 @@ export type LiveArtifactsRubricContext = {
 type LiveArtifactsConfiguration = {
   artifactsDirectory: string
   thresholdHours: number
+  errors: readonly string[]
 }
 
 const isDirectory = (path: string): boolean =>
@@ -56,35 +58,45 @@ const isRegularFile = (path: string): boolean =>
   existsSync(path) && !lstatSync(path).isSymbolicLink() && lstatSync(path).isFile()
 
 const parseFrontmatter = (text: string): Record<string, string> | null => {
-  const lines = text.split(/\r?\n/)
-  if (lines[0]?.trim() !== '---') return null
-  const values: Record<string, string> = {}
-  for (let index = 1; index < lines.length; index++) {
-    const line = lines[index] as string
-    if (line.trim() === '---') return values
-    if (/^\s/.test(line)) continue
-    const separator = line.indexOf(':')
-    if (separator <= 0) continue
-    const key = line.slice(0, separator).trim()
-    const value = line
-      .slice(separator + 1)
-      .trim()
-      .replace(/^['"]|['"]$/g, '')
-    if (key) values[key] = value
+  if (text.split(/\r?\n/, 1)[0]?.trim() !== '---') return null
+  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)
+  if (!match) return null
+  try {
+    const parsed = Bun.YAML.parse(match[1] ?? '')
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    return Object.fromEntries(
+      Object.entries(parsed as Record<string, unknown>).flatMap(([key, value]) =>
+        typeof value === 'string' ? [[key, value]] : value === null ? [[key, '']] : []
+      )
+    )
+  } catch {
+    return null
   }
-  return null
+}
+
+const safeDirectory = (root: string, path: string): boolean => {
+  const output = relative(root, path)
+  if (isAbsolute(output) || output === '..' || output.startsWith('../')) return false
+  let cursor = root
+  for (const segment of output.split(/[\\/]/)) {
+    if (!segment) continue
+    cursor = join(cursor, segment)
+    if (!isDirectory(cursor)) return false
+  }
+  return true
 }
 
 const parseConfiguration = (repository: string): LiveArtifactsConfiguration => {
   const path = join(repository, '.ki-config.toml')
   if (!isRegularFile(path))
-    return { artifactsDirectory: DEFAULT_ARTIFACTS_DIRECTORY, thresholdHours: DEFAULT_THRESHOLD_HOURS }
+    return { artifactsDirectory: DEFAULT_ARTIFACTS_DIRECTORY, thresholdHours: DEFAULT_THRESHOLD_HOURS, errors: [] }
   try {
     const document = Bun.TOML.parse(readFileSync(path, 'utf8')) as Record<string, unknown>
     const skills = document.skills
     const value = skills && typeof skills === 'object' ? (skills as Record<string, unknown>)[CONFIG_TABLE] : undefined
     const table = value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
     const configuredDirectory = table.artifacts_dir
+    const errors: string[] = []
     const artifactsDirectory =
       typeof configuredDirectory === 'string' &&
       configuredDirectory.length > 0 &&
@@ -92,14 +104,22 @@ const parseConfiguration = (repository: string): LiveArtifactsConfiguration => {
       !configuredDirectory.split(/[\\/]/).includes('..')
         ? configuredDirectory
         : DEFAULT_ARTIFACTS_DIRECTORY
+    if (configuredDirectory !== undefined && artifactsDirectory === DEFAULT_ARTIFACTS_DIRECTORY)
+      errors.push('artifacts_dir must be a non-empty relative path beneath the base.')
     const configuredThreshold = table.sync_threshold_hours
     const thresholdHours =
       typeof configuredThreshold === 'number' && Number.isFinite(configuredThreshold) && configuredThreshold >= 0
         ? configuredThreshold
         : DEFAULT_THRESHOLD_HOURS
-    return { artifactsDirectory, thresholdHours }
+    if (configuredThreshold !== undefined && thresholdHours === DEFAULT_THRESHOLD_HOURS)
+      errors.push('sync_threshold_hours must be a finite non-negative number.')
+    return { artifactsDirectory, thresholdHours, errors }
   } catch {
-    return { artifactsDirectory: DEFAULT_ARTIFACTS_DIRECTORY, thresholdHours: DEFAULT_THRESHOLD_HOURS }
+    return {
+      artifactsDirectory: DEFAULT_ARTIFACTS_DIRECTORY,
+      thresholdHours: DEFAULT_THRESHOLD_HOURS,
+      errors: ['Cannot parse .ki-config.toml.']
+    }
   }
 }
 
@@ -129,7 +149,7 @@ export const createLiveArtifactsSession = ({
   const root = resolve(repository)
   const configuration = parseConfiguration(root)
   const artifactsDirectory = join(root, configuration.artifactsDirectory)
-  const directoryExists = isDirectory(artifactsDirectory)
+  const directoryExists = safeDirectory(root, artifactsDirectory)
   const indexPath = join(artifactsDirectory, INDEX_NOTE)
   const indexRelativePath = relative(root, indexPath)
   const indexSafe = !existsSync(indexPath) || isRegularFile(indexPath)
@@ -164,6 +184,15 @@ export const createLiveArtifactsSession = ({
     : noSources
       ? 'No artifact sources exist.'
       : undefined
+  const configurationEvidence: AuditOutcome[] = configuration.errors.length
+    ? configuration.errors.map((message) => ({ status: 'VIOLATION', message, subject: '.ki-config.toml' }))
+    : [
+        {
+          status: 'PASS',
+          message: 'Live artifact configuration is parseable and locally safe.',
+          subject: '.ki-config.toml'
+        }
+      ]
   const missingIndexSources =
     indexText === null
       ? []
@@ -295,11 +324,12 @@ export const createLiveArtifactsSession = ({
   const context: LiveArtifactsRubricContext = {
     rubric: { publication },
     structure: {
+      configuration: configurationEvidence,
       index,
       publishedSources,
       orphanedRenders,
       freshness,
-      ...(mutable && directoryExists && sources.length > 0 && indexSafe
+      ...(mutable && configuration.errors.length === 0 && directoryExists && sources.length > 0 && indexSafe
         ? {
             ensureIndex: () => {
               const entry = (source: ArtifactSource): string =>

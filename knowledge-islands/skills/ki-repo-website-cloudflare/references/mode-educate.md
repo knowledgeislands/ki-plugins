@@ -1,6 +1,6 @@
 # Mode EDUCATE — scaffold Cloudflare hosting
 
-Scaffold Cloudflare Workers + Static Assets hosting for a new Knowledge Islands site. Follow this once per site; subsequent changes are handled by CONFORM or AUDIT. The full contract is in [the Cloudflare hosting standard](standards-cloudflare-hosting.md).
+Scaffold Cloudflare Workers Static Assets hosting for a new Knowledge Islands site. Follow this once per site; subsequent changes are handled by CONFORM or AUDIT. The full contract is in [the Cloudflare hosting standard](standards-cloudflare-hosting.md).
 
 ## Contents
 
@@ -42,10 +42,10 @@ The config lives at the **site root** — the repo root for a flat layout, the `
 
 ```jsonc
 {
-  // <site-name> — Cloudflare Workers deployment (Workers + Static Assets, not Pages).
+  // <site-name> — Cloudflare Workers deployment (Workers Static Assets, not Pages).
   "name": "<site-name>",
   "compatibility_date": "<YYYY-MM-DD>",
-  // Eleventy builds to dist/ beside this file; the Worker serves it directly.
+  // The selected website implementation builds dist/ beside this file.
   // Path is relative to THIS file.
   "assets": { "directory": "./dist" },
   // Custom domains — apex plus www (www → apex via a Cloudflare redirect rule, see §8).
@@ -135,7 +135,7 @@ If `.ki-config.toml` does not yet exist, create it at the repo root. Other skill
 
 ## 6. First deploy — workers.dev subdomain
 
-Build the site and deploy. On first deploy, Cloudflare creates the Worker and assigns a `<name>.<account>.workers.dev` subdomain — no custom domain needed yet.
+Build the site and deploy. On first deploy, Cloudflare creates the Worker and assigns a `<name>.<account-subdomain>.workers.dev` URL — no custom domain is needed yet.
 
 ```bash
 bun run ki:site:build   # produce dist/
@@ -154,8 +154,8 @@ Expected output includes `Published <name> (Uploaded …)` and a `*.workers.dev`
 
 This happens in the **Cloudflare dashboard**, not via `wrangler`. The `routes` block in `wrangler.jsonc` with `custom_domain: true` tells Cloudflare to serve the Worker at that domain, but Cloudflare only honours it if the domain's DNS is already managed in the same account.
 
-1. Go to **Workers & Pages → `<name>` → Settings → Domains & Routes**.
-2. Confirm the apex domain (`example.com`) is listed. If not, the `routes` block is missing or the domain is not in the account — add it to `wrangler.jsonc` and redeploy.
+1. Go to **Workers & Pages → Overview → `<name>` → Settings → Domains & Routes → Add → Custom Domain**.
+2. Enter the apex domain (`example.com`) and select **Add Custom Domain**. Alternatively, declare `custom_domain: true` under `routes` and redeploy.
 3. Cloudflare automatically creates a CNAME/A record pointing the apex at the Worker. No manual DNS entry needed when using `custom_domain: true`.
 4. Repeat for `www.example.com`.
 
@@ -182,10 +182,10 @@ Cloudflare Workers Builds replaces manual `bun run ki:site:deploy` calls: a push
 
 1. Go to **Workers & Pages → `<name>` → Settings → Build**.
 2. Connect the GitHub repository (authorize the Cloudflare GitHub App if prompted).
-3. Set the **build command** — typically `bun run ki:site:build` (or whichever script produces `dist/`). Workers Builds runs in a fresh environment; ensure `bun` is available (Cloudflare Workers Builds supports Bun natively).
-4. Set the **deploy directory** to match `assets.directory` in `wrangler.jsonc` (`dist` for both flat and `site/`-subfolder layouts — the Cloudflare UI wants just the directory name, not the relative-path prefix).
-5. Confirm the branch is `main`.
-6. Save. Push a small commit and watch **Workers & Pages → `<name>` → Deployments** to confirm the build runs and deploys.
+3. Set the **build command** to `bun run ki:site:build`.
+4. Set the **deploy command** to `bun run ki:site:deploy` (or `bunx wrangler deploy` when no package script exists).
+5. For a monorepo, set the optional **root directory** to the directory from which those commands resolve. Do not configure a deploy directory; `assets.directory` in `wrangler.jsonc` owns the build-output path.
+6. Confirm the branch is `main`, save, then watch **Workers & Pages → `<name>` → Deployments** after the next push.
 
 If the repo runs a GitHub Action that commits to `main` before deploy (e.g. a content-apply or image-optimization step), that Action commits to `main`, which triggers Workers Builds — the two work together without conflict.
 

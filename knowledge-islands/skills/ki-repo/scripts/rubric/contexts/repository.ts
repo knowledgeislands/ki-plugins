@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path'
 import type {
   AuditOutcome,
   ConformWrite,
+  RepositorySkillActivation,
   RubricContextOptions,
   RubricEmitter,
   RubricPublicationContext,
@@ -16,6 +17,7 @@ import {
   parseSupportedRuntimes,
   type RepoAuditCollection,
   type RepoEvidenceFinding,
+  requiredRuntimeSkills,
   runtimeSkillIgnoreRules
 } from './audit.ts'
 
@@ -25,7 +27,7 @@ const KI_REPO_DEFAULT = `[skills.${KI_REPO_TABLE}]
 title = ""              # required — exact README.md H1
 description = ""        # required — exact GitHub and package.json description where present
 visibility = "private"   # "public" | "private" — must match the repo's actual GitHub visibility
-license = "MIT"          # SPDX id the LICENSE, package.json, and GitHub must match; default MIT. Use "UNLICENSED" for proprietary. Pick one at https://choosealicense.com/
+license = "MIT"          # SPDX id the LICENSE, package.json, and GitHub must match; default MIT. Use "UNLICENSED" for proprietary. Select with https://choosealicense.com/ and validate identifiers at https://spdx.org/licenses/.
 supported_runtimes = ["claude-code", "chatgpt-codex"] # required agent-runtime support surface
 
 # Per-repo check overrides — true = enforce, false = don't. Omit any check to take
@@ -99,7 +101,9 @@ const GITHUB_CODES = new Set([
   'CHECKS-1',
   'COV-1',
   'STRUCT-1',
-  'STRUCT-2'
+  'STRUCT-2',
+  'STRUCT-3',
+  'STRUCT-4'
 ])
 
 export type EvidenceRubricContext = {
@@ -126,12 +130,15 @@ export type GhRubricContext = {
 export type StructureRubricContext = {
   structure1: readonly RepoEvidenceFinding[]
   structure2: readonly RepoEvidenceFinding[]
+  structure3: readonly RepoEvidenceFinding[]
+  structure4: readonly RepoEvidenceFinding[]
 }
 
 export type RuntimesRubricContext = {
   runtimes1: readonly RepoEvidenceFinding[]
   runtimes2: readonly RepoEvidenceFinding[]
   runtimes3: readonly RepoEvidenceFinding[]
+  requestRuntimeSkills?: () => void
 }
 
 export type KindRubricContext = {
@@ -307,8 +314,97 @@ export type RepoEvidenceInspector = (
   emit?: RubricEmitter
 ) => RepoAuditCollection | Promise<RepoAuditCollection>
 
+type RuntimeActivationEvidence = {
+  findings: readonly RepoEvidenceFinding[]
+  missing: readonly string[]
+  requestable: boolean
+}
+
+const runtimeActivationEvidence = (
+  names: readonly string[],
+  capability?: RepositorySkillActivation
+): RuntimeActivationEvidence => {
+  if (names.length === 0) return { findings: [], missing: [], requestable: false }
+  if (!capability)
+    return {
+      findings: [
+        {
+          level: 'NOT_APPLICABLE',
+          code: 'RUNTIMES-2',
+          message: 'host-managed repository-skill activation evidence is unavailable'
+        }
+      ],
+      missing: [],
+      requestable: false
+    }
+
+  let states: ReturnType<RepositorySkillActivation['inspect']>
+  try {
+    states = capability.inspect(names)
+  } catch {
+    return {
+      findings: [
+        {
+          level: 'NOT_APPLICABLE',
+          code: 'RUNTIMES-2',
+          message: 'host-managed repository-skill activation evidence could not be inspected'
+        }
+      ],
+      missing: [],
+      requestable: false
+    }
+  }
+
+  const expected = new Set(names)
+  const seen = new Set<string>()
+  let valid = states.length === names.length
+  for (const { name, status, message } of states) {
+    if (
+      !expected.has(name) ||
+      seen.has(name) ||
+      (status !== 'active' && status !== 'missing' && status !== 'blocked') ||
+      message.trim().length === 0
+    ) {
+      valid = false
+      break
+    }
+    seen.add(name)
+  }
+  if (!valid)
+    return {
+      findings: [
+        {
+          level: 'NOT_APPLICABLE',
+          code: 'RUNTIMES-2',
+          message: 'host-managed repository-skill activation evidence was incomplete or malformed'
+        }
+      ],
+      missing: [],
+      requestable: false
+    }
+
+  const missing = states
+    .filter(({ status }) => status === 'missing')
+    .map(({ name }) => name)
+    .sort()
+  const blocked = states.filter(({ status }) => status === 'blocked')
+  const findings = states.flatMap(({ name, status, message }): RepoEvidenceFinding[] =>
+    status === 'active'
+      ? []
+      : [
+          {
+            level: 'FAIL',
+            code: 'RUNTIMES-2',
+            message: `${name} repository activation is ${status}: ${message}`,
+            subject: '.ki-config.toml'
+          }
+        ]
+  )
+  return { findings, missing, requestable: missing.length > 0 && blocked.length === 0 }
+}
+
 export const createRepoSession = async (
-  { mode, repository, publication, emit }: RubricContextOptions,
+  { mode, repository, publication, emit, repositorySkills }: RubricContextOptions,
   inspect: RepoEvidenceInspector = (target, report) => collectAuditFindings([target], report)
 ): Promise<RubricSession<RepoRubricContext>> => {
   const target = resolve(repository)
@@ -327,6 +423,14 @@ export const createRepoSession = async (
       ? readFileSync(gitignorePath, 'utf8')
       : undefined
   const declaredRuntimeRules = configSource === undefined ? undefined : runtimeRules(configSource || KI_REPO_DEFAULT)
+  const parsedRuntimeConfiguration = configSource === undefined ? undefined : parseSupportedRuntimes(configSource)
+  const runtimeSkillNames =
+    parsedRuntimeConfiguration &&
+    !parsedRuntimeConfiguration.issue &&
+    parsedRuntimeConfiguration.runtimes.every((runtime) => KNOWN_RUNTIMES.includes(runtime))
+      ? requiredRuntimeSkills(parsedRuntimeConfiguration.runtimes)
+      : []
+  const runtimeActivation = runtimeActivationEvidence(runtimeSkillNames, repositorySkills)
   let repoConfigurationRequested = false
   let authoringConfigurationRequested = false
   let gitignoreRequested = false
@@ -381,13 +485,23 @@ export const createRepoSession = async (
     actions: { evidence: evidence('ACT-1') },
     checks: { evidence: evidence('CHECKS-1') },
     coverage: { evidence: evidence('COV-1') },
-    structure: { structure1: evidence('STRUCT-1'), structure2: evidence('STRUCT-2') },
+    structure: {
+      structure1: evidence('STRUCT-1'),
+      structure2: evidence('STRUCT-2'),
+      structure3: evidence('STRUCT-3'),
+      structure4: evidence('STRUCT-4')
+    },
     access: { evidence: evidence('ACCESS-1') },
     kind: { kind1: evidence('KIND-1'), kind2: evidence('KIND-2') },
     runtimes: {
       runtimes1: evidence('RUNTIMES-1'),
-      runtimes2: evidence('RUNTIMES-2'),
-      runtimes3: evidence('RUNTIMES-3')
+      runtimes2: [...evidence('RUNTIMES-2'), ...runtimeActivation.findings],
+      runtimes3: evidence('RUNTIMES-3'),
+      ...(mutable && repositorySkills && runtimeActivation.requestable
+        ? {
+            requestRuntimeSkills: () => repositorySkills.propose(runtimeActivation.missing)
+          }
+        : {})
     },
     descriptionFit: {},
     overrides: {},

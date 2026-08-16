@@ -1,5 +1,5 @@
 ---
-type: calendar/session
+note_type: calendar/session
 created: <YYYY-MM-DDTHH:MM:SSZ>
 updated: <YYYY-MM-DDTHH:MM:SSZ>
 reviewed:

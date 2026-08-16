@@ -13,25 +13,37 @@ const mechanical = (
   level: ViolationLevel,
   evidence: (context: PackageRubricContext) => EngineeringEvidence,
   options: { overrideLevels?: readonly ViolationLevel[]; conform?: (context: PackageRubricContext) => void } = {}
-): RubricItem<PackageRubricContext> => ({
-  code,
-  title,
-  description,
-  sources: ['standards-engineering.md'],
-  mechanical: {
+): RubricItem<PackageRubricContext> => {
+  const base = { code, title, description, sources: ['standards-engineering.md'] as const }
+  const shared = {
     level,
     ...(options.overrideLevels ? { overrideLevels: options.overrideLevels } : {}),
-    remediation: options.conform
-      ? { class: 'automatic' }
-      : {
-          class: 'diagnostic',
-          guidance:
-            'Correct the package manifest structure or declare the missing ownership before rerunning the audit.'
-        },
-    audit: { phase: 'INSPECT', run: (context) => auditEvidence(evidence(context), level, options.overrideLevels) },
-    ...(options.conform ? { conform: { phase: 'PRIMARY' as const, run: options.conform } } : {})
+    audit: {
+      phase: 'INSPECT' as const,
+      run: (context: PackageRubricContext) => auditEvidence(evidence(context), level, options.overrideLevels)
+    }
   }
-})
+  return options.conform
+    ? {
+        ...base,
+        mechanical: {
+          ...shared,
+          remediation: { class: 'automatic' },
+          conform: { phase: 'PRIMARY', run: options.conform }
+        }
+      }
+    : {
+        ...base,
+        mechanical: {
+          ...shared,
+          remediation: {
+            class: 'diagnostic',
+            guidance:
+              'Correct the package manifest structure or declare the missing ownership before rerunning the audit.'
+          }
+        }
+      }
+}
 
 const synchronise = (context: PackageRubricContext): void => context.synchronise?.()
 

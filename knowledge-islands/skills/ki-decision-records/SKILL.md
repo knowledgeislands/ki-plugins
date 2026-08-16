@@ -14,7 +14,7 @@ You are applying the **Knowledge Islands Decision Records standard** — how Dec
 
 ## What this skill owns
 
-1. **The format standard** — required YAML frontmatter (ID, title, date, maintenance status, human-readable type, type URL, and machine decision type), Nygard body sections (Title, Context, Decision, Consequences), and the optional `## References` section, with exact writing guidance (active voice for Decision, value-neutral Context). A DR is a **living present-state record** — its metadata status describes document currency, never a decision lifecycle, mutability marker, supersession chain, or changelog.
+1. **The format standard** — required YAML frontmatter (ID, title, date, maintenance status, `decision_type`, and `decision_type_url`), Nygard body sections (Title, Context, Decision, Consequences), and the optional `## References` section, with exact writing guidance (active voice for Decision, value-neutral Context). A DR is a concise, self-contained **living present-state record**: edit it in place, without historical narrative, a supersession chain, or changelog.
 2. **The prefix table** — nine type-specific prefixes, one per `decision_type`:
 
    | Prefix | `decision_type` |
@@ -30,7 +30,7 @@ You are applying the **Knowledge Islands Decision Records standard** — how Dec
    | `KDR-` | `knowledge`     |
 
 3. **The naming convention** — the filename is `<ID>-<title-slug>.md`: the canonical uppercase ID followed by the title lowercased with non-alphanumeric runs compressed to one dash. The H1 is `<ID>: <title>`, with an open uppercase-alpha-leading scope and a zero-padded serial (≥ 3 digits), monotonically increasing **per prefix within the scope** (NNN is unique for a given `<PREFIX>`+`<SCOPE>` — two DRs may share a serial if their prefixes differ).
-4. **The living-record principle** — a DR states the decision as it stands **now** and is edited **in place**; there is no status lifecycle, no mutability marker, no supersession chain, and no changelog. A change of direction rewrites the live record rather than superseding it, so every record reads as if written today. See [the Decision Records standard](references/standards-decision-records.md).
+4. **The living-record principle** — a DR states the decision as it stands **now** and is edited **in place**. It contains neither historical narrative, lifecycle language, nor a supersession chain or changelog. A change of direction rewrites the live record so every record reads as if written today. See [the Decision Records standard](references/standards-decision-records.md).
 5. **The index rule** — `Decisions.md` in a KB or `README.md` in a code repository must contain an ordered list, one item per DR, in reveal order. A newly created collection begins with `GDR-<SCOPE>-001: Adopting Decision Records`; established collections remain migration cases.
 6. **The placement rule** — `repo_type = "kb"` in `.ki-config.toml` → `Admin/Governance/Decisions/`; all others → `docs/decisions/`. Pass the actual path to the checker.
 7. **The Enactment Process integration** — a DR is the formal artifact for an Enactment Process proposal whose `Decision` output warrants a standalone record.
@@ -62,10 +62,10 @@ Run `ki repo educate --skill ki-decision-records --repo <repo>` to render the ca
 
 ## Notes
 
-- **Records are edited in place** — a DR is kept true by editing it, not by superseding it; there is no `## Changelog` and no supersession chain. A change of direction rewrites the record so it always reads as current.
+- **Records are edited in place** — a DR is kept true by editing it. It has no `## Changelog`, supersession chain, or historical framing; a change of direction rewrites the record so it always reads as current.
 - **Scope convention** — use the island/repo identifier from `.ki-config.toml` as the primary scope segment (e.g. `ARCADIA`). Multi-level scopes are valid for sub-domain decisions (e.g. `ARCADIA-TOOLS`).
 - **Serials are per-prefix within scope** — NNN is unique for a given `<PREFIX>`+`<SCOPE>`. `GDR-ARCADIA-001` and `SDR-ARCADIA-001` are both valid; two DRs never share the same prefix+scope+serial. A deliberately byte-identical cross-repository record declares `shared_record: true`; it retains its canonical ID and is excluded from a receiving collection’s local serial series only when no ordinary local record has that prefix+scope.
 - **Not every proposal needs a DR** — routine content additions, typo fixes, and minor configuration changes do not warrant one. Reserve DRs for decisions with standalone standing.
-- **All repos** require frontmatter (`id`, `title`, `date`, `status`, `type`, `type_url`, `decision_type`). KB repos use `Admin/Governance/Decisions/`; code repos use `docs/decisions/`.
-- The KI-wide frontmatter standard (universal fields and the `type` taxonomy) lives in the `ki-repo-kb` skill.
+- **All repos** require frontmatter (`id`, `title`, `date`, `status`, `decision_type`, `decision_type_url`). Generic `type` and `type_url` are not DR fields. KB repos use `Admin/Governance/Decisions/`; code repos use `docs/decisions/`.
+- The KI-wide frontmatter standard owns generic note metadata; this skill owns decision-specific metadata.
 - Checker output conforms to the canonical JSONL response and reporter contract owned by `ki-skills`; judgment aspects are counted as unevaluated rather than emitted as synthetic findings.

@@ -6,6 +6,7 @@ import type { RubricContextOptions } from '../../shared/rubric.ts'
 import { KI } from '../items/applicability.ts'
 import { CI } from '../items/ci.ts'
 import { PKG } from '../items/package.ts'
+import { TOOL } from '../items/tools.ts'
 import { createMcpSession } from './mcp.ts'
 
 const temporaryDirectories: string[] = []
@@ -48,7 +49,7 @@ const fixture = (): {
   for (const file of ['access-level.ts', 'annotations.ts', 'audit-log.ts'])
     writeFileSync(join(repository, 'src', 'utils', file), '')
   const config = join(repository, '.ki-config.toml')
-  const configContent = '[skills.ki-repo]\n'
+  const configContent = '[skills.ki-repo]\n[skills.ki-repo-mcp]\n'
   writeFileSync(config, configContent)
   const packagePath = join(repository, 'package.json')
   const packageContent = `${JSON.stringify(
@@ -102,20 +103,17 @@ test('audit is read-only and returns one stable prepared context', () => {
   expect(readFileSync(packagePath, 'utf8')).toBe(packageContent)
 })
 
-test('item-owned actions coalesce config and package changes into one deterministic proposal', () => {
+test('selected source shape can propose only its owned package repair', () => {
   const { repository, config, configContent, packagePath, packageContent } = fixture()
   const session = createMcpSession(options(repository, 'conform'))
   const { context } = rootContext(session)
 
-  applicabilityItem().conform?.run(KI.selectContext(context))
   packageItem().conform?.run(PKG.selectContext(context))
-  applicabilityItem().conform?.run(KI.selectContext(context))
   packageItem().conform?.run(PKG.selectContext(context))
 
   const proposal = session.proposal()
-  expect(proposal.writes.map((write) => write.path)).toEqual(['.ki-config.toml', 'package.json'])
-  expect(proposal.writes[0]?.content).toBe(`${configContent}\n[skills.ki-repo-mcp]\n`)
-  const packageWrite = proposal.writes[1]
+  expect(proposal.writes.map((write) => write.path)).toEqual(['package.json'])
+  const packageWrite = proposal.writes[0]
   if (!packageWrite) throw new Error('package proposal is missing')
   const packageJson = JSON.parse(packageWrite.content) as Record<string, unknown>
   expect(packageJson.main).toBe('dist/mcp-server/index.js')
@@ -141,7 +139,7 @@ test('symlinked mutation targets remain report-only', () => {
   applicabilityItem().conform?.run(KI.selectContext(context))
   packageItem().conform?.run(PKG.selectContext(context))
 
-  expect(applicabilityItem().audit.run(KI.selectContext(context))[0]?.message).toContain('not a regular file')
+  expect(applicabilityItem().audit.run(KI.selectContext(context))[0]?.status).toBe('NOT_APPLICABLE')
   expect(session.proposal()).toEqual({ writes: [] })
   expect(readFileSync(outsideConfig, 'utf8')).toBe('[skills.ki-repo]\n')
   expect(readFileSync(outsidePackage, 'utf8')).toBe('{}\n')
@@ -154,6 +152,23 @@ test('unrelated repositories route only the applicability family', () => {
 
   expect(subject.families).toEqual(['KI'])
   expect(applicabilityItem().audit.run(KI.selectContext(context))[0]?.status).toBe('NOT_APPLICABLE')
+})
+
+test('result-envelope checks bind each helper use to its own source file', () => {
+  const { repository } = fixture()
+  const tool = join(repository, 'src', 'tools', 'example', 'index.ts')
+  writeFileSync(tool, "server.registerTool('example_items_list', {})\nconst response = jsonResult({})\n")
+  writeFileSync(join(repository, 'src', 'utils', 'results.ts'), 'const outputSchema = {}\n')
+  const session = createMcpSession(options(repository, 'audit'))
+  const { context } = rootContext(session)
+  const item = TOOL.items.find((candidate) => candidate.code === 'TOOL-1')
+  const outcomes = item?.mechanical?.audit.run(TOOL.selectContext(context)) ?? []
+
+  expect(outcomes).toContainEqual({
+    status: 'VIOLATION',
+    message: 'Source-local result helper use has no outputSchema in the same file.',
+    subject: 'src/tools/example/index.ts'
+  })
 })
 
 test('smoke execution is reported without launching repository code', () => {

@@ -14,7 +14,7 @@
  *                repo is confirmed a ki-repo by carrying it, each other governance
  *                skill whose applicability is detectable in the repo (a Streams/
  *                zone, an eleventy.config, an MCP SDK dep, …) must DECLARE its
- *                `[ki-<skill>]` opt-in table — detected-but-undeclared
+ *                `[skills.ki-<skill>]` opt-in table — detected-but-undeclared
  *                WARNs. A non-ki-repo is never coverage-checked (no false positives).
  *   2. GITHUB  — default branch, license, squash-only + linear, auto-delete-branch,
  *                Issues on / Wiki+Projects off, non-empty description, visibility
@@ -206,7 +206,7 @@ const pkgHasDep = (pkg: Pkg | null, name: string): boolean =>
   Boolean(pkg?.dependencies?.[name] ?? pkg?.devDependencies?.[name])
 
 // The repo's full tree (recursive) as a set of paths, for the coverage signals that
-// look below the root (`site/wrangler.jsonc`, `skills/*/SKILL.md`, `subagents/**/*.md`).
+// look below the root (`site/wrangler.jsonc`, `skills/*/SKILL.md`, runtime subagent projections).
 // One API call; empty set on error or truncation. `rootPaths` stays the top-level
 // view the file-presence checks use.
 async function treePaths(nwo: string, branch: string): Promise<Set<string>> {
@@ -406,7 +406,7 @@ const REPO_FIELDS =
 // ── coverage cascade ──────────────────────────────────────────────────────────
 // Once the gate confirms a repo is a ki-repo (it carries .ki-config.toml), each
 // other governance skill whose APPLICABILITY is detectable from the repo must be
-// DECLARED — its `[ki-<skill>]` opt-in table present. This is the
+// DECLARED — its `[skills.ki-<skill>]` opt-in table present. This is the
 // single registry of {skill → detection signal → opt-in table}. `repo` reads only
 // table PRESENCE here (validate-down still owns table CONTENTS); a detected-but-
 // undeclared signal WARNs, a declared-but-undetected table WARNs as possibly stale.
@@ -414,7 +414,16 @@ const REPO_FIELDS =
 // it is checked directly as a required declaration above (authoring-baseline), not here.
 const WRANGLER = ['wrangler.jsonc', 'wrangler.json', 'wrangler.toml']
 const ELEVENTY = ['eleventy.config.ts', 'eleventy.config.js', 'eleventy.config.cjs', 'eleventy.config.mjs']
+const VITE = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs', 'vite.config.mts']
 type Signals = { root: Set<string>; tree: Set<string>; pkg: Pkg | null }
+
+const hasNamedConfig = (signals: Signals, names: readonly string[]): boolean =>
+  names.some((file) => signals.root.has(file)) ||
+  [...signals.tree].some((path) => names.some((file) => path.endsWith(`/${file}`)))
+
+const hasContentWebsite = (signals: Signals): boolean => hasNamedConfig(signals, ELEVENTY)
+const hasAppWebsite = (signals: Signals): boolean =>
+  hasNamedConfig(signals, VITE) && pkgHasDep(signals.pkg, 'react') && pkgHasDep(signals.pkg, 'vite')
 type ContentSource = 'local checkout' | 'GitHub default branch'
 type ContentEvidence = {
   files: Set<string>
@@ -485,9 +494,20 @@ const COVERAGE: { skill: string; table: string; artifact: string; detect: (s: Si
   {
     skill: 'website',
     table: skillTable('ki-repo-website'),
+    artifact: 'a content or app website implementation',
+    detect: (s) => hasContentWebsite(s) || hasAppWebsite(s)
+  },
+  {
+    skill: 'website-content',
+    table: skillTable('ki-repo-website-content'),
     artifact: 'eleventy.config.*',
-    detect: (s) =>
-      ELEVENTY.some((f) => s.root.has(f)) || [...s.tree].some((p) => ELEVENTY.some((f) => p.endsWith(`/${f}`)))
+    detect: hasContentWebsite
+  },
+  {
+    skill: 'website-app',
+    table: skillTable('ki-repo-website-app'),
+    artifact: 'Vite config with React and Vite dependencies',
+    detect: hasAppWebsite
   },
   {
     skill: 'website-cloudflare',
@@ -537,8 +557,23 @@ const COVERAGE: { skill: string; table: string; artifact: string; detect: (s: Si
   {
     skill: 'subagents',
     table: skillTable('ki-subagents'),
+    artifact: 'subagents/**/*.md or .codex/agents/**/*.toml',
+    detect: (s) =>
+      [...s.tree].some(
+        (p) => (/^subagents\/.+\.md$/.test(p) && !/(^|\/)README\.md$/i.test(p)) || /^\.codex\/agents\/.+\.toml$/.test(p)
+      )
+  },
+  {
+    skill: 'subagents-claude',
+    table: skillTable('ki-subagents-claude'),
     artifact: 'subagents/**/*.md',
     detect: (s) => [...s.tree].some((p) => /^subagents\/.+\.md$/.test(p) && !/(^|\/)README\.md$/i.test(p))
+  },
+  {
+    skill: 'subagents-codex',
+    table: skillTable('ki-subagents-codex'),
+    artifact: '.codex/agents/**/*.toml',
+    detect: (s) => [...s.tree].some((p) => /^\.codex\/agents\/.+\.toml$/.test(p))
   },
   {
     skill: 'checkpoint',
@@ -551,6 +586,7 @@ const COVERAGE_SKILLS = new Set(COVERAGE.map((c) => c.skill))
 // A primary structure is exclusive; all other ki-repo-* skills are composable
 // specialisations. Project is the non-KB default, while KB owns the KB primary.
 const PRIMARY_STRUCTURE_TABLES = [skillTable('ki-repo-project'), skillTable('ki-repo-kb')]
+const WEBSITE_IMPLEMENTATION_TABLES = [skillTable('ki-repo-website-content'), skillTable('ki-repo-website-app')]
 type MultilineDelimiter = '"""' | "'''"
 function tripleClose(line: string, delimiter: MultilineDelimiter, from: number): number {
   let at = line.indexOf(delimiter, from)
@@ -685,12 +721,12 @@ async function auditRepo(
       fail('FILES-2', `README.md H1 must equal ${KI_CONFIG} title`, 'README.md')
     if (!ki.description?.trim()) fail('FILES-2', `${KI_CONFIG} must declare a non-empty \`description\``, KI_CONFIG)
     if (
-      declaresRootTable(kiText ?? '', skillTable('ki-change-management-roadmap')) &&
+      declaresRootTable(kiText ?? '', skillTable('ki-work-roadmap')) &&
       !/^[A-Z][A-Z0-9-]{1,23}$/.test(ki.repoCode ?? '')
     )
       fail(
         'FILES-2',
-        `${KI_CONFIG} ki-repo repo_code must be a stable uppercase identifier when ki-change-management-roadmap is declared`,
+        `${KI_CONFIG} ki-repo repo_code must be a stable uppercase identifier when ki-work-roadmap is declared`,
         KI_CONFIG
       )
   }
@@ -702,10 +738,10 @@ async function auditRepo(
     else if (configuration.repositoryType === 'kb') {
       if (!declaresRootTable(kiText, skillTable('ki-repo-kb')))
         fail('KIND-2', 'repo_type = "kb" requires the [skills.ki-repo-kb] structure declaration', KI_CONFIG)
-      if (declaresRootTable(kiText, skillTable('ki-change-management-roadmap')))
+      if (declaresRootTable(kiText, skillTable('ki-work-roadmap')))
         fail(
           'KIND-2',
-          'repo_type = "kb" cannot declare ki-change-management-roadmap; Knowledge Bases use ki-repo-kb-streams',
+          'repo_type = "kb" cannot declare ki-work-roadmap; Knowledge Bases use ki-repo-kb-streams',
           KI_CONFIG
         )
     } else if (declaresRootTable(kiText, skillTable('ki-repo-kb')))
@@ -725,7 +761,7 @@ async function auditRepo(
   const liveKey = r.licenseInfo?.key ?? null
   // GH-2: declared license, cross-checked against live GitHub + package.json
   if (proprietary) {
-    if (liveKey && !['other', 'noassertion'].includes(liveKey))
+    if (liveKey && !['other', 'noassertion', 'unlicensed'].includes(liveKey))
       fail('GH-2', `${KI_CONFIG} declares a proprietary license but GitHub reports "${liveKey}"`)
   } else if (liveKey !== declaredKey) {
     fail('GH-2', `license is "${liveKey ?? 'none'}" (want ${declaredLicense} per ${KI_CONFIG})`)
@@ -883,6 +919,21 @@ async function auditRepo(
         'STRUCT-2',
         'declares no primary repository structure — declare ki-repo-project for a non-KB repository or ki-repo-kb for a Knowledge Base'
       )
+
+    // ── website implementation cardinality ── STRUCT-3/4
+    // A website selects one purpose-specific implementation. Hosting adapters compose
+    // independently and are deliberately excluded from this count.
+    const declaredWebsiteImplementations = WEBSITE_IMPLEMENTATION_TABLES.filter((table) => declaresTable(text, table))
+    if (declaredWebsiteImplementations.length > 1)
+      fail(
+        'STRUCT-3',
+        `declares both website implementations (${declaredWebsiteImplementations.map((table) => `[skills.${table}]`).join(', ')}) — choose content or app, not both`
+      )
+    else if (declaresTable(text, skillTable('ki-repo-website')) && declaredWebsiteImplementations.length === 0)
+      warn(
+        'STRUCT-4',
+        'declares [skills.ki-repo-website] but no implementation — choose ki-repo-website-content or ki-repo-website-app'
+      )
   }
 
   // TOGGLE-1: repo-feature toggles (Issues on, Wiki/Projects off)
@@ -968,7 +1019,7 @@ async function auditRepo(
 // The agent runtimes the bootstrap linkers know how to install for. A repo may
 // declare a subset in `[skills.ki-repo] supported_runtimes`; anything outside this set has no
 // discovery path, so the linker would silently do nothing for it (RUNTIMES-1).
-export const KNOWN_RUNTIMES = ['claude-code', 'chatgpt-codex']
+export const KNOWN_RUNTIMES = ['claude-code', 'claude-desktop', 'chatgpt-codex']
 const LOCAL_SELF_SOURCE = '.agents/skills/ki-self'
 const CLAUDE_SELF_PROJECTION = '.claude/skills/ki-self'
 
@@ -1085,6 +1136,16 @@ const localKiSelfFindings = (dir: string, runtimes: readonly string[]): Finding[
 // RUNTIMES-1: validate the required `[skills.ki-repo] supported_runtimes` declaration. A pure
 // local .ki-config.toml read — offline-safe, sitting beside vendor-integrity. Every
 // name must be a runtime the linkers recognise; the support surface is never inferred.
+export const requiredRuntimeSkills = (runtimes: readonly string[]): readonly string[] => {
+  const required = new Set(['ki-tokenomics'])
+  if (runtimes.includes('claude-code')) {
+    required.add('ki-housekeeping-claude')
+    required.add('ki-tokenomics-claude')
+  }
+  if (runtimes.includes('chatgpt-codex')) required.add('ki-tokenomics-codex')
+  return [...required].sort()
+}
+
 function localConfigFindings(dir: string): Finding[] {
   const { f, fail } = mk()
   const cfgPath = join(dir, KI_CONFIG)
@@ -1111,14 +1172,9 @@ function localConfigFindings(dir: string): Finding[] {
     )
   if (unknown.length) return f
 
-  const required = new Set([skillTable('ki-tokenomics')])
-  if (parsed.runtimes.includes('claude-code')) {
-    required.add(skillTable('ki-housekeeping-claude'))
-    required.add(skillTable('ki-tokenomics-claude'))
-  }
-  if (parsed.runtimes.includes('chatgpt-codex')) required.add(skillTable('ki-tokenomics-codex'))
+  const required = requiredRuntimeSkills(parsed.runtimes)
   const declared = new Set(parsed.rootTables)
-  const missing = [...required].filter((skill) => !declared.has(skill)).sort()
+  const missing = required.filter((skill) => !declared.has(skill))
   if (missing.length)
     fail(
       'RUNTIMES-2',
@@ -1205,7 +1261,9 @@ const CONTENT_AREAS = new Set([
   'CHECKS-1',
   'COV-1',
   'STRUCT-1',
-  'STRUCT-2'
+  'STRUCT-2',
+  'STRUCT-3',
+  'STRUCT-4'
 ])
 
 const findingSource = (area: string, content: ContentSource, live = true): string => {

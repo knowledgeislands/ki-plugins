@@ -50,12 +50,12 @@ const fixture = (): { readonly repository: string; readonly config: string; read
   )
   writeFileSync(join(repository, 'README.md'), '# Tap\n\n## Formulae\n\n| Formula |\n| --- |\n| `mgit` |\n')
   const config = join(repository, '.ki-config.toml')
-  const original = '[skills.ki-repo]\n'
+  const original = '[skills.ki-repo]\n[skills.ki-repo-homebrew-tap]\n'
   writeFileSync(config, original)
   return { repository, config, original }
 }
 
-const rootContext = (session: ReturnType<typeof createHomebrewTapSession>) => {
+const rootContext = (session: Awaited<ReturnType<typeof createHomebrewTapSession>>) => {
   const subject = session.subjects[0]
   if (!subject) throw new Error('ki-repo-homebrew-tap session did not expose its repository subject')
   return { subject, context: subject.context() }
@@ -73,67 +73,45 @@ const configItem = () => {
   return item.mechanical
 }
 
-test('audit is read-only, stable, applicable, and keeps Homebrew commands report-only', () => {
+test('audit is read-only, stable, applicable, and never launches Homebrew', async () => {
   const { repository, config, original } = fixture()
-  const session = createHomebrewTapSession(options(repository, 'audit'))
+  const session = await createHomebrewTapSession(options(repository, 'audit'))
   const { subject, context } = rootContext(session)
 
   expect(subject.context()).toBe(subject.context())
   expect(context.config.addMarker).toBeUndefined()
   expect(tapItem('TAP-1').audit.run(TAP.selectContext(context))[0]?.status).toBe('PASS')
-  expect(configItem().audit.run(CONFIG.selectContext(context))[0]?.status).toBe('VIOLATION')
+  expect(configItem().audit.run(CONFIG.selectContext(context))[0]?.status).toBe('PASS')
   expect(tapItem('TAP-7').audit.run(TAP.selectContext(context))).toEqual([
     {
-      status: 'VIOLATION',
-      message: 'Run Homebrew validation explicitly: brew style Formula/mgit.rb and brew audit --strict mgit.',
-      subject: 'Formula/mgit.rb'
+      status: 'INFO',
+      message: 'Static audit does not execute Homebrew; obtain isolated opt-in brew style/audit evidence separately.',
+      subject: 'Formula/'
     }
   ])
   expect(session.proposal()).toEqual({ writes: [] })
   expect(readFileSync(config, 'utf8')).toBe(original)
 })
 
-test('CONFIG-1 coalesces an idempotent marker repair into one session proposal', () => {
-  const { repository, config, original } = fixture()
-  const session = createHomebrewTapSession(options(repository, 'conform'))
-  const { context } = rootContext(session)
-  const configContext = CONFIG.selectContext(context)
-
-  configItem().conform?.run(configContext)
-  configItem().conform?.run(configContext)
-
-  expect(session.proposal()).toEqual({
-    writes: [
-      {
-        path: '.ki-config.toml',
-        content: `${original}\n# This repo is a Knowledge Islands Homebrew tap.\n[skills.ki-repo-homebrew-tap]\n`
-      }
-    ]
-  })
-  expect(readFileSync(config, 'utf8')).toBe(original)
-})
-
-test('a symlinked config is reported but never proposed for replacement', () => {
+test('a symlinked config is reported but never proposed for replacement', async () => {
   const repository = temporaryDirectory('ki-repo-homebrew-tap-root-')
   const outside = join(temporaryDirectory('ki-repo-homebrew-tap-outside-'), 'config.toml')
   mkdirSync(join(repository, 'Formula'))
   writeFileSync(join(repository, 'Formula', 'mgit.rb'), 'class Mgit < Formula\n')
   writeFileSync(outside, '[skills.ki-repo]\n')
   symlinkSync(outside, join(repository, '.ki-config.toml'))
-  const session = createHomebrewTapSession(options(repository, 'conform'))
+  const session = await createHomebrewTapSession(options(repository, 'conform'))
   const { context } = rootContext(session)
   const configContext = CONFIG.selectContext(context)
 
-  configItem().conform?.run(configContext)
-
-  expect(configItem().audit.run(configContext)[0]?.message).toContain('not a regular file')
+  expect(configItem().audit.run(configContext)[0]?.status).toBe('NOT_APPLICABLE')
   expect(session.proposal()).toEqual({ writes: [] })
   expect(readFileSync(outside, 'utf8')).toBe('[skills.ki-repo]\n')
 })
 
-test('an unrelated repository is not applicable', () => {
+test('an unrelated repository is not applicable', async () => {
   const repository = temporaryDirectory('ki-repo-homebrew-tap-unrelated-')
-  const session = createHomebrewTapSession(options(repository, 'audit'))
+  const session = await createHomebrewTapSession(options(repository, 'audit'))
   const { context } = rootContext(session)
 
   expect(tapItem('TAP-1').audit.run(TAP.selectContext(context))[0]?.status).toBe('NOT_APPLICABLE')

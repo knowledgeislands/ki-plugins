@@ -1,5 +1,7 @@
 # Mode CONFORM — bring guides into line
 
+Preserve a guide whose stable behaviour has no existing Specification and route that contract gap to `ki-specs`; do not invent a speculative corpus during CONFORM.
+
 **Precondition:** run [AUDIT](mode-audit.md) first and retain its gap list.
 
 1. Run `ki repo conform --skill ki-guides --repo <repo> --dry-run` to inspect any host-owned generated-publication proposal.

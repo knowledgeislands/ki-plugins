@@ -7,6 +7,7 @@ import { CHECKS } from './checks.ts'
 import { COV } from './coverage.ts'
 import { DEP } from './dependencies.ts'
 import { DESCFIT } from './description-fit.ts'
+import { DOC } from './documentation.ts'
 import { FILES } from './files.ts'
 import { GH } from './gh.ts'
 import { KIND } from './kind.ts'
@@ -48,6 +49,7 @@ export default {
     KIND,
     RUNTIMES,
     DESCFIT,
+    DOC,
     OVR,
     SYNC,
     WORK

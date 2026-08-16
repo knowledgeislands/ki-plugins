@@ -12,49 +12,47 @@ The standard pins versions in `packageManager`, `engines`, `biome.json`'s `$sche
 
 | Tag | Source | Governs | Pinned at | Last reviewed |
 | --- | --- | --- | --- | --- |
-| BUN | [bun.sh / releases][bun] | `packageManager: bun@1.3.x`; the Bun-install / Node-run split | bun@1.3.14 | 2026-07-04 |
-| NODE | [Node release schedule][node] | `engines.node >= 22` (the runtime `dist/` targets) | >=22.0.0 | 2026-07-04 |
-| BIOME | [biomejs.dev][biome] | `biome.json` schema + the formatter/linter config | 2.5.2 | 2026-07-04 |
-| TS | [typescript releases][ts] | the `tsconfig` / `tsconfig.build` compiler options | ^6.0 | 2026-07-04 |
-| VITEST | [vitest.dev][vitest] | the config-gated test profile + 100% coverage (`vitest run`, v8) | current | 2026-07-04 |
-| SYNCPACK | [syncpack][syncpack] | package ordering inside engineering audit/conform | ^15 | 2026-07-04 |
-| MDLINT | [rumdl][rumdl] | Markdown audit/conform inside `ki-authoring` ❡ | ^0.2.52 | 2026-08-08 |
-| KNIP | [knip][knip] | dependency + dead-code checks inside engineering audit/conform | current | 2026-07-04 |
+| BUN | [Bun releases][bun] | `packageManager` and `mise` runtime line; Bun-install / Node-run split | declared and resolved `1.3.14` | 2026-08-12 |
+| NODE | [Node release schedule][node] | `engines.node >= 22` for `dist/` | declared floor `>=22` | 2026-08-12 |
+| BIOME | [Biome releases][biome] | `biome.json` schema + formatter/linter config | declared and resolved `2.5.7` | 2026-08-12 |
+| TS | [TypeScript releases][ts] | `tsconfig` / `tsconfig.build` compiler options | declared range and resolved `7.0.2` | 2026-08-12 |
+| VITEST | [Vitest guide][vitest] | config-gated test profile + 100% coverage (`vitest run`, v8) | capability-selected | 2026-08-12 |
+| SYNCPACK | [syncpack releases][syncpack] | package ordering inside engineering audit/conform | declared range and resolved `15.3.3` | 2026-08-12 |
+| MDLINT | [rumdl releases][rumdl] | Markdown audit/conform inside `ki-authoring` ❡ | declared `^0.2.54`, resolved `0.2.54` | 2026-08-12 |
+| KNIP | [knip releases][knip] | dependency + dead-code checks inside engineering audit/conform | declared range and resolved `6.32.0` | 2026-08-12 |
 
 ❡ The Markdown mechanical pass.
 
 ## In-house (the workspace convention)
 
-The standard is the **majority shape** across the TS/Bun repos under `knowledgeislands/`. They are the living source of truth for house style; when they diverge, the majority wins and the outlier is a finding unless documented.
+The standard is a **deliberately selected house shape**, not a vote count. Current configured repositories and this harness's committed tool files are supporting implementation evidence; the normative rules live in the standard and its registered rubric.
 
 | Tag | Source | Governs | Last reviewed |
 | --- | --- | --- | --- |
-| REPOS | the 10 TS/Bun sibling repos † | aggregate/scoped scripts, tsconfig/biome, config-gated Vitest, build/chmod | 2026-06-21 |
-| FRAMEWORK | harness docs ※ | the enforcement framework (modes, checker contract, rubric tagging, sources cadence) | 2026-06-21 |
+| HARNESS | `package.json` + `bun.lock` † | declared ranges and exact resolved versions for the canonical harness | 2026-08-12 |
+| COLLECTION | current configured collection ※ | house-shape comparison during a deliberate refresh, not a normative repository count | 2026-08-12 |
+| FRAMEWORK | harness rubric sources ‡ | mode, checker, judgment-status, and generated-publication contracts | 2026-08-12 |
 
-† the 7 `mcp-*` servers + `ki-agentic-harness`, `ki-arcadia-principal`, `ki-repo-website`.
+† `package.json` expresses the compatible range where one is selected; `bun.lock` is the resolved evidence for this harness. They are distinct.
 
-※ `ki-agentic-harness/docs/skills.md` "governance-skill shape".
+※ derive this during the current refresh from `.ki-config.toml` selectors; do not hard-code an inventory in this skill.
+
+‡ `ki-skills` rubric-authoring standard and this skill's canonical item catalogue.
 
 ## Last review
 
-REFRESH last run **2026-07-04**. Cadence: monthly, alongside the other governance skills (the `ki-skills-refresh` routine). **Drift folded in this cycle:** the living-source repos have upgraded three toolchain pins ahead of this file, and the deps tool was replaced.
+REFRESH last run **2026-08-12**. Cadence: monthly, alongside the other governance skills.
 
-- **Pins bumped to match the repos:** Biome `2.5.0 → 2.5.2` (repo `biome.json` `$schema=2.5.1`, devDep `@biomejs/biome=2.5.2`; `2.5.2` is upstream latest), rumdl adopted at `^0.2.52`, replacing markdownlint-cli2 and prettier. syncpack `^15.3.2` absorbs latest 15.x.
-- **Deps tool replaced:** the `DEPCHECK` row is retired — `depcheck` is no longer a dependency. Knip now runs directly inside engineering audit/conform for dependency and dead-code checks, per `standards-engineering.md` §2/§5 and `rubric.md`. Tracked as `KNIP` going forward.
-- **Pins confirmed current:** `bun@1.3.14` (latest stable, 2026-05-13; no newer 1.3.x), `engines.node >=22.0.0` (22 Maintenance LTS, 24 Active LTS, 26 Current — floor valid; repo node `24.15.0`), TypeScript `^6.0.3` (6.0 still latest **stable**), vitest `4.1.9` (5.0 still beta).
-- **Repo cross-check:** `ki-agentic-harness` self-audit = 0 fail. The prior proseWrap WARN is resolved this run — the standard, checker (`audit.ts`), and rubric now all specify `proseWrap: never`, matching the repo and `ki-authoring` house style.
-- **Open watch-items:**
-  - **TypeScript 7.0** (Go native port) reached **Release Candidate 2026-06-18**, GA estimated ~July 2026 (no longer "mid-to-late 2026"). Type-checking is structurally identical to 6.0. When 7.0 GAs, decide whether the `^6.0` pin tracks it or holds on 6.x — re-check next refresh.
-  - **Node v27** schedule change (one major/year, every release LTS, odd/even dropped) still lands with v27; v26 is the last under the current model. Re-check the `>=22` floor and Node source wording at the first refresh after October 2026.
-  - **Repo-set count:** the "10 TS/Bun repos / seven `mcp-*` servers" claim overcounts — 6 `mcp-*` on disk (9 total), and only 4 repos carry a `[skills.ki-engineering]` table so far. Reconcile the count in SKILL.md, this footnote, README, and CLAUDE.md centrally.
-  - Bun and Biome both move fast; re-pin on the next house upgrade.
+- **Reconciled declared and resolved evidence:** the canonical harness declares Bun `1.3.14`, Biome `2.5.7`, TypeScript `^7.0.2`, syncpack `^15.3.3`, knip `^6.32.0`, and rumdl `^0.2.54`; its committed lock resolves `1.3.14`, `2.5.7`, `7.0.2`, `15.3.3`, `6.32.0`, and `0.2.54` respectively.
+- **Current upstream comparison:** Bun `1.3.14`, Biome `2.5.7`, TypeScript `7.0.2`, syncpack `15.3.3`, and rumdl `0.2.54` match the reviewed releases. Knip has a newer `6.32.2` release, but the selected `^6.32.0` range already admits that compatible update; this review does not force a lockfile refresh unrelated to the confirmed rumdl fixes.
+- **Authority correction:** upstream release pages establish availability, `package.json` establishes the selected compatible range, and `bun.lock` establishes this harness's resolved evidence. Sibling inventory is supporting observation only; the prior hard-coded repository count is removed from this skill.
+- **Toolchain contract correction:** the current ADR, standard, catalogue, and source record agree that registered native operations own governance and code-tool execution; retired package aliases are not restored.
 
 [bun]: https://bun.sh/blog
 [node]: https://nodejs.org/en/about/previous-releases
-[biome]: https://biomejs.dev/
-[ts]: https://www.typescriptlang.org/
+[biome]: https://github.com/biomejs/biome/releases
+[ts]: https://github.com/microsoft/typescript-go/releases
 [vitest]: https://vitest.dev/
-[syncpack]: https://github.com/JamieMason/syncpack
-[rumdl]: https://github.com/rvben/rumdl
-[knip]: https://github.com/webpro-nl/knip
+[syncpack]: https://github.com/JamieMason/syncpack/releases
+[rumdl]: https://github.com/rvben/rumdl/releases
+[knip]: https://github.com/webpro-nl/knip/releases

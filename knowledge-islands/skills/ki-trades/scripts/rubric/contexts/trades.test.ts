@@ -13,9 +13,12 @@ import { STATUS } from '../items/status.ts'
 import { createTradesSession, tradeReadmes } from './trades.ts'
 
 const temporaryDirectories: string[] = []
+const initialXdgStateHome = process.env.XDG_STATE_HOME
 
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) rmSync(directory, { recursive: true, force: true })
+  if (initialXdgStateHome === undefined) delete process.env.XDG_STATE_HOME
+  else process.env.XDG_STATE_HOME = initialXdgStateHome
 })
 
 const temporaryDirectory = (prefix: string): string => {
@@ -35,8 +38,12 @@ const routes = (
 const tradeConfiguration = (
   _identity: string,
   peers: readonly string[],
-  kinds?: readonly ('work' | 'knowledge')[]
-): Record<string, unknown> => ({ routes: routes(peers, kinds) })
+  kinds?: readonly ('work' | 'knowledge')[],
+  mapBonus?: unknown
+): Record<string, unknown> => ({
+  ...(mapBonus === undefined ? {} : { map_bonus: mapBonus }),
+  routes: routes(peers, kinds)
+})
 
 const writeRepositoryConfiguration = (
   root: string,
@@ -74,11 +81,19 @@ const scaffold = (root: string): void => {
 }
 
 const registry = (home: string, roots: readonly string[]): void => {
-  const directory = join(home, '.config', 'ki')
+  const directory = join(home, '.local', 'state', 'ki')
   mkdirSync(directory, { recursive: true })
   writeFileSync(
-    join(directory, 'config.toml'),
-    ['[repositories]', `paths = [${roots.map((root) => JSON.stringify(root)).join(', ')}]`, ''].join('\n')
+    join(directory, 'registry.toml'),
+    [
+      'schema = 1',
+      '',
+      ...roots.flatMap((root, index) => [
+        `[repositories.${JSON.stringify(`repository-${index + 1}`)}]`,
+        `path = ${JSON.stringify(root)}`,
+        ''
+      ])
+    ].join('\n')
   )
 }
 
@@ -99,12 +114,15 @@ const options = (
   userHome: string,
   configuration: Record<string, unknown>,
   mode: 'audit' | 'conform' = 'audit'
-): RubricContextOptions => ({
-  mode,
-  repository,
-  userHome,
-  configuration
-})
+): RubricContextOptions => {
+  process.env.XDG_STATE_HOME = join(userHome, '.local', 'state')
+  return {
+    mode,
+    repository,
+    userHome,
+    configuration
+  }
+}
 
 const record = (
   id: string,
@@ -183,12 +201,45 @@ test('malformed route declarations are refused', () => {
   const messages = mechanicalOutcomes(session, CONFIG).map((outcome) => outcome.message)
 
   expect(messages).toContain(
-    'route not a repository must be keyed by owner/name or a canonical HTTPS GitHub repository URL'
+    'route not a repository must be keyed by owner/name or a canonical HTTPS GitHub repository URL; non-GitHub endpoints are unsupported'
   )
   expect(messages).toContain('route peer/repo export carries no kinds and must be omitted rather than empty')
   expect(messages).toContain('route peer/repo import must not repeat a kind')
   expect(messages).toContain('route another/repo export kind gossip is not a declared trade kind')
   expect(messages).toContain('route third/repo must be a table declaring export and import kinds')
+})
+
+test('non-GitHub partner identities fail closed rather than entering a partial route projection', () => {
+  const { home, local } = fixture()
+  const session = createTradesSession(
+    options(local, home, {
+      routes: { 'https://code.example.org/peer/repo': { export: ['work'] } }
+    })
+  )
+
+  expect(mechanicalOutcomes(session, CONFIG)).toContainEqual({
+    status: 'VIOLATION',
+    message:
+      'route https://code.example.org/peer/repo must be keyed by owner/name or a canonical HTTPS GitHub repository URL; non-GitHub endpoints are unsupported',
+    subject: '.ki-config.toml'
+  })
+})
+
+test('map bonus is bounded presentation metadata', () => {
+  const { home, local } = fixture()
+  const valid = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'], undefined, 1)))
+  expect(mechanicalOutcomes(valid, CONFIG)).toEqual([
+    { status: 'PASS', message: 'Trade route declarations are canonical.' }
+  ])
+
+  const invalid = createTradesSession(
+    options(local, home, tradeConfiguration('local/repo', ['peer/repo'], undefined, 4))
+  )
+  expect(mechanicalOutcomes(invalid, CONFIG)).toContainEqual({
+    status: 'VIOLATION',
+    message: 'map_bonus must be an integer from 0 through 3',
+    subject: '.ki-config.toml'
+  })
 })
 
 test('declared routes remain pending until the other repository registers and reciprocates', () => {
@@ -243,7 +294,10 @@ test('outbound records are valid on a declared export route while receiver parti
     subject: 'https://github.com/peer/repo'
   })
   expect(mechanicalOutcomes(session, AUTH)).toEqual([
-    { status: 'PASS', message: 'Trade records preserve sender and receiver write boundaries.' }
+    {
+      status: 'PASS',
+      message: 'Trade records preserve sender and receiver write boundaries.'
+    }
   ])
   expect(mechanicalOutcomes(session, RELEASE)).toEqual([
     {
@@ -262,7 +316,7 @@ test('a committed preparation is valid on a sender-declared export and is not re
     '-',
     'peer/repo',
     id,
-    record(id, 'local/repo', 'peer/repo', [], undefined, 'work', 'receipt', true)
+    record(id, 'local/repo', 'peer/repo', [], undefined, 'knowledge', 'receipt', true)
   )
   writeFileSync(
     join(peer, '.ki-config.toml'),
@@ -271,13 +325,22 @@ test('a committed preparation is valid on a sender-declared export and is not re
 
   const session = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
   expect(mechanicalOutcomes(session, RECORD)).toEqual([
-    { status: 'PASS', message: 'Trade record identity and payload shape are valid.' }
+    {
+      status: 'PASS',
+      message: 'Trade record identity and payload shape are valid.'
+    }
   ])
   expect(mechanicalOutcomes(session, AUTH)).toEqual([
-    { status: 'PASS', message: 'Trade records preserve sender and receiver write boundaries.' }
+    {
+      status: 'PASS',
+      message: 'Trade records preserve sender and receiver write boundaries.'
+    }
   ])
   expect(mechanicalOutcomes(session, RECORD, 'RECORD-2')).toEqual([
-    { status: 'PASS', message: 'Every trade record declares the phase its copy holds.' }
+    {
+      status: 'PASS',
+      message: 'Every trade record declares the phase its copy holds.'
+    }
   ])
 })
 
@@ -296,10 +359,16 @@ test('a preparation and its submitted successor share one peer path and differ o
 
   const session = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
   expect(mechanicalOutcomes(session, RECORD, 'RECORD-2')).toEqual([
-    { status: 'PASS', message: 'Every trade record declares the phase its copy holds.' }
+    {
+      status: 'PASS',
+      message: 'Every trade record declares the phase its copy holds.'
+    }
   ])
   expect(mechanicalOutcomes(session, RECORD)).toEqual([
-    { status: 'PASS', message: 'Trade record identity and payload shape are valid.' }
+    {
+      status: 'PASS',
+      message: 'Trade record identity and payload shape are valid.'
+    }
   ])
 })
 
@@ -373,7 +442,10 @@ test('phase carries the copy state without disturbing the immutable sender proje
 
   const session = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
   expect(mechanicalOutcomes(session, AUTH)).toEqual([
-    { status: 'PASS', message: 'Trade records preserve sender and receiver write boundaries.' }
+    {
+      status: 'PASS',
+      message: 'Trade records preserve sender and receiver write boundaries.'
+    }
   ])
 })
 
@@ -384,7 +456,10 @@ test('a blank line after frontmatter does not weaken exact H1 identity validatio
 
   const valid = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
   expect(mechanicalOutcomes(valid, RECORD)).toEqual([
-    { status: 'PASS', message: 'Trade record identity and payload shape are valid.' }
+    {
+      status: 'PASS',
+      message: 'Trade record identity and payload shape are valid.'
+    }
   ])
 
   const invalidId = 'TRD-00000004'
@@ -440,6 +515,56 @@ test('every submitted trade declares an observation policy', () => {
     message: 'observation must be a non-empty sender field',
     subject: `-/_TRADES/peer/repo/${id}.md`
   })
+})
+
+test('each trade kind accepts only its supported observation policies', () => {
+  const { home, local } = fixture()
+  const invalid = [
+    ['knowledge', 'unattended'],
+    ['knowledge', 'decision'],
+    ['knowledge', 'completion'],
+    ['work', 'unattended'],
+    ['work', 'receipt']
+  ] as const
+
+  for (const [index, [kind, observation]] of invalid.entries()) {
+    const id = `TRD-${String(index + 50).padStart(8, '0')}`
+    writeRecord(local, '-', 'peer/repo', id, record(id, 'local/repo', 'peer/repo', [], undefined, kind, observation))
+  }
+
+  const messages = mechanicalOutcomes(
+    createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo']))),
+    RECORD
+  ).map((outcome) => outcome.message)
+  expect(messages).toContain('observation must be one of receipt, decision, completion')
+  expect(messages).toContain('knowledge trades require observation receipt')
+  expect(messages).toContain('work trades require observation decision or completion')
+})
+
+test('each trade kind accepts every supported observation policy', () => {
+  const { home, local } = fixture()
+  const valid = [
+    ['knowledge', 'receipt'],
+    ['work', 'decision'],
+    ['work', 'completion']
+  ] as const
+
+  for (const [index, [kind, observation]] of valid.entries()) {
+    const id = `TRD-${String(index + 60).padStart(8, '0')}`
+    writeRecord(local, '-', 'peer/repo', id, record(id, 'local/repo', 'peer/repo', [], undefined, kind, observation))
+  }
+
+  expect(
+    mechanicalOutcomes(
+      createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo']))),
+      RECORD
+    )
+  ).toEqual([
+    {
+      status: 'PASS',
+      message: 'Trade record identity and payload shape are valid.'
+    }
+  ])
 })
 
 test('sender and receiver write boundaries reject receiver fields outbound and changed inbound payload', () => {
@@ -525,7 +650,10 @@ test('all receiver decision statuses are accepted with their required rationale 
 
   const valid = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
   expect(mechanicalOutcomes(valid, STATUS)).toEqual([
-    { status: 'PASS', message: 'Receiver decision statuses and local linkage are valid.' }
+    {
+      status: 'PASS',
+      message: 'Receiver decision statuses and local linkage are valid.'
+    }
   ])
 
   const invalidId = 'TRD-00000090'
@@ -618,46 +746,36 @@ test('receipt and completion policies produce different release eligibility', ()
     '-',
     'peer/repo',
     receiptId,
-    record(receiptId, 'local/repo', 'peer/repo', [], undefined, 'work', 'receipt')
+    record(receiptId, 'local/repo', 'peer/repo', [], undefined, 'knowledge', 'receipt')
   )
   writeRecord(
     peer,
     '+',
     'local/repo',
     receiptId,
-    record(receiptId, 'local/repo', 'peer/repo', ['decision_status: unconsidered'], undefined, 'work', 'receipt')
+    record(receiptId, 'local/repo', 'peer/repo', ['decision_status: unconsidered'], undefined, 'knowledge', 'receipt')
   )
 
-  const completionId = 'TRD-00000031'
-  writeRecord(
-    local,
-    '-',
-    'peer/repo',
-    completionId,
-    record(completionId, 'local/repo', 'peer/repo', [], undefined, 'work', 'completion')
-  )
-  writeRecord(
-    peer,
-    '+',
-    'local/repo',
-    completionId,
-    record(
-      completionId,
-      'local/repo',
+  const unavailable = [
+    ['TRD-00000031', ['decision_status: applied', `applied_commit: ${'a'.repeat(40)}`]],
+    ['TRD-00000032', ['decision_status: adopted', 'adopted_as: KI-PEER-FND-001']]
+  ] as const
+  for (const [completionId, receiverFields] of unavailable) {
+    writeRecord(
+      local,
+      '-',
       'peer/repo',
-      ['decision_status: adopted', 'adopted_as: KI-PEER-FND-001'],
-      undefined,
-      'work',
-      'completion'
+      completionId,
+      record(completionId, 'local/repo', 'peer/repo', [], undefined, 'work', 'completion')
     )
-  )
-  const roadmapDirectory = join(peer, 'docs', 'roadmap')
-  mkdirSync(roadmapDirectory, { recursive: true })
-  const roadmapPath = join(roadmapDirectory, 'KI-PEER-FND-001-linked-work.md')
-  writeFileSync(
-    roadmapPath,
-    ['---', 'id: KI-PEER-FND-001', 'status: in-progress', '---', '', '# Linked work', ''].join('\n')
-  )
+    writeRecord(
+      peer,
+      '+',
+      'local/repo',
+      completionId,
+      record(completionId, 'local/repo', 'peer/repo', receiverFields, undefined, 'work', 'completion')
+    )
+  }
 
   const waiting = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
   expect(mechanicalOutcomes(waiting, RELEASE)).toContainEqual({
@@ -665,19 +783,12 @@ test('receipt and completion policies produce different release eligibility', ()
     message: 'receipt observation policy permits sender release',
     subject: `-/_TRADES/peer/repo/${receiptId}.md`
   })
-  expect(mechanicalOutcomes(waiting, RELEASE)).toContainEqual({
-    status: 'PASS',
-    message: 'completion observation policy requires sender retention',
-    subject: `-/_TRADES/peer/repo/${completionId}.md`
-  })
-
-  writeFileSync(roadmapPath, ['---', 'id: KI-PEER-FND-001', 'status: done', '---', '', '# Linked work', ''].join('\n'))
-  const completed = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
-  expect(mechanicalOutcomes(completed, RELEASE)).toContainEqual({
-    status: 'INFO',
-    message: 'completion observation policy permits sender release',
-    subject: `-/_TRADES/peer/repo/${completionId}.md`
-  })
+  for (const [completionId] of unavailable)
+    expect(mechanicalOutcomes(waiting, RELEASE)).toContainEqual({
+      status: 'NOT_APPLICABLE',
+      message: 'completion is unavailable: no selected-adapter owner-valid canonical completion evidence exists',
+      subject: `-/_TRADES/peer/repo/${completionId}.md`
+    })
 })
 
 test('receipt and applied commit references require full lower-case commit ids', () => {
@@ -698,8 +809,8 @@ test('receipt and applied commit references require full lower-case commit ids',
 
   const session = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
   const messages = mechanicalOutcomes(session, STATUS).map((outcome) => outcome.message)
-  expect(messages).toContain('received_from_ref must be a full 40-character lower-case hexadecimal commit')
-  expect(messages).toContain('applied requires a full verified local applied_commit')
+  expect(messages).toContain('received_from_ref must be a full 40-character lower-case hexadecimal commit locator')
+  expect(messages).toContain('applied requires a full lower-case hexadecimal applied_commit locator')
 })
 
 test('conform proposes only the local owned README scaffold and never writes a peer', () => {

@@ -1,6 +1,6 @@
 # Sources — ki-binding-chezmoi
 
-**Refresh:** canonical · on-change
+**Refresh:** external-spec · quarterly
 
 Provenance only: the record of _what changed_ lives in git (the REFRESH commit), not a changelog here. This skill tracks no external spec on a clock — it is re-anchored when the chezmoi render contract changes (the `mcp-servers-json` template shape, the `.chezmoidata` wiring, or the `chezmoi apply` behaviour), or when either composed sibling's contract moves.
 
@@ -12,6 +12,8 @@ Provenance only: the record of _what changed_ lives in git (the REFRESH commit),
 | [CHEZ] | `ki-repo-dotfiles-chezmoi` skill | The generic chezmoi source-repo standard this skill composes (repo is conventional) | 2026-07-13 |
 | [SRC] | `~/.config/ki/mcp-servers.yaml` (canonical) + either `.chezmoidata/*mcp*` (data-merge pattern) or a plain managed source file applied verbatim to the canonical path (managed-source pattern) | The single source and the chezmoi data the render path reads | 2026-07-14 |
 | [ADR] | `ADR-KI-HARNESS-SKILLS-004` (composition-for-backends corollary) | Why the render path is its own composition skill, not a fork or a `--backend` flag | 2026-07-13 |
+| [CHEZMOI] | [Chezmoi templating](https://www.chezmoi.io/user-guide/templating/) | Template/data/partial semantics | 2026-08-12 |
+| [APPLY] | [Chezmoi usage](https://www.chezmoi.io/user-guide/frequently-asked-questions/usage/) | Explicit preview and apply distinction | 2026-08-12 |
 
 ## Open gates & watch-items
 

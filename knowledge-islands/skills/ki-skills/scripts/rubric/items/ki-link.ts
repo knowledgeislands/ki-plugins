@@ -1,5 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { DIAGNOSTIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
+import { judgment } from '../../shared/rubric.ts'
 import { type KiLinkRubricContext, type KiSkillsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
 const relativeLinkTargets = (markdown: string): string[] => {
@@ -27,7 +27,11 @@ const KI_LINK_1: RubricItem<KiLinkRubricContext> = {
   sources: ['ki-agentic-harness README'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Replace each wikilink with a standard relative Markdown link after identifying the intended local target and suitable link text.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ markdown }) =>
@@ -45,7 +49,11 @@ const KI_LINK_2: RubricItem<KiLinkRubricContext> = {
   sources: ['ki-agentic-harness README'],
   mechanical: {
     level: 'FAIL',
-    remediation: DIAGNOSTIC_REMEDIATION,
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Correct the relative target, restore the missing file, or remove the link according to the author’s intended relationship.'
+    },
     audit: {
       phase: 'INSPECT',
       run: ({ markdown, relativeTargetExists }) => {

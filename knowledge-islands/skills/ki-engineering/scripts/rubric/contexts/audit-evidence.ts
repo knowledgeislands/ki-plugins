@@ -45,10 +45,76 @@ type Finding = { level: Level; area: string; msg: string; ref?: string; file?: s
 // the rubric that maps code↔criterion (cited by the judgment/scope handoff).
 const STD = 'references/standards-engineering.md'
 
+const mechanicalEngineeringCheckIds = new Set([
+  'PKG-1',
+  'PKG-2',
+  'PKG-3',
+  'PKG-4',
+  'PKG-5',
+  'PKG-6',
+  'MISE-1',
+  'MISE-2',
+  'MISE-3',
+  'CI-1',
+  'CI-2',
+  'SCR-1',
+  'SCR-2',
+  'SCR-3',
+  'SCR-4',
+  'SCR-5',
+  'SCR-6',
+  'SCR-7',
+  'TSC-1',
+  'TSC-2',
+  'BIO-1',
+  'BIO-2',
+  'KNIP-1',
+  'KNIP-2',
+  'KNIP-3',
+  'SYNC-1',
+  'DEPS-1',
+  'GEN-1',
+  'TEST-1',
+  'TEST-2',
+  'TEST-3',
+  'TEST-4',
+  'TEST-5',
+  'BUILD-1',
+  'BUILD-2',
+  'BUILD-3',
+  'BUILD-4',
+  'ENV-1',
+  'ENV-2',
+  'TOML-1',
+  'TOML-2',
+  'TOML-3'
+])
+
+export const inspectEngineeringCheckRecords = (
+  configuration: string
+): readonly Pick<EngineeringEvidenceFinding, 'level' | 'message'>[] => {
+  const header = /^\[skills\.ki-engineering\.checks\]\s*$/m.exec(configuration)
+  if (!header || header.index === undefined)
+    return [{ level: 'NOT_APPLICABLE', message: 'no engineering check records declared' }]
+  const body = configuration.slice(header.index + header[0].length).split(/^\[/m)[0] ?? ''
+  const records = [...body.matchAll(/^\s*([A-Za-z0-9_-]+)\s*=\s*([^#\r\n]+)(?:\s*#.*)?$/gm)]
+  if (!records.length) return [{ level: 'PASS', message: 'engineering checks table has no records' }]
+  return records.map((record) => {
+    const key = record[1] ?? ''
+    const value = record[2]?.trim() ?? ''
+    if (!mechanicalEngineeringCheckIds.has(key))
+      return { level: 'WARN', message: `unknown engineering check record: ${key}` }
+    if (value !== 'true' && value !== 'false')
+      return { level: 'WARN', message: `engineering check record ${key} must be boolean, got ${JSON.stringify(value)}` }
+    return { level: 'PASS', message: `engineering check record ${key} = ${value} (diagnostic only)` }
+  })
+}
+
 const scriptOwner = (key: string): string | undefined => {
   if (key === 'ki:deps:update') return 'ki-engineering'
   if (key === 'ki:eval') return 'ki-repo-harness'
   if (key.startsWith('ki:binding:')) return 'ki-binding-claude'
+  if (['ki:site:deploy', 'ki:site:preview'].includes(key)) return 'ki-repo-website-cloudflare'
   if (key.startsWith('ki:site:')) return 'ki-repo-website'
   if (key.startsWith('ki:ingress:')) return 'ki-repo-website-cloudflare'
   if (key === 'ki:generate:client' || key.startsWith('ki:server:') || key.startsWith('ki:test:')) return 'ki-repo-mcp'
@@ -1210,7 +1276,10 @@ export const collectAuditEvidence = async (
         ['extends ./tsconfig.json', /"extends"\s*:\s*"\.\/tsconfig\.json"/],
         ['noEmit: false', /"noEmit"\s*:\s*false/],
         ['declaration: true', /"declaration"\s*:\s*true/],
+        ['declarationMap: true', /"declarationMap"\s*:\s*true/],
         ['outDir ./dist', /"outDir"\s*:\s*"\.\/dist"/],
+        ['rootDir ./src', /"rootDir"\s*:\s*"\.\/src"/],
+        ['allowImportingTsExtensions: false', /"allowImportingTsExtensions"\s*:\s*false/],
         ['noUncheckedIndexedAccess: true', /"noUncheckedIndexedAccess"\s*:\s*true/],
         ['excludes **/*.test.ts', /\*\*\/\*\.test\.ts/]
       ]
@@ -1309,6 +1378,8 @@ export const collectAuditEvidence = async (
             '.ki-config.toml'
           )
     }
+    for (const record of inspectEngineeringCheckRecords(ki))
+      add(record.level, 'TOML-3', record.message, STD, '.ki-config.toml')
   }
 
   return findings.map(({ level, area, msg, file }) => ({

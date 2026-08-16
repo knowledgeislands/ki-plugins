@@ -8,8 +8,8 @@ The tracked sources behind [the compatible harness standard](standards-compatibl
 
 | Tag | Source | Governs | Last reviewed |
 | --- | --- | --- | --- |
-| [AS] | [Agent Skills specification][as-spec] | The individual `SKILL.md` format the harness serves † | 2026-07-04 |
-| [CC] | [Claude Code subagent docs][cc-subagents] | The subagent definition format the `subagents/` part serves | 2026-07-04 |
+| [AS] | [Agent Skills specification][as-spec] | The individual `SKILL.md` format the harness serves † | 2026-08-12 |
+| [CC] | [Claude Code subagent docs][cc-subagents] | The subagent definition format the `subagents/` part serves | 2026-08-12 |
 
 † Including the directory-name = `name:` constraint and the `references/`, `scripts/`, `assets/` layout.
 
@@ -29,7 +29,7 @@ The tracked sources behind [the compatible harness standard](standards-compatibl
 
 ## Last review
 
-_REFRESH last run **2026-07-27** (previous: 2026-07-04)._
+_REFRESH last run **2026-08-12** (previous: 2026-07-27)._
 
 **Confirmed:**
 

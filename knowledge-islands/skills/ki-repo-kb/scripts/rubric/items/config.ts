@@ -23,6 +23,18 @@ const mechanical = (
   }
 })
 
+const CONFIG_0: RubricItem<KbConfigContext> = {
+  code: 'CONFIG-0',
+  title: 'parseable KB configuration',
+  description: 'When present, .ki-config.toml parses before the KB table is evaluated.',
+  sources: [SOURCE],
+  mechanical: {
+    level: 'FAIL',
+    remediation: { class: 'diagnostic', guidance: 'Correct the TOML syntax before relying on KB configuration.' },
+    audit: { phase: 'PREPARE', run: (context) => context.parseable }
+  }
+}
+
 const CONFIG_1 = mechanical(
   'CONFIG-1',
   'known configuration keys',
@@ -60,5 +72,5 @@ export const CONFIG: RubricFamily<KbRubricContext, KbConfigContext> = {
   description: 'Validate-down `[skills.ki-repo-kb]` configuration and zone aliases.',
   standard: SOURCE,
   selectContext: (context) => context.config,
-  items: [CONFIG_1, CONFIG_2, CONFIG_3, CONFIG_4, CONFIG_5]
+  items: [CONFIG_0, CONFIG_1, CONFIG_2, CONFIG_3, CONFIG_4, CONFIG_5]
 }

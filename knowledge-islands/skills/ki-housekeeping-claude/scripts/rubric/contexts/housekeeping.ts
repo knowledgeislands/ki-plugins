@@ -1,5 +1,5 @@
 import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs'
-import { basename, join, relative, resolve } from 'node:path'
+import { basename, isAbsolute, join, relative, resolve } from 'node:path'
 import type {
   AuditOutcome,
   ConformWrite,
@@ -17,13 +17,26 @@ type MemoryFile = {
   relativePath: string
   content: string
   frontmatter: MemoryFrontmatter | null
+  frontmatterError?: string
+}
+
+type MemorySelection =
+  | { state: 'selected'; relativePath: string; directory: string; message: string }
+  | { state: 'unavailable'; relativePath: string; message: string }
+
+export type HousekeepingSelectionContext = {
+  selected: readonly AuditOutcome[]
+}
+
+export type HousekeepingRuntimeContext = {
+  server: readonly AuditOutcome[]
 }
 
 export type HousekeepingIndexContext = {
   exists: readonly AuditOutcome[]
   entriesResolve: readonly AuditOutcome[]
   filesIndexed: readonly AuditOutcome[]
-  lineLength: readonly AuditOutcome[]
+  sizeEvidence: readonly AuditOutcome[]
   markers: readonly AuditOutcome[]
   learnedEntries: readonly AuditOutcome[]
   appendUnindexed?: () => void
@@ -46,6 +59,8 @@ export type HousekeepingDocContext = Record<never, never>
 
 export type HousekeepingRubricContext = {
   rubric: RubricPublicationContext
+  selection: HousekeepingSelectionContext
+  runtime: HousekeepingRuntimeContext
   index: HousekeepingIndexContext
   frontmatter: HousekeepingFrontmatterContext
   link: HousekeepingLinkContext
@@ -63,35 +78,138 @@ const physicalDirectory = (path: string): boolean =>
 const physicalFile = (path: string): boolean =>
   existsSync(path) && !lstatSync(path).isSymbolicLink() && lstatSync(path).isFile()
 
-const parseFrontmatter = (content: string): MemoryFrontmatter | null => {
-  const match = content.match(/^---\n([\s\S]*?)\n---/)
-  if (!match) return null
-  const output: Record<string, unknown> = {}
-  let currentKey: string | null = null
-  for (const line of (match[1] as string).split('\n')) {
-    const topLevel = line.match(/^([a-zA-Z_]+):\s*(.*)$/)
-    if (topLevel) {
-      currentKey = topLevel[1] as string
-      const value = (topLevel[2] as string).trim()
-      output[currentKey] = value === '' ? {} : value.replace(/^["']|["']$/g, '')
-      continue
-    }
-    const nested = line.match(/^\s+([a-zA-Z_]+):\s*(.*)$/)
-    if (nested && currentKey && typeof output[currentKey] === 'object') {
-      ;(output[currentKey] as Record<string, string>)[nested[1] as string] = (nested[2] as string)
-        .trim()
-        .replace(/^["']|["']$/g, '')
-    }
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const parseFrontmatter = (content: string): { frontmatter: MemoryFrontmatter | null; error?: string } => {
+  const match = content.match(/^---\n([\s\S]*?)\n---(?:\n|$)/)
+  if (!match) return { frontmatter: null }
+  try {
+    const value = Bun.YAML.parse(match[1] as string)
+    return isRecord(value) ? { frontmatter: value } : { frontmatter: null, error: 'frontmatter must be a YAML mapping' }
+  } catch {
+    return { frontmatter: null, error: 'frontmatter is not valid YAML' }
   }
-  return output
 }
 
 const one = (outcome: AuditOutcome): readonly AuditOutcome[] => [outcome]
 const notApplicable = (message: string, subject: string): readonly AuditOutcome[] =>
   one({ status: 'NOT_APPLICABLE', message, subject })
 
-const indexEntries = (index: string): string[] =>
-  [...index.matchAll(/^-\s*\[.+\]\(([^)]+\.md)\)/gm)].map((match) => match[1] as string)
+const headroomBlockRange = (index: string): { start: number; end: number } | null => {
+  const start = index.indexOf('<!-- headroom:learn:start -->')
+  const end = index.indexOf('<!-- headroom:learn:end -->')
+  return start >= 0 && end >= start ? { start, end: end + '<!-- headroom:learn:end -->'.length } : null
+}
+
+const indexEntries = (index: string): { files: string[]; malformed: string[] } => {
+  const files: string[] = []
+  const malformed: string[] = []
+  const block = headroomBlockRange(index)
+  const authoredIndex = block === null ? index : `${index.slice(0, block.start)}${index.slice(block.end)}`
+  for (const line of authoredIndex.split('\n')) {
+    if (!line.startsWith('-')) continue
+    const match = line.match(/^-\s*\[[^\]]+\]\(([^)]+\.md)\)\s+—\s+\S.*$/)
+    if (!match || (match[1] as string).includes('/') || (match[1] as string).includes('\\')) {
+      malformed.push(line)
+      continue
+    }
+    files.push(match[1] as string)
+  }
+  return { files, malformed }
+}
+
+const configuredPath = (home: string, raw: string): string =>
+  raw === '~'
+    ? home
+    : raw.startsWith('~/')
+      ? join(home, raw.slice(2))
+      : isAbsolute(raw)
+        ? resolve(raw)
+        : resolve(home, raw)
+
+const isContained = (root: string, path: string): boolean => {
+  const pathRelative = relative(root, path)
+  return pathRelative === '' || (!pathRelative.startsWith('..') && !isAbsolute(pathRelative))
+}
+
+const physicalDescendant = (root: string, path: string): boolean => {
+  if (!isContained(root, path) || !physicalDirectory(root) || !physicalDirectory(path)) return false
+  let current = root
+  for (const part of relative(root, path).split('/').filter(Boolean)) {
+    current = join(current, part)
+    if (!physicalDirectory(current)) return false
+  }
+  return true
+}
+
+const physicalFileDescendant = (root: string, path: string): boolean => {
+  if (!isContained(root, path) || !physicalDirectory(root) || !physicalFile(path)) return false
+  const parts = relative(root, path).split('/').filter(Boolean)
+  let current = root
+  for (const part of parts.slice(0, -1)) {
+    current = join(current, part)
+    if (!physicalDirectory(current)) return false
+  }
+  return true
+}
+
+const selectMemory = (home: string, repositorySlug: string): MemorySelection => {
+  const claudeRoot = join(home, '.claude')
+  const defaultDirectory = join(claudeRoot, 'projects', repositorySlug, 'memory')
+  const defaultRelativePath = relative(home, defaultDirectory)
+  const settingsPath = join(claudeRoot, 'settings.json')
+  if (!physicalFileDescendant(home, settingsPath)) {
+    return {
+      state: 'unavailable',
+      relativePath: defaultRelativePath,
+      message: 'Native Claude settings are unavailable; the selected auto-memory directory cannot be established.'
+    }
+  }
+  let settings: Record<string, unknown>
+  try {
+    const parsed = JSON.parse(readFileSync(settingsPath, 'utf8'))
+    if (!isRecord(parsed)) throw new Error('not an object')
+    settings = parsed
+  } catch {
+    return {
+      state: 'unavailable',
+      relativePath: defaultRelativePath,
+      message: 'Native Claude settings are malformed; the selected auto-memory directory cannot be established.'
+    }
+  }
+  if (!Object.hasOwn(settings, 'autoMemoryDirectory')) {
+    return {
+      state: 'selected',
+      relativePath: defaultRelativePath,
+      directory: defaultDirectory,
+      message: 'Native settings contain no auto-memory override; the documented default directory is selected.'
+    }
+  }
+  const override = settings.autoMemoryDirectory
+  if (typeof override !== 'string' || !override.trim()) {
+    return {
+      state: 'unavailable',
+      relativePath: defaultRelativePath,
+      message:
+        'Native auto-memory override is disabled or unsupported; the selected directory is unavailable rather than defaulted.'
+    }
+  }
+  const directory = configuredPath(home, override)
+  if (!isContained(claudeRoot, directory)) {
+    return {
+      state: 'unavailable',
+      relativePath: defaultRelativePath,
+      message: 'Native auto-memory override resolves outside the bounded Claude root and is not inspected.'
+    }
+  }
+  return {
+    state: 'selected',
+    relativePath: relative(home, directory),
+    directory,
+    message: 'Native auto-memory override selects this bounded directory.'
+  }
+}
 
 const replaceName = (content: string, expected: string): string => {
   const block = content.match(/^---\n([\s\S]*?)\n---/)
@@ -104,17 +222,29 @@ const replaceName = (content: string, expected: string): string => {
 }
 
 const unavailableMemoryContext = (
-  subject: string,
+  selection: MemorySelection,
   publication?: RubricContextOptions['publication']
 ): HousekeepingRubricContext => {
-  const memory = notApplicable('The selected repository has no physical Claude project memory directory.', subject)
+  const memory = notApplicable(
+    'The selected native auto-memory directory is unavailable for inspection.',
+    selection.relativePath
+  )
   return {
     rubric: { publication },
+    selection: {
+      selected: one({ status: 'VIOLATION', message: selection.message, subject: selection.relativePath })
+    },
+    runtime: {
+      server: notApplicable(
+        'No server registration, access exposure, or executed audit evidence is available to this bounded local session.',
+        selection.relativePath
+      )
+    },
     index: {
       exists: memory,
       entriesResolve: memory,
       filesIndexed: memory,
-      lineLength: memory,
+      sizeEvidence: memory,
       markers: memory,
       learnedEntries: memory
     },
@@ -146,21 +276,25 @@ const projectContext = (
       const content = readFileSync(path, 'utf8')
       const relativePath = relative(userHome, path)
       drafts.set(relativePath, { original: content, content })
-      return { file: entry.name, relativePath, content, frontmatter: parseFrontmatter(content) }
+      const parsed = parseFrontmatter(content)
+      return { file: entry.name, relativePath, content, ...parsed }
     })
     .sort((left, right) => left.file.localeCompare(right.file))
   const indexPath = join(memoryDirectory, INDEX_FILE)
   const indexRelativePath = relative(userHome, indexPath)
   const index = physicalFile(indexPath) ? readFileSync(indexPath, 'utf8') : null
   if (index !== null) drafts.set(indexRelativePath, { original: index, content: index })
-  const indexed = new Set(index === null ? [] : indexEntries(index))
+  const parsedIndex = index === null ? { files: [], malformed: [] } : indexEntries(index)
+  const indexed = new Set(parsedIndex.files)
   const noFiles = memoryFiles.length === 0
   const noFileEvidence = notApplicable('No memory files to inspect.', memoryRoot)
   const present = noFiles
     ? noFileEvidence
     : memoryFiles.map((memory) => ({
         status: memory.frontmatter ? ('PASS' as const) : ('VIOLATION' as const),
-        message: memory.frontmatter ? 'frontmatter block found' : 'no frontmatter block found',
+        message: memory.frontmatter
+          ? 'frontmatter block found'
+          : (memory.frontmatterError ?? 'no frontmatter block found'),
         subject: memory.relativePath
       }))
   const namesMatch = noFiles
@@ -225,23 +359,24 @@ const projectContext = (
     if (!prior) seen.set(name, memory.relativePath)
   }
   if (uniqueNames.length === 0) uniqueNames.push(...noFileEvidence)
-  const missingFiles =
-    index === null ? [] : indexEntries(index).filter((entry) => !memoryFiles.some((file) => file.file === entry))
+  const missingFiles = parsedIndex.files.filter((entry) => !memoryFiles.some((file) => file.file === entry))
   const unindexed = index === null ? [] : memoryFiles.filter((memory) => !indexed.has(memory.file))
-  const longLines =
-    index === null ? [] : index.split('\n').filter((line) => /^-\s*\[.+\]\(.+\.md\)/.test(line) && line.length > 150)
-  const start = index?.indexOf('<!-- headroom:learn:start -->') ?? -1
-  const end = index?.indexOf('<!-- headroom:learn:end -->') ?? -1
+  const block = index === null ? null : headroomBlockRange(index)
+  const start = block?.start ?? -1
+  const end = block === null ? -1 : block.end - '<!-- headroom:learn:end -->'.length
+  const learnedBlock = block === null || index === null ? undefined : index.slice(start, end)
+  const markerDate = learnedBlock?.match(/_Auto-generated by `headroom learn` on (\d{4}-\d{2}-\d{2})\b/)
+  const validMarkerDate = markerDate ? !Number.isNaN(Date.parse(markerDate[1] as string)) : false
   const markers =
     index === null
       ? notApplicable('MEMORY.md is absent.', indexRelativePath)
       : one(
           start === -1 && end === -1
             ? { status: 'PASS', message: 'No headroom:learn block is present.', subject: indexRelativePath }
-            : start === -1 || end === -1 || end < start
+            : start === -1 || end === -1 || end < start || !validMarkerDate
               ? {
                   status: 'VIOLATION',
-                  message: 'headroom:learn block has malformed markers',
+                  message: 'headroom:learn block has malformed markers or required generation date',
                   subject: indexRelativePath
                 }
               : { status: 'PASS', message: 'headroom:learn block markers well-formed', subject: indexRelativePath }
@@ -249,7 +384,7 @@ const projectContext = (
   const learnedEntries =
     index === null
       ? notApplicable('MEMORY.md is absent.', indexRelativePath)
-      : start === -1 || end === -1 || end < start
+      : start === -1 || end === -1 || end < start || !validMarkerDate
         ? notApplicable('No well-formed headroom:learn block to inspect.', indexRelativePath)
         : (() => {
             const foreign = new Set<string>()
@@ -297,12 +432,19 @@ const projectContext = (
       entriesResolve:
         index === null
           ? notApplicable('MEMORY.md is absent.', indexRelativePath)
-          : missingFiles.length > 0
-            ? missingFiles.map((file) => ({
-                status: 'VIOLATION',
-                message: `index entry points to missing file: ${file}`,
-                subject: indexRelativePath
-              }))
+          : missingFiles.length > 0 || parsedIndex.malformed.length > 0
+            ? [
+                ...parsedIndex.malformed.map((line) => ({
+                  status: 'VIOLATION' as const,
+                  message: `malformed index entry: ${line || '(empty bullet)'}`,
+                  subject: indexRelativePath
+                })),
+                ...missingFiles.map((file) => ({
+                  status: 'VIOLATION' as const,
+                  message: `index entry points to missing file: ${file}`,
+                  subject: indexRelativePath
+                }))
+              ]
             : one({ status: 'PASS', message: 'Every index entry resolves.', subject: indexRelativePath }),
       filesIndexed:
         index === null
@@ -314,16 +456,14 @@ const projectContext = (
                 subject: memory.relativePath
               }))
             : one({ status: 'PASS', message: 'Every memory file is indexed.', subject: indexRelativePath }),
-      lineLength:
+      sizeEvidence:
         index === null
           ? notApplicable('MEMORY.md is absent.', indexRelativePath)
-          : longLines.length > 0
-            ? longLines.map((line) => ({
-                status: 'VIOLATION',
-                message: `index line exceeds 150 chars: ${line.slice(0, 60)}...`,
-                subject: indexRelativePath
-              }))
-            : one({ status: 'PASS', message: 'Index lines stay within 150 characters.', subject: indexRelativePath }),
+          : one({
+              status: 'INFO',
+              message: `Observed ${Buffer.byteLength(index, 'utf8')} UTF-8 byte(s) in ${INDEX_FILE}; no effective native aggregate loading limit is asserted by this rubric.`,
+              subject: indexRelativePath
+            }),
       markers,
       learnedEntries,
       ...(mutable && index !== null && unindexed.length > 0
@@ -331,7 +471,7 @@ const projectContext = (
             appendUnindexed: () => {
               const draft = drafts.get(indexRelativePath)
               if (!draft) return
-              const currentIndexed = new Set(indexEntries(draft.content))
+              const currentIndexed = new Set(indexEntries(draft.content).files)
               const lines = memoryFiles.flatMap((memory) => {
                 if (currentIndexed.has(memory.file)) return []
                 const title = memory.file.replace(/\.md$/, '')
@@ -345,6 +485,19 @@ const projectContext = (
             }
           }
         : {})
+    },
+    selection: {
+      selected: one({
+        status: 'PASS',
+        message: 'The native auto-memory directory was selected from available settings evidence.',
+        subject: memoryRoot
+      })
+    },
+    runtime: {
+      server: notApplicable(
+        'No server registration, access exposure, or executed audit evidence is available to this bounded local session.',
+        memoryRoot
+      )
     },
     frontmatter: {
       present,
@@ -396,30 +549,35 @@ export const createHousekeepingSession = ({
   const repositoryName = basename(repositoryRoot)
   const repositorySlug = repositoryRoot.replace(/[/.]/g, '-')
   const claudeRoot = join(home, '.claude')
-  const projectsRoot = join(claudeRoot, 'projects')
   const drafts = new Map<string, MemoryDraft>()
-  const memoryRelativePath = join('.claude', 'projects', repositorySlug, 'memory')
-  const memoryDirectory = join(projectsRoot, repositorySlug, 'memory')
+  const selection = selectMemory(home, repositorySlug)
   const selectedMemory =
-    physicalDirectory(claudeRoot) && physicalDirectory(projectsRoot) && physicalDirectory(memoryDirectory)
+    selection.state === 'selected' && physicalDescendant(claudeRoot, selection.directory)
       ? {
-          ...projectContext(home, repositoryName, memoryRelativePath, memoryDirectory, mode === 'conform', drafts),
+          ...projectContext(
+            home,
+            repositoryName,
+            selection.relativePath,
+            selection.directory,
+            mode === 'conform',
+            drafts
+          ),
           rubric: { publication }
         }
       : null
-  const memoryFamilies = ['IDX', 'FM', 'LINK', 'DOC']
+  const memoryFamilies = ['SELECT', 'RUNTIME', 'IDX', 'FM', 'LINK', 'DOC']
 
   return {
     subjects: [
       {
         families: memoryFamilies,
-        subject: memoryRelativePath,
-        context: () => selectedMemory ?? unavailableMemoryContext(memoryRelativePath, publication)
+        subject: selection.relativePath,
+        context: () => selectedMemory ?? unavailableMemoryContext(selection, publication)
       },
       {
         families: ['RUBRIC'],
         subject: repositoryRoot,
-        context: () => selectedMemory ?? unavailableMemoryContext(memoryRelativePath, publication)
+        context: () => selectedMemory ?? unavailableMemoryContext(selection, publication)
       }
     ],
     proposal: () => {

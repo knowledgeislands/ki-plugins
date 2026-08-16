@@ -1,6 +1,6 @@
 # Principal Knowledge Base standard
 
-A principal Knowledge Base is the canonical shared island for a community or organisation. It composes the normal Knowledge Islands zone model and Decision Records, then requires a visible local governance system.
+This overlay provides a visible local governance system for a Knowledge Base that a repository has already designated as principal. It composes the normal Knowledge Islands zone model and Decision Records. It does not define, select, or prove canonical-island identity, community role, or cross-island authority.
 
 ## Required principal surface
 

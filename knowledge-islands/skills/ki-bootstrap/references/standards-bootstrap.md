@@ -2,8 +2,6 @@
 
 This standard implements the architecture in [ADR-KI-HARNESS-012](../../../../docs/decisions/ADR-KI-HARNESS-012-compatible-harness-publication-and-governed-rubric-boundary.md).
 
-It replaces the former repository-vendored executor model.
-
 ## Contents
 
 - [Scope and ownership](#scope-and-ownership)
@@ -13,7 +11,8 @@ It replaces the former repository-vendored executor model.
 - [Native repository operations](#native-repository-operations)
 - [First-time bootstrap](#first-time-bootstrap)
 - [Local harness development](#local-harness-development)
-- [Guide-led legacy retirement](#guide-led-legacy-retirement)
+- [Managed-state recovery](#managed-state-recovery)
+- [Unowned repository state](#unowned-repository-state)
 - [CI and direct automation](#ci-and-direct-automation)
 - [Scope and safety separation](#scope-and-safety-separation)
 
@@ -29,7 +28,7 @@ Run `ki help` for the installed command grammar. This standard explains the boun
 
 One verified, XDG-managed harness set exists per user. The canonical `knowledgeislands/ki-agentic-harness` is always registered and installed by `ki bootstrap`; each additional compatible harness is installed explicitly.
 
-The harness payload, configuration, cache, and mutable state occupy separate XDG-owned locations. `ki diag` reports the effective paths.
+The harness payload, configuration, cache, and mutable state occupy separate XDG-owned locations. `ki manage diag` reports the effective paths.
 
 `ki harness install <harness-id>` acquires or atomically replaces the selected harness from immutable release evidence verified by the installed `ki` release. `ki harness list` and `ki harness info <harness-id>` inspect the installed set.
 
@@ -57,9 +56,9 @@ Missing, incompatible, undeclared, or untrusted skills are fail-closed errors be
 
 Harness installation and skill activation are separate. Installing a harness does not activate all its skills.
 
-`ki skill user add <skill>` and `ki skill user remove <skill>` change only the managed discovery links and configuration for the detected user runtimes.
+`ki skill add <skill>` and `ki skill remove <skill>` change only the managed discovery links and configuration for the detected user runtimes.
 
-`ki skill repo add <skill>` and `ki skill repo remove <skill>` change only the selected repository: its `.ki-config.toml` declaration and managed repository-runtime discovery links. They do not alter user activation or uninstall a harness.
+`ki repo skill add <skill>` and `ki repo skill remove <skill>` change only the selected repository: its `.ki-config.toml` declaration and managed repository-runtime discovery links. They do not alter user activation or uninstall a harness.
 
 Activation resolves a bare skill name only when one installed harness provides it. Ambiguous, missing, foreign, altered, or escaping targets fail closed. Existing KI-managed links are re-pointed only through the command's explicit replacement option.
 
@@ -90,31 +89,27 @@ Bootstrap does not declare governance in any repository and does not activate ev
 
 Installed verified payloads remain authoritative during ordinary use.
 
-`ki dev on <path>` is the explicit development-only exception for the canonical harness. It validates the local checkout and switches the canonical installed payload to that source. `ki dev off` restores the verified canonical archive.
+`ki dev local set <path>` validates and remembers the local checkout without enabling it. `ki dev local on` is the explicit development-only exception for the canonical harness; it switches the canonical payload to that source. `ki dev local off` restores the verified canonical archive.
 
 A nearby checkout is never selected implicitly.
 
-While `ki dev on` is active the selected checkout is live, so every `ki` invocation on the machine resolves governance through its **working tree**, uncommitted edits included. Governance is then no longer a fixed input: editing the harness changes how `ki repo audit` and `ki repo conform` behave everywhere, immediately, including in sessions that did not make the edit. A rubric criterion can appear, change level, or acquire a new dependency underneath work already in progress, and a repository's audit result can move with no change to that repository at all.
+While `ki dev local on` is active the selected checkout is live, so every `ki` invocation on the machine resolves governance through its **working tree**, uncommitted edits included. Governance is then no longer a fixed input: editing the harness changes how `ki repo audit` and `ki repo conform` behave everywhere, immediately, including in sessions that did not make the edit. A rubric criterion can appear, change level, or acquire a new dependency underneath work already in progress, and a repository's audit result can move with no change to that repository at all.
 
-The exposure is widest where harness edits and harness-dependent verification overlap in time, which is most likely when either is delegated: a worker editing the harness and a worker auditing repositories against it are, in development mode, sharing one mutable input. Separating them in time removes the interaction, and `ki dev off` removes it entirely by resolving the run against the verified canonical archive, which is what makes a result reproducible or comparable across sessions.
+The exposure is widest where harness edits and harness-dependent verification overlap in time, which is most likely when either is delegated: a worker editing the harness and a worker auditing repositories against it are, in development mode, sharing one mutable input. Separating them in time removes the interaction, and `ki dev local off` removes it entirely by resolving the run against the verified canonical archive, which is what makes a result reproducible or comparable across sessions.
 
-`ki diag` distinguishes the two cases after the fact. `Installation` and `Local source` say whether governance came from a mutable tree, so an audit or conform result that moved while the target repository did not is explained there rather than in the repository.
+`ki manage diag` distinguishes the two cases after the fact. `Installation` and `Local source` say whether governance came from a mutable tree, so an audit or conform result that moved while the target repository did not is explained there rather than in the repository.
 
-## Guide-led legacy retirement
+## Managed-state recovery
 
-Vendored repository execution is retired.
+Harness source, installed payloads, runtime-discovery links, and repository declarations are separate owned surfaces. A command refuses unfamiliar, altered, escaping, or unsafe managed state before it overwrites or removes anything. Treat that refusal as a diagnostic: inspect it with `ki manage diag`, `ki manage doctor`, or the applicable `ki harness`, `ki skill`, or `ki repo skill` command rather than copying or deleting files across surfaces.
 
-Existing `.ki/bootstrap/`, `.ki/bin/`, and manifest state are examined only through the maintainer [retirement guide](../../../../docs/guides/developer/retiring-repository-vendored-ki.md).
+After a command changes a managed skill link or switches the selected development source, start a new agent session so the runtime re-scans its discovery directories. An already-running session is not evidence that the new activation is loaded.
 
-Migration validates the required installed harnesses, repository declaration, target ownership, and complete removal set before writing.
+## Unowned repository state
 
-It removes generated legacy material only when it proves ownership of every target; a changed, dangling, linked, partial, unfamiliar, or concurrently changed footprint is left in place and reported as a fail-closed blocker.
+Native operations execute only the declared catalogues resolved from verified installed harnesses. A repository directory, executable, manifest, or runtime payload does not become an operation source merely by being present.
 
-Migration never runs legacy material to complete a native operation, never silently cleans up, and never treats legacy state as proof that native operations are available.
-
-The guide replaces a migration command because the remaining estate is private and reviewed repository by repository.
-
-It does not permit broad deletion: unfamiliar or unproven state is retained, and native execution never uses it as a compatibility runner.
+Normal repository operations leave unowned material unchanged. They never infer ownership, run it as a fallback, or turn repository maintenance into a broad cleanup operation.
 
 ## CI and direct automation
 
