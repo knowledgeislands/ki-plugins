@@ -48,8 +48,8 @@ The corpus has a populated registry that maps prefixes to area files.
 
 Area-table files and corpus files agree.
 
-- **AREA-1 [M] — every file named in an areas table exists** — Every file named in an areas table exists on disk. A missing file is a WARN because the table is ahead of the corpus. (standards-specs.md)
-  - _Remediation:_ diagnostic — Register the missing area file or correct the areas table, then rerun the audit.
+- **AREA-1 [M] — every file named in an areas table exists** — Every file named in an areas table exists as a safe physical file. A missing or unsafe file fails closed because the registry cannot establish its corpus. (standards-specs.md)
+  - _Remediation:_ diagnostic — Restore the missing safe area file or correct the areas table, then rerun the audit.
 - **AREA-2 [M] — every area file is registered** — Every Markdown file in `docs/specs/`, except `index.md`, is registered under at least one prefix in an areas table. (standards-specs.md)
   - _Remediation:_ diagnostic — Add the area file to the appropriate areas table, then rerun the audit.
 
@@ -63,8 +63,8 @@ Requirement headings, prefixes, and append-only IDs form a coherent registry.
   - _Remediation:_ automatic
 - **ID-2 [M] — requirement prefixes are registered to their file** — Each requirement's prefix is registered in an areas table and assigned to its containing file. (standards-specs.md)
   - _Remediation:_ diagnostic — Register the prefix to its owning file or correct the requirement identifier, then rerun the audit.
-- **ID-3 [M] — requirement IDs are unique across the corpus** — Requirement IDs are append-only, never reused, and unique across the corpus. (standards-specs.md)
-  - _Remediation:_ diagnostic — Allocate an unused append-only identifier and update the duplicate requirement, then rerun the audit.
+- **ID-3 [M] — requirement IDs are sequential per prefix and unique across the corpus** — Requirement IDs are append-only, sequential within each registered prefix, never reused, and unique across the corpus. (standards-specs.md)
+  - _Remediation:_ diagnostic — Allocate the next unused serial for the requirement prefix and update the duplicate or gap, then rerun the audit.
 
 ## REQ — normative requirement shape
 

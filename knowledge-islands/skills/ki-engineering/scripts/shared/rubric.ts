@@ -254,6 +254,13 @@ export type RubricSession<RootContext> = {
 export type SkillRubricDefinition<RootContext> = RubricDefinition<RootContext> & {
   contract: 1
   /**
+   * Exact package.json script keys this skill owns. This is source metadata only:
+   * the host aggregates claims from resolved skills and enforces uniqueness and
+   * repository coverage. Prefixes, globs, aliases, and inferred families are not
+   * claims.
+   */
+  packageScripts?: readonly `ki:${string}`[]
+  /**
    * The host awaits this, so a skill may gather evidence asynchronously and yield the event
    * loop while it does. A synchronous session stays valid and assignable, which is what lets
    * each skill move at its own pace: a skill becomes async only when it has a reason to.

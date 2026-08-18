@@ -19,6 +19,7 @@ export type SpecRequirement = {
   readonly file: string
   readonly id: string
   readonly prefix: string
+  readonly serial: number
   readonly owner?: string
   readonly duplicateOf?: string
   readonly deprecated: boolean
@@ -41,27 +42,33 @@ export type SpecHeadingIssue = {
 type CanonicalHeadingIssue = SpecHeadingIssue & { readonly canonical: string }
 
 export type SpecIndexContext = {
+  readonly applicable: boolean
+  readonly unavailableReason?: string
   readonly exists: boolean
   readonly prefixToFile: ReadonlyMap<string, string>
   readonly duplicatePrefixRegistrations: readonly DuplicatePrefixRegistration[]
 }
 
 export type SpecAreaContext = {
+  readonly applicable: boolean
   readonly registeredMissingFiles: readonly { readonly prefix: string; readonly file: string }[]
   readonly unregisteredFiles: readonly string[]
 }
 
 export type SpecIdentityContext = {
+  readonly applicable: boolean
   readonly headingIssues: readonly SpecHeadingIssue[]
   readonly requirements: readonly SpecRequirement[]
   readonly normaliseHeadings?: () => void
 }
 
 export type SpecRequirementContext = {
+  readonly applicable: boolean
   readonly requirements: readonly SpecRequirement[]
 }
 
 export type SpecVerificationContext = {
+  readonly applicable: boolean
   readonly requirements: readonly SpecRequirement[]
 }
 
@@ -82,6 +89,21 @@ const isDirectory = (path: string): boolean =>
 
 const isFile = (path: string): boolean =>
   existsSync(path) && !lstatSync(path).isSymbolicLink() && lstatSync(path).isFile()
+
+const isUnsafePath = (path: string): boolean => existsSync(path) && lstatSync(path).isSymbolicLink()
+
+const declaredInConfiguration = (root: string): { declared: boolean; malformed: boolean } => {
+  const path = join(root, '.ki-config.toml')
+  if (!existsSync(path) || !isFile(path)) return { declared: false, malformed: existsSync(path) }
+  const source = readFileSync(path, 'utf8')
+  try {
+    const document = Bun.TOML.parse(source) as { skills?: Record<string, unknown> }
+    return { declared: Object.hasOwn(document.skills ?? {}, 'ki-specs'), malformed: false }
+  } catch {
+    // A declaration-shaped malformed configuration must not make an intended corpus disappear.
+    return { declared: /^\[skills\.ki-specs\]\s*$/m.test(source), malformed: true }
+  }
+}
 
 const containedPath = (root: string, path: string): string | undefined => {
   const value = relative(root, path)
@@ -165,10 +187,23 @@ export const createSpecsSession = ({
   publication
 }: RubricContextOptions): RubricSession<SpecsRubricContext> => {
   const root = resolve(repository)
+  const declaration = declaredInConfiguration(root)
   const directory = specsDirectory(root)
   const directorySafe = containedPath(root, directory)
     ? safeDirectory(root, directory)
     : directory === root && isDirectory(root)
+  const directoryUnsafe = isUnsafePath(directory)
+  const applicable = declaration.declared
+  const unavailableReason = !applicable
+    ? undefined
+    : declaration.malformed
+      ? '.ki-config.toml is malformed, so the ki-specs declaration cannot be trusted.'
+      : directoryUnsafe
+        ? 'docs/specs/ is a symbolic link and is unsafe to inspect.'
+        : !directorySafe
+          ? 'docs/specs/ is missing or unsafe to inspect.'
+          : undefined
+  const inspectable = applicable && !unavailableReason
   const entries = directorySafe ? readdirSync(directory, { withFileTypes: true }) : []
   const indexPath = join(directory, INDEX_FILE)
   const indexExists = entries.some((entry) => entry.name === INDEX_FILE && entry.isFile()) && isFile(indexPath)
@@ -198,6 +233,7 @@ export const createSpecsSession = ({
       index: number
       id: string
       prefix: string
+      serial: number
       title: string
       owner?: string
       duplicateOf?: string
@@ -229,6 +265,7 @@ export const createSpecsSession = ({
         index,
         id,
         prefix,
+        serial: Number(serial),
         title,
         owner: prefixToFile.get(prefix),
         ...(duplicateOf ? { duplicateOf } : {})
@@ -244,6 +281,7 @@ export const createSpecsSession = ({
         file,
         id: requirement.id,
         prefix: requirement.prefix,
+        serial: requirement.serial,
         ...(requirement.owner ? { owner: requirement.owner } : {}),
         ...(requirement.duplicateOf ? { duplicateOf: requirement.duplicateOf } : {}),
         deprecated: /deprecated/i.test(requirement.title) || /^~~/.test(requirement.title.trim()),
@@ -256,9 +294,16 @@ export const createSpecsSession = ({
   const drafts = new Map(originals)
   const context: SpecsRubricContext = {
     rubric: { publication },
-    index: { exists: indexExists, prefixToFile, duplicatePrefixRegistrations },
-    area: { registeredMissingFiles, unregisteredFiles },
+    index: {
+      applicable,
+      ...(unavailableReason ? { unavailableReason } : {}),
+      exists: indexExists,
+      prefixToFile,
+      duplicatePrefixRegistrations
+    },
+    area: { applicable: inspectable, registeredMissingFiles, unregisteredFiles },
     identity: {
+      applicable: inspectable,
       headingIssues,
       requirements,
       ...(mode === 'conform'
@@ -286,8 +331,8 @@ export const createSpecsSession = ({
           }
         : {})
     },
-    requirement: { requirements },
-    verification: { requirements },
+    requirement: { applicable: inspectable, requirements },
+    verification: { applicable: inspectable, requirements },
     judgment: {}
   }
 

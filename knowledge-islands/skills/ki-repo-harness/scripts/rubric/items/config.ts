@@ -104,11 +104,51 @@ const CONFIG_3: RubricItem<HarnessConfigContext> = {
   }
 }
 
+const CONFIG_4: RubricItem<HarnessConfigContext> = {
+  code: 'CONFIG-4',
+  title: 'Capability prefix declaration',
+  description: 'The ki-repo-harness table declares one valid capability prefix.',
+  sources: STANDARD,
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Declare the owner-approved prefix in [skills.ki-repo-harness], then rerun the audit.'
+    },
+    audit: {
+      phase: 'INSPECT',
+      run: ({ state, hasHarnessTable, prefix }) => {
+        if (state !== 'physical' || !hasHarnessTable)
+          return [
+            {
+              status: 'NOT_APPLICABLE',
+              message: 'The Harness declaration is absent or unsafe.',
+              subject: '.ki-config.toml'
+            }
+          ]
+        return [
+          prefix !== null && /^[a-z][a-z0-9]*$/.test(prefix)
+            ? {
+                status: 'PASS',
+                message: `The Harness declares capability prefix '${prefix}'.`,
+                subject: '.ki-config.toml'
+              }
+            : {
+                status: 'VIOLATION',
+                message: 'The [skills.ki-repo-harness] prefix must be a lowercase alphanumeric name.',
+                subject: '.ki-config.toml'
+              }
+        ]
+      }
+    }
+  }
+}
+
 export const CONFIG: RubricFamily<HarnessRubricContext, HarnessConfigContext> = {
   code: 'CONFIG',
   title: 'Harness declaration',
   description: 'Knowledge Islands source-harness governance declarations.',
   standard: 'standards-compatible-harness.md',
   selectContext: (context) => context.config,
-  items: [CONFIG_1, CONFIG_2, CONFIG_3]
+  items: [CONFIG_1, CONFIG_2, CONFIG_3, CONFIG_4]
 }

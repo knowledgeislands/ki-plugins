@@ -26,6 +26,7 @@ afterEach(() => {
 test('the structured catalogue preserves the engineering criteria', async () => {
   expect(catalogue.contract).toBe(1)
   expect(catalogue.name).toBe('ki-engineering')
+  expect(catalogue.packageScripts).toEqual(['ki:deps:update'])
   expect(catalogue.createSession).toBeFunction()
   expect(catalogue.families.map((family) => family.code)).toEqual([
     'RUBRIC',
@@ -111,7 +112,7 @@ test('the session keeps stable focused context and coalesces package drafts', as
   temporaryDirectories.push(repository)
   writeFileSync(
     join(repository, 'package.json'),
-    '{"name":"example","scripts":{"ki:all":"ki repo audit","ki:engineering:check":"ki repo audit --skill ki-engineering","ki:authoring:fix":"ki repo conform --skill ki-authoring","ki:eval":"bun evals/harness.ts"}}\n'
+    '{"name":"example","scripts":{"ki:all":"ki repo audit","ki:engineering:check":"ki repo audit --skill ki-engineering","ki:authoring:fix":"ki repo conform --skill ki-authoring","ki:harness:eval":"bun evals/harness.ts"}}\n'
   )
   const session = await createEngineeringSession(
     { mode: 'conform', repository, userHome: tmpdir(), configuration: {} },
@@ -137,7 +138,7 @@ test('the session keeps stable focused context and coalesces package drafts', as
   expect(writes[0]?.path).toBe('package.json')
   expect(writes[0]?.content).not.toContain('ki repo audit')
   expect(writes[0]?.content).not.toContain('ki repo conform')
-  expect(JSON.parse(writes[0]?.content ?? '{}').scripts['ki:eval']).toBe('bun evals/harness.ts')
+  expect(JSON.parse(writes[0]?.content ?? '{}').scripts['ki:harness:eval']).toBe('bun evals/harness.ts')
   expect(JSON.parse(writes[0]?.content ?? '{}').type).toBe('module')
 })
 
@@ -146,7 +147,7 @@ test('SCR-2 proposes removal for any whole-repository or focused native governan
   temporaryDirectories.push(repository)
   writeFileSync(
     join(repository, 'package.json'),
-    '{"scripts":{"ki:all":"ki repo audit","ki:engineering:check":"ki repo audit --skill ki-engineering","ki:authoring:fix":"ki repo conform --skill ki-authoring","ki:eval":"bun evals/harness.ts"}}\n'
+    '{"scripts":{"ki:all":"ki repo audit","ki:engineering:check":"ki repo audit --skill ki-engineering","ki:authoring:fix":"ki repo conform --skill ki-authoring","ki:harness:eval":"bun evals/harness.ts"}}\n'
   )
   const session = await createEngineeringSession(
     { mode: 'conform', repository, userHome: tmpdir(), configuration: {} },
@@ -162,7 +163,7 @@ test('SCR-2 proposes removal for any whole-repository or focused native governan
   const scripts = JSON.parse(session.proposal().writes[0]?.content ?? '{}').scripts
   expect(scripts).toEqual({
     'ki:deps:update': 'bun update --latest',
-    'ki:eval': 'bun evals/harness.ts',
+    'ki:harness:eval': 'bun evals/harness.ts',
     clean: 'rm -rf dist node_modules',
     prepare: 'husky'
   })

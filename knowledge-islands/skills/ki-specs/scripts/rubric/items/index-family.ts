@@ -17,9 +17,13 @@ const INDEX_1: RubricItem<SpecIndexContext> = {
     audit: {
       phase: 'INSPECT',
       run: (context) => [
-        context.exists
-          ? { status: 'PASS', message: 'The Specifications index exists.', subject: 'index.md' }
-          : { status: 'VIOLATION', message: 'The Specifications index is missing.', subject: 'index.md' }
+        !context.applicable
+          ? { status: 'NOT_APPLICABLE', message: 'ki-specs is not declared for this repository.' }
+          : context.unavailableReason
+            ? { status: 'VIOLATION', message: context.unavailableReason, subject: 'docs/specs/' }
+            : context.exists
+              ? { status: 'PASS', message: 'The Specifications index exists.', subject: 'index.md' }
+              : { status: 'VIOLATION', message: 'The Specifications index is missing.', subject: 'index.md' }
       ]
     }
   }
@@ -39,23 +43,27 @@ const INDEX_2: RubricItem<SpecIndexContext> = {
     audit: {
       phase: 'INSPECT',
       run: (context) => [
-        !context.exists
-          ? {
-              status: 'NOT_APPLICABLE',
-              message: 'The areas table cannot be inspected until index.md exists.',
-              subject: 'index.md'
-            }
-          : context.prefixToFile.size > 0
-            ? {
-                status: 'PASS',
-                message: 'The index contains a populated Prefix and File areas table.',
-                subject: 'index.md'
-              }
-            : {
-                status: 'VIOLATION',
-                message: 'No populated areas table with Prefix and File columns was found.',
-                subject: 'index.md'
-              }
+        !context.applicable
+          ? { status: 'NOT_APPLICABLE', message: 'ki-specs is not declared for this repository.' }
+          : context.unavailableReason
+            ? { status: 'NOT_APPLICABLE', message: 'The areas table cannot be inspected until docs/specs/ is safe.' }
+            : !context.exists
+              ? {
+                  status: 'NOT_APPLICABLE',
+                  message: 'The areas table cannot be inspected until index.md exists.',
+                  subject: 'index.md'
+                }
+              : context.prefixToFile.size > 0
+                ? {
+                    status: 'PASS',
+                    message: 'The index contains a populated Prefix and File areas table.',
+                    subject: 'index.md'
+                  }
+                : {
+                    status: 'VIOLATION',
+                    message: 'No populated areas table with Prefix and File columns was found.',
+                    subject: 'index.md'
+                  }
       ]
     }
   }
@@ -77,13 +85,17 @@ const INDEX_3: RubricItem<SpecIndexContext> = {
     audit: {
       phase: 'INSPECT',
       run: (context) =>
-        context.duplicatePrefixRegistrations.length === 0
-          ? [{ status: 'PASS', message: 'Every specification prefix has one registered area-file owner.' }]
-          : context.duplicatePrefixRegistrations.map(({ prefix, firstFile, duplicateFile }) => ({
-              status: 'VIOLATION' as const,
-              message: `Prefix ${prefix} is registered to both ${firstFile} and ${duplicateFile}.`,
-              subject: 'index.md'
-            }))
+        !context.applicable
+          ? [{ status: 'NOT_APPLICABLE', message: 'ki-specs is not declared for this repository.' }]
+          : context.unavailableReason
+            ? [{ status: 'NOT_APPLICABLE', message: 'Prefix ownership cannot be inspected until docs/specs/ is safe.' }]
+            : context.duplicatePrefixRegistrations.length === 0
+              ? [{ status: 'PASS', message: 'Every specification prefix has one registered area-file owner.' }]
+              : context.duplicatePrefixRegistrations.map(({ prefix, firstFile, duplicateFile }) => ({
+                  status: 'VIOLATION' as const,
+                  message: `Prefix ${prefix} is registered to both ${firstFile} and ${duplicateFile}.`,
+                  subject: 'index.md'
+                }))
     }
   }
 }

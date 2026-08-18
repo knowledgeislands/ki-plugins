@@ -19,14 +19,16 @@ const ID_1: RubricItem<SpecIdentityContext> = {
     audit: {
       phase: 'INSPECT',
       run: (context) =>
-        outcomes(
-          context.headingIssues.map((issue) => ({
-            status: 'VIOLATION',
-            message: `Level-3 heading is not a valid requirement ID: “${issue.heading}”.`,
-            subject: issue.file
-          })),
-          'Every level-3 heading outside Gaps has canonical requirement-ID form.'
-        )
+        !context.applicable
+          ? [{ status: 'NOT_APPLICABLE', message: 'ki-specs is not declared for this repository.' }]
+          : outcomes(
+              context.headingIssues.map((issue) => ({
+                status: 'VIOLATION',
+                message: `Level-3 heading is not a valid requirement ID: “${issue.heading}”.`,
+                subject: issue.file
+              })),
+              'Every level-3 heading outside Gaps has canonical requirement-ID form.'
+            )
     },
     conform: {
       phase: 'NORMALISE',
@@ -49,46 +51,69 @@ const ID_2: RubricItem<SpecIdentityContext> = {
     audit: {
       phase: 'INSPECT',
       run: (context) =>
-        outcomes(
-          context.requirements
-            .filter((requirement) => requirement.owner !== requirement.file)
-            .map((requirement) => ({
-              status: 'VIOLATION',
-              message: requirement.owner
-                ? `${requirement.id} uses prefix ${requirement.prefix}, registered to ${requirement.owner} rather than this file.`
-                : `${requirement.id} uses prefix ${requirement.prefix}, which no areas-table row registers.`,
-              subject: requirement.file
-            })),
-          'Every requirement prefix is registered to its containing area file.'
-        )
+        !context.applicable
+          ? [{ status: 'NOT_APPLICABLE', message: 'ki-specs is not declared for this repository.' }]
+          : outcomes(
+              context.requirements
+                .filter((requirement) => requirement.owner !== requirement.file)
+                .map((requirement) => ({
+                  status: 'VIOLATION',
+                  message: requirement.owner
+                    ? `${requirement.id} uses prefix ${requirement.prefix}, registered to ${requirement.owner} rather than this file.`
+                    : `${requirement.id} uses prefix ${requirement.prefix}, which no areas-table row registers.`,
+                  subject: requirement.file
+                })),
+              'Every requirement prefix is registered to its containing area file.'
+            )
     }
   }
 }
 
 const ID_3: RubricItem<SpecIdentityContext> = {
   code: 'ID-3',
-  title: 'requirement IDs are unique across the corpus',
-  description: 'Requirement IDs are append-only, never reused, and unique across the corpus.',
+  title: 'requirement IDs are sequential per prefix and unique across the corpus',
+  description:
+    'Requirement IDs are append-only, sequential within each registered prefix, never reused, and unique across the corpus.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
     remediation: {
       class: 'diagnostic',
-      guidance: 'Allocate an unused append-only identifier and update the duplicate requirement, then rerun the audit.'
+      guidance:
+        'Allocate the next unused serial for the requirement prefix and update the duplicate or gap, then rerun the audit.'
     },
     audit: {
       phase: 'INSPECT',
       run: (context) =>
-        outcomes(
-          context.requirements
-            .filter((requirement) => requirement.duplicateOf)
-            .map((requirement) => ({
-              status: 'VIOLATION',
-              message: `${requirement.id} is already defined by ${requirement.duplicateOf}; IDs are append-only and never reused.`,
-              subject: requirement.file
-            })),
-          'Requirement IDs are unique across the corpus.'
-        )
+        !context.applicable
+          ? [{ status: 'NOT_APPLICABLE', message: 'ki-specs is not declared for this repository.' }]
+          : outcomes(
+              [
+                ...context.requirements
+                  .filter((requirement) => requirement.duplicateOf)
+                  .map((requirement) => ({
+                    status: 'VIOLATION' as const,
+                    message: `${requirement.id} is already defined by ${requirement.duplicateOf}; IDs are append-only and never reused.`,
+                    subject: requirement.file
+                  })),
+                ...[...new Set(context.requirements.map((requirement) => requirement.prefix))].flatMap((prefix) => {
+                  const serials = context.requirements
+                    .filter((requirement) => requirement.prefix === prefix)
+                    .map((requirement) => requirement.serial)
+                    .sort((left, right) => left - right)
+                  const present = new Set(serials)
+                  const missing = Array.from({ length: Math.max(...serials, 0) }, (_, index) => index + 1).filter(
+                    (serial) => !present.has(serial)
+                  )
+                  return missing.map((serial) => ({
+                    status: 'VIOLATION' as const,
+                    message: `${prefix}-${String(serial).padStart(3, '0')} is missing; serials are append-only and sequential per prefix.`,
+                    subject: context.requirements.find((requirement) => requirement.prefix === prefix)?.file
+                  }))
+                })
+              ],
+              'Requirement IDs are sequential within each prefix and unique across the corpus.'
+            )
     }
   }
 }

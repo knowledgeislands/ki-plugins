@@ -83,8 +83,8 @@ export const SCRIPTS: RubricFamily<EngineeringRubricContext, ScriptsRubricContex
     ),
     mechanical(
       'SCR-3',
-      'Retired script families absent',
-      'Every `ki:` script belongs to a declared owning capability and `ki:deps:update` is present; retired tool families and aggregate governance aliases are absent.',
+      'Exact script claims cover the governed surface',
+      'Every `ki:` script is claimed by exactly one resolved capability or is exactly excluded as user-owned external tooling; `ki:deps:update` is present; retired tool families and aggregate governance aliases are absent.',
       'FAIL',
       (context) => context.scr3,
       { conform: true }
@@ -122,7 +122,7 @@ export const SCRIPTS: RubricFamily<EngineeringRubricContext, ScriptsRubricContex
     judgment(
       'SCR-8',
       'Repo-specific scripts retain clear ownership',
-      'Repo-specific scripts beyond the governance surface are valid only when an owning skill governs them and they do not shadow a governed entrypoint.',
+      'Repo-specific scripts beyond the governance surface are valid only when an owning skill publishes their exact claim or they are exactly excluded as user-owned external tooling; they do not shadow a governed entrypoint.',
       'Every repo-specific script outside the governed lifecycle and `ki:` surface.',
       'Do repo-specific scripts have a clear owner and avoid divergent shadows of governed entrypoints?',
       'Assign the script to an owning capability, remove a divergent shadow, record a named Gap, or record an explicit exclusion.'

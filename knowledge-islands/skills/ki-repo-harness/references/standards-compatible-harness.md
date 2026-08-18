@@ -41,7 +41,7 @@ The source repository therefore defines capability semantics and carries their s
 
 A compatible harness publishes typed capabilities. The current recognised capability kind is `skill`; the other source shelves reserve their kinds until host support lands.
 
-The installed harness identity derives from its verified `<owner>/<repository>` installation path. A skill's qualified identity is `<harness-id>:<skill-name>`. The baseline identity is `knowledgeislands/ki-agentic-harness`.
+The installed Harness identity derives from its verified `<owner>/<repository>` installation path. Its source declaration supplies one stable capability prefix. A valid local estate contains at most one installed Harness for each prefix, so repository capabilities use their names directly without a second qualified identity.
 
 An installed skill's physical source directory and `SKILL.md` frontmatter are authoritative. A file does not become executable merely because it appears beneath the payload root. A governed skill contributes only its rubric definition, evidence builders, and declared safe repairs to the generic host.
 
@@ -67,7 +67,7 @@ An empty shelf is valid. Its README distinguishes intentional reserved structure
 
 The source root also contains physical `CLAUDE.md`, `ROADMAP.md`, and `.ki-config.toml` files. Symlinked, dangling, directory-valued, device, or unreadable evidence is unsafe and does not satisfy a physical-file or physical-directory requirement.
 
-The source harness may have a `package.json` for its own development and verification. Package scripts are conveniences governed by `ki-engineering`; they are not installation, activation, or governance entry points and are not required by this standard.
+The source harness may have a `package.json` for its own development and verification. `ki:harness:eval` is this standard's exact source-harness evaluation claim: it runs `bun evals/harness.ts` and is neither an installation, activation, nor governance entry point. Other package-script ownership and complete-set validation belong to `ki-engineering`.
 
 ## Skill capability identity
 
@@ -76,6 +76,8 @@ Every discovered skill root beneath `skills/` contains `SKILL.md`, and its direc
 A source harness may group skill roots under semantic directories. Discovery therefore walks physical descendants of `skills/`, stops at a directory containing `SKILL.md`, and rejects unsafe or unreadable evidence rather than following it.
 
 No two discovered skill roots in one source harness share a frontmatter name. The `ki-skills` skill governs every other aspect of skill quality.
+
+Every discovered skill name begins with the declared Harness prefix followed by `-`. A Harness declaring `prefix = "ki"` therefore publishes `ki-*` skills; one declaring `prefix = "hnr"` publishes `hnr-*` skills. The host refuses a second installed Harness claiming an existing prefix rather than asking repositories to qualify one of two competing providers.
 
 ## Root orientation
 
@@ -95,7 +97,14 @@ A source harness carries `ROADMAP.md` as its open-work register. The `ki-work-ro
 
 ## Harness declaration
 
-The source root carries `.ki-config.toml` with a keyless `[skills.ki-repo-harness]` table as its compliance marker. It also declares `[skills.ki-repo]`, and a populated skills shelf declares `[skills.ki-skills]`.
+The source root carries `.ki-config.toml` with `[skills.ki-repo-harness]` declaring the Harness's stable lowercase alphanumeric capability prefix. It also declares `[skills.ki-repo]`, and a populated skills shelf declares `[skills.ki-skills]`.
+
+```toml
+[skills.ki-repo-harness]
+prefix = "ki"
+```
+
+The prefix is provider-authored metadata in the existing Harness-governance table, not a value inferred from repository identity or capability names. Changing it changes the published capability namespace and requires an explicit provider decision.
 
 If a physical readable `.ki-config.toml` exists without `[skills.ki-repo-harness]`, CONFORM may append exactly one keyless marker while preserving all existing bytes apart from normalising the trailing newline before the append:
 
@@ -103,7 +112,7 @@ If a physical readable `.ki-config.toml` exists without `[skills.ki-repo-harness
 [skills.ki-repo-harness]
 ```
 
-CONFORM does not create a missing configuration and never replaces or follows a symlink, directory, dangling link, special file, or unreadable path. The session coalesces repeated marker requests into one host-published proposal. The host owns dry-run, transaction validation, atomic publication, rollback, and post-write re-audit.
+CONFORM does not invent a prefix, create a missing configuration, or replace or follow a symlink, directory, dangling link, special file, or unreadable path. The session coalesces repeated marker requests into one host-published proposal, but a newly appended keyless marker remains a failing declaration until the owner supplies its prefix. The host owns dry-run, transaction validation, atomic publication, rollback, and post-write re-audit.
 
 ## Ownership boundaries
 

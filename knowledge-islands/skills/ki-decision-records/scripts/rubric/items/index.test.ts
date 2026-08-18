@@ -156,3 +156,21 @@ The decision is available.
     }
   ])
 })
+
+test('repository-root Markdown is not treated as decision records', () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-decision-records-no-directory-'))
+  temporaryDirectories.push(repository)
+  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-decision-records]\n')
+  writeFileSync(join(repository, 'README.md'), '# Repository\n')
+  writeFileSync(join(repository, 'CHANGELOG.md'), '# Changelog\n')
+
+  const session = catalogue.createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
+  const rootContext = session.subjects[1]?.context()
+  const family = families.find((candidate) => candidate.code === 'FILENAME')
+  const filenameContext = family?.selectContext(rootContext as NonNullable<typeof rootContext>)
+  const filenameItem = family?.items.find((candidate) => candidate.code === 'FILENAME-0')
+
+  expect(filenameItem?.mechanical?.audit.run(filenameContext as NonNullable<typeof filenameContext>)).toEqual([
+    expect.objectContaining({ status: 'PASS' })
+  ])
+})

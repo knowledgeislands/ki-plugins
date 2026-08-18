@@ -14,6 +14,7 @@ export default {
   contract: 1,
   name: 'ki-repo-harness',
   concern: 'Knowledge Islands compatible harnesses',
+  packageScripts: ['ki:harness:eval'],
   createSession: createHarnessSession,
   families: [CAP, PAYLOAD, LAY, CLAUDE, CONFIG, SKILLS, LONG, COLL, RUBRIC]
 } satisfies SkillRubricDefinition<HarnessRubricContext>

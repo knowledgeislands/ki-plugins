@@ -22,16 +22,18 @@ const REQ_1: RubricItem<SpecRequirementContext> = {
     audit: {
       phase: 'INSPECT',
       run: (context) =>
-        outcomes(
-          context.requirements
-            .filter((requirement) => !requirement.deprecated && !requirement.hasNormativeKeyword)
-            .map((requirement) => ({
-              status: 'VIOLATION',
-              message: `${requirement.id} has no RFC-2119 keyword in its statement.`,
-              subject: requirement.file
-            })),
-          'Every active requirement carries an RFC-2119 keyword.'
-        )
+        !context.applicable
+          ? [{ status: 'NOT_APPLICABLE', message: 'ki-specs is not declared for this repository.' }]
+          : outcomes(
+              context.requirements
+                .filter((requirement) => !requirement.deprecated && !requirement.hasNormativeKeyword)
+                .map((requirement) => ({
+                  status: 'VIOLATION',
+                  message: `${requirement.id} has no RFC-2119 keyword in its statement.`,
+                  subject: requirement.file
+                })),
+              'Every active requirement carries an RFC-2119 keyword.'
+            )
     }
   }
 }

@@ -167,26 +167,14 @@ const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefi
       return undefined
     }
     if (Array.isArray(configuredThemes) && new Set(configuredThemes).size !== configuredThemes.length) {
-      add(
-        'FAIL',
-        'ROAD-6',
-        'ki-work-roadmap themes must not repeat a theme name',
-        STANDARD,
-        '.ki-config.toml'
-      )
+      add('FAIL', 'ROAD-6', 'ki-work-roadmap themes must not repeat a theme name', STANDARD, '.ki-config.toml')
       return undefined
     }
     const configuredAreas = values?.areas
     const areas = new Map<string, string>()
     if (configuredAreas !== undefined) {
       if (typeof configuredAreas !== 'object' || configuredAreas === null || Array.isArray(configuredAreas)) {
-        add(
-          'FAIL',
-          'ROAD-6',
-          'ki-work-roadmap areas must be a code-to-theme table',
-          STANDARD,
-          '.ki-config.toml'
-        )
+        add('FAIL', 'ROAD-6', 'ki-work-roadmap areas must be a code-to-theme table', STANDARD, '.ki-config.toml')
         return undefined
       }
       for (const [area, theme] of Object.entries(configuredAreas as Record<string, unknown>)) {
@@ -207,13 +195,7 @@ const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefi
         areas.set(area, theme)
       }
       if (!areas.size) {
-        add(
-          'FAIL',
-          'ROAD-6',
-          'ki-work-roadmap areas must not be empty when declared',
-          STANDARD,
-          '.ki-config.toml'
-        )
+        add('FAIL', 'ROAD-6', 'ki-work-roadmap areas must not be empty when declared', STANDARD, '.ki-config.toml')
         return undefined
       }
     }
@@ -428,13 +410,7 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
   if (!configuration || !theme || !configuration.themes.has(theme))
     add('FAIL', 'ITEM-2', 'item theme must be declared by ki-work-roadmap configuration', FORMAT, display)
   if (configuration?.areas.size && (!area || configuration.areas.get(area) !== theme))
-    add(
-      'FAIL',
-      'ITEM-2',
-      'item area must map to its theme in ki-work-roadmap configuration',
-      FORMAT,
-      display
-    )
+    add('FAIL', 'ITEM-2', 'item area must map to its theme in ki-work-roadmap configuration', FORMAT, display)
   if (!horizon || !HORIZONS.includes(horizon))
     add('FAIL', 'ITEM-2', 'horizon must be one canonical value', FORMAT, display)
   if (!status || !STATUS.has(status)) add('FAIL', 'ITEM-2', 'status must be one lifecycle value', FORMAT, display)

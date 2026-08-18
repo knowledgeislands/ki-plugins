@@ -23,7 +23,7 @@ RFC-2119 keywords (`MUST` / `MUST NOT` / `SHOULD` / `SHOULD NOT` / `MAY`) are no
 
 ## ID scheme
 
-`<PREFIX>-<NNN>` — a per-file prefix plus a zero-padded three-digit serial, sequential within the file. IDs are **append-only and never reused**: a retired requirement keeps its number, struck through with a `(deprecated)` note. Never renumber to tidy up.
+`<PREFIX>-<NNN>` — a registered prefix plus a zero-padded three-digit serial, sequential within that prefix. A file may host independent prefix sequences, but each complete ID is unique across the corpus. IDs are **append-only and never reused**: a retired requirement keeps its number, struck through with a `(deprecated)` note. Never renumber to tidy up.
 
 ## Gaps
 

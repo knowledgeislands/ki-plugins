@@ -46,14 +46,15 @@ The installed path supplies harness identity and physical source. Runtime discov
 
 ## Harness declaration
 
-A source harness opts into this standard through a keyless marker:
+A source Harness opts into this standard and declares its capability namespace in the same table:
 
 ```toml
 [skills.ki-repo]
 
 [skills.ki-repo-harness]
+prefix = "ki"
 
 [skills.ki-skills]
 ```
 
-When the physical file already exists and only `[skills.ki-repo-harness]` is missing, CONFORM may append that marker. Missing or unsafe configuration remains a reported manual case.
+When the physical file already exists and only `[skills.ki-repo-harness]` is missing, CONFORM may append a keyless marker but cannot infer the provider-owned prefix. Missing, prefix-less, or unsafe configuration remains a reported manual case.

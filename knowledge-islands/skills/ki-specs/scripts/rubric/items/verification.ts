@@ -21,16 +21,18 @@ const VERIFY_1: RubricItem<SpecVerificationContext> = {
     audit: {
       phase: 'INSPECT',
       run: (context) =>
-        outcomes(
-          context.requirements
-            .filter((requirement) => !requirement.deprecated && !requirement.hasVerify)
-            .map((requirement) => ({
-              status: 'VIOLATION',
-              message: `${requirement.id} has no _Verify:_ line.`,
-              subject: requirement.file
-            })),
-          'Every active requirement carries a _Verify:_ hook.'
-        )
+        !context.applicable
+          ? [{ status: 'NOT_APPLICABLE', message: 'ki-specs is not declared for this repository.' }]
+          : outcomes(
+              context.requirements
+                .filter((requirement) => !requirement.deprecated && !requirement.hasVerify)
+                .map((requirement) => ({
+                  status: 'VIOLATION',
+                  message: `${requirement.id} has no _Verify:_ line.`,
+                  subject: requirement.file
+                })),
+              'Every active requirement carries a _Verify:_ hook.'
+            )
     }
   }
 }

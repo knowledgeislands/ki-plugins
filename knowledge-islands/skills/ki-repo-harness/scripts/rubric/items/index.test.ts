@@ -7,7 +7,8 @@ import type {
   HarnessCapabilityPublicationContext,
   HarnessConfigContext,
   HarnessReviewContext,
-  HarnessRubricContext
+  HarnessRubricContext,
+  HarnessSkillsContext
 } from '../contexts/harness.ts'
 import catalogue from './index.ts'
 
@@ -38,12 +39,12 @@ const fixture = (): string => {
   return repository
 }
 
-const configItem = () => {
+const configItem = (code = 'CONFIG-1') => {
   const family = catalogue.families.find((candidate) => candidate.code === 'CONFIG') as
     | RubricFamily<HarnessRubricContext, HarnessConfigContext>
     | undefined
-  const item = family?.items.find((candidate) => candidate.code === 'CONFIG-1')
-  if (!family || !item) throw new Error('CONFIG-1 is missing')
+  const item = family?.items.find((candidate) => candidate.code === code)
+  if (!family || !item) throw new Error(`${code} is missing`)
   return { family, item }
 }
 
@@ -59,6 +60,7 @@ const capabilityPublicationItem = () => {
 test('the catalogue preserves the current compatible-harness criteria', () => {
   expect(catalogue.contract).toBe(1)
   expect(catalogue.name).toBe('ki-repo-harness')
+  expect(catalogue.packageScripts).toEqual(['ki:harness:eval'])
   expect(catalogue.createSession).toBeFunction()
   expect(catalogue.families.map((family) => family.code)).toEqual([
     'CAP',
@@ -89,8 +91,10 @@ test('the catalogue preserves the current compatible-harness criteria', () => {
     'CONFIG-1',
     'CONFIG-2',
     'CONFIG-3',
+    'CONFIG-4',
     'SKILLS-1',
     'SKILLS-2',
+    'SKILLS-3',
     'LONG-1',
     'COLL-1',
     'RUBRIC-1'
@@ -137,6 +141,39 @@ test('audit is read-only and an existing marker produces no proposal', () => {
   expect(context.config.hasHarnessTable).toBe(true)
   expect(context.config.requestHarnessMarker).toBeUndefined()
   expect(session.proposal().writes).toEqual([])
+})
+
+test('the Harness declaration requires a valid explicit prefix', () => {
+  const repository = fixture()
+  const { family, item } = configItem('CONFIG-4')
+  for (const [prefix, status] of [
+    ['', 'VIOLATION'],
+    ['KI', 'VIOLATION'],
+    ['ki', 'PASS']
+  ] as const) {
+    writeFileSync(
+      join(repository, '.ki-config.toml'),
+      `[skills.ki-repo]\n\n[skills.ki-repo-harness]\n${prefix ? `prefix = "${prefix}"\n` : ''}`
+    )
+    const session = catalogue.createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
+    const context = session.subjects[0]?.context() as HarnessRubricContext
+    expect(item.mechanical?.audit.run(family.selectContext(context))[0]?.status).toBe(status)
+  }
+})
+
+test('published skill names use the declared Harness prefix', () => {
+  const repository = fixture()
+  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\n\n[skills.ki-repo-harness]\nprefix = "ki"\n')
+  const session = catalogue.createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
+  const context = session.subjects[0]?.context() as HarnessRubricContext
+  const family = catalogue.families.find((candidate) => candidate.code === 'SKILLS') as
+    | RubricFamily<HarnessRubricContext, HarnessSkillsContext>
+    | undefined
+  const item = family?.items.find((candidate) => candidate.code === 'SKILLS-3')
+  if (!family || !item) throw new Error('SKILLS-3 is missing')
+  expect(item.mechanical?.audit.run(family.selectContext(context))).toEqual([
+    expect.objectContaining({ status: 'VIOLATION', message: expect.stringContaining("must begin with 'ki-'") })
+  ])
 })
 
 test('a missing catalogue produces an exact finding and one marker-bounded conform write', () => {

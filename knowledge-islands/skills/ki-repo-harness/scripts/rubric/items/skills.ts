@@ -69,15 +69,13 @@ const SKILLS_1: RubricItem<HarnessSkillsContext> = {
 const SKILLS_2: RubricItem<HarnessSkillsContext> = {
   code: 'SKILLS-2',
   title: 'Unique skill names',
-  description:
-    'No two discovered skill roots share a frontmatter name, and combined installed surfaces remain unambiguous.',
+  description: 'No two discovered skill roots share a frontmatter name.',
   sources: STANDARD,
   mechanical: {
     level: 'FAIL',
     remediation: {
-      class: 'guarded',
-      guidance:
-        'Resolve the name collision through the owning capability authorities before changing a published or installed identity.'
+      class: 'diagnostic',
+      guidance: 'Resolve the duplicate published name within the source Harness, then rerun the audit.'
     },
     audit: {
       phase: 'INSPECT',
@@ -99,13 +97,51 @@ const SKILLS_2: RubricItem<HarnessSkillsContext> = {
           : [{ status: 'PASS', message: 'Discovered skill names are unique.', subject: 'skills/' }]
       }
     }
-  },
-  judgment: {
-    scope: 'The local skill inventory and every installed compatible harness surface in scope.',
-    prompt: 'Does another installed harness make an otherwise unique local skill name ambiguous?',
-    outcomes: ['conforming', 'resolve collision', 'escalate to capability owner'],
-    guidance:
-      'Preserve the responsible capability owner’s authority over a published name; record the collision and escalate rather than renaming or removing another harness’s skill.'
+  }
+}
+
+const SKILLS_3: RubricItem<HarnessSkillsContext> = {
+  code: 'SKILLS-3',
+  title: 'Prefix-owned skill names',
+  description: 'Every published skill name begins with the Harness capability prefix.',
+  sources: STANDARD,
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Align the published skill identity with the owner-approved Harness prefix.'
+    },
+    audit: {
+      phase: 'INSPECT',
+      run: (context) => {
+        const blocked = unavailable(context)
+        if (blocked) return blocked
+        if (context.prefix === null)
+          return [
+            {
+              status: 'NOT_APPLICABLE',
+              message: 'The Harness capability prefix is absent or invalid.',
+              subject: '.ki-config.toml'
+            }
+          ]
+        const mismatches = context.skills.filter(
+          (skill) => skill.declaredName !== null && !skill.declaredName.startsWith(`${context.prefix}-`)
+        )
+        return mismatches.length
+          ? mismatches.map((skill) => ({
+              status: 'VIOLATION',
+              message: `Skill name '${skill.declaredName}' must begin with '${context.prefix}-'.`,
+              subject: `${skill.path}/SKILL.md`
+            }))
+          : [
+              {
+                status: 'PASS',
+                message: `Published skill names use the '${context.prefix}-' capability prefix.`,
+                subject: 'skills/'
+              }
+            ]
+      }
+    }
   }
 }
 
@@ -115,5 +151,5 @@ export const SKILLS: RubricFamily<HarnessRubricContext, HarnessSkillsContext> = 
   description: 'Recursive physical skill discovery and identity integrity within the compatible payload.',
   standard: 'standards-compatible-harness.md',
   selectContext: (context) => context.skills,
-  items: [SKILLS_1, SKILLS_2]
+  items: [SKILLS_1, SKILLS_2, SKILLS_3]
 }

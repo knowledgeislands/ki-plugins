@@ -1,6 +1,6 @@
 <!-- GENERATED FILE: produced by `ki dev skill rubric`. Do not hand-edit; edit scripts/rubric/items/, then rerun `ki dev skill rubric <skill> --write`. -->
 
-# Generated rubric â GitHub Issues change-management adapter
+# Generated rubric — GitHub Issues change-management adapter
 
 > **Generated publication.** The TypeScript rubric items under `scripts/rubric/items/` are canonical. Edit those definitions, then rerun `ki dev skill rubric ki-work-github-issues --write`.
 
@@ -8,23 +8,23 @@ Line-by-line criteria for auditing ki-work-github-issues. Classifications are de
 
 ## Contents
 
-- [SELECT â GitHub Issues configuration](#select--github-issues-configuration)
-- [MAP â GitHub Issues lifecycle mapping](#map--github-issues-lifecycle-mapping)
+- [SELECT — GitHub Issues configuration](#select--github-issues-configuration)
+- [MAP — GitHub Issues lifecycle mapping](#map--github-issues-lifecycle-mapping)
 
-## SELECT â GitHub Issues configuration
+## SELECT — GitHub Issues configuration
 
-â [standard](standards-github-issues.md)
+→ [standard](standards-github-issues.md)
 
 One declared GitHub Issues repository with matching shared selection.
 
-- **SELECT-1 [M] â explicit GitHub Issues adapter** â The repository selects and configures one GitHub Issues namespace. (standards-github-issues.md)
-  - _Remediation:_ diagnostic â Select github-issues and declare one owner/repository namespace.
+- **SELECT-1 [M] — explicit GitHub Issues adapter** — The repository selects and configures one GitHub Issues namespace. (standards-github-issues.md)
+  - _Remediation:_ diagnostic — Select github-issues and declare one owner/repository namespace.
 
-## MAP â GitHub Issues lifecycle mapping
+## MAP — GitHub Issues lifecycle mapping
 
-â [standard](standards-github-issues.md)
+→ [standard](standards-github-issues.md)
 
 Inspectable local lifecycle metadata, conflict owner, and separate relationship meanings.
 
-- **MAP-1 [M] â inspectable GitHub lifecycle mapping** â The local configuration names exact queue, ready, review, and done values, a metadata conflict owner, and distinct dependency and hierarchy mappings; it does not assert remote verification. (standards-github-issues.md)
-  - _Remediation:_ diagnostic â Declare the exact metadata mapping and owner locally, then have an authorised future resolver verify it remotely before any process execution.
+- **MAP-1 [M] — inspectable GitHub lifecycle mapping** — The local configuration names exact queue, ready, review, and done values, a metadata conflict owner, and distinct dependency and hierarchy mappings; it does not assert remote verification. (standards-github-issues.md)
+  - _Remediation:_ diagnostic — Declare the exact metadata mapping and owner locally, then have an authorised future resolver verify it remotely before any process execution.

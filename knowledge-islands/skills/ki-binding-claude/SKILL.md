@@ -22,7 +22,7 @@ Run `ki repo audit --skill ki-binding-claude --repo <project>`. The host resolve
 
 ### Mode CONFORM
 
-Run AUDIT first. Cowork settings are report-only until product-specific external-edit and next-launch authority is recorded. Rebuild the marketplace plugin with `bun skills/environment/ki-binding-claude/scripts/build-plugin.ts <ki-repo-plugins-checkout>`; it is a projection, never hand-maintained. Registration, installation, activation, and runtime health require separate authorised evidence.
+Run AUDIT first. Cowork settings are report-only until product-specific external-edit and next-launch authority is recorded. Rebuild the marketplace plugin with `bun run ki:binding:claude:build-plugin <ki-repo-plugins-checkout>`; it is a projection, never hand-maintained. This skill's exact package-script claim is limited to that builder command. Registration, installation, activation, and runtime health require separate authorised evidence.
 
 ### Mode EDUCATE
 

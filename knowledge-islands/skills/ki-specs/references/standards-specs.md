@@ -21,6 +21,7 @@ Consumer-facing requirements name observable public behaviour in language a prod
 
 ## Layout
 
+- Applicability is **declaration-led**. A repository that does not declare `[skills.ki-specs]` has no Specifications obligation, even when an incidental `docs/specs/` directory exists. Once declared, the corpus is authoritative: a missing, malformed, symbolic-linked, or otherwise unsafe registry or area-file evidence fails closed rather than becoming an empty pass.
 - Specifications live in **`docs/specs/`**, flat — **one file per area** (e.g. `authentication.md`, `site-seo.md`, `billing.md`). No nesting.
 - **`index.md`** is the overview and the registry. It carries, in order: a purpose blurb; a "how this fits with other docs" note; a "how to read a requirement" example; the **ID scheme**; the **Gaps convention**; and one or more **areas tables**.
 - Each area file opens with an H1 `# <Title> — <PREFIX>`, a one-paragraph scope blurb linking back to `index.md`, and an optional `> **Status:**` note, then the requirements grouped under `## <sub-area>` H2 sections, and finally a `## Gaps` section.
@@ -52,13 +53,13 @@ An indexable page MUST emit a `<link rel="canonical">` whose href is the absolut
 _Verify:_ a built page at `/culture/` has `<link rel="canonical" href="{site.url}/culture/">`.
 ```
 
-- **Heading** — `### <PREFIX>-NNN — <title>`. `PREFIX` is one or more uppercase alpha-leading segments joined by hyphens (`AUTH`, `SITE-SEO`); `NNN` is zero-padded, ≥ 3 digits; the separator before the title is an **em dash** (`—`). `NNN` is sequential within the file (grouped under H2s, but numbered across the whole file, not per H2).
+- **Heading** — `### <PREFIX>-NNN — <title>`. `PREFIX` is one or more uppercase alpha-leading segments joined by hyphens (`AUTH`, `SITE-SEO`); `NNN` is zero-padded, ≥ 3 digits; the separator before the title is an **em dash** (`—`). `NNN` is sequential within its registered prefix (not per H2 or file). A file may host independent prefix sequences; every complete `<PREFIX>-<NNN>` ID is unique across the corpus.
 - **Statement** — one paragraph using an uppercase **BCP 14** keyword (`MUST`, `MUST NOT`, `SHALL`, `SHALL NOT`, `SHOULD`, `SHOULD NOT`, `MAY`, `REQUIRED`, `RECOMMENDED`, `NOT RECOMMENDED`, or `OPTIONAL`). A requirement may pair a `MUST` with a `MUST NOT`; unrelated behaviours split into separate IDs so each verifies independently. RFC 8174 updates RFC 2119: these terms carry their defined meanings only when uppercase.
 - **`_Verify:_`** — one line, the italic label `_Verify:_` followed by the concrete check: a built-output assertion, a unit test, or a linked source file with the specific symbol/behaviour to inspect. This is the hook a test suite (or a reader) uses to confirm the requirement holds.
 
 ## Append-only IDs
 
-IDs are **append-only and never reused**. A retired requirement keeps its number, its title struck through with a `(deprecated)` note (a deprecated entry is exempt from the statement/verify checks). **Never renumber to tidy up** — stable IDs are what let tests, commits, and cross-references point at a requirement over time.
+IDs are **append-only, sequential per registered prefix, and never reused**. A retired requirement keeps its number, its title struck through with a `(deprecated)` note (a deprecated entry is exempt from the statement/verify checks). **Never renumber to tidy up** — stable IDs are what let tests, commits, and cross-references point at a requirement over time.
 
 ## The Gaps backlog
 

@@ -23,6 +23,7 @@ export default {
   contract: 1,
   name: 'ki-engineering',
   concern: 'Knowledge Islands engineering standards',
+  packageScripts: ['ki:deps:update'],
   createSession: createEngineeringSession,
   families: [
     RUBRIC,

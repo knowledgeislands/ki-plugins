@@ -42,6 +42,7 @@ export type HarnessConfigContext = {
   state: 'missing' | 'physical' | 'unsafe'
   hasHarnessTable: boolean
   hasRepositoryTable: boolean
+  prefix: string | null
   requestHarnessMarker?: () => void
 }
 
@@ -51,6 +52,7 @@ export type HarnessSkillsContext = {
   skillsState: PathState
   skills: readonly HarnessSkillEntry[]
   unsafePaths: readonly string[]
+  prefix: string | null
 }
 
 export type HarnessCapabilityPublicationContext = {
@@ -157,6 +159,19 @@ const tableIdentity = (name: string): string => name
 const hasTomlTable = (toml: string, name: string): boolean =>
   new RegExp(`^\\[skills\\.${tableIdentity(name)}\\]`, 'm').test(toml)
 
+const harnessPrefix = (toml: string | null): string | null => {
+  if (toml === null) return null
+  try {
+    const parsed = Bun.TOML.parse(toml) as { skills?: Record<string, unknown> }
+    const harness = parsed.skills?.['ki-repo-harness']
+    if (typeof harness !== 'object' || harness === null || Array.isArray(harness)) return null
+    const prefix = (harness as Record<string, unknown>).prefix
+    return typeof prefix === 'string' ? prefix : null
+  } catch {
+    return null
+  }
+}
+
 export const createHarnessSession = ({
   mode,
   repository,
@@ -177,6 +192,7 @@ export const createHarnessSession = ({
     }
   }
   const hasHarnessTable = configContent !== null && hasTomlTable(configContent, 'ki-repo-harness')
+  const prefix = harnessPrefix(configContent)
   let markerRequested = false
   const inspectedSkills = inspectSkills(root, state)
   const capabilitySources: CapabilitySource[] = []
@@ -242,6 +258,7 @@ export const createHarnessSession = ({
       state: configState,
       hasHarnessTable,
       hasRepositoryTable: configContent !== null && hasTomlTable(configContent, 'ki-repo'),
+      prefix,
       ...(mode === 'conform' && state === 'physical' && configState === 'physical' && !hasHarnessTable
         ? {
             requestHarnessMarker: () => {
@@ -253,6 +270,7 @@ export const createHarnessSession = ({
     skills: {
       repository: root,
       repositoryState: state,
+      prefix,
       ...inspectedSkills
     },
     review: { repository: root },

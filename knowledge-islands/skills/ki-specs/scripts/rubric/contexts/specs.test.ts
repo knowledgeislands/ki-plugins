@@ -28,10 +28,14 @@ const options = (repository: string, mode: 'audit' | 'conform'): RubricContextOp
   configuration: {}
 })
 
+const declareSpecs = (repository: string): void =>
+  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-specs]\n')
+
 const fixture = (): { repository: string; area: string; original: string } => {
   const repository = temporaryDirectory('ki-specs-')
   const directory = join(repository, 'docs', 'specs')
   mkdirSync(directory, { recursive: true })
+  declareSpecs(repository)
   writeFileSync(
     join(directory, 'index.md'),
     ['# Specifications', '', '| File | Prefix |', '| --- | --- |', '| authentication.md | AUTH |', ''].join('\n')
@@ -119,6 +123,7 @@ test('a symlinked area file is not read or proposed for replacement', () => {
   const repository = temporaryDirectory('ki-specs-root-')
   const directory = join(repository, 'docs', 'specs')
   mkdirSync(directory, { recursive: true })
+  declareSpecs(repository)
   writeFileSync(
     join(directory, 'index.md'),
     ['# Specifications', '', '| File | Prefix |', '| --- | --- |', '| authentication.md | AUTH |', ''].join('\n')
@@ -138,6 +143,7 @@ test('a symlinked specifications directory is not traversed', () => {
   const repository = temporaryDirectory('ki-specs-linked-root-')
   const outside = temporaryDirectory('ki-specs-linked-target-')
   mkdirSync(join(repository, 'docs'), { recursive: true })
+  declareSpecs(repository)
   writeFileSync(join(outside, 'authentication.md'), '### AUTH-001 - Outside\n')
   symlinkSync(outside, join(repository, 'docs', 'specs'))
   const session = createSpecsSession(options(repository, 'conform'))
@@ -147,6 +153,110 @@ test('a symlinked specifications directory is not traversed', () => {
   expect(session.proposal()).toEqual({ writes: [] })
   expect(existsSync(join(outside, 'index.md'))).toBe(false)
   expect(readFileSync(join(outside, 'authentication.md'), 'utf8')).toBe('### AUTH-001 - Outside\n')
+})
+
+test('a declared symlinked corpus fails closed', () => {
+  const repository = temporaryDirectory('ki-specs-linked-fail-')
+  const outside = temporaryDirectory('ki-specs-linked-fail-target-')
+  mkdirSync(join(repository, 'docs'), { recursive: true })
+  declareSpecs(repository)
+  symlinkSync(outside, join(repository, 'docs', 'specs'))
+  const session = createSpecsSession(options(repository, 'audit'))
+  const context = INDEX.selectContext(session.subjects[0]?.context() as never)
+
+  expect(mechanicalItem(INDEX, 'INDEX-1').audit.run(context as never)[0]).toMatchObject({
+    status: 'VIOLATION',
+    message: expect.stringContaining('symbolic link')
+  })
+})
+
+test('a declaration-shaped malformed configuration fails closed', () => {
+  const repository = temporaryDirectory('ki-specs-malformed-')
+  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-specs]\ninvalid = [\n')
+  const session = createSpecsSession(options(repository, 'audit'))
+  const context = INDEX.selectContext(session.subjects[0]?.context() as never)
+
+  expect(mechanicalItem(INDEX, 'INDEX-1').audit.run(context as never)[0]).toMatchObject({
+    status: 'VIOLATION',
+    message: expect.stringContaining('malformed')
+  })
+})
+
+test('an undeclared incidental corpus is not applicable', () => {
+  const repository = temporaryDirectory('ki-specs-undeclared-')
+  const directory = join(repository, 'docs', 'specs')
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(join(directory, 'index.md'), '# Incidental notes\n')
+  const session = createSpecsSession(options(repository, 'audit'))
+  const context = INDEX.selectContext(session.subjects[0]?.context() as never)
+
+  expect(mechanicalItem(INDEX, 'INDEX-1').audit.run(context as never)[0]?.status).toBe('NOT_APPLICABLE')
+})
+
+test('a declared missing corpus fails closed', () => {
+  const repository = temporaryDirectory('ki-specs-missing-')
+  declareSpecs(repository)
+  const session = createSpecsSession(options(repository, 'audit'))
+  const context = INDEX.selectContext(session.subjects[0]?.context() as never)
+
+  expect(mechanicalItem(INDEX, 'INDEX-1').audit.run(context as never)[0]).toMatchObject({
+    status: 'VIOLATION',
+    message: expect.stringContaining('missing')
+  })
+})
+
+test('independent prefixes in one area start independent serial sequences', () => {
+  const { repository, area } = fixture()
+  writeFileSync(
+    join(repository, 'docs/specs/index.md'),
+    ['# Specifications', '', '| File | Prefix |', '| --- | --- |', '| authentication.md | AUTH · TOKEN |', ''].join(
+      '\n'
+    )
+  )
+  writeFileSync(
+    area,
+    [
+      '# Authentication',
+      '',
+      '### AUTH-001 — Session lifetime',
+      '',
+      'A session MUST expire.',
+      '',
+      '_Verify:_ session test.',
+      '',
+      '### TOKEN-001 — Token expiry',
+      '',
+      'A token MUST expire.',
+      '',
+      '_Verify:_ token test.',
+      ''
+    ].join('\n')
+  )
+  const session = createSpecsSession(options(repository, 'audit'))
+  const context = identityContext(session)
+
+  expect(mechanicalItem(ID, 'ID-3').audit.run(context)[0]?.status).toBe('PASS')
+})
+
+test('a serial gap within a prefix is reported', () => {
+  const { repository, area } = fixture()
+  writeFileSync(
+    area,
+    [
+      '# Authentication',
+      '',
+      '### AUTH-002 — Session lifetime',
+      '',
+      'A session MUST expire.',
+      '',
+      '_Verify:_ session test.',
+      ''
+    ].join('\n')
+  )
+  const session = createSpecsSession(options(repository, 'audit'))
+  const outcomes = mechanicalItem(ID, 'ID-3').audit.run(identityContext(session))
+
+  expect(outcomes[0]).toMatchObject({ status: 'VIOLATION', message: expect.stringContaining('AUTH-001') })
 })
 
 test('a requirement cannot borrow a keyword or Verify hook from a later H2 or Gaps section', () => {

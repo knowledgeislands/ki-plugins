@@ -6,6 +6,7 @@ export default {
   contract: 1,
   name: 'ki-binding-claude',
   concern: 'Knowledge Islands Claude MCP binding',
+  packageScripts: ['ki:binding:claude:build-plugin'],
   createSession: createClaudeBindingSession,
   families: [CLAUDEBIND, RUBRIC]
 } satisfies SkillRubricDefinition<ClaudeBindingContext>

@@ -126,7 +126,7 @@ A repository-footprint replacement prefers the correct clean end state over tran
 
 ### The `ki:` naming law (core)
 
-Every entry in `scripts` is **either** one of the six universal lifecycle idioms — `build`, `prepare`, `test`, `test:coverage`, `test:watch`, `clean` — **or** it carries the `ki:` prefix. There is no third option: a bare (non-`ki:`, non-idiom) script name is **drift** (a `FAIL`). A `ki:` key is supported only when an explicitly declared capability owns its family; that capability's rubric mandates its required shape. `ki-engineering` mandates `"ki:deps:update": "bun update --latest"`; `ki-repo-harness`, `ki-binding-claude`, `ki-repo-mcp`, the neutral `ki-repo-website` lifecycle, its selected content/app implementation, `ki-repo-website-cloudflare`, and `ki-repo-tools` own their respective established families. A repository-local `ki-self` may own a `ki:self:*` family once it is declared and resolved. Any other `ki:` key is drift. The exempt six are left bare because they are universally recognized package-lifecycle verbs that every Node toolchain, CI runner, and contributor already knows.
+Every entry in `scripts` is **either** one of the six universal lifecycle idioms — `build`, `prepare`, `test`, `test:coverage`, `test:watch`, `clean` — **or** it carries the `ki:` prefix. There is no third option: a bare (non-`ki:`, non-idiom) script name is **drift** (a `FAIL`). A `ki:` key is supported only when exactly one resolved capability publishes that exact key in its rubric catalogue's `packageScripts` metadata; its own rubric mandates the command's required shape. `ki-engineering` claims `ki:deps:update`. The host aggregates claims from resolved skills only: a namespace is readability, never an inferred claim. Duplicate, absent, patterned, aliased, or repository-configured claims fail. A repository may instead list an actual user-owned external script as one exact, non-overlapping `script_exclusions` entry under `[skills.ki-engineering]`. The exempt six are left bare because they are universally recognized package-lifecycle verbs that every Node toolchain, CI runner, and contributor already knows.
 
 ### Native governance commands
 
@@ -140,7 +140,7 @@ ki repo conform
 - **`ki repo audit`** is the read-only gate; **`ki repo conform`** is the write pass. Both resolve the selected repo's declared skills to registered native operations from the verified active installed collection. Missing, incompatible, undeclared, or untrusted skills fail before an operation runs or writes.
 - Native rubric registration and focused reporting replace derived package scripts. No `.ki/bin`, generated manifest, standalone `govern.ts`, or child-process fallback participates in the execution path.
 - `clean` and `prepare` remain bare lifecycle idioms. A repo with tests exposes the complete suite through bare `test`; a compiled repo exposes bare `build`.
-- A repo MAY add only a script family explicitly owned by one of its declared capabilities (`ki:eval`, `ki:binding:*`, `ki:server:*`, `ki:site:*`, …). The owning skill specifies and audits its shape; `ki-self` is the local escape hatch for a repository-specific `ki:self:*` family.
+- A repo MAY add only an exact script key claimed by one of its resolved capabilities. The owning skill specifies and audits its shape; `ki-self` is the local escape hatch for a repository-specific exact claim, not a `ki:self:*` family allow-list.
 
 ### Code tools run inside the registered `ki-engineering` rubric
 

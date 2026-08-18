@@ -17,6 +17,7 @@ afterEach(() => {
 test('the Claude catalogue is independently complete', () => {
   expect(catalogue.contract).toBe(1)
   expect(catalogue.name).toBe('ki-binding-claude')
+  expect(catalogue.packageScripts).toEqual(['ki:binding:claude:build-plugin'])
   expect(catalogue.families[0]?.items.map((item) => item.code)).toEqual([
     'CLAUDEBIND-1',
     'CLAUDEBIND-2',

@@ -177,12 +177,6 @@ const resolveDirectory = (target: string, kbMode: boolean): string => {
   for (const candidate of (kbMode ? [KB_DIR, CODE_DIR] : [CODE_DIR, KB_DIR]).map((path) => join(absolute, path))) {
     if (isDirectory(candidate)) return candidate
   }
-  if (
-    isDirectory(absolute) &&
-    (['README.md', 'Decisions.md'].some((name) => existsSync(join(absolute, name))) ||
-      readdirSync(absolute).some((name) => name.endsWith('.md')))
-  )
-    return absolute
   return join(absolute, kbMode ? KB_DIR : CODE_DIR)
 }
 

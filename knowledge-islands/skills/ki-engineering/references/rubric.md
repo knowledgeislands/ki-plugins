@@ -89,7 +89,7 @@ The direct CLI boundary, lifecycle idioms, and clean cutover discipline.
   - _Remediation:_ diagnostic — Revise the package scripts to meet the governed script surface, then rerun the audit.
 - **SCR-2 [M] — Repository maintenance stays CLI-owned** — Package scripts do not invoke `ki repo audit`, `ki repo conform`, or `ki repo educate`, whether for the whole repository or a focused skill; repositories invoke the installed CLI directly. (standards-engineering.md)
   - _Remediation:_ automatic
-- **SCR-3 [M] — Retired script families absent** — Every `ki:` script belongs to a declared owning capability and `ki:deps:update` is present; retired tool families and aggregate governance aliases are absent. (standards-engineering.md)
+- **SCR-3 [M] — Exact script claims cover the governed surface** — Every `ki:` script is claimed by exactly one resolved capability or is exactly excluded as user-owned external tooling; `ki:deps:update` is present; retired tool families and aggregate governance aliases are absent. (standards-engineering.md)
   - _Remediation:_ automatic
 - **SCR-4 [M] — Per-skill wrapper aliases absent** — Package scripts contain no derived `ki:<skill>:<mode>` aliases and no command that invokes `.ki`, `govern.ts`, `educate.ts`, an adapter, or a vendored runtime. (standards-engineering.md)
   - _Remediation:_ automatic
@@ -99,7 +99,7 @@ The direct CLI boundary, lifecycle idioms, and clean cutover discipline.
   - _Remediation:_ diagnostic — Revise the package scripts to meet the governed script surface, then rerun the audit.
 - **SCR-7 [M] — Runner-neutral test and build entrypoints** — Test-capable repos expose bare `test`; compiled repos expose bare `build`; repository governance remains outside package scripts. (standards-engineering.md)
   - _Remediation:_ diagnostic — Revise the package scripts to meet the governed script surface, then rerun the audit.
-- **SCR-8 [J] — Repo-specific scripts retain clear ownership** — Repo-specific scripts beyond the governance surface are valid only when an owning skill governs them and they do not shadow a governed entrypoint. (standards-engineering.md)
+- **SCR-8 [J] — Repo-specific scripts retain clear ownership** — Repo-specific scripts beyond the governance surface are valid only when an owning skill publishes their exact claim or they are exactly excluded as user-owned external tooling; they do not shadow a governed entrypoint. (standards-engineering.md)
   - _Evidence scope:_ Every repo-specific script outside the governed lifecycle and `ki:` surface.
   - _Review prompt:_ Do repo-specific scripts have a clear owner and avoid divergent shadows of governed entrypoints?
   - _Outcomes:_ conforming; gap; exclusion

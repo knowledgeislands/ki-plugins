@@ -32,9 +32,7 @@ test('requires the selected adapter to be declared and applicable', () => {
     expect.arrayContaining([expect.objectContaining({ status: 'PASS' })])
   )
   expect(
-    audit(
-      '[skills.ki-repo]\nrepo_type = "kb"\n\n[skills.ki-work]\nadapter = "roadmap"\n\n[skills.ki-work-roadmap]\n'
-    )
+    audit('[skills.ki-repo]\nrepo_type = "kb"\n\n[skills.ki-work]\nadapter = "roadmap"\n\n[skills.ki-work-roadmap]\n')
   ).toEqual(
     expect.arrayContaining([
       expect.objectContaining({ status: 'VIOLATION', message: expect.stringContaining('not kb') })
@@ -43,9 +41,7 @@ test('requires the selected adapter to be declared and applicable', () => {
 })
 
 test('resolves valid local and remote adapters from declared tables', () => {
-  expect(
-    audit('[skills.ki-work]\nadapter = "roadmap"\n\n[skills.ki-work-roadmap]\n')
-  ).toEqual([
+  expect(audit('[skills.ki-work]\nadapter = "roadmap"\n\n[skills.ki-work-roadmap]\n')).toEqual([
     expect.objectContaining({ status: 'PASS', message: expect.stringContaining('ki-work-roadmap') })
   ])
   expect(

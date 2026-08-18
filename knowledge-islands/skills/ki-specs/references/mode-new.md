@@ -5,7 +5,7 @@ Read the [Specifications standard](standards-specs.md) first; the [exemplars](ex
 ## Adding a requirement to an existing area
 
 1. **Pick the area file** by prefix from the `index.md` areas table. The requirement lives in the file its prefix belongs to.
-2. **Allocate the next serial** — the highest existing `NNN` for that prefix **+ 1**, zero-padded to ≥ 3 digits. Never reuse a retired number, even if a gap exists in the sequence.
+2. **Allocate the next serial** — the highest existing `NNN` for that prefix **+ 1**, zero-padded to ≥ 3 digits. This is independent of any other prefix in the same file. Never reuse a retired number or introduce a gap in the prefix sequence.
 3. **Write the heading** — `### <PREFIX>-NNN — <short title>` under the appropriate `## <sub-area>` H2.
 4. **Write one normative statement** — behaviour only, an uppercase RFC-2119 keyword (`MUST` / `SHOULD` / `MAY`), no rationale. If the behaviour follows from a decision, cite the DR inline.
 5. **Write the `_Verify:_` line** — a concrete, checkable hook: a built-output assertion, a named test, or a linked source symbol. If you cannot state a truthful verification, the behaviour is probably not as-built yet — put it in `## Gaps` instead.
