@@ -3,7 +3,7 @@ name: ki-repo-specifications
 ki-kind: governance
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
-contributes: [.ki-config.toml]
+contributes: [.ki.toml]
 description: >-
   Audits, conforms, and scaffolds the deliberately minimal repository structure for KI Specifications: a keyless `[skills.ki-repo-specifications]` marker plus the top-level proposals, specifications, schemas, templates, examples, docs, and tooling areas. Use when bootstrapping KI Specifications, checking its repository shape, or evolving that shape as the specification system matures. Triggers: "audit KI Specifications", "bootstrap the specifications repo", "check the KIP/KIS repository structure", "conform the specifications repository". It adds only the specifications-specific structural delta; use `ki-repo` for universal repository files and GitHub settings, `ki-decision-records` for decisions, and `ki-work-roadmap` for planning.
 argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
@@ -30,7 +30,7 @@ ki-repo-specifications/
 ├── examples/
 ├── docs/
 ├── tooling/
-└── .ki-config.toml  # [skills.ki-repo] + keyless [skills.ki-repo-specifications]
+└── .ki.toml  # [skills.ki-repo] + keyless [skills.ki-repo-specifications]
 ```
 
 ## Operating modes

@@ -55,7 +55,7 @@ The five-part source container and its required physical root files.
   - _Remediation:_ diagnostic — Create or repair the required physical root file with owner-approved content, then rerun the audit.
 - **LAY-4 [M] — Root roadmap** — ROADMAP.md exists as a physical file at the source-harness root. (standards-compatible-harness.md#root-roadmap)
   - _Remediation:_ diagnostic — Create or repair the required physical root file with owner-approved content, then rerun the audit.
-- **LAY-5 [M] — Root Knowledge Islands configuration** — .ki-config.toml exists as a physical file at the source-harness root. (standards-compatible-harness.md#harness-declaration)
+- **LAY-5 [M] — Root Knowledge Islands configuration** — .ki.toml exists as a physical file at the source-harness root. (standards-compatible-harness.md#harness-declaration)
   - _Remediation:_ diagnostic — Create or repair the required physical root file with owner-approved content, then rerun the audit.
 
 ## CLAUDE — Root orientation
@@ -96,13 +96,13 @@ Coverage and freshness of the effective source-harness orientation.
 
 Knowledge Islands source-harness governance declarations.
 
-- **CONFIG-1 [M] — Harness declaration** — A physical .ki-config.toml contains the keyless ki-repo-harness root table. (standards-compatible-harness.md#harness-declaration)
+- **CONFIG-1 [M] — Harness declaration** — A physical .ki.toml contains the keyless ki-repo-harness root table. (standards-compatible-harness.md#harness-declaration)
   - _Remediation:_ automatic
-- **CONFIG-2 [M] — Repository governance declaration** — A physical .ki-config.toml contains the ki-repo root table. (standards-compatible-harness.md#harness-declaration)
+- **CONFIG-2 [M] — Repository governance declaration** — A physical .ki.toml contains the ki-repo root table. (standards-compatible-harness.md#harness-declaration)
   - _Remediation:_ diagnostic — Declare the ki-repo governance root in the physical configuration, then rerun the audit.
 - **CONFIG-3 [J] — Skill governance declaration** — A source harness with populated skills declares ki-skills. (standards-compatible-harness.md#harness-declaration)
-  - _Evidence scope:_ The physical .ki-config.toml and the source harness skills shelf.
-  - _Review prompt:_ When skills/ is populated, does .ki-config.toml declare the ki-skills governance root?
+  - _Evidence scope:_ The physical .ki.toml and the source harness skills shelf.
+  - _Review prompt:_ When skills/ is populated, does .ki.toml declare the ki-skills governance root?
   - _Outcomes:_ conforming; configuration revision; not applicable
   - _Conforming guidance:_ Add or correct the declaration only through the repository owner’s configuration decision; do not infer activation scope from shelf contents alone.
 - **CONFIG-4 [M] — Capability prefix declaration** — The ki-repo-harness table declares one valid capability prefix. (standards-compatible-harness.md#harness-declaration)

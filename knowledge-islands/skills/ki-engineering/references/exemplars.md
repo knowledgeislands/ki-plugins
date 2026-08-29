@@ -129,7 +129,7 @@ export default defineConfig({
 })
 ```
 
-### Minimal `[skills.ki-engineering]` table in `.ki-config.toml`
+### Minimal `[skills.ki-engineering]` table in `.ki.toml`
 
 The table is a conformance marker — its presence declares "the engineering standard applies here". It carries no top-level keys because capabilities (tests, compiled build, env config) are auto-detected from repo markers (`vitest.config.*`, `tsconfig.build.json`, `.env*.example`). The only allowed sub-structure is a `[skills.ki-engineering.checks]` table for deliberate waivers. A repo that fully conforms writes the table header and nothing else.
 

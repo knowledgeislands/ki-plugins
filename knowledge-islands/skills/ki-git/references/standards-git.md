@@ -74,6 +74,6 @@ The harness publishes hook payload sources; `ki-repo-dotfiles-chezmoi` may regis
 
 The native rubric exposes these four policy families as **judgment-only** review prompts. A rendered audit therefore leaves them unassessed until a reviewer records an outcome; it must never be interpreted as a Git-state pass. Gather the criterion's focused read-only evidence first: current status and intended paths for hygiene, current branch, worktree, protection, concurrency, and review evidence for the working approach, proposed diff and message for commit shape, and physical-worktree/process/file-type evidence for a lock candidate. The rubric does not execute Git commands or a private wrapper on the reviewer's behalf.
 
-No compatible mechanical enforcement, `.ki-config.toml` activation, user-skill activation, or commit-message enforcement exists yet.
+No compatible mechanical enforcement, `.ki.toml` activation, user-skill activation, or commit-message enforcement exists yet.
 
 Any future enforcement must be limited to deterministic rules explicitly added to this standard after its host execution contract is designed.

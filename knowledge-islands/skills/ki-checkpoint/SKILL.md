@@ -3,7 +3,7 @@ name: ki-checkpoint
 ki-kind: governance
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
-contributes: ['.ki-config.toml']
+contributes: ['.ki.toml']
 owns: ['+/_CHECKPOINTS/']
 description: >
   Governs concise, repository-owned checkpoints for resuming one human-named active thread in a fresh agent context without a transcript or vendor session. Use when asked to checkpoint current work, update or retire a checkpoint, resume a named thread, audit `+/_CHECKPOINTS/`, or explain portable reconstruction state. It keeps one active snapshot per thread, retains explicit retired evidence, and leaves decisions, roadmap state, knowledge, recap, runtime hooks, and session continuity to their proper owners.

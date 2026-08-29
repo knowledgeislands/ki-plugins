@@ -315,7 +315,7 @@ const parseConfiguration = (
 }
 
 const parseRepositoryConfiguration = (root: string): TradeConfiguration => {
-  const path = join(root, '.ki-config.toml')
+  const path = join(root, '.ki.toml')
   if (!containedPhysical(root, path, 'file'))
     return {
       exportsTo: { work: [], knowledge: [] },
@@ -1092,7 +1092,7 @@ export const createTradesSession = ({
   const parsedConfiguration = parseConfiguration(
     configuration,
     parseRepositoryConfiguration(root).repository,
-    '.ki-config.toml'
+    '.ki.toml'
   )
   const routes = routeEvidence(root, userHome, parsedConfiguration.configuration)
   const evidence = recordEvidence(root, parsedConfiguration.configuration, routes.active)

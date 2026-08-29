@@ -86,10 +86,10 @@ export const createWebsiteSession = ({
   const cfgName = flatCfg ?? siteCfg ?? ''
   const siteAt = (...parts: string[]) => (siteRoot ? join(siteRoot, ...parts) : join(...parts))
 
-  const configPath = at('.ki-config.toml')
+  const configPath = at('.ki.toml')
   const configExists = existsSync(configPath)
   const configSafe = !configExists || containedPhysical(root, configPath, 'file')
-  const configRaw = configSafe && configExists ? read('.ki-config.toml') : ''
+  const configRaw = configSafe && configExists ? read('.ki.toml') : ''
   const ki = configSafe ? parseToml(configRaw) : { document: null, malformed: true }
   const kiWebsiteTable = asTable(asTable(ki.document?.skills)?.[KI_SECTION])
   const applicable = available && kiWebsiteTable !== null
@@ -122,7 +122,7 @@ export const createWebsiteSession = ({
   if (available) walkPartials(partials)
 
   const drafts = new Map<string, Draft>()
-  const prepareDraft = (path: '.ki-config.toml' | '.gitignore'): Draft | undefined => {
+  const prepareDraft = (path: '.ki.toml' | '.gitignore'): Draft | undefined => {
     const absolute = at(path)
     if (!existsSync(absolute)) {
       const draft = { path, original: null, content: '' }

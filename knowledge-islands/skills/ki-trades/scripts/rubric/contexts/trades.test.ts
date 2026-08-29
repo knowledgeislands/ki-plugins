@@ -52,7 +52,7 @@ const writeRepositoryConfiguration = (
   kinds?: readonly ('work' | 'knowledge')[]
 ): void => {
   writeFileSync(
-    join(root, '.ki-config.toml'),
+    join(root, '.ki.toml'),
     [
       '[skills.ki-repo]',
       `repository = ${JSON.stringify(repositoryUrl(identity))}`,
@@ -221,7 +221,7 @@ test('non-GitHub partner identities fail closed rather than entering a partial r
     status: 'VIOLATION',
     message:
       'route https://code.example.org/peer/repo must be keyed by owner/name or a canonical HTTPS GitHub repository URL; non-GitHub endpoints are unsupported',
-    subject: '.ki-config.toml'
+    subject: '.ki.toml'
   })
 })
 
@@ -238,7 +238,7 @@ test('map bonus is bounded presentation metadata', () => {
   expect(mechanicalOutcomes(invalid, CONFIG)).toContainEqual({
     status: 'VIOLATION',
     message: 'map_bonus must be an integer from 0 through 3',
-    subject: '.ki-config.toml'
+    subject: '.ki.toml'
   })
 })
 
@@ -283,7 +283,7 @@ test('outbound records are valid on a declared export route while receiver parti
   const id = 'TRD-000000aa'
   writeRecord(local, '-', 'peer/repo', id, record(id, 'local/repo', 'peer/repo'))
   writeFileSync(
-    join(peer, '.ki-config.toml'),
+    join(peer, '.ki.toml'),
     ['[skills.ki-repo]', 'repository = "https://github.com/peer/repo"', ''].join('\n')
   )
 
@@ -319,7 +319,7 @@ test('a committed preparation is valid on a sender-declared export and is not re
     record(id, 'local/repo', 'peer/repo', [], undefined, 'knowledge', 'receipt', true)
   )
   writeFileSync(
-    join(peer, '.ki-config.toml'),
+    join(peer, '.ki.toml'),
     ['[skills.ki-repo]', 'repository = "https://github.com/peer/repo"', ''].join('\n')
   )
 

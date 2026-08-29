@@ -289,11 +289,11 @@ const PLUG_15 = mechanical(
         Boolean(context.configTable) && Object.keys(context.configTable ?? {}).length === 0,
         '[skills.ki-repo-plugins] declaration is canonical',
         context.malformedConfig
-          ? '.ki-config.toml is malformed'
+          ? '.ki.toml is malformed'
           : !context.configTable
             ? '[skills.ki-repo-plugins] declaration is absent'
             : `unknown [skills.ki-repo-plugins] keys: ${Object.keys(context.configTable).join(', ')}`,
-        '.ki-config.toml'
+        '.ki.toml'
       )
     )
 )

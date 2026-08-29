@@ -42,7 +42,7 @@ ki skill remove example-engineering
 
 ## Repository activation and maintenance
 
-Given an existing KI repository whose `.ki-config.toml` does not yet declare `ki-work-roadmap`, add the installed skill at repository scope:
+Given an existing KI repository whose `.ki.toml` does not yet declare `ki-work-roadmap`, add the installed skill at repository scope:
 
 ```sh
 ki repo skill add ki-work-roadmap --repo .

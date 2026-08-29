@@ -33,7 +33,7 @@ const targetFixture = (): string => {
   mkdirSync(join(root, 'Streams', 'Housekeeping'), { recursive: true })
   writeFileSync(join(root, 'Streams', 'Roadmap', '_ISSUES.md'), '# Streams issue ledger\n')
   writeFileSync(
-    join(root, '.ki-config.toml'),
+    join(root, '.ki.toml'),
     '[skills.ki-repo-kb-streams]\nprocess_note = "Admin/Operations/Processes/Enactment Process"\n'
   )
   return root
@@ -100,7 +100,7 @@ describe('ki-repo-kb-streams session', () => {
 
   test('rejects inert area configuration rather than silently accepting it', () => {
     const root = targetFixture()
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo-kb-streams.areas]\nOPS = "repository-operations"\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo-kb-streams.areas]\nOPS = "repository-operations"\n')
     const context = rootContext(createStreamsSession(options(root, 'audit')))
     const config = definition.families.find((family) => family.code === 'CONFIG')?.selectContext(context) as {
       knownKeys: readonly { level: string; message: string }[]

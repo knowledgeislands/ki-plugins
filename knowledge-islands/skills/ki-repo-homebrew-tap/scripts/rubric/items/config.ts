@@ -7,7 +7,7 @@ const SOURCE = [STANDARD] as const
 const CONFIG_1: RubricItem<TapConfigContext> = {
   code: 'CONFIG-1',
   title: 'identity marker',
-  description: '`.ki-config.toml` contains a keyless `[skills.ki-repo-homebrew-tap]` marker with no unknown keys.',
+  description: '`.ki.toml` contains a keyless `[skills.ki-repo-homebrew-tap]` marker with no unknown keys.',
   sources: SOURCE,
   mechanical: {
     level: 'WARN',
@@ -32,18 +32,18 @@ const CONFIG_1: RubricItem<TapConfigContext> = {
           return [
             {
               status: 'VIOLATION',
-              message: '.ki-config.toml is not a regular file; marker repair remains report-only.',
-              subject: '.ki-config.toml'
+              message: '.ki.toml is not a regular file; marker repair remains report-only.',
+              subject: '.ki.toml'
             }
           ]
         if (context.config === 'malformed')
-          return [{ status: 'VIOLATION', message: '.ki-config.toml is malformed.', subject: '.ki-config.toml' }]
+          return [{ status: 'VIOLATION', message: '.ki.toml is malformed.', subject: '.ki.toml' }]
         if (context.config !== 'present')
           return [
             {
               status: 'VIOLATION',
-              message: '[skills.ki-repo-homebrew-tap] is absent from .ki-config.toml.',
-              subject: '.ki-config.toml'
+              message: '[skills.ki-repo-homebrew-tap] is absent from .ki.toml.',
+              subject: '.ki.toml'
             }
           ]
         return [
@@ -51,12 +51,12 @@ const CONFIG_1: RubricItem<TapConfigContext> = {
             ? {
                 status: 'PASS',
                 message: 'The keyless [skills.ki-repo-homebrew-tap] marker is present.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             : {
                 status: 'VIOLATION',
                 message: `The keyless marker contains unknown keys: ${context.configKeys.join(', ')}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
         ]
       }

@@ -4,7 +4,7 @@ import { auditEvidence, type EvidenceRubricContext, type RepoRubricContext } fro
 const VIS_1: RubricItem<EvidenceRubricContext> = {
   code: 'VIS-1',
   title: 'Declared visibility',
-  description: 'Live GitHub visibility matches the valid visibility declared in .ki-config.toml.',
+  description: 'Live GitHub visibility matches the valid visibility declared in .ki.toml.',
   sources: ['standards-repository.md'],
   mechanical: {
     level: 'FAIL',

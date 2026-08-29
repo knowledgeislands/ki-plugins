@@ -17,7 +17,7 @@ const fixture = (): string => {
   const root = mkdtempSync(join(tmpdir(), 'ki-agora-'))
   temporaryDirectories.push(root)
   writeFileSync(
-    join(root, '.ki-config.toml'),
+    join(root, '.ki.toml'),
     ['[skills.ki-repo]', 'repository = "https://github.com/knowledgeislands/home"', ''].join('\n')
   )
   return root
@@ -96,7 +96,7 @@ test('local shape rejects malformed declarations without observing a peer', () =
   expect(outcomes(session, MEMBERSHIP)).toContainEqual({
     status: 'VIOLATION',
     message: 'membership knowledge-islands has unrecognised key extra',
-    subject: '.ki-config.toml'
+    subject: '.ki.toml'
   })
   expect(outcomes(session, MEMBERSHIP).map((outcome) => outcome.message)).toContain(
     'membership knowledge-islands home must be a canonical HTTPS GitHub repository'
@@ -124,12 +124,12 @@ test('unknown fields fail closed and a local declaration never becomes reciproca
       {
         status: 'VIOLATION',
         message: 'unrecognised ki-agora configuration key target_policy',
-        subject: '.ki-config.toml'
+        subject: '.ki.toml'
       },
       {
         status: 'VIOLATION',
         message: 'home team has unrecognised key target_policy',
-        subject: '.ki-config.toml'
+        subject: '.ki.toml'
       }
     ])
   )
@@ -152,6 +152,6 @@ test('local shape requires each home to name its declaring owner', () => {
   expect(outcomes(session, CONFIG)).toContainEqual({
     status: 'VIOLATION',
     message: 'home team owner must match its declaring repository',
-    subject: '.ki-config.toml'
+    subject: '.ki.toml'
   })
 })

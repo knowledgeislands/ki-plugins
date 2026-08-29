@@ -13,7 +13,7 @@ afterEach(() => {
 const audit = (config: string) => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-work-'))
   temporaryDirectories.push(repository)
-  writeFileSync(join(repository, '.ki-config.toml'), config)
+  writeFileSync(join(repository, '.ki.toml'), config)
   return createChangeManagementSession({
     mode: 'audit',
     repository,

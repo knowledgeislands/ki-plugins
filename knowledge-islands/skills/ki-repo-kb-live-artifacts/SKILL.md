@@ -74,7 +74,7 @@ Modes: **AUDIT · CONFORM · EDUCATE · NEW · REFRESH** (named, alphabetical). 
 
 ## Project bindings
 
-Declare in the base's `.ki-config.toml` `[skills.ki-repo-kb-live-artifacts]` table:
+Declare in the base's `.ki.toml` `[skills.ki-repo-kb-live-artifacts]` table:
 
 ```toml
 [skills.ki-repo-kb-live-artifacts]

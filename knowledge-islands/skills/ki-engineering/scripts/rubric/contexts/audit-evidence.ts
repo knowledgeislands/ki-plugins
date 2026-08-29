@@ -498,7 +498,7 @@ export const collectAuditEvidence = async (
       /^ki:[a-z-]+:lint$/.test(key) ||
       ['ki:audit', 'ki:conform', 'ki:educate', 'ki:help'].includes(key)
   )
-  const declared = declaredSkillNames(read('.ki-config.toml'))
+  const declared = declaredSkillNames(read('.ki.toml'))
   const unsupported = Object.keys(scripts).filter(
     (key) => key.startsWith('ki:') && (!scriptOwner(key) || !declared.has(scriptOwner(key) as string))
   )
@@ -1348,20 +1348,20 @@ export const collectAuditEvidence = async (
     add('NOT_APPLICABLE', 'ENV-1', 'no env capability — not applicable', STD)
   }
 
-  // ── core: .ki-config.toml qualified ki-engineering table ────────
-  const ki = read('.ki-config.toml')
+  // ── core: .ki.toml qualified ki-engineering table ────────
+  const ki = read('.ki.toml')
   const engineeringHeader = '[skills.ki-engineering]'
-  if (!ki) add('WARN', 'TOML-1', '.ki-config.toml missing (ki-repo owns the contract)', STD, '.ki-config.toml')
+  if (!ki) add('WARN', 'TOML-1', '.ki.toml missing (ki-repo owns the contract)', STD, '.ki.toml')
   else if (!/^\[skills\.ki-engineering\]/m.test(ki)) {
     add(
       'WARN',
       'TOML-1',
       `no ${engineeringHeader} table — add it to mark this repo as governed by the engineering standard`,
       STD,
-      '.ki-config.toml'
+      '.ki.toml'
     )
   } else {
-    add('PASS', 'TOML-1', `${engineeringHeader} table present`, STD, '.ki-config.toml')
+    add('PASS', 'TOML-1', `${engineeringHeader} table present`, STD, '.ki.toml')
     // validate-down: the table is a conformance marker only — it carries no keys. Repo
     // shape (flat vs monorepo) is read from package.json `workspaces` (§0), a standard Bun
     // convention, not a bespoke key here. Any key directly under the table is drift.
@@ -1369,17 +1369,17 @@ export const collectAuditEvidence = async (
     const KNOWN = new Set<string>() // no keys defined; only a [skills.ki-engineering.checks] sub-table is allowed
     for (const m of body.matchAll(/^\s*([A-Za-z0-9_-]+)\s*=/gm)) {
       KNOWN.has(m[1])
-        ? add('PASS', 'TOML-2', `known key ${m[1]}`, STD, '.ki-config.toml')
+        ? add('PASS', 'TOML-2', `known key ${m[1]}`, STD, '.ki.toml')
         : add(
             'WARN',
             'TOML-2',
             `unknown key under ${engineeringHeader}: ${m[1]} (validate-down)`,
             STD,
-            '.ki-config.toml'
+            '.ki.toml'
           )
     }
     for (const record of inspectEngineeringCheckRecords(ki))
-      add(record.level, 'TOML-3', record.message, STD, '.ki-config.toml')
+      add(record.level, 'TOML-3', record.message, STD, '.ki.toml')
   }
 
   return findings.map(({ level, area, msg, file }) => ({

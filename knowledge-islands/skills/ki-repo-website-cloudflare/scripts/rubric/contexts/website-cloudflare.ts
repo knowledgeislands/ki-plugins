@@ -2,7 +2,7 @@ import { lstatSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, isAbsolute, join, normalize, relative, resolve } from 'node:path'
 import type { RubricContextOptions, RubricPublicationContext, RubricSession } from '../../shared/rubric.ts'
 
-const CONFIG_FILE = '.ki-config.toml'
+const CONFIG_FILE = '.ki.toml'
 const CONFIG_SECTION = 'ki-repo-website-cloudflare'
 const WRANGLER_FILES = ['wrangler.jsonc', 'wrangler.json', 'wrangler.toml'] as const
 const SKIPPED_DIRECTORIES = new Set(['.git', '.wrangler', 'dist', 'node_modules'])

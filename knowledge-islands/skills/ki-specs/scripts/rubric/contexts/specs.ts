@@ -93,7 +93,7 @@ const isFile = (path: string): boolean =>
 const isUnsafePath = (path: string): boolean => existsSync(path) && lstatSync(path).isSymbolicLink()
 
 const declaredInConfiguration = (root: string): { declared: boolean; malformed: boolean } => {
-  const path = join(root, '.ki-config.toml')
+  const path = join(root, '.ki.toml')
   if (!existsSync(path) || !isFile(path)) return { declared: false, malformed: existsSync(path) }
   const source = readFileSync(path, 'utf8')
   try {
@@ -197,7 +197,7 @@ export const createSpecsSession = ({
   const unavailableReason = !applicable
     ? undefined
     : declaration.malformed
-      ? '.ki-config.toml is malformed, so the ki-specs declaration cannot be trusted.'
+      ? '.ki.toml is malformed, so the ki-specs declaration cannot be trusted.'
       : directoryUnsafe
         ? 'docs/specs/ is a symbolic link and is unsafe to inspect.'
         : !directorySafe

@@ -21,7 +21,7 @@ KI detects supported local agent runtimes, creates its XDG configuration if abse
 
 Run `ki bootstrap --refresh` to redetect agents and reconcile the recorded harness and managed user-skill inventory with installed state.
 
-The user configuration and installed harness payloads are separate from a repository's `.ki-config.toml`.
+The user configuration and installed harness payloads are separate from a repository's `.ki.toml`.
 
 ## Harnesses and skills
 
@@ -35,7 +35,7 @@ Managed activation is fail-closed. If a link, installed payload, or development 
 
 ## Repository operations
 
-`.ki-config.toml` declares the skills that govern a repository. `ki repo educate`, `ki repo audit`, and `ki repo conform` resolve only those declarations and their explicit dependencies from installed harnesses.
+`.ki.toml` declares the skills that govern a repository. `ki repo educate`, `ki repo audit`, and `ki repo conform` resolve only those declarations and their explicit dependencies from installed harnesses.
 
 Missing, incompatible, undeclared, or ambiguous skills fail before an audit or conform operation runs. The CLI executes native rubric catalogues; it never uses repository-vendored runners or `.ki/bin` wrappers.
 
@@ -49,7 +49,7 @@ For command grammar, run `ki help`. For repository coverage, use `ki-repo`.
 
 ### Mode HELP
 
-Explain the first-time bootstrap, installed-harness, user-activation, repository-activation, and native repository-operation boundaries above. Route exact command and option questions to `ki help`; route `.ki-config.toml` coverage questions to `ki-repo`.
+Explain the first-time bootstrap, installed-harness, user-activation, repository-activation, and native repository-operation boundaries above. Route exact command and option questions to `ki help`; route `.ki.toml` coverage questions to `ki-repo`.
 
 ### Mode REFRESH
 

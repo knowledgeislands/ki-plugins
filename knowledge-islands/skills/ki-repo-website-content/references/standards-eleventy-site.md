@@ -6,7 +6,7 @@ This skill owns the **site-build delta**. The toolchain it sits on (Bun mandate,
 
 Use this implementation when the website is a collection of pages generated from Markdown or structured data. A single interactive SPA is a legitimate non-adoption: select `ki-repo-website-app` instead. Eleventy does not bundle React application JavaScript, so combining both implementations would introduce two build systems and is outside the current standard.
 
-The standard applies only when a repository declares `[skills.ki-repo-website-content]` in `.ki-config.toml`. An `eleventy.config.{ts,js,mjs,cjs}` file at the repository root or under `site/` is coverage evidence for `ki-repo`, not local selection authority; an undeclared site receives one `NOT_APPLICABLE` result here.
+The standard applies only when a repository declares `[skills.ki-repo-website-content]` in `.ki.toml`. An `eleventy.config.{ts,js,mjs,cjs}` file at the repository root or under `site/` is coverage evidence for `ki-repo`, not local selection authority; an undeclared site receives one `NOT_APPLICABLE` result here.
 
 ## Contents
 

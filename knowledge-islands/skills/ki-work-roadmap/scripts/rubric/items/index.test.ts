@@ -31,7 +31,7 @@ const createFixture = (): string => {
   temporaryDirectories.push(repository)
   mkdirSync(join(repository, 'docs', 'roadmap'), { recursive: true })
   writeFileSync(
-    join(repository, '.ki-config.toml'),
+    join(repository, '.ki.toml'),
     '[skills.ki-repo]\nrepo_code = "TEST"\n\n[skills.ki-work-roadmap]\nthemes = ["foundation-tooling"]\n'
   )
   writeFileSync(
@@ -185,7 +185,7 @@ test('frontmatter keys use snake_case', () => {
 test('an area-qualified work item uses its configured namespace and area ledger', () => {
   const repository = createFixture()
   writeFileSync(
-    join(repository, '.ki-config.toml'),
+    join(repository, '.ki.toml'),
     '[skills.ki-repo]\nrepo_code = "TEST"\n\n[skills.ki-work-roadmap.areas]\nCORE = "foundation-tooling"\n'
   )
   const source = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
@@ -199,7 +199,7 @@ test('an area-qualified work item uses its configured namespace and area ledger'
 test('fixed areas reject an unknown namespace and a ledger below its retained serial', () => {
   const repository = createFixture()
   writeFileSync(
-    join(repository, '.ki-config.toml'),
+    join(repository, '.ki.toml'),
     '[skills.ki-repo]\nrepo_code = "TEST"\n\n[skills.ki-work-roadmap.areas]\nCORE = "foundation-tooling"\n'
   )
   const source = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
@@ -408,14 +408,14 @@ test('every emitted structural failure is visible through its catalogue criterio
 test('KB scope follows the declared repository kind, not a directory shape', () => {
   const repository = createFixture()
   writeFileSync(
-    join(repository, '.ki-config.toml'),
+    join(repository, '.ki.toml'),
     '[skills.ki-repo]\nrepo_code = "TEST"\nrepo_type = "kb"\n\n[skills.ki-work-roadmap]\nthemes = ["foundation-tooling"]\n'
   )
   expect(inspectRoadmap(repository)).toContainEqual(
     expect.objectContaining({ area: 'SCOPE-1', level: 'FAIL', msg: expect.stringContaining('ki-repo-kb-streams') })
   )
   writeFileSync(
-    join(repository, '.ki-config.toml'),
+    join(repository, '.ki.toml'),
     '[skills.ki-repo]\nrepo_code = "TEST"\n\n[skills.ki-work-roadmap]\nthemes = ["foundation-tooling"]\n'
   )
   mkdirSync(join(repository, 'Streams', 'Roadmap'), { recursive: true })

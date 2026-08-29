@@ -11,7 +11,7 @@ import type {
 
 export const ZONES = ['Calendar', 'Pillars', 'Resources', 'Streams', 'Admin'] as const
 export const STAGING = ['+', '-'] as const
-const CONFIG = '.ki-config.toml'
+const CONFIG = '.ki.toml'
 const CONFIG_TABLE = 'ki-repo-kb'
 const SNAKE_CASE = /^[a-z][a-z0-9_]*$/
 
@@ -193,7 +193,7 @@ export const collectKbAuditEvidence = (target: string): readonly KbEvidenceFindi
     add(
       parsed.malformed ? 'FAIL' : 'NOT_APPLICABLE',
       'CONFIG-0',
-      parsed.malformed ? 'Cannot parse .ki-config.toml.' : '[skills.ki-repo-kb] is not declared.',
+      parsed.malformed ? 'Cannot parse .ki.toml.' : '[skills.ki-repo-kb] is not declared.',
       CONFIG
     )
     for (const code of ['CONFIG-1', 'CONFIG-2', 'CONFIG-3', 'CONFIG-4', 'CONFIG-5'])

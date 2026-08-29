@@ -139,7 +139,7 @@ const slugify = (value: string): string =>
 const findKiConfig = (start: string): string | undefined => {
   let directory = resolve(start)
   for (let depth = 0; depth < 10; depth++) {
-    const candidate = join(directory, '.ki-config.toml')
+    const candidate = join(directory, '.ki.toml')
     if (existsSync(candidate)) return candidate
     const parent = dirname(directory)
     if (parent === directory) return undefined

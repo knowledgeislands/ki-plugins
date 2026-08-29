@@ -323,7 +323,7 @@ export const createEngineeringSession = async (
     if (!existsSync(path)) scaffold.add(name)
   }
   const requestEngineeringTable = (): void => {
-    const path = join(target, '.ki-config.toml')
+    const path = join(target, '.ki.toml')
     if (!existsSync(path) || isSafeRegularFile(path)) declareEngineering = true
   }
 
@@ -460,14 +460,14 @@ export const createEngineeringSession = async (
       }
       for (const name of scaffold) writes.push({ path: name, content: defaults[name], create: true })
       if (declareEngineering) {
-        const path = join(target, '.ki-config.toml')
+        const path = join(target, '.ki.toml')
         if (!existsSync(path))
-          writes.push({ path: '.ki-config.toml', content: `[skills.${ENGINEERING_TABLE}]\n`, create: true })
+          writes.push({ path: '.ki.toml', content: `[skills.${ENGINEERING_TABLE}]\n`, create: true })
         else {
           const source = readFileSync(path, 'utf8')
           if (!new RegExp(`^\\[skills\\.${ENGINEERING_TABLE}\\]`, 'm').test(source))
             writes.push({
-              path: '.ki-config.toml',
+              path: '.ki.toml',
               content: `${source.replace(/\n*$/, '\n\n')}[skills.${ENGINEERING_TABLE}]\n`
             })
         }

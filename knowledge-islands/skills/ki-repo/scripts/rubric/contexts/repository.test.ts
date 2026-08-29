@@ -90,7 +90,7 @@ describe('ki-repo session', () => {
     runFilesConform(context)
 
     const proposal = session.proposal()
-    expect(proposal.writes.map((write) => write.path)).toEqual(['.ki-config.toml', '.gitignore'])
+    expect(proposal.writes.map((write) => write.path)).toEqual(['.ki.toml', '.gitignore'])
     expect(proposal.writes[0]?.create).toBe(true)
     expect(proposal.writes[0]?.content).toContain('[skills.ki-repo]')
     expect(proposal.writes[0]?.content).toContain('[skills.ki-authoring]')
@@ -99,11 +99,11 @@ describe('ki-repo session', () => {
   test('appends only a missing exact root marker and preserves the original bytes', async () => {
     const root = repository()
     const original = '# retained\n[skills.ki-repo.checks]\nwiki = false\n'
-    writeFileSync(join(root, '.ki-config.toml'), original)
+    writeFileSync(join(root, '.ki.toml'), original)
     const session = await createRepoSession(options(root, 'conform'), inspect)
     runFilesConform(filesContext(session))
 
-    const config = session.proposal().writes.find((write) => write.path === '.ki-config.toml')
+    const config = session.proposal().writes.find((write) => write.path === '.ki.toml')
     expect(config?.create).toBeUndefined()
     expect(config?.content.startsWith(original)).toBe(true)
     expect(config?.content).toContain('\n[skills.ki-repo]\n')
@@ -113,7 +113,7 @@ describe('ki-repo session', () => {
   test('replaces legacy runtime-skill ignores with the canonical ki-self exception', async () => {
     const root = repository()
     writeFileSync(
-      join(root, '.ki-config.toml'),
+      join(root, '.ki.toml'),
       '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n'
     )
     mkdirSync(join(root, '.agents', 'skills', 'ki-self'), { recursive: true })
@@ -131,7 +131,7 @@ describe('ki-repo session', () => {
 
   test('derives runtime-skill ignores from supported runtimes while reserving ki-self', async () => {
     const root = repository()
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code"]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code"]\n')
     writeFileSync(join(root, '.gitignore'), '.agents/skills/*\n')
 
     expect((await collectAuditFindings([root])).findings).toContainEqual(
@@ -148,7 +148,7 @@ describe('ki-repo session', () => {
       expect.objectContaining({ code: 'FILES-4' })
     )
 
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\nsupported_runtimes = ["chatgpt-codex"]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["chatgpt-codex"]\n')
     writeFileSync(join(root, '.gitignore'), '.agents/skills/*\n!.agents/skills/ki-self/\n!.agents/skills/ki-self/**\n')
     expect((await collectAuditFindings([root])).findings).not.toContainEqual(
       expect.objectContaining({ code: 'FILES-4' })
@@ -189,7 +189,7 @@ describe('ki-repo session', () => {
   test('audit is read-only and unsafe configuration leaves expose no write capability', async () => {
     const root = repository()
     writeFileSync(join(root, 'outside.toml'), '[skills.ki-repo]\n')
-    symlinkSync('outside.toml', join(root, '.ki-config.toml'))
+    symlinkSync('outside.toml', join(root, '.ki.toml'))
 
     const audit = await createRepoSession(options(root, 'audit'), inspect)
     expect(audit.proposal()).toEqual({ writes: [] })
@@ -251,7 +251,7 @@ describe('ki-repo session', () => {
 describe('runtime environment coverage', () => {
   const runtimeFindings = async (configuration: string) => {
     const root = repository()
-    writeFileSync(join(root, '.ki-config.toml'), configuration)
+    writeFileSync(join(root, '.ki.toml'), configuration)
     return (await collectAuditFindings([root])).findings.filter(
       ({ code }) => code === 'RUNTIMES-1' || code === 'RUNTIMES-2' || code === 'RUNTIMES-3'
     )
@@ -274,7 +274,7 @@ describe('runtime environment coverage', () => {
     const inspected: string[][] = []
     const requested: string[][] = []
     writeFileSync(
-      join(root, '.ki-config.toml'),
+      join(root, '.ki.toml'),
       '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n'
     )
 
@@ -310,7 +310,7 @@ supported_runtimes = ["claude-code", "chatgpt-codex"]
 `
     const activeRoot = repository()
     const activeRequests: string[][] = []
-    writeFileSync(join(activeRoot, '.ki-config.toml'), complete)
+    writeFileSync(join(activeRoot, '.ki.toml'), complete)
     const active = await createRepoSession({
       ...options(activeRoot, 'conform'),
       repositorySkills: {
@@ -326,7 +326,7 @@ supported_runtimes = ["claude-code", "chatgpt-codex"]
 
     const blockedRoot = repository()
     const blockedRequests: string[][] = []
-    writeFileSync(join(blockedRoot, '.ki-config.toml'), complete)
+    writeFileSync(join(blockedRoot, '.ki.toml'), complete)
     const blocked = await createRepoSession({
       ...options(blockedRoot, 'conform'),
       repositorySkills: {
@@ -343,13 +343,13 @@ supported_runtimes = ["claude-code", "chatgpt-codex"]
     expect(blockedRequests).toEqual([])
 
     const unavailableRoot = repository()
-    writeFileSync(join(unavailableRoot, '.ki-config.toml'), complete)
+    writeFileSync(join(unavailableRoot, '.ki.toml'), complete)
     const unavailable = await createRepoSession(options(unavailableRoot, 'conform'))
     expect(runtimesContext(unavailable).requestRuntimeSkills).toBeUndefined()
 
     const invalidRoot = repository()
     let invalidInspected = false
-    writeFileSync(join(invalidRoot, '.ki-config.toml'), '[skills.ki-repo]\nsupported_runtimes = ["unknown"]\n')
+    writeFileSync(join(invalidRoot, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["unknown"]\n')
     await createRepoSession({
       ...options(invalidRoot, 'conform'),
       repositorySkills: {
@@ -397,7 +397,7 @@ supported_runtimes = ["claude-code", "claude-desktop", "chatgpt-codex"]
     mkdirSync(join(root, '.claude', 'skills'), { recursive: true })
     symlinkSync('../../.agents/skills/ki-self', join(root, '.claude', 'skills', 'ki-self'), 'dir')
     writeFileSync(
-      join(root, '.ki-config.toml'),
+      join(root, '.ki.toml'),
       '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n'
     )
 
@@ -408,7 +408,7 @@ supported_runtimes = ["claude-code", "claude-desktop", "chatgpt-codex"]
     const root = repository()
     mkdirSync(join(root, '.agents', 'skills', 'ki-self'), { recursive: true })
     writeFileSync(join(root, '.agents', 'skills', 'ki-self', 'SKILL.md'), '# KI Self\n')
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code"]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code"]\n')
 
     expect((await collectAuditFindings([root])).findings).toContainEqual(
       expect.objectContaining({
@@ -424,7 +424,7 @@ supported_runtimes = ["claude-code", "claude-desktop", "chatgpt-codex"]
     mkdirSync(join(root, '.claude', 'skills', 'ki-self'), { recursive: true })
     writeFileSync(join(root, '.agents', 'skills', 'ki-self', 'SKILL.md'), '# KI Self\n')
     writeFileSync(join(root, '.claude', 'skills', 'ki-self', 'SKILL.md'), '# KI Self\n')
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code"]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code"]\n')
 
     expect((await collectAuditFindings([root])).findings).toContainEqual(
       expect.objectContaining({
@@ -436,7 +436,7 @@ supported_runtimes = ["claude-code", "claude-desktop", "chatgpt-codex"]
     rmSync(join(root, '.claude'), { recursive: true, force: true })
     mkdirSync(join(root, '.claude', 'skills'), { recursive: true })
     symlinkSync('../../.agents/skills/ki-self', join(root, '.claude', 'skills', 'ki-self'), 'dir')
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\nsupported_runtimes = ["chatgpt-codex"]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["chatgpt-codex"]\n')
 
     expect((await collectAuditFindings([root])).findings).toContainEqual(
       expect.objectContaining({ code: 'RUNTIMES-3', message: expect.stringContaining('claude-code is not declared') })
@@ -447,7 +447,7 @@ supported_runtimes = ["claude-code", "claude-desktop", "chatgpt-codex"]
 describe('repository kind and Knowledge Base stores', () => {
   const kindFindings = async (configuration: string) => {
     const root = repository()
-    writeFileSync(join(root, '.ki-config.toml'), configuration)
+    writeFileSync(join(root, '.ki.toml'), configuration)
     return (await collectAuditFindings([root])).findings.filter(({ code }) => code === 'KIND-1' || code === 'KIND-2')
   }
 
@@ -522,7 +522,7 @@ describe('local repository evidence', () => {
     const root = repository()
     writeFileSync(join(root, 'README.md'), '# Actual title\n')
     writeFileSync(
-      join(root, '.ki-config.toml'),
+      join(root, '.ki.toml'),
       '[skills.ki-repo]\ntitle = "Configured title"\ndescription = "Configured description."\n\n[skills.ki-work-roadmap]\n'
     )
 
@@ -539,14 +539,14 @@ describe('local repository evidence', () => {
     const root = repository()
     mkdirSync(join(root, '+', '_CHECKPOINTS'), { recursive: true })
     writeFileSync(join(root, '+', '_CHECKPOINTS', 'Thread.md'), '# Thread\n')
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n')
 
     const findings = (await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')
     expect(findings).toContainEqual(
       expect.objectContaining({ message: expect.stringContaining('looks governed by ki-checkpoint') })
     )
 
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\n\n[skills.ki-checkpoint]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n\n[skills.ki-checkpoint]\n')
     expect((await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')).toEqual([])
   })
 
@@ -557,14 +557,14 @@ describe('local repository evidence', () => {
       join(root, 'package.json'),
       JSON.stringify({ dependencies: { react: '^19.0.0' }, devDependencies: { vite: '^7.0.0' } })
     )
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n')
 
     const coverage = (await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')
     expect(coverage).toContainEqual(expect.objectContaining({ message: expect.stringContaining('ki-website (') }))
     expect(coverage).toContainEqual(expect.objectContaining({ message: expect.stringContaining('ki-website-app') }))
 
     writeFileSync(
-      join(root, '.ki-config.toml'),
+      join(root, '.ki.toml'),
       '[skills.ki-repo]\n\n[skills.ki-repo-website]\n\n[skills.ki-repo-website-content]\n\n[skills.ki-repo-website-app]\n'
     )
     const structure = (await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'STRUCT-3')
@@ -577,7 +577,7 @@ describe('local repository evidence', () => {
     const root = repository()
     mkdirSync(join(root, 'subagents', 'governance'), { recursive: true })
     writeFileSync(join(root, 'subagents', 'governance', 'reviewer.md'), '# Reviewer\n')
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n')
 
     const findings = (await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')
     expect(findings).toContainEqual(
@@ -588,7 +588,7 @@ describe('local repository evidence', () => {
     )
 
     writeFileSync(
-      join(root, '.ki-config.toml'),
+      join(root, '.ki.toml'),
       '[skills.ki-repo]\n\n[skills.ki-subagents]\n\n[skills.ki-subagents-claude]\n'
     )
     expect((await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')).toEqual([])
@@ -598,7 +598,7 @@ describe('local repository evidence', () => {
     const root = repository()
     mkdirSync(join(root, '.codex', 'agents'), { recursive: true })
     writeFileSync(join(root, '.codex', 'agents', 'reviewer.toml'), 'name = "reviewer"\n')
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n')
 
     const findings = (await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')
     expect(findings).toContainEqual(
@@ -609,7 +609,7 @@ describe('local repository evidence', () => {
     )
 
     writeFileSync(
-      join(root, '.ki-config.toml'),
+      join(root, '.ki.toml'),
       '[skills.ki-repo]\n\n[skills.ki-subagents]\n\n[skills.ki-subagents-codex]\n'
     )
     expect((await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')).toEqual([])

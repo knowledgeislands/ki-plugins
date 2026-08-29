@@ -49,7 +49,7 @@ const fixture = (): { readonly repository: string; readonly config: string; read
     ].join('\n')
   )
   writeFileSync(join(repository, 'README.md'), '# Tap\n\n## Formulae\n\n| Formula |\n| --- |\n| `mgit` |\n')
-  const config = join(repository, '.ki-config.toml')
+  const config = join(repository, '.ki.toml')
   const original = '[skills.ki-repo]\n[skills.ki-repo-homebrew-tap]\n'
   writeFileSync(config, original)
   return { repository, config, original }
@@ -99,7 +99,7 @@ test('a symlinked config is reported but never proposed for replacement', async 
   mkdirSync(join(repository, 'Formula'))
   writeFileSync(join(repository, 'Formula', 'mgit.rb'), 'class Mgit < Formula\n')
   writeFileSync(outside, '[skills.ki-repo]\n')
-  symlinkSync(outside, join(repository, '.ki-config.toml'))
+  symlinkSync(outside, join(repository, '.ki.toml'))
   const session = await createHomebrewTapSession(options(repository, 'conform'))
   const { context } = rootContext(session)
   const configContext = CONFIG.selectContext(context)

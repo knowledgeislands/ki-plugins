@@ -121,7 +121,7 @@ const SKILLS_3: RubricItem<HarnessSkillsContext> = {
             {
               status: 'NOT_APPLICABLE',
               message: 'The Harness capability prefix is absent or invalid.',
-              subject: '.ki-config.toml'
+              subject: '.ki.toml'
             }
           ]
         const mismatches = context.skills.filter(

@@ -46,7 +46,7 @@ const fixture = (): {
   writeFileSync(join(repository, '.github', 'workflows', 'ci.yml'), 'run: shellcheck bin/demo\nrun: bats tests/\n')
   mkdirSync(join(repository, 'tests'))
   writeFileSync(join(repository, 'tests', 'demo.bats'), '@test "version" { run bin/demo --version; }\n')
-  const config = join(repository, '.ki-config.toml')
+  const config = join(repository, '.ki.toml')
   writeFileSync(config, '[skills.ki-repo]\n[skills.ki-repo-tools]\n')
   return { repository, config, executable, install }
 }
@@ -199,7 +199,7 @@ test('symlinked governed paths remain report-only and are never traversed', () =
   writeFileSync(join(outside, 'bin', 'unsafe'), '#!/bin/sh\n')
   writeFileSync(join(outside, 'config.toml'), '[skills.ki-repo]\n')
   symlinkSync(join(outside, 'bin'), join(repository, 'bin'))
-  symlinkSync(join(outside, 'config.toml'), join(repository, '.ki-config.toml'))
+  symlinkSync(join(outside, 'config.toml'), join(repository, '.ki.toml'))
   symlinkSync(outside, join(repository, '.github'))
 
   const session = createToolsSession(options(repository, 'conform'))

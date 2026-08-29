@@ -65,7 +65,7 @@ const fixture = (
   const root = mkdtempSync(join(tmpdir(), 'ki-decision-records-'))
   temporaryRoots.push(root)
   const directory = join(root, 'docs', 'decisions')
-  writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-decision-records]\n')
+  writeFileSync(join(root, '.ki.toml'), '[skills.ki-decision-records]\n')
   mkdirSync(directory, { recursive: true })
   writeFileSync(join(directory, filename), record(options))
   for (const extra of options.extra ?? []) writeFileSync(join(directory, extra.file), extra.content)
@@ -118,7 +118,7 @@ const rootFixture = ({
   const root = mkdtempSync(join(tmpdir(), 'ki-decision-records-root-'))
   temporaryRoots.push(root)
   const directory = join(root, 'docs', 'decisions')
-  writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-decision-records]\n')
+  writeFileSync(join(root, '.ki.toml'), '[skills.ki-decision-records]\n')
   mkdirSync(directory, { recursive: true })
   for (const file of files) writeFileSync(join(directory, file.file), rootRecord(file))
   const entries = indexIds
@@ -196,7 +196,7 @@ decision_type_url: https://knowledgeislands.info/specifications/decision-records
     const file = 'ADR-EXAMPLE-001-decide-the-record-shape.md'
     const body = `# ADR-EXAMPLE-001: Decide the record shape\n\n## Context\n\nThe record needs a stable shape.\n\n## Decision\n\nThe repository records the decision.\n\n## Consequences\n\nReaders can identify the decision.\n`
     mkdirSync(directory, { recursive: true })
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-decision-records]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-decision-records]\n')
     writeFileSync(
       join(directory, file),
       `---\nid: ADR-EXAMPLE-001\ntitle: 'Decide the record shape'\ndate: 2026-07-21\nstatus: current\ntype: Architecture Decision Record\ntype_url: https://knowledgeislands.info/specifications/decision-records/adr\n---\n\n${body}`
@@ -234,7 +234,7 @@ decision_type_url: https://knowledgeislands.info/specifications/decision-records
     temporaryRoots.push(root)
     const directory = join(root, 'docs', 'decisions')
     mkdirSync(directory, { recursive: true })
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-decision-records]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-decision-records]\n')
     writeFileSync(join(directory, 'README.md'), '# Decisions\n')
     writeFileSync(join(directory, 'ADR-EXAMPLE-001-decide-the-record-shape.md'), record({}))
 
@@ -255,7 +255,7 @@ decision_type_url: https://knowledgeislands.info/specifications/decision-records
     temporaryRoots.push(root)
     const directory = join(root, 'docs', 'decisions')
     mkdirSync(directory, { recursive: true })
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-decision-records]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-decision-records]\n')
     writeFileSync(join(directory, 'README.md'), '# Decisions\n')
     const malformed = 'ADR-EXAMPLE-001-decide-the-record-shape.md'
     const conflicting = 'ADR-EXAMPLE-002-conflicting-decision.md'
@@ -369,7 +369,7 @@ describe('decision-record index links', () => {
     temporaryRoots.push(root)
     const directory = join(root, 'docs', 'decisions')
     mkdirSync(directory, { recursive: true })
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-decision-records]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-decision-records]\n')
     const id = 'ADR-EXAMPLE-001'
     const file = 'ADR-EXAMPLE-001-first-decision.md'
     writeFileSync(join(directory, file), rootRecord({ id, title: 'First decision' }))
@@ -398,7 +398,7 @@ describe('decision-record index links', () => {
     temporaryRoots.push(root)
     const directory = join(root, 'docs', 'decisions')
     mkdirSync(directory, { recursive: true })
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-decision-records]\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-decision-records]\n')
     writeFileSync(
       join(directory, 'ADR-EXAMPLE-001-first-decision.md'),
       rootRecord({ id: 'ADR-EXAMPLE-001', title: 'First decision' })

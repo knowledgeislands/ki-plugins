@@ -56,7 +56,7 @@ test('each family module exports one complete family', async () => {
 test('the session never infers a declaration from detected directories or proposes a write', () => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-repo-specifications-'))
   temporaryDirectories.push(repository)
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo]\n')
   for (const directory of ['proposals', 'specifications', 'schemas']) mkdirSync(join(repository, directory))
 
   const session = catalogue.createSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
@@ -73,7 +73,7 @@ test('the session never infers a declaration from detected directories or propos
 test('detected authority directories without a declaration are not applicable', () => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-repo-specifications-unselected-'))
   temporaryDirectories.push(repository)
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo]\n')
   for (const directory of ['proposals', 'specifications', 'schemas']) mkdirSync(join(repository, directory))
 
   const session = catalogue.createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })

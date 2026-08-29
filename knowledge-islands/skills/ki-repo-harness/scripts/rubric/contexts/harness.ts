@@ -33,7 +33,7 @@ export type HarnessLayoutContext = {
     state: PathState
     readmeState: PathState
   }[]
-  rootFiles: Readonly<Record<'CLAUDE.md' | 'ROADMAP.md' | '.ki-config.toml', PathState>>
+  rootFiles: Readonly<Record<'CLAUDE.md' | 'ROADMAP.md' | '.ki.toml', PathState>>
 }
 
 export type HarnessConfigContext = {
@@ -179,7 +179,7 @@ export const createHarnessSession = ({
 }: RubricContextOptions): RubricSession<HarnessRubricContext> => {
   const root = resolve(repository)
   const state = repositoryState(root)
-  const configPath = join(root, '.ki-config.toml')
+  const configPath = join(root, '.ki.toml')
   const rawConfigState = state === 'physical' ? pathState(configPath) : 'missing'
   let configContent: string | null = null
   let configState: HarnessConfigContext['state'] =
@@ -249,7 +249,7 @@ export const createHarnessSession = ({
       rootFiles: {
         'CLAUDE.md': state === 'physical' ? pathState(join(root, 'CLAUDE.md')) : 'missing',
         'ROADMAP.md': state === 'physical' ? pathState(join(root, 'ROADMAP.md')) : 'missing',
-        '.ki-config.toml': rawConfigState
+        '.ki.toml': rawConfigState
       }
     },
     config: {
@@ -299,7 +299,7 @@ export const createHarnessSession = ({
       const writes: ConformWrite[] = []
       if (markerRequested && configContent !== null)
         writes.push({
-          path: '.ki-config.toml',
+          path: '.ki.toml',
           content: `${configContent.replace(/\n*$/, '\n')}\n[skills.${tableIdentity('ki-repo-harness')}]\n`
         })
       if (capabilityPublicationRequested && capabilityDraft.merged !== undefined)

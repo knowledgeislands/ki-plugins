@@ -21,7 +21,7 @@ The full, quotable standard behind the `ki-repo-tools` skill. A `tools-*` repo h
 
 This standard judges the **container** (the repo's shape) and a small shared public interface — it does **not** judge the quality of tool-specific operations. A shell tool must be shellcheck-clean and carry a bats suite; this standard checks those are **wired into CI**, not what they report. Whether a tool's own operations are correct, well-factored, or fast is its author's concern.
 
-Applicability is declaration or structure: `[skills.ki-repo-tools]` in `.ki-config.toml` or a root `bin/` directory activates the complete audit. With neither, `ki repo audit --skill ki-repo-tools` reports one `NA` and stops. A declared repository without `bin/` and an undeclared repository with `bin/` remain applicable; the former fails the executable-container requirement and the latter is audited for the missing declaration.
+Applicability is declaration or structure: `[skills.ki-repo-tools]` in `.ki.toml` or a root `bin/` directory activates the complete audit. With neither, `ki repo audit --skill ki-repo-tools` reports one `NA` and stops. A declared repository without `bin/` and an undeclared repository with `bin/` remain applicable; the former fails the executable-container requirement and the latter is audited for the missing declaration.
 
 One tool per repo. A repo that would ship two distinct tools is two repos.
 
@@ -36,7 +36,7 @@ tools-<name>/
 ├── man/<name>.1            # Optional manual source; when present, mandoc runs in CI.
 ├── CHANGELOG.md            # semver release history or current-release baseline. Expected.
 ├── README.md · LICENSE     # ki-repo's job.
-└── .ki-config.toml         # qualified ki-repo + ki-repo-tools declarations.
+└── .ki.toml         # qualified ki-repo + ki-repo-tools declarations.
 ```
 
 - **`bin/` with ≥1 executable file is the only hard requirement** — its absence is a FAIL, since without it there is no tool. Everything else is expected-but-optional (WARN when absent): a repo can be mid-scaffold.
@@ -89,7 +89,7 @@ What the repo _is_ decides which checks apply — the same standard covers a bas
 | Capability signal | Requirement it turns on |
 | --- | --- |
 | Primary bin has a `bash`/`sh` shebang (SHELL) | A CI workflow references **shellcheck** (the tool is shellcheck-clean); `tests/` holds a **`*.bats`** suite CI runs (references `bats`). |
-| A `package.json` appears (TS/Bun tool) | The repo defers lint/test to **`ki-engineering`** and MUST also declare `[skills.ki-engineering]` in `.ki-config.toml`. Shell checks don't apply. |
+| A `package.json` appears (TS/Bun tool) | The repo defers lint/test to **`ki-engineering`** and MUST also declare `[skills.ki-engineering]` in `.ki.toml`. Shell checks don't apply. |
 | A physical `man/<tool>.1` page appears | CI runs `mandoc -T lint man/<tool>.1`, directly or through the repository's native task runner. The installer publishes it and `--link` links it alongside the executable. |
 | Another language (Python, Go, …) | Defer to that language's own toolchain. The container checks (bin, install.sh, versioning, changelog, CI, tests) still apply. |
 
@@ -119,12 +119,12 @@ A physical `man/<tool>.1` is the installed command reference. It stays aligned w
 
 ## The qualified `ki-repo-tools` marker
 
-A `tools-*` repo opts in by declaring a **keyless** `[skills.ki-repo-tools]` table in its `.ki-config.toml`. It is validated **down**: the checker reads only this table and warns on any unknown key inside it (there are none today), never reading another skill's table. `ki repo conform --skill ki-repo-tools` adds it to an existing parseable configuration when it is safe to do so.
+A `tools-*` repo opts in by declaring a **keyless** `[skills.ki-repo-tools]` table in its `.ki.toml`. It is validated **down**: the checker reads only this table and warns on any unknown key inside it (there are none today), never reading another skill's table. `ki repo conform --skill ki-repo-tools` adds it to an existing parseable configuration when it is safe to do so.
 
 A language conditional is declared as its **own** table, not a key here: a TS/Bun tool carries both `ki-repo-tools` and `ki-engineering` qualified declarations.
 
 ## What other skills own
 
-- **`ki-repo`** — the local standard files (README, LICENSE, `.gitignore`, `.editorconfig`), GitHub settings (merge policy, branch protection, topics, visibility), and the `.ki-config.toml` contract itself. `ki-repo`'s coverage cascade detects an undeclared tool (a `bin/<exe>` + `install.sh` with no qualified `ki-repo-tools` declaration) and WARNs, enforcing the one-structure-skill-per-repo invariant.
+- **`ki-repo`** — the local standard files (README, LICENSE, `.gitignore`, `.editorconfig`), GitHub settings (merge policy, branch protection, topics, visibility), and the `.ki.toml` contract itself. `ki-repo`'s coverage cascade detects an undeclared tool (a `bin/<exe>` + `install.sh` with no qualified `ki-repo-tools` declaration) and WARNs, enforcing the one-structure-skill-per-repo invariant.
 - **`ki-repo-homebrew-tap`** — the tap repo, the `Formula/*.rb` shape, and the tap's own test-bot/CI.
 - **`ki-engineering`** — the TS/Bun build/lint/test toolchain, only if the tool grows a `package.json`.

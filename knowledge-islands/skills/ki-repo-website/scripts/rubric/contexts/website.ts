@@ -66,7 +66,7 @@ export const createWebsiteCoreSession = ({
   const root = resolve(repository)
   const available = existsSync(root) && lstatSync(root).isDirectory() && !lstatSync(root).isSymbolicLink()
   const configuration = available
-    ? parseTable(join(root, '.ki-config.toml'))
+    ? parseTable(join(root, '.ki.toml'))
     : { applicable: false, malformed: false, keys: [] }
   const packageEvidence = available
     ? parsePackage(join(root, 'package.json'))

@@ -127,7 +127,7 @@ describe('ki-repo-kb-live-artifacts session', () => {
   test('honours a safe configured artifacts directory', () => {
     const root = repository()
     writeFileSync(
-      join(root, '.ki-config.toml'),
+      join(root, '.ki.toml'),
       '[skills.ki-repo-kb-live-artifacts]\nartifacts_dir = "Operational/Boards"\n'
     )
     mkdirSync(join(root, 'Operational', 'Boards'), { recursive: true })
@@ -144,7 +144,7 @@ describe('ki-repo-kb-live-artifacts session', () => {
 
   test('fails closed for malformed configuration and proposes no derived writes', () => {
     const { root } = fixture()
-    writeFileSync(join(root, '.ki-config.toml'), '[skills.ki-repo-kb-live-artifacts]\nartifacts_dir =\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo-kb-live-artifacts]\nartifacts_dir =\n')
     const session = createLiveArtifactsSession(options(root, 'conform'))
     const context = rootContext(session)
 
@@ -159,7 +159,7 @@ describe('ki-repo-kb-live-artifacts session', () => {
     mkdirSync(join(outside, 'Boards'), { recursive: true })
     symlinkSync(outside, join(root, 'linked'))
     writeFileSync(
-      join(root, '.ki-config.toml'),
+      join(root, '.ki.toml'),
       '[skills.ki-repo-kb-live-artifacts]\nartifacts_dir = "linked/Boards"\n'
     )
     const context = rootContext(createLiveArtifactsSession(options(root, 'audit')))

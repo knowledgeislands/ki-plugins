@@ -3,7 +3,7 @@ name: ki-agora
 ki-kind: governance
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
-contributes: ['.ki-config.toml']
+contributes: ['.ki.toml']
 description: >
   Governs portable reciprocal Agora membership between Knowledge Islands repositories. An Agora home declares its purpose and approved canonical repository members with their roles; a member independently consents by naming the same home and role. Use when defining, auditing, or conforming an Agora declaration, deciding whether a repository belongs to an Agora, or preparing local resolution and editor or client projections. ki-agora defines declarations only; ki owns local registry resolution and target-specific opening, while a user-environment owner renders per-repository state.
 argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
@@ -34,7 +34,7 @@ Run AUDIT first. `ki repo conform --skill ki-agora --repo <repo> --dry-run` may 
 
 ### Mode EDUCATE
 
-Run `ki repo educate --skill ki-agora --repo <repo>` to render the concern and rubric. Start with the repository's canonical `ki-repo.repository`, then declare a home or a membership in `.ki-config.toml` using the examples in the standard. EDUCATE grants neither membership nor local projection authority.
+Run `ki repo educate --skill ki-agora --repo <repo>` to render the concern and rubric. Start with the repository's canonical `ki-repo.repository`, then declare a home or a membership in `.ki.toml` using the examples in the standard. EDUCATE grants neither membership nor local projection authority.
 
 ### Mode REFRESH
 

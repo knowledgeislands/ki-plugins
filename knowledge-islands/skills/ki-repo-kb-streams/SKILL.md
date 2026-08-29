@@ -53,7 +53,7 @@ Use the owning adapter's standard rather than retaining a generic Streams record
 
 ## Project bindings
 
-Almost everything is fixed above. Only these come from the host base — take declarative overrides from the base's `.ki-config.toml` `[skills.ki-repo-kb-streams]` table (the shared-file contract is owned by `ki-repo`; validate your own table, warn on an unrecognised key, never read another skill's), otherwise from the auto-loaded `CLAUDE.md`.
+Almost everything is fixed above. Only these come from the host base — take declarative overrides from the base's `.ki.toml` `[skills.ki-repo-kb-streams]` table (the shared-file contract is owned by `ki-repo`; validate your own table, warn on an unrecognised key, never read another skill's), otherwise from the auto-loaded `CLAUDE.md`.
 
 - **Process note** — the base's local change-process note: a thin pointer to the shared change-management skills plus base-specific authority and routing. _Default:_ `Enactment Process`. A base may host it under a non-default name or location (e.g. `kit-legal` keeps it under `Admin/Operations/Processes/`); declare it as `process_note = "Admin/Operations/Processes/Enactment Process"` where needed.
 - **Area bindings** — `Roadmap/` and `Housekeeping/` are the initial fixed areas. A future `Trades/` area is explicit work, not an implicit folder a base creates ad hoc.
@@ -61,7 +61,7 @@ Almost everything is fixed above. Only these come from the host base — take de
 
 ## Step 1 — Load context
 
-1. Resolve the bindings: read the base's `.ki-config.toml` `[skills.ki-repo-kb-streams]` table and `CLAUDE.md`. Load the base's bound **process note** if it has one, for local authority and routing.
+1. Resolve the bindings: read the base's `.ki.toml` `[skills.ki-repo-kb-streams]` table and `CLAUDE.md`. Load the base's bound **process note** if it has one, for local authority and routing.
 2. For roadmap work, load the relevant flat work item and `Streams/Roadmap/_ISSUES.md` **fresh**; for housekeeping, load the relevant template. Never act on a cached record.
 
 ## Operating modes

@@ -31,20 +31,20 @@ const CONFIG_1: RubricItem<ToolsConfigContext> = {
           return [
             {
               status: 'VIOLATION',
-              message: '.ki-config.toml is not a physical regular file.',
-              subject: '.ki-config.toml'
+              message: '.ki.toml is not a physical regular file.',
+              subject: '.ki.toml'
             }
           ]
         if (context.config === 'missing')
-          return [{ status: 'VIOLATION', message: '.ki-config.toml is absent.', subject: '.ki-config.toml' }]
+          return [{ status: 'VIOLATION', message: '.ki.toml is absent.', subject: '.ki.toml' }]
         if (context.config === 'malformed')
-          return [{ status: 'VIOLATION', message: '.ki-config.toml is malformed.', subject: '.ki-config.toml' }]
+          return [{ status: 'VIOLATION', message: '.ki.toml is malformed.', subject: '.ki.toml' }]
         if (context.config === 'absent')
           return [
             {
               status: 'VIOLATION',
-              message: `[skills.${TABLE}] is absent from .ki-config.toml.`,
-              subject: '.ki-config.toml'
+              message: `[skills.${TABLE}] is absent from .ki.toml.`,
+              subject: '.ki.toml'
             }
           ]
         return [
@@ -52,12 +52,12 @@ const CONFIG_1: RubricItem<ToolsConfigContext> = {
             ? {
                 status: 'PASS',
                 message: `The keyless [skills.${TABLE}] marker is present.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             : {
                 status: 'VIOLATION',
                 message: `The keyless marker contains unknown keys: ${context.configKeys.join(', ')}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
         ]
       }

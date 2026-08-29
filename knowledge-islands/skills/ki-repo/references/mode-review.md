@@ -12,7 +12,7 @@ If the review could turn on an unspoken product, security, ownership, or compati
 
 ## 2. Build an evidence inventory
 
-Read the repository orientation and current work first: `AGENTS.md`, `README`, `.ki-config.toml` where present, canonical roadmap material, Decision Records, feature definitions, guides, and the implementation surfaces in scope.
+Read the repository orientation and current work first: `AGENTS.md`, `README`, `.ki.toml` where present, canonical roadmap material, Decision Records, feature definitions, guides, and the implementation surfaces in scope.
 
 Collect inspectable evidence rather than impressions:
 

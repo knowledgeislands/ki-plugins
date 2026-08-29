@@ -35,7 +35,7 @@ The standard is a **deliberately selected house shape**, not a vote count. Curre
 
 † `package.json` expresses the compatible range where one is selected; `bun.lock` is the resolved evidence for this harness. They are distinct.
 
-※ derive this during the current refresh from `.ki-config.toml` selectors; do not hard-code an inventory in this skill.
+※ derive this during the current refresh from `.ki.toml` selectors; do not hard-code an inventory in this skill.
 
 ‡ `ki-skills` rubric-authoring standard and this skill's canonical item catalogue.
 

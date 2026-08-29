@@ -87,7 +87,7 @@ const safeDirectory = (root: string, path: string): boolean => {
 }
 
 const parseConfiguration = (repository: string): LiveArtifactsConfiguration => {
-  const path = join(repository, '.ki-config.toml')
+  const path = join(repository, '.ki.toml')
   if (!isRegularFile(path))
     return { artifactsDirectory: DEFAULT_ARTIFACTS_DIRECTORY, thresholdHours: DEFAULT_THRESHOLD_HOURS, errors: [] }
   try {
@@ -118,7 +118,7 @@ const parseConfiguration = (repository: string): LiveArtifactsConfiguration => {
     return {
       artifactsDirectory: DEFAULT_ARTIFACTS_DIRECTORY,
       thresholdHours: DEFAULT_THRESHOLD_HOURS,
-      errors: ['Cannot parse .ki-config.toml.']
+      errors: ['Cannot parse .ki.toml.']
     }
   }
 }
@@ -185,12 +185,12 @@ export const createLiveArtifactsSession = ({
       ? 'No artifact sources exist.'
       : undefined
   const configurationEvidence: AuditOutcome[] = configuration.errors.length
-    ? configuration.errors.map((message) => ({ status: 'VIOLATION', message, subject: '.ki-config.toml' }))
+    ? configuration.errors.map((message) => ({ status: 'VIOLATION', message, subject: '.ki.toml' }))
     : [
         {
           status: 'PASS',
           message: 'Live artifact configuration is parseable and locally safe.',
-          subject: '.ki-config.toml'
+          subject: '.ki.toml'
         }
       ]
   const missingIndexSources =

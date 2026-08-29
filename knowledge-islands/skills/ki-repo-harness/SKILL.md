@@ -6,7 +6,7 @@ ki-depends-on: [ki-skills, ki-subagents, ki-decision-records, ki-work-roadmap]
 ki-shared-dependencies: [ki-skills:rubric]
 contributes: [skills/README.md]
 description: >
-  Audit, conform, and design Knowledge Islands compatible harnesses — source repositories that co-locate skills, subagents, MCP servers, evals, and hooks while publishing a verified installed capability payload. Use when creating a harness, checking its five-part source layout, validating its declared capability prefix and skill identities, reviewing its CLAUDE.md orientation, confirming its `.ki-config.toml` harness declaration, or distinguishing source shelves from the directly installed payload. Triggers: "audit the harness", "scaffold a new harness", "does this repo follow the harness standard", "refresh the harness standard", "is this a compatible harness". Governs the container and publication boundary, not its contents: skill quality → `ki-skills`; agent quality → `ki-subagents`; repository roadmap → `ki-work-roadmap`; MCP code → `ki-repo-mcp`; engineering toolchain → `ki-engineering`; repository settings → `ki-repo`; CLI installation and activation → `tools-ki`.
+  Audit, conform, and design Knowledge Islands compatible harnesses — source repositories that co-locate skills, subagents, MCP servers, evals, and hooks while publishing a verified installed capability payload. Use when creating a harness, checking its five-part source layout, validating its declared capability prefix and skill identities, reviewing its CLAUDE.md orientation, confirming its `.ki.toml` harness declaration, or distinguishing source shelves from the directly installed payload. Triggers: "audit the harness", "scaffold a new harness", "does this repo follow the harness standard", "refresh the harness standard", "is this a compatible harness". Governs the container and publication boundary, not its contents: skill quality → `ki-skills`; agent quality → `ki-subagents`; repository roadmap → `ki-work-roadmap`; MCP code → `ki-repo-mcp`; engineering toolchain → `ki-engineering`; repository settings → `ki-repo`; CLI installation and activation → `tools-ki`.
 argument-hint: 'audit [path] | conform [path] | educate <name> | help | refresh'
 ---
 
@@ -30,7 +30,7 @@ The universal modes are **AUDIT · CONFORM · EDUCATE · REFRESH**.
 ### Mode CONFORM — apply safe harness repairs
 
 1. Run AUDIT first.
-2. Run `ki repo conform --skill ki-repo-harness --repo <path>`. If a physical readable `.ki-config.toml` lacks `[skills.ki-repo-harness]`, the item requests one append. If the generated capability catalogue in `skills/README.md` is missing or stale, the item requests one exact marker-bounded replacement from validated `SKILL.md` frontmatter. The session coalesces the resulting host proposal.
+2. Run `ki repo conform --skill ki-repo-harness --repo <path>`. If a physical readable `.ki.toml` lacks `[skills.ki-repo-harness]`, the item requests one append. If the generated capability catalogue in `skills/README.md` is missing or stale, the item requests one exact marker-bounded replacement from validated `SKILL.md` frontmatter. The session coalesces the resulting host proposal.
 3. Missing shelves, shelf READMEs, root files, unsafe paths, identity conflicts, and orientation changes remain report-only because their content or replacement intent cannot be inferred safely.
 4. Re-run AUDIT and apply the judgment criteria.
 

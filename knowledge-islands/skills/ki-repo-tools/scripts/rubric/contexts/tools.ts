@@ -274,7 +274,7 @@ export const createToolsSession = ({
   const manualKind = manualDirectoryKind === 'directory' ? nodeKind(join(root, manualPath)) : manualDirectoryKind
   const manual: FileState = manualKind === 'missing' ? 'missing' : manualKind === 'file' ? 'physical' : 'unsafe'
 
-  const configPath = join(root, '.ki-config.toml')
+  const configPath = join(root, '.ki.toml')
   const configEvidence =
     rootState === 'physical'
       ? inspectConfig(configPath, nodeKind(configPath))
@@ -370,7 +370,7 @@ export const createToolsSession = ({
         .map((path): ConformCommand => ({ program: 'chmod', arguments: ['+x', path] }))
       const writes: ConformWrite[] =
         markerRequested && originalConfig !== null
-          ? [{ path: '.ki-config.toml', content: `${originalConfig.replace(/\n*$/, '\n')}\n[skills.${TOOLS_TABLE}]\n` }]
+          ? [{ path: '.ki.toml', content: `${originalConfig.replace(/\n*$/, '\n')}\n[skills.${TOOLS_TABLE}]\n` }]
           : []
       return { writes, ...(commands.length > 0 ? { commands } : {}) }
     }

@@ -19,7 +19,7 @@ The tracked sources behind [the compatible harness standard](standards-compatibl
 | --- | --- | --- | --- |
 | [AH] | [ki-agentic-harness README][ah-readme] | The KI canonical source-harness implementation § | 2026-07-27 |
 | [CH] | [Compatible harness contract][compatible] | Installed identity, direct payload, capability, host, and activation boundaries | 2026-07-27 |
-| [KR] | `ki-repo` skill | The `.ki-config.toml` contract and what makes a KI-governed repository | 2026-07-27 |
+| [KR] | `ki-repo` skill | The `.ki.toml` contract and what makes a KI-governed repository | 2026-07-27 |
 | [KS] | `ki-skills` skill | The governed-rubric family, session, and host boundary ‡ | 2026-07-27 |
 | [KE] | `ki-engineering` skill | Development toolchain ownership outside compatible-harness installation semantics | 2026-07-27 |
 
@@ -36,7 +36,7 @@ _REFRESH last run **2026-08-12** (previous: 2026-07-27)._
 - [AS] re-fetched live: the Agent Skills specification still defines **no** bundle, harness, container, or multi-skill grouping concept — the five-part source structure and co-location intent remain a KI architectural convention. The spec requires the `name` field to match the parent directory name (reinforcing SKILLS-1) and documents optional frontmatter governed by `ki-skills`, not this container standard.
 - [CC] re-fetched live: the subagent definition format (frontmatter `name` / `description` / `tools` / `model` + system-prompt body, project- and user-level install locations) is unchanged. No change to the `subagents/` part of the harness contract.
 - [CH] confirms that the current installed payload contains regular `skills/`, `subagents/`, and `hooks/`; a checkout, cache, runtime projection, or `.ki/` directory is never an implicit operation source.
-- [KR] / [KS] / [KE] confirm the direct boundaries: `.ki-config.toml` declares source-repository governance, rubrics execute through the `ki` host, and package scripts are development conveniences rather than installation or governance entry points.
+- [KR] / [KS] / [KE] confirm the direct boundaries: `.ki.toml` declares source-repository governance, rubrics execute through the `ki` host, and package scripts are development conveniences rather than installation or governance entry points.
 
 **Drift resolved this pass:**
 

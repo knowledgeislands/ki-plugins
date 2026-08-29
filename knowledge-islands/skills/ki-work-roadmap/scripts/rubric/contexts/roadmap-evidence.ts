@@ -103,7 +103,7 @@ const parseFrontmatter = (
 }
 
 const isKb = (repository: string): boolean => {
-  const config = join(repository, '.ki-config.toml')
+  const config = join(repository, '.ki.toml')
   if (!existsSync(config)) return false
   try {
     const parsed = TOML.parse(readFileSync(config, 'utf8')) as Record<string, unknown>
@@ -120,9 +120,9 @@ const isKb = (repository: string): boolean => {
 }
 
 const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefined => {
-  const config = join(repository, '.ki-config.toml')
+  const config = join(repository, '.ki.toml')
   if (!existsSync(config)) {
-    add('FAIL', 'ROAD-6', 'missing .ki-config.toml ki-work-roadmap repo_code', STANDARD, '.ki-config.toml')
+    add('FAIL', 'ROAD-6', 'missing .ki.toml ki-work-roadmap repo_code', STANDARD, '.ki.toml')
     return undefined
   }
   try {
@@ -139,7 +139,7 @@ const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefi
         'ROAD-6',
         'ki-repo repo_code must be a stable uppercase identifier for a repository declaring ki-work-roadmap',
         STANDARD,
-        '.ki-config.toml'
+        '.ki.toml'
       )
       return undefined
     }
@@ -150,7 +150,7 @@ const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefi
         : undefined
     const configuredThemes = values?.themes
     if (configuredThemes !== undefined && (!Array.isArray(configuredThemes) || configuredThemes.length === 0)) {
-      add('FAIL', 'ROAD-6', 'roadmap themes must be a non-empty array when declared', STANDARD, '.ki-config.toml')
+      add('FAIL', 'ROAD-6', 'roadmap themes must be a non-empty array when declared', STANDARD, '.ki.toml')
       return undefined
     }
     if (
@@ -162,19 +162,19 @@ const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefi
         'ROAD-6',
         'ki-work-roadmap themes must contain only lowercase kebab-case names',
         STANDARD,
-        '.ki-config.toml'
+        '.ki.toml'
       )
       return undefined
     }
     if (Array.isArray(configuredThemes) && new Set(configuredThemes).size !== configuredThemes.length) {
-      add('FAIL', 'ROAD-6', 'ki-work-roadmap themes must not repeat a theme name', STANDARD, '.ki-config.toml')
+      add('FAIL', 'ROAD-6', 'ki-work-roadmap themes must not repeat a theme name', STANDARD, '.ki.toml')
       return undefined
     }
     const configuredAreas = values?.areas
     const areas = new Map<string, string>()
     if (configuredAreas !== undefined) {
       if (typeof configuredAreas !== 'object' || configuredAreas === null || Array.isArray(configuredAreas)) {
-        add('FAIL', 'ROAD-6', 'ki-work-roadmap areas must be a code-to-theme table', STANDARD, '.ki-config.toml')
+        add('FAIL', 'ROAD-6', 'ki-work-roadmap areas must be a code-to-theme table', STANDARD, '.ki.toml')
         return undefined
       }
       for (const [area, theme] of Object.entries(configuredAreas as Record<string, unknown>)) {
@@ -184,29 +184,29 @@ const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefi
             'ROAD-6',
             'roadmap area codes must be uppercase and map to lowercase kebab-case themes',
             STANDARD,
-            '.ki-config.toml'
+            '.ki.toml'
           )
           return undefined
         }
         if (Array.isArray(configuredThemes) && !configuredThemes.includes(theme)) {
-          add('FAIL', 'ROAD-6', 'every roadmap area must map to a declared theme', STANDARD, '.ki-config.toml')
+          add('FAIL', 'ROAD-6', 'every roadmap area must map to a declared theme', STANDARD, '.ki.toml')
           return undefined
         }
         areas.set(area, theme)
       }
       if (!areas.size) {
-        add('FAIL', 'ROAD-6', 'ki-work-roadmap areas must not be empty when declared', STANDARD, '.ki-config.toml')
+        add('FAIL', 'ROAD-6', 'ki-work-roadmap areas must not be empty when declared', STANDARD, '.ki.toml')
         return undefined
       }
     }
     const themes = new Set(Array.isArray(configuredThemes) ? configuredThemes : areas.values())
     if (!themes.size) {
-      add('FAIL', 'ROAD-6', 'roadmap must declare themes or a non-empty areas table', STANDARD, '.ki-config.toml')
+      add('FAIL', 'ROAD-6', 'roadmap must declare themes or a non-empty areas table', STANDARD, '.ki.toml')
       return undefined
     }
     return { repoCode: code, themes, areas }
   } catch {
-    add('FAIL', 'ROAD-6', 'cannot parse .ki-config.toml', STANDARD, '.ki-config.toml')
+    add('FAIL', 'ROAD-6', 'cannot parse .ki.toml', STANDARD, '.ki.toml')
     return undefined
   }
 }

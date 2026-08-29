@@ -58,7 +58,7 @@ export const createWebsiteAppSession = ({
   const root = resolve(repository)
   const available = existsSync(root) && lstatSync(root).isDirectory() && !lstatSync(root).isSymbolicLink()
   const configuration = available
-    ? tableEvidence(join(root, '.ki-config.toml'))
+    ? tableEvidence(join(root, '.ki.toml'))
     : { applicable: false, malformed: false, keys: [] }
   let packageOk = false
   let dependencies: Record<string, string> = {}

@@ -170,7 +170,7 @@ export const createStreamsSession = ({
     }
   }
 
-  const configPath = join(root, '.ki-config.toml')
+  const configPath = join(root, '.ki.toml')
   const configuration = parseConfiguration(regularFile(configPath) ? readFileSync(configPath, 'utf8') : '')
   const streamsPath = join(root, configuration.streams)
   if (!directory(streamsPath)) {
@@ -234,8 +234,8 @@ export const createStreamsSession = ({
   const parseable: StreamsEvidence[] = [
     {
       level: configuration.malformed ? 'FAIL' : 'PASS',
-      message: configuration.malformed ? 'Cannot parse .ki-config.toml.' : 'Streams configuration is parseable.',
-      subject: '.ki-config.toml'
+      message: configuration.malformed ? 'Cannot parse .ki.toml.' : 'Streams configuration is parseable.',
+      subject: '.ki.toml'
     }
   ]
   const unknownKeys = configuration.ownKeys.filter((key) => key !== 'process_note')
@@ -245,7 +245,7 @@ export const createStreamsSession = ({
       message: unknownKeys.length
         ? `Unrecognised ki-repo-kb-streams key(s): ${unknownKeys.join(', ')}.`
         : 'Only recognised ki-repo-kb-streams keys are present.',
-      subject: '.ki-config.toml'
+      subject: '.ki.toml'
     }
   ]
   const processNote = configuration.keys.process_note
@@ -254,7 +254,7 @@ export const createStreamsSession = ({
     : undefined
   const processNoteEvidence: StreamsEvidence[] = [
     !processNote
-      ? { level: 'PASS', message: 'No optional process_note binding is declared.', subject: '.ki-config.toml' }
+      ? { level: 'PASS', message: 'No optional process_note binding is declared.', subject: '.ki.toml' }
       : safeRegularFile(root, processNotePath as string)
         ? { level: 'PASS', message: 'The declared process_note is a contained regular file.', subject: processNote }
         : {

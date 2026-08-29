@@ -96,7 +96,7 @@ test('uses Streams Housekeeping for a KB configuration', () => {
   const repository = temporaryDirectory()
   const root = join(repository, 'Streams', 'Housekeeping')
   mkdirSync(root, { recursive: true })
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\nrepo_type = "kb"\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo]\nrepo_type = "kb"\n')
   writeFileSync(join(root, 'Housekeeping.md'), '# Housekeeping\n')
   writeFileSync(
     join(root, 'Monthly Maintenance Housekeeping.md'),

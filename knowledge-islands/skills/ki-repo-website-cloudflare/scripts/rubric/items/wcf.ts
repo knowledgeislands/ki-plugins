@@ -486,7 +486,7 @@ const WCF_20: RubricItem<WebsiteCloudflareContext> = {
               {
                 status: 'PASS',
                 message: 'The [skills.ki-repo-website-cloudflare] table is present.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [
@@ -494,11 +494,11 @@ const WCF_20: RubricItem<WebsiteCloudflareContext> = {
                 status: 'VIOLATION',
                 message:
                   state === 'unsafe'
-                    ? '.ki-config.toml is not a safely readable regular file.'
+                    ? '.ki.toml is not a safely readable regular file.'
                     : state === 'malformed'
-                      ? '.ki-config.toml is malformed.'
+                      ? '.ki.toml is malformed.'
                       : 'The [skills.ki-repo-website-cloudflare] table is absent.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
       }
@@ -526,26 +526,26 @@ const WCF_21: RubricItem<WebsiteCloudflareContext> = {
         const outcomes: AuditOutcome[] = unknown.map((key) => ({
           status: 'VIOLATION',
           message: `Unknown opt-in key: ${key}.`,
-          subject: '.ki-config.toml'
+          subject: '.ki.toml'
         }))
         const siteRoot = context.configuration.siteRoot
         if (context.configuration.keys.includes('site-root') && siteRoot === null)
           outcomes.push({
             status: 'VIOLATION',
             message: 'site-root must be a string.',
-            subject: '.ki-config.toml'
+            subject: '.ki.toml'
           })
         else if (siteRoot === null)
           outcomes.push({
             status: 'PASS',
             message: 'No site-root override is declared; Wrangler config discovery applies.',
-            subject: '.ki-config.toml'
+            subject: '.ki.toml'
           })
         else if (!safeSiteRoot(siteRoot))
           outcomes.push({
             status: 'VIOLATION',
             message: `site-root is not a safe relative path: ${siteRoot}.`,
-            subject: '.ki-config.toml'
+            subject: '.ki.toml'
           })
         else {
           const normalised = siteRoot.replace(/^\.\//, '').replace(/\/$/, '') || '.'
@@ -555,7 +555,7 @@ const WCF_21: RubricItem<WebsiteCloudflareContext> = {
             message: directories.has(normalised)
               ? `The declared site-root ${siteRoot} holds a Wrangler config.`
               : `The declared site-root ${siteRoot} holds no Wrangler config.`,
-            subject: '.ki-config.toml'
+            subject: '.ki.toml'
           })
         }
         return outcomes

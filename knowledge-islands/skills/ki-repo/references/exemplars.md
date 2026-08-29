@@ -5,13 +5,13 @@
 - [Collections](#collections)
 - [Selected patterns](#selected-patterns)
 
-Curated patterns from the KI repo set that show what a well-configured Knowledge Islands repo looks like. Use these as reference when onboarding a new repo, running CONFORM, or auditing against the standard. The `ki-agentic-harness` is the primary exemplar — it carries every required layer-1 file, a fully-populated `.ki-config.toml`, and a `CLAUDE.md` with correct topic imports. The `mcp-*` repos are the reference set for public repos (topics, secret scanning, MIT license). For the full source list and last-review dates, see [sources.md](sources.md).
+Curated patterns from the KI repo set that show what a well-configured Knowledge Islands repo looks like. Use these as reference when onboarding a new repo, running CONFORM, or auditing against the standard. The `ki-agentic-harness` is the primary exemplar — it carries every required layer-1 file, a fully-populated `.ki.toml`, and a `CLAUDE.md` with correct topic imports. The `mcp-*` repos are the reference set for public repos (topics, secret scanning, MIT license). For the full source list and last-review dates, see [sources.md](sources.md).
 
 ## Collections
 
 | Source | URL | What it covers |
 | --- | --- | --- |
-| ki-agentic-harness | [github][harness] | Private repo; all layer-1 files; full `.ki-config.toml`; rich `CLAUDE.md` |
+| ki-agentic-harness | [github][harness] | Private repo; all layer-1 files; full `.ki.toml`; rich `CLAUDE.md` |
 | mcp-gsuite | [github][mcp-gsuite] | Public repo; MIT license; standard topic set; Dependabot auto-merge |
 | mcp-kb-fs | [github][mcp-kb-fs] | Public repo; canonical layer-2/3 settings; `branch-protection` off |
 | GitHub REST API — repo settings | [docs.github.com][repo-settings] | Merge methods, auto-delete-branch, features |
@@ -19,12 +19,12 @@ Curated patterns from the KI repo set that show what a well-configured Knowledge
 
 ## Selected patterns
 
-### Minimal `.ki-config.toml` — private repo, no overrides
+### Minimal `.ki.toml` — private repo, no overrides
 
-Every KI-governed repo carries a `.ki-config.toml` at its root. The file is the compliance marker; its presence is what the coverage cascade gates on. A repo that fully conforms to org defaults needs only the `[skills.ki-repo]` table with a `visibility` declaration and silence under `[skills.ki-repo.checks]` (or no checks table at all). Each additional governance skill the repo opts into adds its own table — the tables are independent, each skill reads only its own.
+Every KI-governed repo carries a `.ki.toml` at its root. The file is the compliance marker; its presence is what the coverage cascade gates on. A repo that fully conforms to org defaults needs only the `[skills.ki-repo]` table with a `visibility` declaration and silence under `[skills.ki-repo.checks]` (or no checks table at all). Each additional governance skill the repo opts into adds its own table — the tables are independent, each skill reads only its own.
 
 ```toml
-# .ki-config.toml — one [table] per governing skill
+# .ki.toml — one [table] per governing skill
 
 [skills.ki-repo]
 visibility = "private"   # "public" | "private" — declared, not inferred
@@ -34,7 +34,7 @@ visibility = "private"   # "public" | "private" — declared, not inferred
 # Fully conforms; no overrides. Capabilities auto-detected from repo markers.
 ```
 
-### `.ki-config.toml` — opt-in `branch-protection` override
+### `.ki.toml` — opt-in `branch-protection` override
 
 `branch-protection` defaults **off** for all KI repos — `main` is open, direct pushes allowed. A repo that wants a protected `main` declares it with a single boolean. When `branch-protection = true`, the auditor requires: a PR (0 approvals), the `build` status check, linear history, no force-push, no deletion, admins not enforced. No other check is affected by this override.
 
@@ -96,7 +96,7 @@ The shared orientation lives in AGENTS.md, imported above. The following topic f
 
 ### Five-part harness layout with coverage declarations
 
-When a repo carries a five-part agentic harness layout (`skills/`, `subagents/`, `mcp/`, `evals/`, `hooks/`), its `.ki-config.toml` must declare all four relevant tables so `ki-repo`'s coverage cascade does not warn on detected-but-undeclared artifacts. The harness repo (`ki-agentic-harness`) is the canonical example — it opts into every applicable governance skill and documents why each table is present.
+When a repo carries a five-part agentic harness layout (`skills/`, `subagents/`, `mcp/`, `evals/`, `hooks/`), its `.ki.toml` must declare all four relevant tables so `ki-repo`'s coverage cascade does not warn on detected-but-undeclared artifacts. The harness repo (`ki-agentic-harness`) is the canonical example — it opts into every applicable governance skill and documents why each table is present.
 
 ```toml
 [skills.ki-repo]

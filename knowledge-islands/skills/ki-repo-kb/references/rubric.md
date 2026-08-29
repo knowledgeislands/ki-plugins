@@ -49,7 +49,7 @@ Required zones, indexes, staging, and output placement.
 
 Validate-down `[skills.ki-repo-kb]` configuration and zone aliases.
 
-- **CONFIG-0 [M] — parseable KB configuration** — When present, .ki-config.toml parses before the KB table is evaluated. (standards-knowledge-base.md)
+- **CONFIG-0 [M] — parseable KB configuration** — When present, .ki.toml parses before the KB table is evaluated. (standards-knowledge-base.md)
   - _Remediation:_ diagnostic — Correct the TOML syntax before relying on KB configuration.
 - **CONFIG-1 [M] — known configuration keys** — Only required_frontmatter, preflight, zones, and templates are recognised beneath [skills.ki-repo-kb]. (standards-knowledge-base.md)
   - _Remediation:_ diagnostic — Correct the selected ki-repo-kb configuration evidence, then rerun the audit.

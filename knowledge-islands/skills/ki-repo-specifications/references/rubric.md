@@ -27,7 +27,7 @@ The tracked readable rubric is the exact publication of the structured catalogue
 
 Repository identity and stable top-level seams.
 
-- **SPEC-1 [M] — Repository identity marker** — `.ki-config.toml` declares a keyless `[skills.ki-repo-specifications]` table. Unknown keys WARN because the marker has no options yet. (standards-specifications.md)
+- **SPEC-1 [M] — Repository identity marker** — `.ki.toml` declares a keyless `[skills.ki-repo-specifications]` table. Unknown keys WARN because the marker has no options yet. (standards-specifications.md)
   - _Remediation:_ diagnostic — Declare the selected standard through the repository configuration owner.
 - **SPEC-2 [M] — Authority areas** — `proposals/`, `specifications/`, and `schemas/` exist as directories. Their absence FAILs. (standards-specifications.md)
   - _Remediation:_ diagnostic — Create the missing authority area only after confirming that the repository is intended to carry this specification responsibility.

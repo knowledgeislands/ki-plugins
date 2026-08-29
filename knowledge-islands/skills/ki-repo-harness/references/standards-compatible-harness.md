@@ -65,7 +65,7 @@ hooks/        README.md
 
 An empty shelf is valid. Its README distinguishes intentional reserved structure from accidental absence.
 
-The source root also contains physical `CLAUDE.md`, `ROADMAP.md`, and `.ki-config.toml` files. Symlinked, dangling, directory-valued, device, or unreadable evidence is unsafe and does not satisfy a physical-file or physical-directory requirement.
+The source root also contains physical `CLAUDE.md`, `ROADMAP.md`, and `.ki.toml` files. Symlinked, dangling, directory-valued, device, or unreadable evidence is unsafe and does not satisfy a physical-file or physical-directory requirement.
 
 The source harness may have a `package.json` for its own development and verification. `ki:harness:eval` is this standard's exact source-harness evaluation claim: it runs `bun evals/harness.ts` and is neither an installation, activation, nor governance entry point. Other package-script ownership and complete-set validation belong to `ki-engineering`.
 
@@ -97,7 +97,7 @@ A source harness carries `ROADMAP.md` as its open-work register. The `ki-work-ro
 
 ## Harness declaration
 
-The source root carries `.ki-config.toml` with `[skills.ki-repo-harness]` declaring the Harness's stable lowercase alphanumeric capability prefix. It also declares `[skills.ki-repo]`, and a populated skills shelf declares `[skills.ki-skills]`.
+The source root carries `.ki.toml` with `[skills.ki-repo-harness]` declaring the Harness's stable lowercase alphanumeric capability prefix. It also declares `[skills.ki-repo]`, and a populated skills shelf declares `[skills.ki-skills]`.
 
 ```toml
 [skills.ki-repo-harness]
@@ -106,7 +106,7 @@ prefix = "ki"
 
 The prefix is provider-authored metadata in the existing Harness-governance table, not a value inferred from repository identity or capability names. Changing it changes the published capability namespace and requires an explicit provider decision.
 
-If a physical readable `.ki-config.toml` exists without `[skills.ki-repo-harness]`, CONFORM may append exactly one keyless marker while preserving all existing bytes apart from normalising the trailing newline before the append:
+If a physical readable `.ki.toml` exists without `[skills.ki-repo-harness]`, CONFORM may append exactly one keyless marker while preserving all existing bytes apart from normalising the trailing newline before the append:
 
 ```toml
 [skills.ki-repo-harness]

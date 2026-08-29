@@ -68,7 +68,7 @@ const hasBodySection = (body: string, heading: string): boolean => {
 }
 
 const isKb = (root: string): boolean => {
-  const config = join(root, '.ki-config.toml')
+  const config = join(root, '.ki.toml')
   if (!file(config)) return false
   try {
     const parsed = TOML.parse(readFileSync(config, 'utf8')) as Record<string, unknown>

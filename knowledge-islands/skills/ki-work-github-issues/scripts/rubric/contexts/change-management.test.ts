@@ -13,7 +13,7 @@ afterEach(() => {
 const sessionFor = (content: string) => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-github-adapter-'))
   temporaryDirectories.push(repository)
-  writeFileSync(join(repository, '.ki-config.toml'), content)
+  writeFileSync(join(repository, '.ki.toml'), content)
   return createGitHubIssuesSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
 }
 

@@ -34,7 +34,7 @@ describe('interactive website context', () => {
   test('accepts one React/Vite app that emits dist', () => {
     const repository = root()
     mkdirSync(join(repository, 'src'))
-    writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo-website]\n[skills.ki-repo-website-app]\n')
+    writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-website]\n[skills.ki-repo-website-app]\n')
     writeFileSync(
       join(repository, 'package.json'),
       JSON.stringify({
@@ -51,7 +51,7 @@ describe('interactive website context', () => {
 
   test('rejects an Eleventy build beside the app', () => {
     const repository = root()
-    writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo-website-app]\n')
+    writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-website-app]\n')
     writeFileSync(
       join(repository, 'package.json'),
       JSON.stringify({

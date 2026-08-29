@@ -29,7 +29,7 @@ const options = (repository: string): RubricContextOptions => ({
 describe('website core context', () => {
   test('accepts the neutral lifecycle seam without selecting an implementation', () => {
     const repository = root()
-    writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo-website]\n')
+    writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-website]\n')
     writeFileSync(
       join(repository, 'package.json'),
       JSON.stringify({ scripts: { 'ki:site:build': 'build', 'ki:site:dev': 'dev', 'ki:site:clean': 'clean' } })

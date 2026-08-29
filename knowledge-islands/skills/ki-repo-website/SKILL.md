@@ -4,7 +4,7 @@ ki-kind: governance
 ki-shared-dependencies: [ki-skills:rubric]
 ki-depends-on: []
 owns: []
-contributes: ['.ki-config.toml', '.gitignore', package.json]
+contributes: ['.ki.toml', '.gitignore', package.json]
 requires: []
 description: >-
   Governs the generator-neutral Knowledge Islands website seam: one site source root, a reproducible `dist/` output, and the `ki:site:build`, `ki:site:dev`, and `ki:site:clean` lifecycle. Use for any repository that publishes a website, before selecting exactly one purpose-specific implementation: `ki-repo-website-content` for Markdown/data page collections or `ki-repo-website-app` for a single interactive React/Vite app. Hosting is orthogonal; add `ki-repo-website-cloudflare` only when Cloudflare serves the output.

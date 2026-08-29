@@ -8,9 +8,9 @@
  * applies; a local target never silently falls back to remote file evidence.
  *
  * The standard has three layers (see references/standards-repository.md):
- *   1. FILES   — README, LICENSE, .gitignore, and .ki-config.toml
+ *   1. FILES   — README, LICENSE, .gitignore, and .ki.toml
  *                (the repo's declared config), from the selected evidence source.
- *                .ki-config.toml is also the GATE of the coverage cascade: once a
+ *                .ki.toml is also the GATE of the coverage cascade: once a
  *                repo is confirmed a ki-repo by carrying it, each other governance
  *                skill whose applicability is detectable in the repo (a Streams/
  *                zone, an eleventy.config, an MCP SDK dep, …) must DECLARE its
@@ -18,14 +18,14 @@
  *                WARNs. A non-ki-repo is never coverage-checked (no false positives).
  *   2. GITHUB  — default branch, license, squash-only + linear, auto-delete-branch,
  *                Issues on / Wiki+Projects off, non-empty description, visibility
- *                (matches the value DECLARED in .ki-config.toml — not the name),
+ *                (matches the value DECLARED in .ki.toml — not the name),
  *                and (public) the standard topic set. `main` is open by default;
- *                branch protection is an overridable check (.ki-config.toml checks).
+ *                branch protection is an overridable check (.ki.toml checks).
  *   3. DEEPER  — Dependabot alerts + security updates; "always suggest updating PR
  *                branches" (allow_update_branch); secret scanning + push protection
  *                (public); Actions allowed-actions = all.
  *
- * Each repo's `.ki-config.toml` declares its `visibility` and, in a
+ * Each repo's `.ki.toml` declares its `visibility` and, in a
  * `[skills.ki-repo.checks]` sub-table, per-repo overrides — one
  * boolean per overridable check (`true` = enforce, `false` = don't). A check it
  * omits takes the org default (CHECK_DEFAULTS), so a fully-conforming repo writes
@@ -72,7 +72,7 @@ const CHECK_DEFAULTS: Record<string, boolean> = {
   'push-protection': true, //   (public) secret-scanning push protection on
   structure: true //            declares one primary repository structure
 }
-const KI_CONFIG = '.ki-config.toml'
+const KI_CONFIG = '.ki.toml'
 
 // Required root files. Each entry is one or more acceptable paths (first found wins).
 const REQUIRED_FILES: [id: string, paths: string[]][] = [
@@ -240,7 +240,7 @@ const localRaw = (dir: string, path: string): string | null => {
   }
 }
 
-// `.ki-config.toml` is a shared per-repo file; each skill reads its own [table].
+// `.ki.toml` is a shared per-repo file; each skill reads its own [table].
 // This skill owns the [skills.ki-repo] table. The default block
 // (written by `--educate`) is the authoritative key list — authoring a repo emits it.
 // A declaration is a bare skill name under `[skills]`; the providing harness is resolved from
@@ -404,7 +404,7 @@ const REPO_FIELDS =
   'nameWithOwner,visibility,isArchived,defaultBranchRef,mergeCommitAllowed,squashMergeAllowed,rebaseMergeAllowed,deleteBranchOnMerge,hasIssuesEnabled,hasProjectsEnabled,hasWikiEnabled,repositoryTopics,licenseInfo,description'
 
 // ── coverage cascade ──────────────────────────────────────────────────────────
-// Once the gate confirms a repo is a ki-repo (it carries .ki-config.toml), each
+// Once the gate confirms a repo is a ki-repo (it carries .ki.toml), each
 // other governance skill whose APPLICABILITY is detectable from the repo must be
 // DECLARED — its `[skills.ki-<skill>]` opt-in table present. This is the
 // single registry of {skill → detection signal → opt-in table}. `repo` reads only
@@ -831,7 +831,7 @@ async function auditRepo(
     )
   if (!r.deleteBranchOnMerge) fail('MERGE-1', 'auto-delete head branch on merge is off')
 
-  // VIS-1: visibility declared in .ki-config.toml, checked against live GitHub
+  // VIS-1: visibility declared in .ki.toml, checked against live GitHub
   const declared = ki?.visibility?.toUpperCase()
   if (!ki) fail('VIS-1', `cannot verify visibility — ${KI_CONFIG} has no [skills.${KI_SECTION}] table (run --educate)`)
   else if (declared !== 'PUBLIC' && declared !== 'PRIVATE')
@@ -886,7 +886,7 @@ async function auditRepo(
   }
 
   // ── coverage cascade (gated on the ki-repo marker) ──
-  // Only a confirmed ki-repo (.ki-config.toml present) is checked for declaring the
+  // Only a confirmed ki-repo (.ki.toml present) is checked for declaring the
   // other governance skills that apply to it. A repo without the marker already
   // FAILed `ki-config` above and is NOT a ki-repo, so it is never told to opt in —
   // that would be a false positive on a plain git repo that merely looks similar.
@@ -1134,7 +1134,7 @@ const localKiSelfFindings = (dir: string, runtimes: readonly string[]): Finding[
 }
 
 // RUNTIMES-1: validate the required `[skills.ki-repo] supported_runtimes` declaration. A pure
-// local .ki-config.toml read — offline-safe, sitting beside vendor-integrity. Every
+// local .ki.toml read — offline-safe, sitting beside vendor-integrity. Every
 // name must be a runtime the linkers recognise; the support surface is never inferred.
 export const requiredRuntimeSkills = (runtimes: readonly string[]): readonly string[] => {
   const required = new Set(['ki-tokenomics'])
@@ -1324,7 +1324,7 @@ export const collectAuditFindings = async (
 
 const collect = async (argv: readonly string[]): Promise<RepoAuditCollection> => {
   // `--educate` prints the default [skills.ki-repo] block for a new repo's
-  // .ki-config.toml (authoring creates the keys; the author edits the values).
+  // .ki.toml (authoring creates the keys; the author edits the values).
   if (argv.includes('--educate')) {
     return { target: resolve('.'), findings: [], educate: KI_DEFAULT }
   }

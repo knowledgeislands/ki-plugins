@@ -14,7 +14,7 @@ The sources behind [the enforcement standard](standards-authoring.md), [the Mark
 | [rumdl CLI][rcli] | `check --fix` behaviour and exit semantics | 2026-08-12 |
 | [rumdl releases][rr] | current upstream release | 2026-08-12 |
 | [GitHub alert guidance][ga] | GitHub alert labels, purpose, and Markdown form             | 2026-08-12    |
-| [TOML spec][toml]           | TOML syntax for the shared `.ki-config.toml`                | 2026-08-12    |
+| [TOML spec][toml]           | TOML syntax for the shared `.ki.toml`                | 2026-08-12    |
 
 [cm]: https://spec.commonmark.org/
 [ru]: https://rumdl.dev/rules

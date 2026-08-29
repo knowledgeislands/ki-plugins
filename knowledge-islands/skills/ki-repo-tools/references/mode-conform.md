@@ -3,7 +3,7 @@
 _On-demand procedure for `ki-repo-tools` CONFORM. The hosted catalogue owns its bounded executable-bit and configuration-marker actions; this procedure coordinates the judgment repairs and sibling skills that remain outside that transaction._
 
 1. Run **AUDIT** first, so changes begin from a known gap list.
-2. Run `ki repo conform --repo <repo-path> --skill ki-repo-tools`. The host may set executable bits on verified physical `bin/*` files and `install.sh`, and append `[skills.ki-repo-tools]` to an existing physical, parseable `.ki-config.toml`. Repeated item requests coalesce into bounded commands and one configuration draft.
+2. Run `ki repo conform --repo <repo-path> --skill ki-repo-tools`. The host may set executable bits on verified physical `bin/*` files and `install.sh`, and append `[skills.ki-repo-tools]` to an existing physical, parseable `.ki.toml`. Repeated item requests coalesce into bounded commands and one configuration draft.
 3. Fix report-only gaps by adapting the `tools-mgit` reference rather than inventing:
    - Missing `install.sh` → adapt the `REPO`, `<TOOL>_INSTALL_DIR` / `<TOOL>_VERSION` overrides, and download → verify → install flow.
    - Missing `--version` → add one version marker literal and the `--version`/`-V` case.

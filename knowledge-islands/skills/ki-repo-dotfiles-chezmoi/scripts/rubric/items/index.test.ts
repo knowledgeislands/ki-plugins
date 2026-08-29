@@ -20,7 +20,7 @@ const fixture = (): string => {
   temporaryDirectories.push(repository)
   mkdirSync(join(repository, '.chezmoidata'))
   mkdirSync(join(repository, 'bin'))
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo-dotfiles-chezmoi]\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-dotfiles-chezmoi]\n')
   writeFileSync(join(repository, 'dot_zshrc.tmpl'), '{{ .chezmoi.os }}\n')
   writeFileSync(join(repository, 'bin', 'executable_setup'), '#!/bin/sh\n')
   return repository
@@ -135,7 +135,7 @@ test('audit is read-only and an existing ignore file is never proposed for repla
 
 test('detected chezmoi shape without the declaration is not applicable and proposes no write', () => {
   const repository = fixture()
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo]\n')
   const session = createChezmoiSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
   const root = session.subjects[0]?.context() as ChezmoiRubricContext
   const declaration = shapeFamily().items.find((candidate) => candidate.code === 'CHEZMOI-0')

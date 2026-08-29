@@ -48,7 +48,7 @@ const fixture = (): {
   )
   for (const file of ['access-level.ts', 'annotations.ts', 'audit-log.ts'])
     writeFileSync(join(repository, 'src', 'utils', file), '')
-  const config = join(repository, '.ki-config.toml')
+  const config = join(repository, '.ki.toml')
   const configContent = '[skills.ki-repo]\n[skills.ki-repo-mcp]\n'
   writeFileSync(config, configContent)
   const packagePath = join(repository, 'package.json')
@@ -131,7 +131,7 @@ test('symlinked mutation targets remain report-only', () => {
   const outsidePackage = join(outside, 'package.json')
   writeFileSync(outsideConfig, '[skills.ki-repo]\n')
   writeFileSync(outsidePackage, '{}\n')
-  symlinkSync(outsideConfig, join(repository, '.ki-config.toml'))
+  symlinkSync(outsideConfig, join(repository, '.ki.toml'))
   symlinkSync(outsidePackage, join(repository, 'package.json'))
   const session = createMcpSession(options(repository, 'conform'))
   const { context } = rootContext(session)

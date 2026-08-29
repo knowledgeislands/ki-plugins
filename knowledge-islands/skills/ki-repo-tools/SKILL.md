@@ -35,7 +35,7 @@ tools-<name>/
 ├── man/<name>.1            # Optional manual source; when present, CI runs mandoc -T lint.
 ├── CHANGELOG.md            # semver release history or a declared current-release baseline.
 ├── README.md · LICENSE     # ki-repo's job — not governed here.
-└── .ki-config.toml         # carries qualified ki-repo + ki-repo-tools declarations (the opt-in marker).
+└── .ki.toml         # carries qualified ki-repo + ki-repo-tools declarations (the opt-in marker).
 ```
 
 `bin/` with ≥1 executable file is the only hard requirement (**FAIL** if missing); everything else is **WARN** — expected but not ship-stopping. The companion Homebrew formula lives in the tap repo (`homebrew-<x>`, `Formula/<name>.rb`), governed by `ki-repo-homebrew-tap` — cross-reference it, don't reproduce it.
@@ -45,13 +45,13 @@ tools-<name>/
 Mirrors `ki-engineering`'s capability-conditional pattern: what the repo _is_ decides which checks apply, so the same standard covers a bash tool and a TS tool without forking.
 
 - **Shell entrypoint** (the primary `bin/` file has a `bash`/`sh` shebang): it MUST be shellcheck-clean in CI (a workflow references `shellcheck`) and ship a `bats` suite that CI runs (a `*.bats` file under `tests/` and a workflow that references `bats`).
-- **A `package.json` appears** (a TS/Bun tool): the repo defers lint/test to `ki-engineering` and MUST also declare `[skills.ki-engineering]` in its `.ki-config.toml`. The shell checks don't apply.
+- **A `package.json` appears** (a TS/Bun tool): the repo defers lint/test to `ki-engineering` and MUST also declare `[skills.ki-engineering]` in its `.ki.toml`. The shell checks don't apply.
 - **A physical `man/<tool>.1` page appears**: CI MUST run `mandoc -T lint man/<tool>.1`, directly or through the repository's native task runner. The release installer and its `--link` mode publish or link that manual alongside the executable.
 - **Another language** (Python, Go, …): defer to that language's own toolchain; the container checks (bin, install.sh, versioning, changelog, CI, tests) still apply.
 
 ## The qualified `ki-repo-tools` marker
 
-A `tools-*` repo opts into this standard by declaring a **keyless** `[skills.ki-repo-tools]` table in its `.ki-config.toml`. The table is validated **down** (this skill reads only its own table and warns on any unknown key inside it). `ki-repo` owns selecting the declaration; this skill may only set executable bits on verified physical `bin/*` files and `install.sh`. Missing content, malformed or unsafe paths, external releases, and Homebrew operations remain report-only.
+A `tools-*` repo opts into this standard by declaring a **keyless** `[skills.ki-repo-tools]` table in its `.ki.toml`. The table is validated **down** (this skill reads only its own table and warns on any unknown key inside it). `ki-repo` owns selecting the declaration; this skill may only set executable bits on verified physical `bin/*` files and `install.sh`. Missing content, malformed or unsafe paths, external releases, and Homebrew operations remain report-only.
 
 ## Release readiness
 

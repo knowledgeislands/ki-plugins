@@ -26,7 +26,7 @@ const mechanical = (
 const CONFIG_0: RubricItem<KbConfigContext> = {
   code: 'CONFIG-0',
   title: 'parseable KB configuration',
-  description: 'When present, .ki-config.toml parses before the KB table is evaluated.',
+  description: 'When present, .ki.toml parses before the KB table is evaluated.',
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',

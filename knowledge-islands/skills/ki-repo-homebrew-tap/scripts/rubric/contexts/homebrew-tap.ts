@@ -9,7 +9,7 @@ import type {
 } from '../../shared/rubric.ts'
 
 const FORMULA_DIRECTORY = 'Formula'
-const CONFIG_FILE = '.ki-config.toml'
+const CONFIG_FILE = '.ki.toml'
 const CONFIG_SECTION = 'ki-repo-homebrew-tap'
 
 type NodeKind = 'missing' | 'file' | 'directory' | 'unsafe'

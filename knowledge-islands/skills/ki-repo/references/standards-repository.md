@@ -1,6 +1,6 @@
 # Knowledge Islands repo standard
 
-The canonical configuration a Knowledge Islands repo should carry, so repos present and behave consistently and that consistency is _checkable_ rather than folklore. A Knowledge Islands repo is a git repo that carries a `.ki-config.toml` (its presence is the compliance marker); the standard applies to any such repo — the [`knowledgeislands`](https://github.com/knowledgeislands) org is the reference set it was derived from, not its boundary. Three layers — local files, core GitHub settings, deeper GitHub (security & Actions). Derived and applied 2026-05-31 from an audit of all 10 `knowledgeislands` repos. The structured catalogue under `../scripts/rubric/` is the executable source hosted by native `ki repo` operations.
+The canonical configuration a Knowledge Islands repo should carry, so repos present and behave consistently and that consistency is _checkable_ rather than folklore. A Knowledge Islands repo is a git repo that carries a `.ki.toml` (its presence is the compliance marker); the standard applies to any such repo — the [`knowledgeislands`](https://github.com/knowledgeislands) org is the reference set it was derived from, not its boundary. Three layers — local files, core GitHub settings, deeper GitHub (security & Actions). Derived and applied 2026-05-31 from an audit of all 10 `knowledgeislands` repos. The structured catalogue under `../scripts/rubric/` is the executable source hosted by native `ki repo` operations.
 
 ## Contents
 
@@ -28,11 +28,11 @@ Every repo carries these at the root. A local audit reads the selected checkout'
 | `.gitignore` | Keeps build/dep noise out of history and excludes generated runtime skill links. |
 | `.editorconfig` | Shared editor defaults across the workspace toolchain. |
 | `CLAUDE.md` | Agent instructions — the always-loaded anchor for any repo-specific gate or convention (skills rubric SHAPE-7). |
-| `.ki-config.toml` | Declares this repo's expected config under `[skills.ki-repo]`. † |
+| `.ki.toml` | Declares this repo's expected config under `[skills.ki-repo]`. † |
 
 † The values it carries: mandatory `title` and `description`, `visibility`, the declared `license` (SPDX id, default MIT), and any per-repo check overrides. A repository that declares `ki-work-roadmap` also carries its stable `repo_code` here.
 
-**Baseline governance is declared, not assumed.** Every Knowledge Islands repo is governed by `ki-repo` **and** `ki-authoring`; both are required declarations — a `.ki-config.toml` missing `[skills.ki-authoring]` is a FAIL (`authoring-baseline`). Authoring is no longer an implicit universal hidden in the tooling ([ADR-KI-HARNESS-005](../../../../docs/decisions/ADR-KI-HARNESS-005-validate-down-ki-config-toml-contract.md)); the config shows the full governance set. Portable tokenomics and the real environment capabilities mapped from `[skills.ki-repo].supported_runtimes` are likewise explicit required capabilities. `ki-repo` derives the exact names and checks their declarations without reading sibling-owned contents; verified source resolution and managed runtime projections remain host evidence.
+**Baseline governance is declared, not assumed.** Every Knowledge Islands repo is governed by `ki-repo` **and** `ki-authoring`; both are required declarations — a `.ki.toml` missing `[skills.ki-authoring]` is a FAIL (`authoring-baseline`). Authoring is no longer an implicit universal hidden in the tooling ([ADR-KI-HARNESS-005](../../../../docs/decisions/ADR-KI-HARNESS-005-validate-down-ki-config-toml-contract.md)); the config shows the full governance set. Portable tokenomics and the real environment capabilities mapped from `[skills.ki-repo].supported_runtimes` are likewise explicit required capabilities. `ki-repo` derives the exact names and checks their declarations without reading sibling-owned contents; verified source resolution and managed runtime projections remain host evidence.
 
 **Foundation scaffolding is owner-controlled and append-only.** `ki-repo` owns the file-level contract and writes its `[skills.ki-repo]` block plus the required bare `[skills.ki-authoring]` foundation marker. Its native CONFORM session creates a missing file with both, or appends only a missing exact root marker to a partial file; a dotted `[skills.ki-repo.checks]` sub-table alone does not satisfy `[skills.ki-repo]`. It preserves all existing bytes, is idempotent, and makes no write in dry-run. Sibling skills may conform their own tables under the validate-down/conform-down boundary. CONFORM completes this local repair before any separately confirmed live GitHub work and carries no TOML template for another skill.
 
@@ -142,12 +142,12 @@ The engineering coverage manifest assigns the `package.json` **identity & metada
 
 ## Visibility
 
-Each repo **declares** its expected visibility in `.ki-config.toml` (`visibility = "public"` or `"private"`); the auditor checks that declaration against the live GitHub visibility. It is a deliberate per-repo choice, **not inferred from the name**. (In practice the `arcadia-*` repos are private bases / internal skills and the `mcp-*` repos are public servers — a pattern, not the rule.)
+Each repo **declares** its expected visibility in `.ki.toml` (`visibility = "public"` or `"private"`); the auditor checks that declaration against the live GitHub visibility. It is a deliberate per-repo choice, **not inferred from the name**. (In practice the `arcadia-*` repos are private bases / internal skills and the `mcp-*` repos are public servers — a pattern, not the rule.)
 
-`.ki-config.toml` is a shared per-repo file; each skill reads and may conform the schema of its own `[table]`, while `ki-repo` owns the file-level contract and required foundation markers. The full cross-skill contract — its presence as the compliance marker, the table-per-skill model, and the validate-your-own-table protocol — is in [the `.ki-config.toml` standard](standards-configuration.md). The native configuration operation establishes the canonical foundations only; native self-check resolves the verified installed collection rather than writing a repository-local executor. Then edit the values:
+`.ki.toml` is a shared per-repo file; each skill reads and may conform the schema of its own `[table]`, while `ki-repo` owns the file-level contract and required foundation markers. The full cross-skill contract — its presence as the compliance marker, the table-per-skill model, and the validate-your-own-table protocol — is in [the `.ki.toml` standard](standards-configuration.md). The native configuration operation establishes the canonical foundations only; native self-check resolves the verified installed collection rather than writing a repository-local executor. Then edit the values:
 
 ```toml
-# .ki-config.toml — one [table] per skill that needs per-repo options
+# .ki.toml — one [table] per skill that needs per-repo options
 [skills.ki-repo]
 title = "Example repository" # exact README.md H1
 description = "One sentence describing the repository." # exact GitHub and package.json description where present
@@ -188,14 +188,14 @@ The rubric carries the **org default** for every check. Most are bedrock — fil
 - The required status check for `branch-protection` is **`build`** — the single job in each repo's `.github/workflows/ci.yml` (workflow "CI"). A repo that turns it on but lacks that job can't satisfy the check; add the CI job first.
 - `topics` / `secret-scanning` / `push-protection` are **public-only** — they don't apply to a private repo regardless of the override, so the private `arcadia-*` repos need say nothing about them.
 - A key under `[…checks]` that names no overridable check (a typo, or a bedrock check) **WARNs** — it would otherwise silently do nothing. The auditor's `CHECK_DEFAULTS` registry is the source of truth for what's overridable.
-- A **redundant** override — one whose value just restates the org default (e.g. `wiki = true`) — does nothing, so the auditor flags it with a `note` advising it be dropped. The aim is that a `.ki-config.toml` carries only genuine divergences, and a conforming repo's `[…checks]` is empty or absent.
+- A **redundant** override — one whose value just restates the org default (e.g. `wiki = true`) — does nothing, so the auditor flags it with a `note` advising it be dropped. The aim is that a `.ki.toml` carries only genuine divergences, and a conforming repo's `[…checks]` is empty or absent.
 - `coverage-<skill>` (for example `coverage-website-content = false` for a vendored Eleventy config) is also accepted here — it opts the repo out of **one** coverage signal of the cascade below. It does not disable `coverage-website-app` or `coverage-website-cloudflare`. A key naming no coverage skill WARNs, like any unknown check.
 
 ## Coverage cascade
 
-`.ki-config.toml`'s presence is the **gate** (Layer 1): once it confirms the repo is a ki-repo, the auditor checks the repo **declares an opt-in `[skills.ki-<skill>]` table for every governance skill whose applicability it can detect**. Website signals are deliberately separate: Eleventy requires the neutral website core plus the content implementation; React/Vite requires the core plus the app implementation; Wrangler independently requires the Cloudflare hosting adapter. A `Streams/` zone, MCP SDK dependency, plugin manifest, specification tree, tool layout, Homebrew formula, or skill source similarly selects only its own standard. Detected-but-undeclared WARNs; a declared table with no matching artifact WARNs as possibly stale.
+`.ki.toml`'s presence is the **gate** (Layer 1): once it confirms the repo is a ki-repo, the auditor checks the repo **declares an opt-in `[skills.ki-<skill>]` table for every governance skill whose applicability it can detect**. Website signals are deliberately separate: Eleventy requires the neutral website core plus the content implementation; React/Vite requires the core plus the app implementation; Wrangler independently requires the Cloudflare hosting adapter. A `Streams/` zone, MCP SDK dependency, plugin manifest, specification tree, tool layout, Homebrew formula, or skill source similarly selects only its own standard. Detected-but-undeclared WARNs; a declared table with no matching artifact WARNs as possibly stale.
 
-A repo that is **not** a ki-repo (no `.ki-config.toml`) is never coverage-checked — it just takes the `ki-config` FAIL, so a lookalike repo (an `eleventy.config` but no marker) is not falsely told to opt in. This is `ki-repo`'s single cross-table read, and it reads only table **presence**, never another skill's keys. The full signal list and the marker-vs-config model live in [the `.ki-config.toml` standard](standards-configuration.md#coverage-enforcement). Silence one signal with `coverage-<skill> = false` under `[skills.ki-repo.checks]`.
+A repo that is **not** a ki-repo (no `.ki.toml`) is never coverage-checked — it just takes the `ki-config` FAIL, so a lookalike repo (an `eleventy.config` but no marker) is not falsely told to opt in. This is `ki-repo`'s single cross-table read, and it reads only table **presence**, never another skill's keys. The full signal list and the marker-vs-config model live in [the `.ki.toml` standard](standards-configuration.md#coverage-enforcement). Silence one signal with `coverage-<skill> = false` under `[skills.ki-repo.checks]`.
 
 The cascade's companion is a **primary-structure** rule: a repo declares at most one of `[skills.ki-repo-project]` and `[skills.ki-repo-kb]`. Project is the explicit default for non-KB repositories; KB is the mutually exclusive Knowledge Base primary. Declaring both FAILs (`repo-structure`, bedrock — not overridable). The remaining `ki-repo-*` standards are composable specialisations and do not count. Declaring neither WARNs (`structure`) so every governed repository makes its primary model visible.
 
@@ -209,7 +209,7 @@ Website composition has its own narrower cardinality. A repository declaring `[s
 all=(ki-arcadia-principal ki-agentic-harness ki-repo-website mcp-claude-housekeeping mcp-git-audit mcp-gsuite mcp-kb-fs mcp-ki-repo-kb-notion-mirror mcp-m365)
 public=(mcp-claude-housekeeping mcp-git-audit mcp-gsuite mcp-kb-fs mcp-ki-repo-kb-notion-mirror mcp-m365)
 
-# Layer 1 — each repo declares its config in .ki-config.toml (committed via PR like any file).
+# Layer 1 — each repo declares its config in .ki.toml (committed via PR like any file).
 #   Native conform scaffolds/repairs [skills.ki-repo] + [skills.ki-authoring] only.
 #   It resolves the verified installed collection; it never vendors self-checks.
 # Visibility is verified (declared vs live), not set here; change actual visibility deliberately:
@@ -230,7 +230,7 @@ done
 
 # Layer 2 — branch protection is overridable, default OFF. Default: `main` open — strip any leftover protection:
 for r in $all; do gh api -X DELETE "repos/knowledgeislands/$r/branches/main/protection" 2>/dev/null || true; done
-# Only for a repo that overrides it on (branch-protection = true under [..checks] in its .ki-config.toml):
+# Only for a repo that overrides it on (branch-protection = true under [..checks] in its .ki.toml):
 read -r -d '' body <<'JSON'
 { "required_status_checks": {"strict": true, "checks": [{"context": "build"}]}, "enforce_admins": false,
   "required_pull_request_reviews": {"required_approving_review_count": 0}, "restrictions": null,
@@ -260,7 +260,7 @@ The native command resolves declared operations and checks every applicable laye
 
 ### What is read locally and what is read from GitHub
 
-Evidence comes from two distinct sources, and every finding identifies which one supplied it. A local checkout is primary for Layer 1 file presence, `.ki-config.toml`, tree-based coverage, and `package.json`; it includes tracked, staged, and unignored working-tree content. A local unpushed change therefore appears in a local audit. If a caller explicitly selects a local target and it cannot be read, the audit fails that local evidence collection rather than falling back to GitHub.
+Evidence comes from two distinct sources, and every finding identifies which one supplied it. A local checkout is primary for Layer 1 file presence, `.ki.toml`, tree-based coverage, and `package.json`; it includes tracked, staged, and unignored working-tree content. A local unpushed change therefore appears in a local audit. If a caller explicitly selects a local target and it cannot be read, the audit fails that local evidence collection rather than falling back to GitHub.
 
 An organisation or other filesystem-free remote run reads that same file and configuration evidence from the repository's GitHub default branch. This lets a scheduled or sandboxed judgmental run assess a repository without granting it filesystem access. It sees published state, not a developer's checkout.
 

@@ -171,14 +171,14 @@ const ACT_S_3: RubricItem<ActivitiesContext> = {
               {
                 status: 'VIOLATION',
                 message: `unrecognized [skills.ki-repo-kb-activities] key(s): ${unknown.join(', ')}`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [
               {
                 status: 'PASS',
                 message: 'only recognized [skills.ki-repo-kb-activities] keys are present',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
       }

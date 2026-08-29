@@ -129,8 +129,8 @@ const LAY_4 = rootFileItem(
 const LAY_5 = rootFileItem(
   'LAY-5',
   'Root Knowledge Islands configuration',
-  '.ki-config.toml exists as a physical file at the source-harness root.',
-  '.ki-config.toml',
+  '.ki.toml exists as a physical file at the source-harness root.',
+  '.ki.toml',
   'FAIL',
   'standards-compatible-harness.md#harness-declaration'
 )

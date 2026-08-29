@@ -107,7 +107,7 @@ Issues, Wiki, and Projects settings.
 
 Declared and live repository visibility.
 
-- **VIS-1 [M] — Declared visibility** — Live GitHub visibility matches the valid visibility declared in .ki-config.toml. (standards-repository.md)
+- **VIS-1 [M] — Declared visibility** — Live GitHub visibility matches the valid visibility declared in .ki.toml. (standards-repository.md)
   - _Remediation:_ diagnostic — Align the declared and live repository visibility, then rerun the audit.
 
 ## TOPICS — Topics

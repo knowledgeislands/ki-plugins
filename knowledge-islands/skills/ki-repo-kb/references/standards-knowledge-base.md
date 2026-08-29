@@ -15,7 +15,7 @@ This normative standard defines the structure, linking, configuration, routing, 
 
 A Knowledge Islands base is a single markdown store organised into five fixed zones - `Calendar/`, `Pillars/`, `Resources/`, `Streams/`, and `Admin/` - flanked by an inbound staging area (`+/`) and an outbound one (`-/`). The `+/` and `-/` folders are staging, not zones: material lands or leaves through them but is not canonical there. The zone set is part of the standard, so the skill does not ask a base to define it; it only needs a few store-level bindings.
 
-The standard applies when a base either declares `[skills.ki-repo-kb]` / `[skills.ki-repo-kb.zones]` in `.ki-config.toml` or carries at least one canonical zone directory. With neither, the checker reports one `NA` and stops. Either signal activates the complete audit: a declared but structurally incomplete base still fails its missing zones, and a zone-bearing base without a declaration is audited with canonical zone names.
+The standard applies when a base either declares `[skills.ki-repo-kb]` / `[skills.ki-repo-kb.zones]` in `.ki.toml` or carries at least one canonical zone directory. With neither, the checker reports one `NA` and stops. Either signal activates the complete audit: a declared but structurally incomplete base still fails its missing zones, and a zone-bearing base without a declaration is audited with canonical zone names.
 
 - **Island vs Pillar.** Each whole knowledge base is an "island" (a legal base, a personal base, a research base). Within a base, a **Pillar** is a major strand of subject matter - a case, a client, a domain, a theme. A base that holds a zone under a different local folder name keeps that folder and declares it as a [zone alias](#zone-aliases-and-the-skillski-repo-kb-config-table) rather than counting as a different zone.
 - **Settling.** `Streams/` holds work in motion; once settled it migrates into `Pillars/` (internal) or `Resources/` (external). The discriminating question for internal vs external: _would this knowledge exist without this base?_ If yes, it is a resource. The **internal structure and process of the `Streams/` zone** — flat adapter-owned operational areas and the Enactment Process that governs them — are owned by the `ki-repo-kb-streams` skill; this skill knows only that `Streams/` is a zone with a same-name index and routes top-level work into it.
@@ -34,8 +34,8 @@ Because the zone model is fixed, onboarding is small - resolve only the **projec
 2. **Sources store** - whether a paired sources store exists, and how note extracts mirror its paths.
 3. **Scope usage** - whether the base is Pillar-scoped (declare an active Pillar each session) or single-Pillar / flat.
 4. **Writing standards** - language variant, citation format, structural norms (defaults: British English, cite source paths, concise prose).
-5. **Domain pre-flight** - any extra reads before drafting; declared as a `preflight` list in the base's `.ki-config.toml` `[skills.ki-repo-kb]` table, not in `CLAUDE.md`.
-6. **Zone names** - only if a folder diverges from its canonical name during a migration; declared in `.ki-config.toml`, not `CLAUDE.md` (see [Zone aliases](#zone-aliases-and-the-skillski-repo-kb-config-table)).
+5. **Domain pre-flight** - any extra reads before drafting; declared as a `preflight` list in the base's `.ki.toml` `[skills.ki-repo-kb]` table, not in `CLAUDE.md`.
+6. **Zone names** - only if a folder diverges from its canonical name during a migration; declared in `.ki.toml`, not `CLAUDE.md` (see [Zone aliases](#zone-aliases-and-the-skillski-repo-kb-config-table)).
 7. **Template overrides** - optional zone-keyed paths under `[skills.ki-repo-kb.templates]`, relative to the base.
 
 A base that follows the structure and defines the notes store needs nothing more; the rest runs on defaults.
@@ -44,7 +44,7 @@ A base that follows the structure and defines the notes store needs nothing more
 
 The zone set is fixed, but a base may hold a zone under a different local folder name — whether **mid-migration** (renaming toward the canonical name) or as a **standing local naming choice**. Any canonical zone (`Calendar` / `Pillars` / `Resources` / `Streams` / `Admin`) or staging area (`+` / `-`) may be aliased. So that the skill works against the real layout without hard-coding any one base's folders, the local folder name is a declared, reviewable override rather than a model change. (Bases that use an alias are recorded in [the source list](sources.md) for REFRESH.)
 
-It lives in the base's `.ki-config.toml` under the skill's own table (the shared-file contract is owned by `ki-repo`; this skill owns the keys inside its table):
+It lives in the base's `.ki.toml` under the skill's own table (the shared-file contract is owned by `ki-repo`; this skill owns the keys inside its table):
 
 ```toml
 [skills.ki-repo-kb.zones]
@@ -53,7 +53,7 @@ It lives in the base's `.ki-config.toml` under the skill's own table (the shared
 Pillars = "<local folder name>"
 ```
 
-Rules, following the `.ki-config.toml` contract:
+Rules, following the `.ki.toml` contract:
 
 - **Resolve every zone reference through the alias.** When the table maps a zone to a local folder, read, route, and write that zone at the mapped folder; the routing test, memory cascade, and digest paths all use the resolved folder.
 - **Validate down, ignore across.** Warn on an unrecognised key under `[skills.ki-repo-kb]` (a typo or stale option should surface) and advise dropping one that merely restates a default (a zone mapped to its own canonical name). Never read or validate another skill's table.
@@ -73,7 +73,7 @@ Destination `-/_DIGESTS/<UTC timestamp> <Short Topic>.md` (timestamp `YYYY-MM-DD
 
 A base never ships a `<base>-kb` extension skill. What it needs differently is **declared**, so the mode logic stays in one place and the base specifics stay auditable:
 
-- **Structured data** → the base's `.ki-config.toml` `[skills.ki-repo-kb]` table, read **validate-down** by this skill: the `[skills.ki-repo-kb.zones]` aliases, `[skills.ki-repo-kb.templates]` overrides, the `required_frontmatter` array, and the `preflight` array (note paths/globs to read before drafting — the base-specific pre-flight that scope declaration and domain context once justified an extension for).
+- **Structured data** → the base's `.ki.toml` `[skills.ki-repo-kb]` table, read **validate-down** by this skill: the `[skills.ki-repo-kb.zones]` aliases, `[skills.ki-repo-kb.templates]` overrides, the `required_frontmatter` array, and the `preflight` array (note paths/globs to read before drafting — the base-specific pre-flight that scope declaration and domain context once justified an extension for).
 - **Narrative bindings** (store alias, scope usage, writing standards) → the base's auto-loaded `CLAUDE.md`.
 
 Relationships to sibling skills use explicit boundaries, never extension. Selecting this skill also selects its declared focused prerequisites — `ki-repo-kb-activities`, `ki-repo-kb-live-artifacts`, and `ki-repo-kb-streams` — before the wider base audit. Coverage selects `ki-authoring` separately for Markdown conventions. No skill imports another. A genuinely base-specific _behaviour_ that no declaration can express is a signal to generalise it into this standard skill (a REFRESH candidate), not to fork a coupled one.

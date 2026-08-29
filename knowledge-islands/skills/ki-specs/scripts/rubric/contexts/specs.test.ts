@@ -29,7 +29,7 @@ const options = (repository: string, mode: 'audit' | 'conform'): RubricContextOp
 })
 
 const declareSpecs = (repository: string): void =>
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-specs]\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-specs]\n')
 
 const fixture = (): { repository: string; area: string; original: string } => {
   const repository = temporaryDirectory('ki-specs-')
@@ -172,7 +172,7 @@ test('a declared symlinked corpus fails closed', () => {
 
 test('a declaration-shaped malformed configuration fails closed', () => {
   const repository = temporaryDirectory('ki-specs-malformed-')
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-specs]\ninvalid = [\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-specs]\ninvalid = [\n')
   const session = createSpecsSession(options(repository, 'audit'))
   const context = INDEX.selectContext(session.subjects[0]?.context() as never)
 

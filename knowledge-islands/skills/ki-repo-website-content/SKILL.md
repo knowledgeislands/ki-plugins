@@ -4,7 +4,7 @@ ki-kind: governance
 ki-shared-dependencies: [ki-skills:rubric]
 ki-depends-on: [ki-repo-website]
 owns: [eleventy.config.ts, eleventy.config.js, eleventy.config.mjs, eleventy.config.cjs]
-contributes: ['.ki-config.toml', '.gitignore', package.json]
+contributes: ['.ki.toml', '.gitignore', package.json]
 requires: [ROADMAP.md]
 description: >-
   Governs the Knowledge Islands content-led website implementation: Eleventy 3 generates a collection of pages from Markdown and structured data, with Nunjucks, Tailwind 4 semantic tokens, and portable `dist/` output. Use for documentation, publication, and marketing sites whose primary artifact is a page collection. Do not use for a single interactive SPA; select `ki-repo-website-app` instead because Eleventy does not bundle React application JavaScript and combining them creates two build systems. Depends on the neutral `ki-repo-website` seam; Cloudflare hosting remains independent.
@@ -15,7 +15,7 @@ argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 
 You are applying the **Knowledge Islands content website standard** — the shared way every static website in this work is built: **Eleventy 3, Nunjucks and Markdown; TypeScript run natively on Bun; Tailwind 4 config-less with design tokens**, compiling to a **portable `dist/`**. A new site is scaffolded to it; an existing one is audited and conformed against it. This skill carries that standard and the procedure.
 
-This is a **base-agnostic governance skill**. It hard-codes no single repo; it applies to any repo carrying a `[skills.ki-repo-website-content]` table in its `.ki-config.toml`. How it sits beside the other skills, and where it must not overlap them, is documented once in the ki-agentic-harness `README.md`.
+This is a **base-agnostic governance skill**. It hard-codes no single repo; it applies to any repo carrying a `[skills.ki-repo-website-content]` table in its `.ki.toml`. How it sits beside the other skills, and where it must not overlap them, is documented once in the ki-agentic-harness `README.md`.
 
 `ki-repo` owns that repository declaration. Detected Eleventy files are coverage evidence only; hosted conform never infers or adds the opt-in.
 
@@ -60,7 +60,7 @@ ki repo audit --repo <repo> --skill ki-engineering          → common toolchain
   then ki repo audit --repo <repo> --skill ki-repo-website-cloudflare → serving the dist/ (if deployed to Cloudflare)
 ```
 
-A repo is "clean" only when **every applicable** skill's audit passes. The `.ki-config.toml` tables are the selector: `[skills.ki-repo-website]` marks the common website seam; `[skills.ki-repo-website-content]` marks this implementation; `[skills.ki-repo-website-cloudflare]` marks optional Cloudflare hosting.
+A repo is "clean" only when **every applicable** skill's audit passes. The `.ki.toml` tables are the selector: `[skills.ki-repo-website]` marks the common website seam; `[skills.ki-repo-website-content]` marks this implementation; `[skills.ki-repo-website-cloudflare]` marks optional Cloudflare hosting.
 
 ## The `dist/` contract (the seam to hosting)
 
@@ -103,5 +103,5 @@ Reciprocal off-ramps — each names this skill back for the site-build layer:
 
 ## Notes
 
-- Hosted conform is intentionally narrow: only contained, physical `.ki-config.toml` and `.gitignore` files are eligible for proposals, and missing safe files may be proposed for creation. Application scaffolding, builds, deployment, and external commands remain explicit.
+- Hosted conform is intentionally narrow: only contained, physical `.ki.toml` and `.gitignore` files are eligible for proposals, and missing safe files may be proposed for creation. Application scaffolding, builds, deployment, and external commands remain explicit.
 - [The exemplars](references/exemplars.md) remain separate because they carry complete reusable `eleventy.config.ts`, Tailwind token, package-script, and layout shapes that would make the normative standard unwieldy. They illustrate the contract but do not define it.

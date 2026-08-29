@@ -78,7 +78,7 @@ export const createPluginsSession = ({
     available && containedPhysical(root, at(...parts), 'file') ? readFileSync(at(...parts), 'utf8') : ''
   const isDir = (...parts: string[]) => available && containedPhysical(root, at(...parts), 'directory')
 
-  const configRaw = read('.ki-config.toml')
+  const configRaw = read('.ki.toml')
   let config: Record<string, unknown> | null = null
   let malformedConfig = false
   try {

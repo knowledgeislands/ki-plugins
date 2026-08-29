@@ -18,7 +18,7 @@ The quotable standard behind the [skills.ki-repo-homebrew-tap](../SKILL.md) skil
 
 A Homebrew **tap** is a git repository of formulae. A repo becomes a tap by carrying a `Formula/` directory with one or more `*.rb` formula files _(spec)_. Knowledge Islands keeps a single tap, `homebrew-tap`, that distributes the `tools-*` command-line tools; each tool gets one formula _(shape)_. An applicable tap with no `Formula/*.rb` fails rather than warns.
 
-Checker applicability is declaration or structure: `[skills.ki-repo-homebrew-tap]` in `.ki-config.toml` or a root `Formula/` directory activates the complete audit. With neither, the checker reports one `NA` and stops. A declared repository with no `Formula/`, and a structurally marked but empty `Formula/`, remain applicable failures; an undeclared repository with `Formula/` remains applicable and surfaces the missing marker.
+Checker applicability is declaration or structure: `[skills.ki-repo-homebrew-tap]` in `.ki.toml` or a root `Formula/` directory activates the complete audit. With neither, the checker reports one `NA` and stops. A declared repository with no `Formula/`, and a structurally marked but empty `Formula/`, remain applicable failures; an undeclared repository with `Formula/` remains applicable and surfaces the missing marker.
 
 ## The name is fixed by Homebrew
 
@@ -33,7 +33,7 @@ homebrew-tap/
 ├── README.md               # a "## Formulae" table (shape)
 ├── .github/workflows/      # OPTIONAL brew test-bot (shape)
 ├── LICENSE                 # ki-repo's
-└── .ki-config.toml          # [skills.ki-repo] + [skills.ki-repo-homebrew-tap] (shape)
+└── .ki.toml          # [skills.ki-repo] + [skills.ki-repo-homebrew-tap] (shape)
 ```
 
 The README, LICENSE, `.gitignore`, and GitHub settings are **`ki-repo`'s**, not this skill's — this skill checks only the tap-specific delta (the `Formula/` dir, the formula shape, the formulae table, the sourcing rule).
@@ -77,7 +77,7 @@ A tap MAY carry a `.github/workflows/` job running [`brew test-bot`][testbot] �
 
 ## Config marker
 
-The tap opts into governance with a keyless `[skills.ki-repo-homebrew-tap]` table in `.ki-config.toml`, alongside `[skills.ki-repo]` _(shape)_. It is **validate-down**: presence is the whole config, any key under it is unknown and WARNed (the tap's shape is fixed by Homebrew, so there is nothing to tune). Run `ki repo conform --skill ki-repo-homebrew-tap <tap-path>` to add the marker safely after `ki-repo` has created the shared config file.
+The tap opts into governance with a keyless `[skills.ki-repo-homebrew-tap]` table in `.ki.toml`, alongside `[skills.ki-repo]` _(shape)_. It is **validate-down**: presence is the whole config, any key under it is unknown and WARNed (the tap's shape is fixed by Homebrew, so there is nothing to tune). Run `ki repo conform --skill ki-repo-homebrew-tap <tap-path>` to add the marker safely after `ki-repo` has created the shared config file.
 
 ## What `brew` checks that this skill does not
 

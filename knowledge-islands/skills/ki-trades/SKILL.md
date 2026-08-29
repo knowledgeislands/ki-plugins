@@ -3,7 +3,7 @@ name: ki-trades
 ki-kind: governance
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
-contributes: [".ki-config.toml"]
+contributes: [".ki.toml"]
 owns: ["+/_TRADES/README.md", "-/_TRADES/README.md"]
 description: >
   Governs typed, directional cross-repository trades between locally registered Knowledge Islands repositories: mutable committed preparations, work and knowledge routes, TRD eight-hexadecimal identities, immutable submitted sender projections, receipt, receiver-only decisions, sender observation policies, release, and pruning. Use when preparing or submitting work or knowledge to another repository, observing a preparation, receiving or reviewing an inbound trade, auditing routes or records, or resolving direct application, adoption, retention, parking, clarification, decline, or supersession. A route grants visibility only; ki-work-roadmap and the receiving repository retain priority and acceptance authority.
@@ -38,7 +38,7 @@ Run AUDIT first. `ki repo conform --skill ki-trades --repo <repo> --dry-run` may
 
 ### Mode EDUCATE
 
-Run `ki repo educate --skill ki-trades --repo <repo>` to render the concern and rubric. To participate, declare `ki-repo.repository`, then typed routes in `.ki-config.toml`, ensure the generic working areas exist through `ki-repo`, and scaffold only this skill's `_TRADES` README files. EDUCATE grants no peer authority and creates no trade record.
+Run `ki repo educate --skill ki-trades --repo <repo>` to render the concern and rubric. To participate, declare `ki-repo.repository`, then typed routes in `.ki.toml`, ensure the generic working areas exist through `ki-repo`, and scaffold only this skill's `_TRADES` README files. EDUCATE grants no peer authority and creates no trade record.
 
 ### Mode REFRESH
 

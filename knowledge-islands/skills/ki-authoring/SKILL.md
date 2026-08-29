@@ -64,12 +64,12 @@ Each set is a self-contained reference, loaded on demand. Read the one relevant 
 - **[Markdown authoring](references/standards-markdown.md)** — wide tables → footnotes (with the marker series), link style, and what to leave to the linter. The footnote-marker series, in order, is `†` `‡` `§` `¶` `‖` (then doubled: `††` `‡‡` `§§` `¶¶` `‖‖`), reset per table — omitting `*`, which collides with markdown emphasis; where one table needs two footnote categories, a visually distinct second series `※` `❡` `¤` `¥` separates them. (Stated here so it is reachable without opening the reference; the worked example, gotchas, and rationale stay in the reference.)
 - **[TOML formatting](references/standards-toml.md)** — value quoting, short arrays, and comments; `ki-repo` owns key and table semantics.
 - **[Knowledge promotion](references/standards-knowledge-promotion.md)** — runtime-neutral placement, evidence, and reconciliation for durable learnings; it routes knowledge deliberately without mining transcripts or creating guide areas automatically.
-- **[Worked exemplars](references/exemplars.md)** — annotated illustrations of the conventions in practice: the footnote-marker series and table spill, relative-link style, and a well-formed `.ki-config.toml` table. Reach for these when a rule's application is a judgment call.
+- **[Worked exemplars](references/exemplars.md)** — annotated illustrations of the conventions in practice: the footnote-marker series and table spill, relative-link style, and a well-formed `.ki.toml` table. Reach for these when a rule's application is a judgment call.
 
 Out of scope by design, with their natural homes:
 
 - **KB note-writing conventions** (zones, frontmatter, routing) → the `ki-repo-kb` skill.
-- **Commit and PR conventions, a repo's configuration, and the `.ki-config.toml` _contract_** (the compliance marker + one-table-per-skill model) → the `ki-repo` skill. This skill owns only the TOML _formatting_ style every such table is written in.
+- **Commit and PR conventions, a repo's configuration, and the `.ki.toml` _contract_** (the compliance marker + one-table-per-skill model) → the `ki-repo` skill. This skill owns only the TOML _formatting_ style every such table is written in.
 - **SKILL.md authoring** (frontmatter, description, body altitude) → the `ki-skills` skill.
 
 ## Adding a convention set

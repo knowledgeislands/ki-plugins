@@ -26,7 +26,7 @@ hooks/
   plan-stamp.sh
 CLAUDE.md
 ROADMAP.md
-.ki-config.toml
+.ki.toml
 ```
 
 Semantic grouping beneath `skills/` is valid. The capability identity still comes from the leaf directory and its `SKILL.md` name.

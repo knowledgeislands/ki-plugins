@@ -8,16 +8,16 @@ const TEAM = /^[A-Z][A-Z0-9_]{1,15}$/
 const TOML = (globalThis as unknown as { Bun: { TOML: { parse(text: string): unknown } } }).Bun.TOML
 
 export const createLinearSession = ({ repository }: RubricContextOptions): RubricSession<LinearRubricContext> => {
-  const config = join(repository, '.ki-config.toml')
+  const config = join(repository, '.ki.toml')
   let outcomes: AuditOutcome[]
   let mapping: AuditOutcome[]
   if (!existsSync(config))
     outcomes = [
-      { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki-config.toml' }
+      { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki.toml' }
     ]
   if (!existsSync(config))
     mapping = [
-      { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki-config.toml' }
+      { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki.toml' }
     ]
   else {
     try {
@@ -51,16 +51,16 @@ export const createLinearSession = ({ repository }: RubricContextOptions): Rubri
               {
                 status: 'VIOLATION' as const,
                 message: 'The shared selector must choose adapter = "linear".',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]),
         ...(typeof values?.team === 'string' && TEAM.test(values.team)
-          ? [{ status: 'PASS' as const, message: `Linear team is ${values.team}.`, subject: '.ki-config.toml' }]
+          ? [{ status: 'PASS' as const, message: `Linear team is ${values.team}.`, subject: '.ki.toml' }]
           : [
               {
                 status: 'VIOLATION' as const,
                 message: '[skills.ki-work-linear].team must be an uppercase team key.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]),
         ...(unknown.length
@@ -68,7 +68,7 @@ export const createLinearSession = ({ repository }: RubricContextOptions): Rubri
               {
                 status: 'VIOLATION' as const,
                 message: `Unrecognised Linear configuration key: ${unknown.join(', ')}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [])
@@ -79,14 +79,14 @@ export const createLinearSession = ({ repository }: RubricContextOptions): Rubri
               {
                 status: 'PASS' as const,
                 message: `Linear lifecycle conflict owner is ${values.metadata_owner}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [
               {
                 status: 'VIOLATION' as const,
                 message: 'Linear configuration requires a non-empty metadata_owner.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]),
         ...(typeof values?.dependencies === 'string' &&
@@ -98,14 +98,14 @@ export const createLinearSession = ({ repository }: RubricContextOptions): Rubri
               {
                 status: 'PASS' as const,
                 message: 'Linear dependency and hierarchy mappings are distinct.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [
               {
                 status: 'VIOLATION' as const,
                 message: 'Linear configuration requires distinct non-empty dependencies and hierarchy mappings.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]),
         ...(missingLifecycle.length
@@ -113,14 +113,14 @@ export const createLinearSession = ({ repository }: RubricContextOptions): Rubri
               {
                 status: 'VIOLATION' as const,
                 message: `Linear lifecycle mapping requires non-empty values for: ${missingLifecycle.join(', ')}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [
               {
                 status: 'PASS' as const,
                 message: 'Linear lifecycle mapping declares queue, ready, review, and done.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]),
         ...(directUnknown.length || lifecycleUnknown.length
@@ -128,14 +128,14 @@ export const createLinearSession = ({ repository }: RubricContextOptions): Rubri
               {
                 status: 'VIOLATION' as const,
                 message: `Unrecognised Linear lifecycle configuration key: ${[...directUnknown, ...lifecycleUnknown].join(', ')}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [])
       ]
     } catch {
-      outcomes = [{ status: 'VIOLATION', message: 'Cannot parse .ki-config.toml.', subject: '.ki-config.toml' }]
-      mapping = [{ status: 'VIOLATION', message: 'Cannot parse .ki-config.toml.', subject: '.ki-config.toml' }]
+      outcomes = [{ status: 'VIOLATION', message: 'Cannot parse .ki.toml.', subject: '.ki.toml' }]
+      mapping = [{ status: 'VIOLATION', message: 'Cannot parse .ki.toml.', subject: '.ki.toml' }]
     }
   }
   return {

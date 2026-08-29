@@ -333,7 +333,7 @@ export const createCheckpointsSession = ({
         status: 'VIOLATION' as const,
         level: 'WARN' as const,
         message: `unrecognised ki-checkpoint configuration key ${key}`,
-        subject: '.ki-config.toml'
+        subject: '.ki.toml'
       }))
     : []
   const evidence = recordEvidence(

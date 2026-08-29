@@ -4,7 +4,7 @@ A checkpoint is a concise repository-owned reconstruction snapshot for one activ
 
 ## Activation and ownership
 
-The capability is optional. A repository declares `ki-checkpoint` in `.ki-config.toml`; only then may it use the owned `+/_CHECKPOINTS/` subarea. `ki-repo` owns the generic `+/` scaffold and detects an undeclared specialist subarea, while `ki-checkpoint` alone interprets checkpoint records. An absent `_CHECKPOINTS` directory is quiet and means there is no active checkpoint scope.
+The capability is optional. A repository declares `ki-checkpoint` in `.ki.toml`; only then may it use the owned `+/_CHECKPOINTS/` subarea. `ki-repo` owns the generic `+/` scaffold and detects an undeclared specialist subarea, while `ki-checkpoint` alone interprets checkpoint records. An absent `_CHECKPOINTS` directory is quiet and means there is no active checkpoint scope.
 
 The repository owns its checkpoint content and retention. The portable standard neither writes a sibling repository nor imposes deletion.
 

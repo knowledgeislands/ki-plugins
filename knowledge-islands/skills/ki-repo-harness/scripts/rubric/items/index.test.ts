@@ -30,7 +30,7 @@ const fixture = (): string => {
   }
   writeFileSync(join(repository, 'CLAUDE.md'), '# Harness\n')
   writeFileSync(join(repository, 'ROADMAP.md'), '# Roadmap\n')
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo]\n')
   mkdirSync(join(repository, 'skills', 'group', 'example'), { recursive: true })
   writeFileSync(
     join(repository, 'skills', 'group', 'example', 'SKILL.md'),
@@ -127,7 +127,7 @@ test('the session discovers grouped skills once and coalesces marker requests', 
   item.mechanical?.conform?.run(config)
   expect(session.proposal().writes).toEqual([
     {
-      path: '.ki-config.toml',
+      path: '.ki.toml',
       content: '[skills.ki-repo]\n\n[skills.ki-repo-harness]\n'
     }
   ])
@@ -135,7 +135,7 @@ test('the session discovers grouped skills once and coalesces marker requests', 
 
 test('audit is read-only and an existing marker produces no proposal', () => {
   const repository = fixture()
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\n\n[skills.ki-repo-harness]\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo]\n\n[skills.ki-repo-harness]\n')
   const session = catalogue.createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
   const context = session.subjects[0]?.context() as HarnessRubricContext
   expect(context.config.hasHarnessTable).toBe(true)
@@ -152,7 +152,7 @@ test('the Harness declaration requires a valid explicit prefix', () => {
     ['ki', 'PASS']
   ] as const) {
     writeFileSync(
-      join(repository, '.ki-config.toml'),
+      join(repository, '.ki.toml'),
       `[skills.ki-repo]\n\n[skills.ki-repo-harness]\n${prefix ? `prefix = "${prefix}"\n` : ''}`
     )
     const session = catalogue.createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
@@ -163,7 +163,7 @@ test('the Harness declaration requires a valid explicit prefix', () => {
 
 test('published skill names use the declared Harness prefix', () => {
   const repository = fixture()
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo]\n\n[skills.ki-repo-harness]\nprefix = "ki"\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo]\n\n[skills.ki-repo-harness]\nprefix = "ki"\n')
   const session = catalogue.createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
   const context = session.subjects[0]?.context() as HarnessRubricContext
   const family = catalogue.families.find((candidate) => candidate.code === 'SKILLS') as
@@ -212,10 +212,10 @@ test('source conformance does not inherit payload or runtime assurance', () => {
 test('conform refuses a symlinked or dangling configuration path', () => {
   for (const dangling of [false, true]) {
     const repository = fixture()
-    rmSync(join(repository, '.ki-config.toml'))
+    rmSync(join(repository, '.ki.toml'))
     const target = join(repository, dangling ? 'missing-config' : 'config-source')
     if (!dangling) writeFileSync(target, '[skills.ki-repo]\n')
-    symlinkSync(target, join(repository, '.ki-config.toml'))
+    symlinkSync(target, join(repository, '.ki.toml'))
     const session = catalogue.createSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
     const context = session.subjects[0]?.context() as HarnessRubricContext
     expect(context.config.state).toBe('unsafe')

@@ -27,11 +27,11 @@ const isAdapter = (value: unknown): value is Adapter => typeof value === 'string
 export const createChangeManagementSession = ({
   repository
 }: RubricContextOptions): RubricSession<ChangeManagementRubricContext> => {
-  const config = join(repository, '.ki-config.toml')
+  const config = join(repository, '.ki.toml')
   let outcomes: AuditOutcome[]
   if (!existsSync(config))
     outcomes = [
-      { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki-config.toml' }
+      { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki.toml' }
     ]
   else {
     try {
@@ -43,7 +43,7 @@ export const createChangeManagementSession = ({
           {
             status: 'VIOLATION',
             message: '[skills.ki-work] must select one adapter.',
-            subject: '.ki-config.toml'
+            subject: '.ki.toml'
           }
         ]
       else {
@@ -58,7 +58,7 @@ export const createChangeManagementSession = ({
                 {
                   status: 'VIOLATION' as const,
                   message: `Unrecognised change-management configuration key: ${unknown.join(', ')}.`,
-                  subject: '.ki-config.toml'
+                  subject: '.ki.toml'
                 }
               ]
             : []),
@@ -68,7 +68,7 @@ export const createChangeManagementSession = ({
                 {
                   status: 'VIOLATION' as const,
                   message: 'adapter must be one of: roadmap, kb-streams, github-issues, linear.',
-                  subject: '.ki-config.toml'
+                  subject: '.ki.toml'
                 }
               ]),
           ...(definition && !tableAt(skills, definition.skill)
@@ -76,7 +76,7 @@ export const createChangeManagementSession = ({
                 {
                   status: 'VIOLATION' as const,
                   message: `Selected ${adapter} adapter requires a declared [skills.${definition.skill}] table.`,
-                  subject: '.ki-config.toml'
+                  subject: '.ki.toml'
                 }
               ]
             : []),
@@ -85,7 +85,7 @@ export const createChangeManagementSession = ({
                 {
                   status: 'VIOLATION' as const,
                   message: `Selected ${adapter} adapter applies only to a ${definition.repositoryKind} repository, not ${repoType}.`,
-                  subject: '.ki-config.toml'
+                  subject: '.ki.toml'
                 }
               ]
             : [])
@@ -97,12 +97,12 @@ export const createChangeManagementSession = ({
                 {
                   status: 'PASS',
                   message: `Change management selects ${adapter}, resolved to ${definition?.skill}.`,
-                  subject: '.ki-config.toml'
+                  subject: '.ki.toml'
                 }
               ]
       }
     } catch {
-      outcomes = [{ status: 'VIOLATION', message: 'Cannot parse .ki-config.toml.', subject: '.ki-config.toml' }]
+      outcomes = [{ status: 'VIOLATION', message: 'Cannot parse .ki.toml.', subject: '.ki.toml' }]
     }
   }
   const context: ChangeManagementRubricContext = { selection: { outcomes } }

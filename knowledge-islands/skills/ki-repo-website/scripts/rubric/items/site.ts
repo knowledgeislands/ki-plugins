@@ -24,9 +24,9 @@ const item = (
 const SITE_1 = item('SITE-1', 'Website opt-in', 'The neutral website table is present.', 'WARN', (context) => {
   if (!context.available) return [{ status: 'VIOLATION', message: 'Target directory is unavailable.' }]
   if (context.malformedConfiguration)
-    return [{ status: 'VIOLATION', message: '.ki-config.toml is malformed or unsafe.', subject: '.ki-config.toml' }]
+    return [{ status: 'VIOLATION', message: '.ki.toml is malformed or unsafe.', subject: '.ki.toml' }]
   return context.applicable
-    ? [{ status: 'PASS', message: 'The [skills.ki-repo-website] table is present.', subject: '.ki-config.toml' }]
+    ? [{ status: 'PASS', message: 'The [skills.ki-repo-website] table is present.', subject: '.ki.toml' }]
     : [{ status: 'NOT_APPLICABLE', message: 'The website core is not declared.' }]
 })
 
@@ -39,11 +39,11 @@ const SITE_2 = item(
     const stopped = skip(context)
     if (stopped) return stopped
     return context.configurationKeys.length === 0
-      ? [{ status: 'PASS', message: 'The website core table is keyless.', subject: '.ki-config.toml' }]
+      ? [{ status: 'PASS', message: 'The website core table is keyless.', subject: '.ki.toml' }]
       : context.configurationKeys.map((key) => ({
           status: 'VIOLATION' as const,
           message: `Unknown key under [skills.ki-repo-website]: ${key}.`,
-          subject: '.ki-config.toml'
+          subject: '.ki.toml'
         }))
   }
 )

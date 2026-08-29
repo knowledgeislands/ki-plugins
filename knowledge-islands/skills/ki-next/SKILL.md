@@ -53,7 +53,7 @@ When a recap precedes it, `ki-next` begins only after its bounded handoff is com
 
 `ki-trade` prepares, submits, receives, releases, and prunes local trade records. It hands a validated received record to `ki-next`; it never chooses the receiver's disposition.
 
-The process skills are global invocation surfaces, not `.ki-config.toml` governance roots.
+The process skills are global invocation surfaces, not `.ki.toml` governance roots.
 
 ## Invocation
 

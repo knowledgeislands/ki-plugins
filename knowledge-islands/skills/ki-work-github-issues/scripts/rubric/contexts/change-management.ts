@@ -10,16 +10,16 @@ const TOML = (globalThis as unknown as { Bun: { TOML: { parse(text: string): unk
 export const createGitHubIssuesSession = ({
   repository
 }: RubricContextOptions): RubricSession<GitHubIssuesRubricContext> => {
-  const config = join(repository, '.ki-config.toml')
+  const config = join(repository, '.ki.toml')
   let outcomes: AuditOutcome[]
   let mapping: AuditOutcome[]
   if (!existsSync(config))
     outcomes = [
-      { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki-config.toml' }
+      { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki.toml' }
     ]
   if (!existsSync(config))
     mapping = [
-      { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki-config.toml' }
+      { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki.toml' }
     ]
   else {
     try {
@@ -53,7 +53,7 @@ export const createGitHubIssuesSession = ({
               {
                 status: 'VIOLATION' as const,
                 message: 'The shared selector must choose adapter = "github-issues".',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]),
         ...(typeof values?.repository === 'string' && REPOSITORY.test(values.repository)
@@ -61,14 +61,14 @@ export const createGitHubIssuesSession = ({
               {
                 status: 'PASS' as const,
                 message: `GitHub Issues repository is ${values.repository}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [
               {
                 status: 'VIOLATION' as const,
                 message: '[skills.ki-work-github-issues].repository must be owner/repository.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]),
         ...(unknown.length
@@ -76,7 +76,7 @@ export const createGitHubIssuesSession = ({
               {
                 status: 'VIOLATION' as const,
                 message: `Unrecognised GitHub Issues configuration key: ${unknown.join(', ')}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [])
@@ -87,14 +87,14 @@ export const createGitHubIssuesSession = ({
               {
                 status: 'PASS' as const,
                 message: `GitHub lifecycle conflict owner is ${values.metadata_owner}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [
               {
                 status: 'VIOLATION' as const,
                 message: 'GitHub configuration requires a non-empty metadata_owner.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]),
         ...(typeof values?.dependencies === 'string' &&
@@ -106,14 +106,14 @@ export const createGitHubIssuesSession = ({
               {
                 status: 'PASS' as const,
                 message: 'GitHub dependency and hierarchy mappings are distinct.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [
               {
                 status: 'VIOLATION' as const,
                 message: 'GitHub configuration requires distinct non-empty dependencies and hierarchy mappings.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]),
         ...(missingLifecycle.length
@@ -121,14 +121,14 @@ export const createGitHubIssuesSession = ({
               {
                 status: 'VIOLATION' as const,
                 message: `GitHub lifecycle mapping requires non-empty values for: ${missingLifecycle.join(', ')}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [
               {
                 status: 'PASS' as const,
                 message: 'GitHub lifecycle mapping declares queue, ready, review, and done.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]),
         ...(directUnknown.length || lifecycleUnknown.length
@@ -136,14 +136,14 @@ export const createGitHubIssuesSession = ({
               {
                 status: 'VIOLATION' as const,
                 message: `Unrecognised GitHub lifecycle configuration key: ${[...directUnknown, ...lifecycleUnknown].join(', ')}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [])
       ]
     } catch {
-      outcomes = [{ status: 'VIOLATION', message: 'Cannot parse .ki-config.toml.', subject: '.ki-config.toml' }]
-      mapping = [{ status: 'VIOLATION', message: 'Cannot parse .ki-config.toml.', subject: '.ki-config.toml' }]
+      outcomes = [{ status: 'VIOLATION', message: 'Cannot parse .ki.toml.', subject: '.ki.toml' }]
+      mapping = [{ status: 'VIOLATION', message: 'Cannot parse .ki.toml.', subject: '.ki.toml' }]
     }
   }
   return {

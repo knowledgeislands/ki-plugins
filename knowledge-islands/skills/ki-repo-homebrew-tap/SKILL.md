@@ -25,7 +25,7 @@ homebrew-tap/            # named homebrew-<x> — Homebrew requires the prefix f
 │   └── <tool>.rb
 ├── README.md            # a "## Formulae" table listing every formula + its source repo
 ├── .github/workflows/   # OPTIONAL brew test-bot CI (brew audit/style/install on PR)
-└── .ki-config.toml      # [skills.ki-repo] + [skills.ki-repo-homebrew-tap] (keyless opt-in marker)
+└── .ki.toml      # [skills.ki-repo] + [skills.ki-repo-homebrew-tap] (keyless opt-in marker)
 ```
 
 A single formula (`Formula/mgit.rb`) is a Ruby class Homebrew evaluates:

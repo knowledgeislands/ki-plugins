@@ -46,11 +46,11 @@ Modes: **AUDIT · CONFORM · EDUCATE · NEW · REFRESH** (named, alphabetical). 
 
 - `ki-repo-kb` — owns the Admin/Operations/ zone and the base-level audit. Its declared dependency edge delegates Activity-note governance here, so selecting `ki-repo-kb` runs this capability first. A focused `ki-repo-kb-activities` audit remains limited to the collection.
 - `ki-skills` — authors a missing skill when a `slash-command` activity names one that does not exist.
-- `ki-repo-harness` — the harness bundle layout; the checker resolves `skills/<name>/SKILL.md` relative to the harness root declared in the base's `.ki-config.toml`.
+- `ki-repo-harness` — the harness bundle layout; the checker resolves `skills/<name>/SKILL.md` relative to the harness root declared in the base's `.ki.toml`.
 
 ## Project bindings
 
-Declare in the base's `.ki-config.toml` `[skills.ki-repo-kb-activities]` table:
+Declare in the base's `.ki.toml` `[skills.ki-repo-kb-activities]` table:
 
 ```toml
 [skills.ki-repo-kb-activities]

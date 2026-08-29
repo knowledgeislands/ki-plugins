@@ -78,5 +78,5 @@ Formula layout, static source evidence, and judgment review of tap correctness.
 
 The repository declares the keyless Homebrew-tap governance marker.
 
-- **CONFIG-1 [M] — identity marker** — `.ki-config.toml` contains a keyless `[skills.ki-repo-homebrew-tap]` marker with no unknown keys. (standards-homebrew-tap.md)
+- **CONFIG-1 [M] — identity marker** — `.ki.toml` contains a keyless `[skills.ki-repo-homebrew-tap]` marker with no unknown keys. (standards-homebrew-tap.md)
   - _Remediation:_ diagnostic — Declare the selected standard through the repository configuration owner.

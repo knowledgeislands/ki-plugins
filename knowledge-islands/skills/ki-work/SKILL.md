@@ -3,7 +3,7 @@ name: ki-work
 ki-kind: governance
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
-contributes: ['.ki-config.toml']
+contributes: ['.ki.toml']
 description: >
   Governs repository selection of a forward-work adapter and the shared lifecycle vocabulary used by change-management processes. Use when choosing or auditing a work tracker, configuring roadmap, KB Streams, GitHub Issues, or Linear change management, or mapping repository work to a common lifecycle. The selected adapter owns its records; use ki-work-roadmap, ki-repo-kb-streams, ki-work-github-issues, or ki-work-linear.
 argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'

@@ -7,7 +7,7 @@ const SPEC_1: RubricItem<SpecificationsContext> = {
   code: 'SPEC-1',
   title: 'Repository identity marker',
   description:
-    '`.ki-config.toml` declares a keyless `[skills.ki-repo-specifications]` table. Unknown keys WARN because the marker has no options yet.',
+    '`.ki.toml` declares a keyless `[skills.ki-repo-specifications]` table. Unknown keys WARN because the marker has no options yet.',
   sources: SOURCE,
   mechanical: {
     level: 'WARN',
@@ -35,14 +35,14 @@ const SPEC_1: RubricItem<SpecificationsContext> = {
           ]
         if (context.malformed)
           return [
-            { status: 'VIOLATION', message: '.ki-config.toml is malformed or unsafe.', subject: '.ki-config.toml' }
+            { status: 'VIOLATION', message: '.ki.toml is malformed or unsafe.', subject: '.ki.toml' }
           ]
         if (!context.table)
           return [
             {
               status: 'VIOLATION',
-              message: '[skills.ki-repo-specifications] is absent from .ki-config.toml.',
-              subject: '.ki-config.toml'
+              message: '[skills.ki-repo-specifications] is absent from .ki.toml.',
+              subject: '.ki.toml'
             }
           ]
         const keys = Object.keys(context.table)
@@ -51,12 +51,12 @@ const SPEC_1: RubricItem<SpecificationsContext> = {
             ? {
                 status: 'PASS',
                 message: 'The keyless [skills.ki-repo-specifications] marker is present.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             : {
                 status: 'VIOLATION',
                 message: `The keyless marker contains unknown keys: ${keys.join(', ')}.`,
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
         ]
       }

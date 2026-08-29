@@ -82,7 +82,7 @@ const KI_SHAPE_4: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-4',
   title: 'a skill validates only its own configuration table',
   description:
-    "A skill that reads the shared `.ki-config.toml` consumes and **validates only its own `[<skill>]` table** — warns on a key it doesn't recognise, advises dropping one that merely restates a default — and never inspects another skill's table. Validate down, ignore across.",
+    "A skill that reads the shared `.ki.toml` consumes and **validates only its own `[<skill>]` table** — warns on a key it doesn't recognise, advises dropping one that merely restates a default — and never inspects another skill's table. Validate down, ignore across.",
   sources: ['contract defined by `ki-repo`'],
   judgment: judgment('Does this skill validate only its own configuration table and ignore unrelated tables?')
 }
@@ -138,7 +138,7 @@ const KI_SHAPE_7: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-7',
   title: 'behaviour-changing skills define and check their anchor',
   description:
-    '_A behaviour-changing skill defines its gate — and checks the anchor._ A skill that changes a **default behaviour** — installs a gate, a standing "always do X before Y" rule, or a routing intercept — cannot rely on its own `description` to fire it, because skills load **on demand** and the triggering request often won\'t mention the skill (e.g. "edit this note" never says "proposal"). Such a skill must **anchor the behaviour in always-loaded context** (the base/repo `CLAUDE.md` / `AGENTS.md`, or a companion skill that _does_ reliably load handing off to it), **and its rubric must verify the anchor is present** so it can\'t be silently lost. The hosted audit surfaces candidates mechanically (strong gate phrasing in the body or a reference file — body + references scanned as one unit, since mode-routing lifts procedures out of the body — without an anchor its rubric reads); the **[J]** call is whether the skill genuinely changes a default and so _needs_ a gate. Realised as `ki-repo-kb-streams`\' **GATE-1** (the Enactment gate) and `ki-repo-kb`\'s **MEM-2** (the memory cascade); `ki-repo`\'s `.ki-config.toml` marker is the same pattern (anchor + checked).',
+    '_A behaviour-changing skill defines its gate — and checks the anchor._ A skill that changes a **default behaviour** — installs a gate, a standing "always do X before Y" rule, or a routing intercept — cannot rely on its own `description` to fire it, because skills load **on demand** and the triggering request often won\'t mention the skill (e.g. "edit this note" never says "proposal"). Such a skill must **anchor the behaviour in always-loaded context** (the base/repo `CLAUDE.md` / `AGENTS.md`, or a companion skill that _does_ reliably load handing off to it), **and its rubric must verify the anchor is present** so it can\'t be silently lost. The hosted audit surfaces candidates mechanically (strong gate phrasing in the body or a reference file — body + references scanned as one unit, since mode-routing lifts procedures out of the body — without an anchor its rubric reads); the **[J]** call is whether the skill genuinely changes a default and so _needs_ a gate. Realised as `ki-repo-kb-streams`\' **GATE-1** (the Enactment gate) and `ki-repo-kb`\'s **MEM-2** (the memory cascade); `ki-repo`\'s `.ki.toml` marker is the same pattern (anchor + checked).',
   sources: ['standards-knowledge-islands.md §2', 'standards-rubric-authoring.md#context-and-evidence'],
   mechanical: {
     level: 'WARN',
@@ -417,7 +417,7 @@ const KI_SHAPE_16: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-16',
   title: 'target files have declared ownership',
   description:
-    "_Declared file ownership, three tiers._ A skill whose rubric reads or changes a house-standard file in the **target repository's** working tree declares that relationship in frontmatter, alongside `ki-depends-on:`, under one of three keys: `requires:` (must exist, doesn't create/control it — any number of skills may share a `requires:` filename), `contributes:` (writes/expects only its own section of a shared file — any number of skills may share a `contributes:` filename, e.g. `.ki-config.toml`, `package.json`), or `owns:` (sole author of the whole file — **exclusive**, at most one skill per filename). The mechanical heuristic verifies that declared filenames occur in the skill's production implementation and that no filename is owned by more than one skill. Judgment confirms that every session proposal and governed read has the appropriate declaration.",
+    "_Declared file ownership, three tiers._ A skill whose rubric reads or changes a house-standard file in the **target repository's** working tree declares that relationship in frontmatter, alongside `ki-depends-on:`, under one of three keys: `requires:` (must exist, doesn't create/control it — any number of skills may share a `requires:` filename), `contributes:` (writes/expects only its own section of a shared file — any number of skills may share a `contributes:` filename, e.g. `.ki.toml`, `package.json`), or `owns:` (sole author of the whole file — **exclusive**, at most one skill per filename). The mechanical heuristic verifies that declared filenames occur in the skill's production implementation and that no filename is owned by more than one skill. Judgment confirms that every session proposal and governed read has the appropriate declaration.",
   sources: ['KI'],
   mechanical: {
     level: 'WARN',
@@ -462,7 +462,7 @@ const KI_SHAPE_17: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-17',
   title: 'dependencies are declared explicitly',
   description:
-    "_Explicit dependency declaration._ Every skill declares `ki-depends-on:` as a single-line flow list. `ki-depends-on: []` is the required explicit form when a skill has no governance dependencies. The listed capability names and a governed repository's matching `.ki-config.toml` tables are validated by the dependency graph and bootstrap; the skill checker enforces the local declaration shape.",
+    "_Explicit dependency declaration._ Every skill declares `ki-depends-on:` as a single-line flow list. `ki-depends-on: []` is the required explicit form when a skill has no governance dependencies. The listed capability names and a governed repository's matching `.ki.toml` tables are validated by the dependency graph and bootstrap; the skill checker enforces the local declaration shape.",
   sources: ['ADR-KI-HARNESS-SKILLS-006'],
   mechanical: {
     level: 'FAIL',

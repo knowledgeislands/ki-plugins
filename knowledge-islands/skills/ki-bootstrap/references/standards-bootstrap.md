@@ -42,7 +42,7 @@ The canonical harness cannot be uninstalled. `ki harness uninstall <harness-id>`
 
 ## Declarative repository selection
 
-`.ki-config.toml` declares the governance coverage of one repository through explicit `[ki-<skill>]` tables.
+`.ki.toml` declares the governance coverage of one repository through explicit `[ki-<skill>]` tables.
 
 `ki-repo` owns the file's schema, creation, and declared coverage.
 
@@ -58,7 +58,7 @@ Harness installation and skill activation are separate. Installing a harness doe
 
 `ki skill add <skill>` and `ki skill remove <skill>` change only the managed discovery links and configuration for the detected user runtimes.
 
-`ki repo skill add <skill>` and `ki repo skill remove <skill>` change only the selected repository: its `.ki-config.toml` declaration and managed repository-runtime discovery links. They do not alter user activation or uninstall a harness.
+`ki repo skill add <skill>` and `ki repo skill remove <skill>` change only the selected repository: its `.ki.toml` declaration and managed repository-runtime discovery links. They do not alter user activation or uninstall a harness.
 
 Activation resolves a bare skill name only when one installed harness provides it. Ambiguous, missing, foreign, altered, or escaping targets fail closed. Existing KI-managed links are re-pointed only through the command's explicit replacement option.
 
@@ -125,7 +125,7 @@ Recovery guidance must identify the failed layer: CLI release, harness acquisiti
 
 User state comprises the XDG-owned harness registry and data, configuration, cache, state, and user-runtime activation.
 
-Repository state comprises `.ki-config.toml`, repository-scope activation links, and registered native-operation writes.
+Repository state comprises `.ki.toml`, repository-scope activation links, and registered native-operation writes.
 
 No unscoped operation infers or crosses either boundary.
 

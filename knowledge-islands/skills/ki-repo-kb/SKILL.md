@@ -82,7 +82,7 @@ Root index `Admin/MEMORY.md` lists the active Pillars. Where the base is Pillar-
 
 ## Note templates
 
-The skill ships zone-scoped starter templates under `assets/templates/<zone>/`. EDUCATE copies the relevant stubs when scaffolding a new base. QUERY can list available templates when the user asks (`?templates`). A base may override or extend these by declaring a `[skills.ki-repo-kb.templates]` table in its `.ki-config.toml` — keys are zone names, values are paths relative to the base.
+The skill ships zone-scoped starter templates under `assets/templates/<zone>/`. EDUCATE copies the relevant stubs when scaffolding a new base. QUERY can list available templates when the user asks (`?templates`). A base may override or extend these by declaring a `[skills.ki-repo-kb.templates]` table in its `.ki.toml` — keys are zone names, values are paths relative to the base.
 
 | Zone         | Template                                           | Use for                                     |
 | ------------ | -------------------------------------------------- | ------------------------------------------- |
@@ -95,7 +95,7 @@ Templates are stubs — headings, frontmatter keys, and inline `<!-- prompts -->
 
 ## Project bindings
 
-Almost everything is fixed by the structure above. Only these come from the host project - take the narrative bindings from the auto-loaded `CLAUDE.md`, then the root memory index. **Declarative overrides** (the zone alias and the lists below) are read from the base's `.ki-config.toml` `[skills.ki-repo-kb]` table instead — see the `ki-repo` skill for the shared-file contract; validate your own table (warn on an unrecognised key) and never read another skill's. A base never ships a `<base>-kb` skill: what it needs differently is declared here (data) or in its `CLAUDE.md` (prose), never forked into a coupled skill.
+Almost everything is fixed by the structure above. Only these come from the host project - take the narrative bindings from the auto-loaded `CLAUDE.md`, then the root memory index. **Declarative overrides** (the zone alias and the lists below) are read from the base's `.ki.toml` `[skills.ki-repo-kb]` table instead — see the `ki-repo` skill for the shared-file contract; validate your own table (warn on an unrecognised key) and never read another skill's. A base never ships a `<base>-kb` skill: what it needs differently is declared here (data) or in its `CLAUDE.md` (prose), never forked into a coupled skill.
 
 - **Notes store** — canonical alias and location of the notes store. _Default:_ the connected base; refer to it as "the base".
 - **Sources store** — whether a paired sources store exists, and how note extracts mirror its paths. _Default:_ none.
@@ -133,7 +133,7 @@ The memory cascade and the canonical-zone Enactment gate are part of the shared 
 ## Notes
 
 - This skill assumes the Knowledge Islands structure. If a base does not follow it, or a binding cannot be resolved and no default fits, ask the user rather than guess.
-- A base supplies its specifics by **declaration**, not a coupled skill: structured data (zone aliases, required frontmatter, pre-flight reads) in its `.ki-config.toml` `[skills.ki-repo-kb]` table, narrative bindings (store alias, scope, writing standards) in its `CLAUDE.md`. There is no `<base>-kb` extension skill; relationships to sibling skills are composition (e.g. the `Streams` zone delegates to `ki-repo-kb-streams`).
+- A base supplies its specifics by **declaration**, not a coupled skill: structured data (zone aliases, required frontmatter, pre-flight reads) in its `.ki.toml` `[skills.ki-repo-kb]` table, narrative bindings (store alias, scope, writing standards) in its `CLAUDE.md`. There is no `<base>-kb` extension skill; relationships to sibling skills are composition (e.g. the `Streams` zone delegates to `ki-repo-kb-streams`).
 
 Normative detail: [the Knowledge Islands knowledge-base standard](references/standards-knowledge-base.md). Checkable criteria: [the generated rubric](references/rubric.md), enforced mechanically by `ki repo audit --skill ki-repo-kb`. After changing the catalogue under `scripts/rubric/items/`, regenerate the published catalogue with `ki dev skill rubric ki-repo-kb --write`.
 

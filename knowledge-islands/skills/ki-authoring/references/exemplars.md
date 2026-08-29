@@ -4,7 +4,7 @@
 
 - [Selected patterns](#selected-patterns)
 
-Curated illustrations of the Knowledge Islands authoring conventions in practice. Use these when writing or conforming a document, checking whether a table should spill to footnotes, choosing between link styles, or formatting a `.ki-config.toml` entry. The exemplars show the judgment layer — the choices no formatter makes — annotated to make the reasoning visible. Mechanical rules (prose wrap, heading hierarchy, list and emphasis characters) are owned by rumdl; run `ki repo conform --skill ki-authoring` for the write pass and `ki repo audit --skill ki-authoring` for the read-only gate.
+Curated illustrations of the Knowledge Islands authoring conventions in practice. Use these when writing or conforming a document, checking whether a table should spill to footnotes, choosing between link styles, or formatting a `.ki.toml` entry. The exemplars show the judgment layer — the choices no formatter makes — annotated to make the reasoning visible. Mechanical rules (prose wrap, heading hierarchy, list and emphasis characters) are owned by rumdl; run `ki repo conform --skill ki-authoring` for the write pass and `ki repo audit --skill ki-authoring` for the read-only gate.
 
 ## Selected patterns
 
@@ -66,7 +66,7 @@ See [[audit-rubric|the rubric]].
 See `skills/repo-structure/ki-repo-kb/SKILL.md` for KB conventions.
 ```
 
-### Well-formed `.ki-config.toml` table
+### Well-formed `.ki.toml` table
 
 Keys are lowercase `snake_case`. Strings are double-quoted. Arrays use the inline `["a", "b"]` form for short lists. One table per skill, named for the skill (`[skills.ki-repo]`), with sub-tables nested under it. Comment non-obvious keys with a `#` line above them — the _why_, not the _what_. The contract behind what each table means (the one-table-per-skill model, validate-your-own-table protocol) belongs to the `ki-repo` skill; this pattern covers formatting only.
 

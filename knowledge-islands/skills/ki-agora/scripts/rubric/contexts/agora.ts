@@ -27,10 +27,10 @@ const table = (value: unknown): Record<string, unknown> | null =>
 
 const pass = (message: string): readonly AuditOutcome[] => [{ status: 'PASS', message }]
 
-const violation = (message: string): AuditOutcome => ({ status: 'VIOLATION', message, subject: '.ki-config.toml' })
+const violation = (message: string): AuditOutcome => ({ status: 'VIOLATION', message, subject: '.ki.toml' })
 
 const parsedRepository = (root: string): unknown => {
-  const configuration = join(root, '.ki-config.toml')
+  const configuration = join(root, '.ki.toml')
   if (!existsSync(configuration)) return undefined
   try {
     return table(Bun.TOML.parse(readFileSync(configuration, 'utf8')))?.skills

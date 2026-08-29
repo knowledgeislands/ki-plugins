@@ -8,7 +8,7 @@ Scaffold Cloudflare Workers Static Assets hosting for a new Knowledge Islands si
 - [2. Create the site `wrangler.jsonc`](#2-create-the-site-wranglerjsonc)
 - [3. Add the script family to `package.json`](#3-add-the-script-family-to-packagejson)
 - [4. Update `.gitignore`](#4-update-gitignore)
-- [5. Mark the repo with `.ki-config.toml`](#5-mark-the-repo-with-ki-configtoml)
+- [5. Mark the repo with `.ki.toml`](#5-mark-the-repo-with-ki-configtoml)
 - [6. First deploy — workers.dev subdomain](#6-first-deploy--workersdev-subdomain)
 - [7. Wire the custom domain](#7-wire-the-custom-domain)
 - [8. Add the `www` redirect rule](#8-add-the-www-redirect-rule)
@@ -118,7 +118,7 @@ site/.wrangler/
 
 ---
 
-## 5. Mark the repo with `.ki-config.toml`
+## 5. Mark the repo with `.ki.toml`
 
 Add the `[skills.ki-repo-website-cloudflare]` table so the mechanical checker can find the repo:
 
@@ -129,7 +129,7 @@ Add the `[skills.ki-repo-website-cloudflare]` table so the mechanical checker ca
 site-root = "site"
 ```
 
-If `.ki-config.toml` does not yet exist, create it at the repo root. Other skills may already have their own tables in it — just append.
+If `.ki.toml` does not yet exist, create it at the repo root. Other skills may already have their own tables in it — just append.
 
 ---
 

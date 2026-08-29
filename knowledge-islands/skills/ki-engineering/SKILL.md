@@ -4,7 +4,7 @@ ki-kind: governance
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 owns: [mise.toml, tsconfig.json, biome.json, knip.json]
-contributes: ['.ki-config.toml', package.json]
+contributes: ['.ki.toml', package.json]
 description: >
   Use to audit or conform the shared Knowledge Islands TypeScript/Bun engineering standard: comprehension-first modularity and reuse; architectural-boundary testing; package scripts, tsconfig, Biome, and toolchain consistency. Triggers: "audit our engineering standards", "is this code too DRY", "are tests at the API boundary". For repository configuration use `ki-repo`; Markdown/TOML style use `ki-authoring`; MCP specifics use `ki-repo-mcp`.
 argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
@@ -14,7 +14,7 @@ argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 
 You are applying the **Knowledge Islands engineering standard** — the shared code-design and software-engineering toolchain every TypeScript/Bun repo in this work builds on. It is the build/test twin of `ki-authoring`: that skill owns _how we write_ (Markdown/TOML style); this one owns _how we structure, build, lint, and test_. `ki-skills` owns the governance-skill enforcement framework that this skill follows.
 
-This is a **standard, base-agnostic governance skill**. It hard-codes no single repo; it applies to any repo carrying a `[skills.ki-engineering]` table in its `.ki-config.toml`. The active repository set is local supporting evidence, not a normative count: derive it from the current configured collection during REFRESH. How this skill sits alongside the other skills, and where it must not overlap them, is documented once in the ki-agentic-harness `README.md`.
+This is a **standard, base-agnostic governance skill**. It hard-codes no single repo; it applies to any repo carrying a `[skills.ki-engineering]` table in its `.ki.toml`. The active repository set is local supporting evidence, not a normative count: derive it from the current configured collection during REFRESH. How this skill sits alongside the other skills, and where it must not overlap them, is documented once in the ki-agentic-harness `README.md`.
 
 ## What this skill owns
 
@@ -41,7 +41,7 @@ ki repo audit
   └── ki-repo-mcp          → MCP delta when declared
 ```
 
-A repo is "clean" only when **every applicable** skill's audit passes. The `.ki-config.toml` tables are the selector: `[skills.ki-engineering]` marks the common layer; the artifact skill applies by its own convention.
+A repo is "clean" only when **every applicable** skill's audit passes. The `.ki.toml` tables are the selector: `[skills.ki-engineering]` marks the common layer; the artifact skill applies by its own convention.
 
 ## Operating modes
 
@@ -55,7 +55,7 @@ Explain the common TypeScript/Bun toolchain, the direct `ki repo` workflow, the 
 
 1. Run `ki repo audit --skill ki-engineering` for the focused mechanical pass, or `ki repo audit` for the repository's complete declared set. The native host loads [the canonical item catalogue](scripts/rubric/items/index.ts), runs its code-tool checks, checks the script and CI surface, the `bun test` trap, `tsconfig`/`biome`, capability conditionals, and the `[skills.ki-engineering]` table, then reports findings with rubric codes.
 2. **Apply the judgment items** in [the rubric](references/rubric.md): cohesive, comprehensible code with restrained reuse; any change-aware consistency review the explicit Git evidence makes worthwhile; no per-repo loosening of `strict`/the `noImplicit*` family; the Node `.env` parity call where env is loaded; Vitest-configured source tests actually reaching the 100% bar; and repo-specific scripts not shadowing governed entrypoints. Treat malformed, foreign, or unresolved review trailers as unavailable evidence, never as a signal to infer a boundary.
-3. Ensure the artifact skill is declared in `.ki-config.toml`; the unscoped `ki repo audit` runs every declared layer. Report by location → criterion → fix, grouped by severity (FAIL first).
+3. Ensure the artifact skill is declared in `.ki.toml`; the unscoped `ki repo audit` runs every declared layer. Report by location → criterion → fix, grouped by severity (FAIL first).
 
 ### Mode CONFORM — bring a repo's toolchain into line
 
@@ -82,7 +82,7 @@ The standard pins volatile versions (Bun, Node, Biome, TypeScript, vitest, syncp
 
 Reciprocal off-ramps — each names this skill back for the engineering layer:
 
-- **A repo's GitHub settings, security, the universal local files (README/LICENSE/.gitignore), and the `.ki-config.toml` _contract_** → `ki-repo`. This skill owns the _engineering_ toolchain inside the repo; `ki-repo` owns the repo's _configuration_ and its `.ki-config.toml` contract (this skill only contributes its own table within it).
+- **A repo's GitHub settings, security, the universal local files (README/LICENSE/.gitignore), and the `.ki.toml` _contract_** → `ki-repo`. This skill owns the _engineering_ toolchain inside the repo; `ki-repo` owns the repo's _configuration_ and its `.ki.toml` contract (this skill only contributes its own table within it).
 - **`.rumdl.toml` and `.editorconfig`** → `ki-authoring`. rumdl backs that skill's own Markdown audit and conform passes, so it owns both files wholly (scaffold, hash-drift check, unconditional overwrite on drift) — this skill no longer scaffolds or content-checks either.
 - **Markdown / TOML _formatting_ style** (including what the authoring conform pass produces) → `ki-authoring`. Engineering owns the declared tool dependencies; authoring owns their Markdown execution and the prose/format conventions they enforce.
 - **Artifact-specific code and deltas** — MCP `src/` layout, tool naming, the access gate, security invariants, the coverage-exclude list → `ki-repo-mcp` (and future artifact skills). They build on this common layer and add their own.

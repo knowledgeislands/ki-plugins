@@ -54,7 +54,7 @@ const fixture = (): string => {
   )
   writeFileSync(join(repository, 'knowledge-islands', 'skills', 'example', 'SKILL.md'), '---\nname: example\n---\n')
   writeFileSync(join(repository, 'knowledge-islands', 'agents', 'example.md'), '# Example\n')
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo-plugins]\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-plugins]\n')
   writeFileSync(join(repository, 'CLAUDE.md'), '# Generated projection\n\nDo not hand-edit generated content.\n')
   writeFileSync(join(repository, 'README.md'), '# Plugin marketplace\n')
   writeFileSync(join(repository, 'LICENSE'), 'Proprietary\n')
@@ -91,7 +91,7 @@ describe('ki-repo-plugins session', () => {
   test('does not read a symlinked marketplace manifest', () => {
     const repository = temporaryRoot()
     mkdirSync(join(repository, '.claude-plugin'), { recursive: true })
-    writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-repo-plugins]\n')
+    writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-plugins]\n')
     writeFileSync(
       join(repository, 'outside.json'),
       json({

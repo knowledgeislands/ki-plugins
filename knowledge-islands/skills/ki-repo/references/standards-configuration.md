@@ -1,6 +1,6 @@
-# The `.ki-config.toml` contract
+# The `.ki.toml` contract
 
-The cross-cutting contract for the shared **`.ki-config.toml`** file every Knowledge Islands repo carries. It is owned by `ki-repo` because **a Knowledge Islands repo is defined by carrying this file** — its presence is the compliance marker, and `ki-repo` governs the repo's compliance. Every other standard-holding skill reads its own table within it. (The TOML _formatting_ style — key case, quoting, comments — is the `ki-authoring` skill's; see its `standards-toml.md` reference. This document governs the _contract_: the file's meaning and the cross-skill protocol.)
+The cross-cutting contract for the shared **`.ki.toml`** file every Knowledge Islands repo carries. It is owned by `ki-repo` because **a Knowledge Islands repo is defined by carrying this file** — its presence is the compliance marker, and `ki-repo` governs the repo's compliance. Every other standard-holding skill reads its own table within it. (The TOML _formatting_ style — key case, quoting, comments — is the `ki-authoring` skill's; see its `standards-toml.md` reference. This document governs the _contract_: the file's meaning and the cross-skill protocol.)
 
 ## Contents
 
@@ -16,9 +16,9 @@ The cross-cutting contract for the shared **`.ki-config.toml`** file every Knowl
 
 ## The shared file & the compliance marker
 
-A repo declares its configuration in **one** `.ki-config.toml` at its root — not one file per concern. It is shared: several skills may read it, each from its own section. This keeps a repo's declared config in a single reviewable place and lets a skill discover what it needs without a bespoke file.
+A repo declares its configuration in **one** `.ki.toml` at its root — not one file per concern. It is shared: several skills may read it, each from its own section. This keeps a repo's declared config in a single reviewable place and lets a skill discover what it needs without a bespoke file.
 
-Its **presence is the marker of a Knowledge Islands–compliant repo**, and the **gate of the coverage cascade** (below): a repo that carries `.ki-config.toml` has opted into the house standards, and the standard-holding skills are what hold it to them, each reading its own table where it needs declared config. Onboarding a repo (adding the file) is the act of making it compliant; `ki-repo` requires it as a Layer-1 root file, is the skill that audits it, and — because it is the gate — is also the skill that checks the repo declares the other standards that govern it (_Coverage enforcement_, below).
+Its **presence is the marker of a Knowledge Islands–compliant repo**, and the **gate of the coverage cascade** (below): a repo that carries `.ki.toml` has opted into the house standards, and the standard-holding skills are what hold it to them, each reading its own table where it needs declared config. Onboarding a repo (adding the file) is the act of making it compliant; `ki-repo` requires it as a Layer-1 root file, is the skill that audits it, and — because it is the gate — is also the skill that checks the repo declares the other standards that govern it (_Coverage enforcement_, below).
 
 ## Harnesses and the skills namespace
 
@@ -88,7 +88,7 @@ So **what an absent table means is per-skill**, and that is exactly what _Covera
 | any other marker skill's table | not opted into that standard — a coverage WARN _if_ the repo shows that skill's artifacts |
 | `ki-authoring` | a bare `[skills.ki-authoring]` marker — declared like any coverage, not assumed (FAIL if missing) |
 
-Every declared governance root also commits the repository to a complete **resolvable native capability**: `ki repo audit` and `ki repo conform` must resolve its compatible registered operations only from the verified active installed collection before any operation runs. A declaration is not a request to vendor a manifest or payload into the repository. Process skills (`ki-next`, `ki-plan`, `ki-implement`, `ki-accept`, `ki-batch`, and `ki-recap`) remain global process tooling, not target-local governance contracts, and must not be declared in `.ki-config.toml`. Human-led repository review is a mode of the declared `ki-repo` capability, not a separate configuration table.
+Every declared governance root also commits the repository to a complete **resolvable native capability**: `ki repo audit` and `ki repo conform` must resolve its compatible registered operations only from the verified active installed collection before any operation runs. A declaration is not a request to vendor a manifest or payload into the repository. Process skills (`ki-next`, `ki-plan`, `ki-implement`, `ki-accept`, `ki-batch`, and `ki-recap`) remain global process tooling, not target-local governance contracts, and must not be declared in `.ki.toml`. Human-led repository review is a mode of the declared `ki-repo` capability, not a separate configuration table.
 
 ## Validate your own table
 
@@ -115,9 +115,9 @@ So the option set is **authored, not implicit**: each skill with declarable keys
 
 ## Coverage enforcement
 
-The file's presence is the **gate of an audit cascade**. Once a repo is confirmed a ki-repo (it carries `.ki-config.toml`), `ki-repo`'s auditor checks that the repo **declares an opt-in table for every governance skill whose applicability is detectable in it**. A detected-but-undeclared signal WARNs ("looks governed by `ki-<skill>` but declares no `[skills.ki-<skill>]`"); a declared-but-undetected table WARNs as a possibly stale opt-in.
+The file's presence is the **gate of an audit cascade**. Once a repo is confirmed a ki-repo (it carries `.ki.toml`), `ki-repo`'s auditor checks that the repo **declares an opt-in table for every governance skill whose applicability is detectable in it**. A detected-but-undeclared signal WARNs ("looks governed by `ki-<skill>` but declares no `[skills.ki-<skill>]`"); a declared-but-undetected table WARNs as a possibly stale opt-in.
 
-The gate is what prevents a **false positive**: a plain git repo that has, say, an `eleventy.config` but **no `.ki-config.toml`** is not a ki-repo, so it is never told to declare a website table. It simply takes the `ki-config` required-file FAIL. Coverage is only ever considered _after_ the marker confirms a ki-repo.
+The gate is what prevents a **false positive**: a plain git repo that has, say, an `eleventy.config` but **no `.ki.toml`** is not a ki-repo, so it is never told to declare a website table. It simply takes the `ki-config` required-file FAIL. Coverage is only ever considered _after_ the marker confirms a ki-repo.
 
 The detection signals `ki-repo` uses (one recursive tree read + `package.json`):
 
@@ -151,7 +151,7 @@ No marker table is decorative — each is read by code. Most are read by their *
 
 ## Scaffolding & ownership
 
-The **schema and conformer** inside a table belong to the skill that owns it: that skill documents the allowed keys and may emit or update its canonical fragment while preserving unrelated content. `ki-repo` owns the shared file-level contract and the two required foundation markers. No operation embeds another skill's TOML template or edits that skill's table directly. This retains one shared `.ki-config.toml`, one table per skill, read-only access across table boundaries, and validate-down/conform-down ownership.
+The **schema and conformer** inside a table belong to the skill that owns it: that skill documents the allowed keys and may emit or update its canonical fragment while preserving unrelated content. `ki-repo` owns the shared file-level contract and the two required foundation markers. No operation embeds another skill's TOML template or edits that skill's table directly. This retains one shared `.ki.toml`, one table per skill, read-only access across table boundaries, and validate-down/conform-down ownership.
 
 `ki-repo`'s own foundation action establishes the required markers. For a missing file it writes one canonical `[skills.ki-repo]` default block followed by one bare `[skills.ki-authoring]`. For a partial file it appends only whichever exact root marker is absent; `[skills.ki-repo.checks]` alone is not an exact `[skills.ki-repo]` marker. Existing content remains an exact byte-for-byte prefix — including values, comments, ordering, and existing newline bytes — repeat runs are idempotent, and dry-run writes nothing. CONFORM applies the local repair while live GitHub changes remain separately confirmed work.
 
@@ -161,4 +161,4 @@ The native resolver validates declaration names. Exact and dotted `[skills.ki-*]
 
 ## Local registry
 
-The local user configuration separately records physical roots that have been addressed as KI repositories. It is an inventory for audit, repair, and future bulk operations — not a record of successful conformance. `ki repo register` adds explicitly selected physical roots without resolving declarations or applying repository repairs. `ki repo init`, direct-CWD `ki repair`, and a local non-dry-run `ki repo conform` each attempt the same registration before their later work, so a malformed or failing `.ki-config.toml` remains discoverable. Registration preserves existing entries, never removes an entry, and does not search the filesystem beyond the caller's explicit target selection. Without a bootstrapped local user configuration, CONFORM remains portable and does not create one; the standalone registration command requires it. Cloud-account registry and reconciliation are outside this local contract.
+The local user configuration separately records physical roots that have been addressed as KI repositories. It is an inventory for audit, repair, and future bulk operations — not a record of successful conformance. `ki repo register` adds explicitly selected physical roots without resolving declarations or applying repository repairs. `ki repo init`, direct-CWD `ki repair`, and a local non-dry-run `ki repo conform` each attempt the same registration before their later work, so a malformed or failing `.ki.toml` remains discoverable. Registration preserves existing entries, never removes an entry, and does not search the filesystem beyond the caller's explicit target selection. Without a bootstrapped local user configuration, CONFORM remains portable and does not create one; the standalone registration command requires it. Cloud-account registry and reconciliation are outside this local contract.

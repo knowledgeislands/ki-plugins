@@ -2,7 +2,7 @@
 
 The quotable standard for a Knowledge Islands **plugin-marketplace repo** — a generated Claude plugin marketplace that projects the harness's skills and agents onto the Claude Cowork surface. The reference instance is `knowledgeislands/ki-plugins`. The [SKILL.md](../SKILL.md) is the operating procedure and carries the canonical shape; this file is the standard it audits against.
 
-The standard applies when a repository either declares `[skills.ki-repo-plugins]` in `.ki-config.toml` or carries `.claude-plugin/marketplace.json`. With neither, the checker reports one `NA` and stops. Either signal activates the complete projection audit, so a declared but incomplete marketplace still fails and a marketplace manifest without a declaration still surfaces the missing marker.
+The standard applies when a repository either declares `[skills.ki-repo-plugins]` in `.ki.toml` or carries `.claude-plugin/marketplace.json`. With neither, the checker reports one `NA` and stops. Either signal activates the complete projection audit, so a declared but incomplete marketplace still fails and a marketplace manifest without a declaration still surfaces the missing marker.
 
 ## Contents
 
@@ -29,7 +29,7 @@ ki-repo-plugins/
 │   ├── .claude-plugin/plugin.json    # plugin manifest
 │   ├── skills/<name>/                # each harness skill, copied verbatim
 │   └── agents/<name>.md              # governance agents, flattened
-├── .ki-config.toml                   # declares [skills.ki-repo-plugins] (+ [skills.ki-repo])
+├── .ki.toml                   # declares [skills.ki-repo-plugins] (+ [skills.ki-repo])
 ├── CLAUDE.md  README.md  LICENSE  .gitignore  .editorconfig
 ```
 
@@ -63,7 +63,7 @@ The plugin ships `skills/` and `agents/` only (v1). It carries **no `.mcp.json`*
 
 ## The repo scaffold
 
-Owned by the repo, not the generator: `LICENSE`, `README.md`, `.gitignore`, `.editorconfig`, `CLAUDE.md`, `.ki-config.toml`. `CLAUDE.md` must state the **generated-not-hand-edited** invariant. `.ki-config.toml` declares `[skills.ki-repo-plugins]` (this standard) and `[skills.ki-repo]`. The reference instance keeps a **public-but-proprietary** LICENSE — a deliberate, documented divergence from `ki-repo`'s public-⇒-MIT default, not a fault to auto-correct.
+Owned by the repo, not the generator: `LICENSE`, `README.md`, `.gitignore`, `.editorconfig`, `CLAUDE.md`, `.ki.toml`. `CLAUDE.md` must state the **generated-not-hand-edited** invariant. `.ki.toml` declares `[skills.ki-repo-plugins]` (this standard) and `[skills.ki-repo]`. The reference instance keeps a **public-but-proprietary** LICENSE — a deliberate, documented divergence from `ki-repo`'s public-⇒-MIT default, not a fault to auto-correct.
 
 ## Boundary with ki-binding
 

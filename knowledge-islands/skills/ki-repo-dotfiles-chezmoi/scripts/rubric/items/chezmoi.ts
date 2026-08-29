@@ -29,7 +29,7 @@ const CHEZMOI_0: RubricItem<ChezmoiShapeContext> = {
               {
                 status: 'PASS',
                 message: '[skills.ki-repo-dotfiles-chezmoi] selects this standard.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
           : [
@@ -37,7 +37,7 @@ const CHEZMOI_0: RubricItem<ChezmoiShapeContext> = {
                 status: 'NOT_APPLICABLE',
                 message:
                   'ki-repo-dotfiles-chezmoi is not applicable: its repository declaration is absent. Detected chezmoi shape is handled by ki-repo coverage.',
-                subject: '.ki-config.toml'
+                subject: '.ki.toml'
               }
             ]
       }

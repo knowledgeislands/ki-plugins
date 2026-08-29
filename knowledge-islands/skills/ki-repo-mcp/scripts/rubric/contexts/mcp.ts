@@ -7,7 +7,7 @@ import type {
   RubricSession
 } from '../../shared/rubric.ts'
 
-const CONFIG_FILE = '.ki-config.toml'
+const CONFIG_FILE = '.ki.toml'
 const CONFIG_SECTION = 'ki-repo-mcp'
 const PACKAGE_FILE = 'package.json'
 const MCP_MAIN = 'dist/mcp-server/index.js'

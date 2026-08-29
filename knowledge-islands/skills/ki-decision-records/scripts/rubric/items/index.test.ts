@@ -95,7 +95,7 @@ test('the session keeps one index draft and proposes all missing entries once', 
   temporaryDirectories.push(repository)
   const directory = join(repository, 'docs', 'decisions')
   mkdirSync(directory, { recursive: true })
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-decision-records]\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-decision-records]\n')
   writeFileSync(join(directory, 'README.md'), '# Decisions\n')
 
   for (const [serial, title] of [
@@ -160,7 +160,7 @@ The decision is available.
 test('repository-root Markdown is not treated as decision records', () => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-decision-records-no-directory-'))
   temporaryDirectories.push(repository)
-  writeFileSync(join(repository, '.ki-config.toml'), '[skills.ki-decision-records]\n')
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-decision-records]\n')
   writeFileSync(join(repository, 'README.md'), '# Repository\n')
   writeFileSync(join(repository, 'CHANGELOG.md'), '# Changelog\n')
 

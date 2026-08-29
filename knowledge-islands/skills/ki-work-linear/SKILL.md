@@ -3,7 +3,7 @@ name: ki-work-linear
 ki-kind: governance
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
-contributes: ['.ki-config.toml']
+contributes: ['.ki.toml']
 description: >
   Defines the configuration and safety guidance for Linear as a Knowledge Islands change-management adapter: mutable team-scoped locators, workflow metadata, review, closure, archive/delete semantics, and remote-write authority. Use when a repository configures Linear as its tracker or needs guidance for a future authorised remote operation. Remote process execution fails closed pending KI-HARNESS-FND-014. For local files use ki-work-roadmap; for GitHub use ki-work-github-issues.
 argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'

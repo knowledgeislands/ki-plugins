@@ -136,9 +136,9 @@ const APP_8 = item('APP-8', 'Dist output', 'Vite emits the shared dist seam.', '
 const APP_9 = item('APP-9', 'App opt-in', 'The app implementation table is present.', 'WARN', (context) => {
   if (!context.available) return [{ status: 'VIOLATION', message: 'Target directory is unavailable.' }]
   if (context.malformedConfiguration)
-    return [{ status: 'VIOLATION', message: '.ki-config.toml is malformed or unsafe.', subject: '.ki-config.toml' }]
+    return [{ status: 'VIOLATION', message: '.ki.toml is malformed or unsafe.', subject: '.ki.toml' }]
   return context.applicable
-    ? [{ status: 'PASS', message: 'The [skills.ki-repo-website-app] table is present.', subject: '.ki-config.toml' }]
+    ? [{ status: 'PASS', message: 'The [skills.ki-repo-website-app] table is present.', subject: '.ki.toml' }]
     : [{ status: 'NOT_APPLICABLE', message: 'The app implementation is not declared.' }]
 })
 const APP_10 = item(
@@ -149,11 +149,11 @@ const APP_10 = item(
   (context) =>
     inactive(context) ??
     (context.configurationKeys.length === 0
-      ? [{ status: 'PASS', message: 'The app table is keyless.', subject: '.ki-config.toml' }]
+      ? [{ status: 'PASS', message: 'The app table is keyless.', subject: '.ki.toml' }]
       : context.configurationKeys.map((key) => ({
           status: 'VIOLATION' as const,
           message: `Unknown key under [skills.ki-repo-website-app]: ${key}.`,
-          subject: '.ki-config.toml'
+          subject: '.ki.toml'
         })))
 )
 

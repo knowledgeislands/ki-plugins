@@ -13,7 +13,7 @@ afterEach(() => {
 const sessionFor = (content: string) => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-linear-adapter-'))
   temporaryDirectories.push(repository)
-  writeFileSync(join(repository, '.ki-config.toml'), content)
+  writeFileSync(join(repository, '.ki.toml'), content)
   return createLinearSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
 }
 

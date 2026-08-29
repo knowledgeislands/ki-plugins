@@ -4,7 +4,7 @@ ki-kind: governance
 ki-shared-dependencies: [ki-skills:rubric]
 ki-depends-on: [ki-repo-website]
 owns: [vite.config.ts, vite.config.js, vite.config.mjs, vite.config.mts]
-contributes: ['.ki-config.toml', package.json]
+contributes: ['.ki.toml', package.json]
 requires: []
 description: >-
   Governs the Knowledge Islands interactive website implementation: one client-side React application bundled by Vite to `dist/`. Use for dashboards and single interactive SPAs whose primary artifact is an application rather than a Markdown/data page collection. This is the legitimate alternative to `ki-repo-website-content`; never select both. Cloudflare hosting remains an independent adapter.
