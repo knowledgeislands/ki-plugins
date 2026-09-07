@@ -69,6 +69,12 @@ const manualItem = () => {
   return candidate.mechanical
 }
 
+const manualStyleItem = () => {
+  const candidate = MAN.items.find((entry) => entry.code === 'MAN-STYLE')
+  if (!candidate?.mechanical) throw new Error('MAN-STYLE mechanical item is missing')
+  return candidate.mechanical
+}
+
 test('audit is read-only and prepares one stable focused repository context', () => {
   const { repository, config, executable, install } = fixture()
   const session = createToolsSession(options(repository, 'audit'))
@@ -190,6 +196,44 @@ test('a physical manual page requires a mandoc lint workflow gate', () => {
   const scripted = createToolsSession(options(repository, 'audit')).subjects[0]?.context()
   if (!scripted) throw new Error('ki-repo-tools session has no repository context')
   expect(manualItem().audit.run(MAN.selectContext(scripted))[0]?.status).toBe('PASS')
+})
+
+test('manual heading spacing audits and conforms through one idempotent source write', () => {
+  const { repository } = fixture()
+  const beforeManual = createToolsSession(options(repository, 'audit')).subjects[0]?.context()
+  if (!beforeManual) throw new Error('ki-repo-tools session has no repository context')
+  const relativeManualPath = beforeManual.manual.manualPath
+  const manualPath = join(repository, relativeManualPath)
+  mkdirSync(join(repository, 'man'))
+  writeFileSync(manualPath, '.TH demo 1\n.SH NAME\ndemo\n.SS COMMANDS\n\\&\n.PP\n.TP\n')
+
+  const auditContext = createToolsSession(options(repository, 'audit')).subjects[0]?.context()
+  if (!auditContext) throw new Error('ki-repo-tools session has no repository context')
+  expect(manualStyleItem().audit.run(MAN.selectContext(auditContext))).toEqual([
+    {
+      status: 'VIOLATION',
+      message: `${relativeManualPath} headings on lines 2, 4 need \\& separation and a non-empty .PP only before prose.`,
+      subject: relativeManualPath
+    }
+  ])
+
+  const conformSession = createToolsSession(options(repository, 'conform'))
+  const conformContext = conformSession.subjects[0]?.context()
+  if (!conformContext) throw new Error('ki-repo-tools session has no repository context')
+  manualStyleItem().conform?.run(MAN.selectContext(conformContext))
+  const first = conformSession.proposal().writes.find((write) => write.path === relativeManualPath)
+  expect(first?.content).toBe('.TH demo 1\n.SH NAME\n\\&\n.PP\ndemo\n.SS COMMANDS\n\\&\n.TP\n')
+  if (!first) throw new Error('manual spacing conform write is missing')
+  writeFileSync(manualPath, first.content)
+
+  const secondSession = createToolsSession(options(repository, 'conform'))
+  const secondContext = secondSession.subjects[0]?.context()
+  if (!secondContext) throw new Error('ki-repo-tools session has no repository context')
+  expect(manualStyleItem().audit.run(MAN.selectContext(secondContext))[0]?.status).toBe('PASS')
+  manualStyleItem().conform?.run(MAN.selectContext(secondContext))
+  expect(secondSession.proposal().writes.find((write) => write.path === relativeManualPath)?.content).toBe(
+    first.content
+  )
 })
 
 test('symlinked governed paths remain report-only and are never traversed', () => {

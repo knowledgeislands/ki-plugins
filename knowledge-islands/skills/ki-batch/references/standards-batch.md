@@ -4,7 +4,9 @@ This is the on-demand procedure for `ki-batch`.
 
 The kind, phases, and relationship boundary live in [the skill](../SKILL.md).
 
-## 1. Prepare a reviewed authorisation
+## 1. Establish authority and prepare the contract
+
+### Reviewed-item authority
 
 Accept only an explicit candidate set.
 
@@ -32,9 +34,13 @@ Present the complete authorisation for review and require explicit approval befo
 
 An omitted field is not implied authority.
 
+### Outcome authority
+
+Read and follow [the outcome-authority procedure](standards-outcome-authority.md). It permits generated selection and immediate execution only from affirmative current human authority, and retains exact scope, evidence, consolidated acceptance, and mandatory stops.
+
 ## 2. Validate before implementation
 
-Resolve the approved regular local authorisation, the selected adapter, and every named canonical work item afresh. An absent, malformed, foreign, expired, unbound, duplicate, or changed authority is a no-write stop; no conversation, clean gate, or unstructured file substitutes for it. A remote adapter stops before execution pending `KI-HARNESS-FND-014`; do not infer a local record path or call a remote API.
+Resolve the approved regular local authorisation, the selected adapter, and every named canonical work item afresh. An absent, malformed, foreign, expired, unbound, duplicate, or changed authority is a no-write stop. Current outcome authority may generate the structured record as defined above; ordinary conversation, a clean gate, or an unstructured file does not substitute for it. A remote adapter stops before execution pending `KI-HARNESS-FND-014`; do not infer a local record path or call a remote API.
 
 Confirm that each item remains `ready`, is a canonical record for the resolved local adapter, has a bounded approved plan, its dependencies remain satisfied and correctly ordered, its one repository and file or system boundary still match, its required checks are available, its delegation is authorised, and no mandatory stop has already occurred.
 
@@ -66,9 +72,9 @@ Continue only items proven independent of the parked item and within the authori
 
 ## 5. Review closure and recap
 
-Records reach `awaiting-review` through `ki-implement`; the batch does not self-certify them.
+Records reach `awaiting-review` through `ki-implement`; the batch does not self-certify delivery evidence.
 
-Request named batched closure from `ki-accept` only when the authorisation expressly grants that authority for those records.
+Invoke named batched closure through `ki-accept` only when the authorisation expressly grants that authority for those records. Outcome-authorised `done` completion is consolidated human authority, not agent self-approval: re-check each item’s exact review packet and current repository evidence before recording closure.
 
 Otherwise stop each record at awaiting-review for normal human review.
 
@@ -80,18 +86,10 @@ Pruning is never implied by batch completion.
 
 `scripts/internal/authorisation.ts` exposes a pure approval-payload calculation and a regular-file resolver. `scripts/internal/batch-cycle.ts` exposes a pure `evaluateBatchCycle()` helper. Their focused fixture tests prove that changed approval payloads, mismatched run records, duplicate IDs, unresolved or remote adapters, non-canonical or out-of-scope records, missing plans/checks, unauthorised delegation, stops, reversed dependencies, a dirty tree, a failed gate, an unready item, an unsatisfied dependency, and an early decision produce a named no-write outcome.
 
-The model may report `coordinate` only for a clean, approval-bound, same-repository set of named canonical Ready items through a locally executable selected adapter. It does not invoke any skill, run a command, write a file, or mutate an item.
+The model may report `coordinate` only for a clean, authority-bound, same-repository set of named canonical Ready items through a locally executable selected adapter. It verifies current evidence for outcome authority and complete closure scope for a `done` target. It does not invoke any skill, run a command, write a file, or mutate an item.
 
 ## Mandatory stops
 
-Stop the affected item and escalate when any of these occurs:
-
-- a public-contract change outside the approved plan;
-- material scope expansion;
-- destructive or irreversible work;
-- a new external dependency or coordination need;
-- failed required verification;
-- push or release; or
-- an unapproved decision.
+Stop the affected item and escalate for a public-contract change outside the approved plan, material scope expansion, destructive or irreversible work, a new external dependency or coordination need, failed required verification, push or release, or an unapproved decision.
 
 Do not continue by broadening the authorisation, guessing the decision, or converting a stop into a silent omission.

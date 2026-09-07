@@ -66,24 +66,55 @@ See [[audit-rubric|the rubric]].
 See `skills/repo-structure/ki-repo-kb/SKILL.md` for KB conventions.
 ```
 
-### Well-formed `.ki.toml` table
+### Well-formed `.ki.toml` structure
 
-Keys are lowercase `snake_case`. Strings are double-quoted. Arrays use the inline `["a", "b"]` form for short lists. One table per skill, named for the skill (`[skills.ki-repo]`), with sub-tables nested under it. Comment non-obvious keys with a `#` line above them — the _why_, not the _what_. The contract behind what each table means (the one-table-per-skill model, validate-your-own-table protocol) belongs to the `ki-repo` skill; this pattern covers formatting only.
+Keys are lowercase `snake_case`. Strings are double-quoted. Arrays use the inline `["a", "b"]` form for short lists. One explicit table per skill names the owner (`[skills.ki-repo]`); short subordinate maps use dotted keys under that root, while complex records may use nested tables. Comment non-obvious values with their _why_, not their _what_. A substantial file uses only the navigational neighbourhoods it needs and leaves the exact conformance header first. The contract behind table identity, neighbourhood meaning, and the validate-your-own-table protocol belongs to the `ki-repo` skill; this pattern covers presentation.
 
 ```toml
+# Knowledge Islands repository configuration.
+# Its presence declares conformance with the Knowledge Islands repository standard.
+
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Foundation
+# -----------------------------------------------------------------------------
+
+[repo]
+harnesses = ["knowledgeislands/ki-agentic-harness"]
+
 [skills.ki-repo]
+repository = "https://github.com/owner/repository"
 visibility = "public"
 
 # Branch protection is opt-in; most repos leave this off.
-[skills.ki-repo.checks]
-branch-protection = true
+checks.branch-protection = true
 
-[skills.ki-engineering]
-node_version = "22"
-lint_paths = ["src", "scripts"]
+[skills.ki-authoring]
 
-[skills.ki-repo-kb]
-zones = ["Pillars", "Admin", "Reference"]
-# default_zone controls where new notes land when no zone is specified.
-default_zone = "Pillars"
+# -----------------------------------------------------------------------------
+# Repository shape
+# -----------------------------------------------------------------------------
+
+[skills.ki-repo-project]
+
+# -----------------------------------------------------------------------------
+# Change management
+# -----------------------------------------------------------------------------
+
+[skills.ki-work]
+adapter = "roadmap"
+
+[skills.ki-work-roadmap]
+areas.CORE = "foundation-tooling"
+
+# -----------------------------------------------------------------------------
+# Relationships
+# -----------------------------------------------------------------------------
+
+[skills.ki-agora]
+memberships.ki-all = { home = "https://github.com/knowledgeislands/ki-agentic-harness", role = "maintainer" }
+
+[skills.ki-trades]
+routes."knowledgeislands/tools-ki" = { export = ["work", "knowledge"], import = ["knowledge"] }
 ```

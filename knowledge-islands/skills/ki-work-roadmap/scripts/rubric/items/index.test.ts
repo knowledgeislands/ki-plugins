@@ -132,6 +132,7 @@ test('the structured catalogue represents the flat work-item standard', () => {
     'ROAD-5',
     'ROAD-6',
     'ROAD-7',
+    'ROAD-8',
     'ITEM-1',
     'ITEM-2',
     'ITEM-3',
@@ -146,6 +147,16 @@ test('the structured catalogue represents the flat work-item standard', () => {
     'TRADE-1',
     'TRADE-2'
   ])
+})
+
+test('roadmap commit guidance separates pruning rather than every lifecycle transition', () => {
+  const item = items.find((candidate) => candidate.code === 'ROAD-8')
+  const metadata = `${item?.description}\n${item?.judgment?.prompt}\n${item?.judgment?.guidance}`
+
+  expect(metadata).toContain('without requiring intermediate-state commits')
+  expect(metadata).toContain('prior committed done state')
+  expect(metadata).toContain('one or more eligible records')
+  expect(metadata).toContain('dedicated prune-only commit')
 })
 
 test('every criterion declares its v1 remediation or review evidence', () => {
@@ -357,7 +368,9 @@ test('conform scaffolds a missing issue ledger from the highest retained issue',
     | RubricItem<typeof context.roadmaps>
     | undefined
   item?.mechanical?.conform?.run(context.roadmaps)
-  expect(session.proposal().writes).toEqual([{ path: `docs/roadmap/${ISSUE_LEDGER}`, content: issueLedger(1) }])
+  expect(session.proposal().writes).toEqual([
+    { path: `docs/roadmap/${ISSUE_LEDGER}`, content: issueLedger(1), create: true }
+  ])
 })
 
 test('the issue ledger prevents a retained issue from exceeding the allocated range', () => {

@@ -158,6 +158,7 @@ const contextOptions: RubricContextOptions = {
   repository: '/fixture',
   userHome: '/fixture-user',
   configuration: {},
+  packageScriptClaims: [],
   repositorySkills: {
     inspect: (names) =>
       names.map((name) => ({ name, status: name === 'active-skill' ? 'active' : 'missing', message: 'fixture' })),

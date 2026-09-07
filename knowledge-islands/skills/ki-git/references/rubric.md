@@ -53,11 +53,11 @@ Working-copy topology and review flow follow local protection, review, and concu
 
 Git operations preserve shared worktree state and recoverability.
 
-- **HYGIENE-1 [J] — Git working hygiene preserves unrelated state** — Git work preserves shared state through explicit paths, worker-local indexes, and serialized commits. (standards-git.md)
-  - _Evidence scope:_ The shared working tree (`git status --short`), worker-local Git indexes, staged paths, expected HEAD, and Git write operations for the selected work.
-  - _Review prompt:_ After recording current working-tree and expected-HEAD evidence, assess whether each delegated worker used its assigned Git index, staging is limited to intended paths, unrelated changes remain untouched, and shared-HEAD commits are safely serialised.
+- **HYGIENE-1 [J] — Git working hygiene preserves unrelated state** — Git work preserves a potentially shared working tree through thread-local touched paths, explicit staging, contested-path coordination, and serialized commit windows. (standards-git.md)
+  - _Evidence scope:_ The pre-edit and current working tree (`git status --short`), expected `HEAD`, the thread-local touched-path set, touched and staged diffs, contested paths, and Git write operations for the selected work.
+  - _Review prompt:_ After recording the pre-edit state and expected `HEAD`, assess whether the thread tracked every path it may have changed, withheld pre-existing or overlapping paths for coordination, staged only enumerated uncontested paths, preserved unrelated staged and unstaged work, and serialised the commit window that advances shared `HEAD`.
   - _Outcomes:_ conforming; state inspection required; staging correction required; operation coordination required
-  - _Conforming guidance:_ Inspect the working tree, pass the assigned `GIT_INDEX_FILE` on every worker Git write, stage only explicit intended paths, leave unrelated work untouched, and have the orchestrator serialize commits after re-checking HEAD.
+  - _Conforming guidance:_ Maintain a thread-local touched-path set, re-check status, `HEAD`, touched diffs, and staged paths before committing, and use `git add -- <path>...` only for enumerated uncontested paths. Never use `git add -A`, `git add .`, `git add -u`, `git commit -a`, `git commit -am`, or broad wildcard pathspecs in a shared tree. Leave contested and unrelated work untouched, and serialize only the shared-index and commit window.
 
 ## LOCK — stale-lock semantics
 

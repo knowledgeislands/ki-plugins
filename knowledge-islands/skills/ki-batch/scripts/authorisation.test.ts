@@ -8,7 +8,7 @@ const repository = 'https://github.com/knowledgeislands/ki-agentic-harness'
 const now = new Date('2026-08-09T12:00:00Z')
 
 const record = (overrides: readonly string[] = [], ledger = ''): string => {
-  const unsigned = `---\nid: KI-HARNESS-BATCH-001\nrepository: ${repository}\napproved: true\napproved_at: 2026-08-09T11:00:00Z\napproved_payload_sha256: <payload>\nrun_id: KI-HARNESS-BATCH-001-RUN-001\ntimebox_ends_at: 2026-08-09T13:00:00Z\nitem_ids: [KI-HARNESS-FND-013]\ncompletion_target: awaiting-review\nmandatory_stops: [unapproved-decision]\n${overrides.join('\n')}\n---\n\n# KI-HARNESS-BATCH-001 — Test batch\n\n## Scope\n\n- Repository: ${repository}\n`
+  const unsigned = `---\nid: KI-HARNESS-BATCH-001\nrepository: ${repository}\napproved: true\napproved_at: 2026-08-09T11:00:00Z\nauthority_mode: reviewed-items\napproved_payload_sha256: <payload>\nrun_id: KI-HARNESS-BATCH-001-RUN-001\ntimebox_ends_at: 2026-08-09T13:00:00Z\nitem_ids: [KI-HARNESS-FND-013]\ncompletion_target: awaiting-review\nmandatory_stops: [unapproved-decision]\n${overrides.join('\n')}\n---\n\n# KI-HARNESS-BATCH-001 — Test batch\n\n## Scope\n\n- Repository: ${repository}\n`
   const hash = approvedPayloadSha256(unsigned.replace('<payload>', '0'.repeat(64)))
   return `${unsigned.replace('<payload>', hash as string)}${ledger}`
 }
@@ -40,6 +40,8 @@ test('resolves one approved, local, active canonical batch authorisation without
       repository,
       approved: true,
       approvedAt: '2026-08-09T11:00:00Z',
+      authorityMode: 'reviewed-items',
+      authorityEvidence: null,
       approvedPayloadSha256: expect.stringMatching(/^[0-9a-f]{64}$/),
       runId: 'KI-HARNESS-BATCH-001-RUN-001',
       runBinding: null,
@@ -123,6 +125,44 @@ test('stops without writes for a non-canonical file, altered payload, duplicate 
   ).toMatchObject({
     kind: 'stop',
     reason: 'batch run ledger lacks an approval binding',
+    writes: false
+  })
+})
+
+test('resolves current outcome authority with an exact consolidated-acceptance scope', () => {
+  const outcome = record([
+    'authority_mode: outcome',
+    'authority_evidence: User explicitly authorised autonomous roadmap delivery in the current session.',
+    'completion_target: done',
+    'closure_item_ids: [KI-HARNESS-FND-013]'
+  ])
+
+  expect(resolveFixture(outcome)).toMatchObject({
+    kind: 'resolved',
+    authorisation: {
+      authorityMode: 'outcome',
+      authorityEvidence: 'User explicitly authorised autonomous roadmap delivery in the current session.',
+      completionTarget: 'done',
+      closureItemIds: ['KI-HARNESS-FND-013']
+    },
+    writes: false
+  })
+})
+
+test('stops outcome authority without evidence and incomplete done closure scope', () => {
+  expect(resolveFixture(record(['authority_mode: outcome']))).toMatchObject({
+    kind: 'stop',
+    reason: 'outcome-authorised batch lacks current human authority evidence',
+    writes: false
+  })
+
+  expect(
+    resolveFixture(
+      record(['authority_mode: outcome', 'authority_evidence: Current human authority.', 'completion_target: done'])
+    )
+  ).toMatchObject({
+    kind: 'stop',
+    reason: 'done completion target must grant closure for every named item',
     writes: false
   })
 })

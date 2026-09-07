@@ -26,7 +26,7 @@ The tracked readable rubric is the exact publication of the structured catalogue
 
 Activity note structure, frontmatter, realization-specific declarations, and safe index maintenance.
 
-- **ACT-S-1 [M + J] — activity index** — `Activities.md` exists when one or more activity notes exist and lists every note. (standards-activities.md)
+- **ACT-S-1 [M + J] — activity index** — `Activities.md` exists when one or more activity notes exist and links every note with Markdown or Obsidian wikilinks. (standards-activities.md)
   - _Remediation:_ automatic
   - _Evidence scope:_ The Activities index, its note entries, ordering, and reader-facing descriptions.
   - _Review prompt:_ Is the index current, well ordered, and informative rather than merely mechanically complete?

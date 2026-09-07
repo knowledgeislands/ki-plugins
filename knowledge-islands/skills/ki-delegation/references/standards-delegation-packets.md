@@ -62,7 +62,7 @@ Grant the least authority and tool access that can complete the lane. The worker
 
 Choose the strongest practical isolation for the lane: read-only for research, an exclusive non-overlapping write boundary in a shared worktree, or an isolated worktree or sandbox when writes could interfere. If the runtime cannot enforce the required boundary, reduce the lane to a safer read-only task or keep it with the coordinator.
 
-When a worker will run Git write commands in a shared worktree, its brief also names a unique temporary Git index path. The worker passes it explicitly on every Git write command, for example `GIT_INDEX_FILE=<worker-index> git add -- <paths>`. The path is a worker-local staging boundary, not authority to commit concurrently; `ki-git` owns the matching shared-`HEAD` serialization rule.
+When a worker may change a shared worktree, its brief names an exclusive file boundary and the worker retains a thread-local touched-path set as required by `ki-git`. If it must stage outside the shared commit window, the brief also names a unique temporary Git index path, passed explicitly on each preparatory staging command. The index is staging isolation, not working-file isolation: the worker may commit its own uncontested paths only through `ki-git`'s revalidation and serialized shared-`HEAD` commit window.
 
 ## Quality bar
 

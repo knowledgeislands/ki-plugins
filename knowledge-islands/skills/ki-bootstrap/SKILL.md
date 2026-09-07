@@ -3,7 +3,7 @@ name: ki-bootstrap
 ki-kind: process
 ki-depends-on: []
 description: >
-  Explains first-time Knowledge Islands activation through the `ki` CLI: bootstrap a user, select a verified canonical harness, and distinguish user skills from repository-declared governance. Use for guidance on `ki bootstrap`, `ki harness`, `ki skill add/remove`, `ki repo skill add/remove`, and `ki dev local`; the CLI itself owns all mechanics. Triggers: "set up KI", "what does ki bootstrap do", "activate a KI skill", "why won't ki repo audit run". For repository coverage use `ki-repo`; for command behaviour use `ki help`.
+  Explains first-time Knowledge Islands activation through the `ki` CLI: bootstrap a user, select a verified canonical harness, and distinguish user skills from repository-declared governance. Use for guidance on `ki bootstrap`, `ki harness`, `ki skill add/remove`, `ki repo skill add/remove`, and `ki dev local`; the CLI itself owns all mechanics. Triggers: "set up KI", "what does ki bootstrap do", "activate a KI skill", "why won't ki repo audit run". For repository coverage use `ki-repo`; for command behaviour use `ki --help`.
 argument-hint: 'help | refresh'
 ---
 
@@ -41,15 +41,15 @@ Missing, incompatible, undeclared, or ambiguous skills fail before an audit or c
 
 ## Development boundary
 
-An installed verified payload is the authoritative source of capabilities. Local development is explicit: `ki dev local set <path>` validates and records a checkout, `ki dev local on` selects it, and `ki dev local off` restores the verified canonical archive. A selected local checkout is a mutable development source, not a verified installed payload; activation and loaded runtime capability remain separate host evidence.
+An installed verified payload is the authoritative source of capabilities. Local development is explicit: `ki dev local set <harness-id> <local-harness-path>` validates and records a checkout, `ki dev local on [harness-id]` selects it, and `ki dev local off [harness-id]` restores the verified archive. A selected local checkout is a mutable development source, not a verified installed payload; activation and loaded runtime capability remain separate host evidence.
 
-For command grammar, run `ki help`. For repository coverage, use `ki-repo`.
+For command grammar, run `ki --help`. For repository coverage, use `ki-repo`.
 
 ## Operating modes
 
 ### Mode HELP
 
-Explain the first-time bootstrap, installed-harness, user-activation, repository-activation, and native repository-operation boundaries above. Route exact command and option questions to `ki help`; route `.ki.toml` coverage questions to `ki-repo`.
+Explain the first-time bootstrap, installed-harness, user-activation, repository-activation, and native repository-operation boundaries above. Route exact command and option questions to `ki --help`; route `.ki.toml` coverage questions to `ki-repo`.
 
 ### Mode REFRESH
 

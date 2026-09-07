@@ -37,6 +37,7 @@ const createSession = (mode: 'audit' | 'conform') =>
     repository: createRepository(),
     userHome: tmpdir(),
     configuration: {},
+    packageScriptClaims: [],
     publication: {
       target: 'references/rubric.md',
       rendered: '',
@@ -100,7 +101,8 @@ describe('ki-skills session evidence', () => {
       mode: 'conform',
       repository,
       userHome: tmpdir(),
-      configuration: {}
+      configuration: {},
+      packageScriptClaims: []
     })
     const subject = session.subjects.find((candidate) => candidate.subject === 'skills/ki-example')
     const context = subject?.context().name
@@ -119,7 +121,8 @@ describe('ki-skills session evidence', () => {
       mode: 'conform',
       repository,
       userHome: tmpdir(),
-      configuration: {}
+      configuration: {},
+      packageScriptClaims: []
     })
     const repeatedSubject = repeated.subjects.find((candidate) => candidate.subject === 'skills/ki-example')
     const repeatedContext = repeatedSubject?.context().name
@@ -142,7 +145,8 @@ describe('ki-skills session evidence', () => {
       mode: 'conform',
       repository,
       userHome: tmpdir(),
-      configuration: {}
+      configuration: {},
+      packageScriptClaims: []
     })
     const subject = session.subjects.find((candidate) => candidate.subject === 'skills/ki-example')
     expect(subject?.context().name?.setName).toBeUndefined()
@@ -162,6 +166,7 @@ describe('ki-skills session evidence', () => {
       repository: createRepository('ki-skills'),
       userHome: tmpdir(),
       configuration: {},
+      packageScriptClaims: [],
       publication
     })
     const rubricSubjects = session.subjects.filter((subject) => subject.families.includes('RUBRIC'))

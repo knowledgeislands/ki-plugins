@@ -27,7 +27,7 @@ const mechanical = (
 const ZONE_1 = mechanical(
   'ZONE-1',
   'required zone layout',
-  'Calendar/, Pillars/, Resources/, Streams/, and Admin/ are present, resolving each through a declared zone alias.',
+  'Calendar/, Pillars/, Resources/, Streams/, and Admin/ resolve through any declared zone alias to readable directories, including directory symlinks.',
   'FAIL',
   (context) => context.requiredLayout
 )

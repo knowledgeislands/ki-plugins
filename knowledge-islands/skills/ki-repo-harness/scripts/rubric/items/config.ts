@@ -69,9 +69,7 @@ const CONFIG_2: RubricItem<HarnessConfigContext> = {
       phase: 'INSPECT',
       run: ({ state, hasRepositoryTable }) => {
         if (state !== 'physical')
-          return [
-            { status: 'NOT_APPLICABLE', message: 'KI configuration is absent or unsafe.', subject: '.ki.toml' }
-          ]
+          return [{ status: 'NOT_APPLICABLE', message: 'KI configuration is absent or unsafe.', subject: '.ki.toml' }]
         return [
           hasRepositoryTable
             ? {

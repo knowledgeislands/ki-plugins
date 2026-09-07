@@ -3,7 +3,13 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileS
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { RubricEmitter, RubricFamily } from '../../shared/rubric.ts'
-import { inspectEngineeringCheckRecords } from '../contexts/audit-evidence.ts'
+import {
+  gradeDependencyFreshness,
+  inspectDependencyHolds,
+  inspectEngineeringCheckRecords,
+  inspectGovernedScriptSurface,
+  nextVersionAfter
+} from '../contexts/audit-evidence.ts'
 import {
   createEngineeringSession,
   type EngineeringEvidenceInspector,
@@ -15,6 +21,7 @@ import {
 import catalogue from './index.ts'
 
 const temporaryDirectories: string[] = []
+const engineeringClaim = [{ script: 'ki:deps:update', skill: 'example/harness:ki-engineering' }] as const
 const familyModules = readdirSync(import.meta.dir)
   .filter((file) => file.endsWith('.ts') && file !== 'index.ts' && !file.endsWith('.test.ts'))
   .sort()
@@ -97,6 +104,139 @@ test('engineering check records accept only known mechanical boolean entries', (
   ])
 })
 
+test('exact external script exclusions satisfy the naming and claim boundaries', () => {
+  const scripts = { 'ki:deps:update': 'bun update --latest', 'vendor:generate': 'vendor generate' }
+  for (const configuration of [
+    '[skills.ki-engineering]\nscript_exclusions = ["vendor:generate"]\n',
+    '[skills."example/harness:ki-engineering"]\nscript_exclusions = ["vendor:generate"]\n'
+  ]) {
+    expect(inspectGovernedScriptSurface(configuration, scripts, engineeringClaim)).toEqual({
+      namingOffenders: [],
+      claimProblems: []
+    })
+  }
+})
+
+test('repository-owned self scripts and the closed bare lifecycle set need no exclusions', () => {
+  const scripts = {
+    build: 'build',
+    prepare: 'husky',
+    test: 'bun test',
+    'test:coverage': 'bun test --coverage',
+    'test:watch': 'bun test --watch',
+    clean: 'rm -rf node_modules',
+    'ki:deps:update': 'bun update --latest',
+    'self:cf:build': 'build for cloudflare',
+    'self:typecheck': 'tsc --noEmit'
+  }
+
+  expect(inspectGovernedScriptSurface('[skills.ki-engineering]\n', scripts, engineeringClaim)).toEqual({
+    namingOffenders: [],
+    claimProblems: []
+  })
+})
+
+test('self ownership requires a non-empty suffix and cannot be redundantly excluded', () => {
+  expect(
+    inspectGovernedScriptSurface(
+      '[skills.ki-engineering]\n',
+      { 'ki:deps:update': 'bun update --latest', 'self:': 'invalid' },
+      engineeringClaim
+    )
+  ).toEqual({
+    namingOffenders: ['self:'],
+    claimProblems: ['unsupported or unclaimed script key(s): self:']
+  })
+
+  expect(
+    inspectGovernedScriptSurface(
+      '[skills.ki-engineering]\nscript_exclusions = ["self:vendor:clone"]\n',
+      { 'ki:deps:update': 'bun update --latest', 'self:vendor:clone': 'vendor clone' },
+      engineeringClaim
+    )
+  ).toEqual({
+    namingOffenders: [],
+    claimProblems: ['script exclusion overlaps repository-owned self: namespace: self:vendor:clone']
+  })
+})
+
+test('unclaimed ki scripts cannot use exclusions as a capability claim', () => {
+  expect(
+    inspectGovernedScriptSurface(
+      '[skills.ki-engineering]\nscript_exclusions = ["ki:local:run"]\n',
+      { 'ki:deps:update': 'bun update --latest', 'ki:local:run': 'run local task' },
+      engineeringClaim
+    )
+  ).toEqual({
+    namingOffenders: [],
+    claimProblems: ['script exclusion overlaps capability-owned ki: namespace: ki:local:run']
+  })
+})
+
+test('script exclusions reject invalid, stale, duplicate, patterned, and owned entries', () => {
+  const scripts = {
+    'ki:deps:update': 'bun update --latest',
+    'ki:harness:eval': 'bun evals/harness.ts',
+    'vendor:generate': 'vendor generate'
+  }
+  const configuration = `[skills.ki-engineering]
+script_exclusions = ["", "vendor:*", "missing", "vendor:generate", "vendor:generate", "ki:harness:eval", 7]
+
+[skills.ki-repo-harness]
+`
+  expect(
+    inspectGovernedScriptSurface(configuration, scripts, [
+      ...engineeringClaim,
+      { script: 'ki:harness:eval', skill: 'example/harness:ki-repo-harness' }
+    ])
+  ).toEqual({
+    namingOffenders: [],
+    claimProblems: [
+      'script_exclusions entries must be non-empty strings',
+      'script exclusion "vendor:*" must be exact, not a pattern',
+      'stale script exclusion names no existing script: missing',
+      'duplicate script exclusion: vendor:generate',
+      'script exclusion overlaps declared owner example/harness:ki-repo-harness: ki:harness:eval',
+      'script_exclusions entries must be non-empty strings'
+    ]
+  })
+})
+
+test('script_exclusions must be an array and cannot hide an ordinary unexcluded script', () => {
+  expect(
+    inspectGovernedScriptSurface(
+      '[skills.ki-engineering]\nscript_exclusions = "vendor:generate"\n',
+      {
+        'ki:deps:update': 'bun update --latest',
+        'vendor:generate': 'vendor generate'
+      },
+      engineeringClaim
+    )
+  ).toEqual({
+    namingOffenders: ['vendor:generate'],
+    claimProblems: [
+      'unsupported or unclaimed script key(s): vendor:generate',
+      'script_exclusions must be an array of exact script names'
+    ]
+  })
+})
+
+test('package script claims authorize exact identities without prefix inference', () => {
+  const scripts = {
+    'ki:deps:update': 'bun update --latest',
+    'ki:custom:run': 'bun run custom'
+  }
+  expect(
+    inspectGovernedScriptSurface('[skills.ki-engineering]\n', scripts, [
+      ...engineeringClaim,
+      { script: 'ki:custom:run', skill: 'example/harness:ki-custom' }
+    ])
+  ).toEqual({ namingOffenders: [], claimProblems: [] })
+  expect(inspectGovernedScriptSurface('[skills.ki-engineering]\n', scripts, engineeringClaim).claimProblems).toContain(
+    'unsupported or unclaimed script key(s): ki:custom:run'
+  )
+})
+
 test('each family module exports one complete family', async () => {
   for (const file of familyModules) {
     const module = (await import(`./${file}`)) as Record<string, unknown>
@@ -115,7 +255,7 @@ test('the session keeps stable focused context and coalesces package drafts', as
     '{"name":"example","scripts":{"ki:all":"ki repo audit","ki:engineering:check":"ki repo audit --skill ki-engineering","ki:authoring:fix":"ki repo conform --skill ki-authoring","ki:harness:eval":"bun evals/harness.ts"}}\n'
   )
   const session = await createEngineeringSession(
-    { mode: 'conform', repository, userHome: tmpdir(), configuration: {} },
+    { mode: 'conform', repository, userHome: tmpdir(), configuration: {}, packageScriptClaims: [] },
     () => [
       { level: 'FAIL', code: 'PKG-1', message: 'type missing', subject: 'package.json' },
       { level: 'FAIL', code: 'PKG-2', message: 'package manager missing', subject: 'package.json' }
@@ -150,7 +290,7 @@ test('SCR-2 proposes removal for any whole-repository or focused native governan
     '{"scripts":{"ki:all":"ki repo audit","ki:engineering:check":"ki repo audit --skill ki-engineering","ki:authoring:fix":"ki repo conform --skill ki-authoring","ki:harness:eval":"bun evals/harness.ts"}}\n'
   )
   const session = await createEngineeringSession(
-    { mode: 'conform', repository, userHome: tmpdir(), configuration: {} },
+    { mode: 'conform', repository, userHome: tmpdir(), configuration: {}, packageScriptClaims: [] },
     () => [{ level: 'FAIL', code: 'SCR-2', message: 'native governance wrappers present', subject: 'package.json' }]
   )
   const root = session.subjects[1]?.context() as EngineeringRubricContext
@@ -174,7 +314,7 @@ test('guarded remedies do not expose unsafe command conform actions', async () =
   temporaryDirectories.push(repository)
   writeFileSync(join(repository, 'package.json'), '{}\n')
   const session = await createEngineeringSession(
-    { mode: 'conform', repository, userHome: tmpdir(), configuration: {} },
+    { mode: 'conform', repository, userHome: tmpdir(), configuration: {}, packageScriptClaims: [] },
     () => [
       { level: 'FAIL', code: 'BIO-1', message: 'formatting drift' },
       { level: 'FAIL', code: 'KNIP-2', message: 'unused export' },
@@ -199,7 +339,7 @@ test('conform never replaces a symlinked contributed package file', async () => 
   writeFileSync(source, '{}\n')
   symlinkSync(source, join(repository, 'package.json'))
   const session = await createEngineeringSession(
-    { mode: 'conform', repository, userHome: tmpdir(), configuration: {} },
+    { mode: 'conform', repository, userHome: tmpdir(), configuration: {}, packageScriptClaims: [] },
     () => [{ level: 'FAIL', code: 'PKG-1', message: 'type missing' }]
   )
   const root = session.subjects[1]?.context() as EngineeringRubricContext
@@ -213,7 +353,7 @@ test('knip export coverage is audited without offering a repair', async () => {
   temporaryDirectories.push(repository)
   writeFileSync(join(repository, 'package.json'), '{}\n')
   const session = await createEngineeringSession(
-    { mode: 'conform', repository, userHome: tmpdir(), configuration: {} },
+    { mode: 'conform', repository, userHome: tmpdir(), configuration: {}, packageScriptClaims: [] },
     () => [{ level: 'FAIL', code: 'KNIP-3', message: 'export "./cli" is unreachable', subject: 'knip.json' }]
   )
   const root = session.subjects[1]?.context() as EngineeringRubricContext
@@ -252,7 +392,7 @@ test('a recording emitter changes no outcome and still observes the evidence sta
     ]
   }
 
-  const options = { mode: 'audit', repository, userHome: tmpdir(), configuration: {} } as const
+  const options = { mode: 'audit', repository, userHome: tmpdir(), configuration: {}, packageScriptClaims: [] } as const
   const silent = await createEngineeringSession(options, recording)
   const watched = await createEngineeringSession({ ...options, emit: (event) => void events.push(event) }, recording)
 
@@ -274,5 +414,77 @@ test('a recording emitter changes no outcome and still observes the evidence sta
   expect(events).toEqual([
     { kind: 'stage', edge: 'start', label: 'engineering evidence' },
     { kind: 'stage', edge: 'end', label: 'engineering evidence' }
+  ])
+})
+
+// ── DEPS-1: leading-edge dependency freshness ─────────────────────────────────
+
+test('dependency holds parse "<name> — <reason>" entries and flag malformed, duplicate, and stale holds', () => {
+  const configuration = [
+    '[skills.ki-engineering]',
+    'dependency_holds = [',
+    '  "typescript — vendored packages still target TS 5",',
+    '  "typescript — repeated",',
+    '  "react",',
+    '  "left-pad — no update is actually available"',
+    ']'
+  ].join('\n')
+  const inspected = inspectDependencyHolds(configuration, ['typescript', 'react'])
+  expect(inspected.holds).toEqual(
+    new Map([
+      ['typescript', 'vendored packages still target TS 5'],
+      ['left-pad', 'no update is actually available']
+    ])
+  )
+  expect(inspected.messages).toEqual([
+    'duplicate dependency hold: typescript',
+    'dependency hold "react" must record a reason as "<name> — <reason>"',
+    'stale dependency hold names a package with no available update: left-pad'
+  ])
+})
+
+test('dependency holds are absent when the table declares none', () => {
+  expect(inspectDependencyHolds('[skills.ki-engineering]\n', ['typescript'])).toEqual({
+    holds: new Map(),
+    messages: []
+  })
+  expect(inspectDependencyHolds('[skills.ki-engineering]\ndependency_holds = "typescript"\n', []).messages).toEqual([
+    'dependency_holds must be an array of "<name> — <reason>" strings'
+  ])
+})
+
+test('the adoption clock is set by the next unadopted release, never the latest', () => {
+  expect(nextVersionAfter('5.9.3', ['5.9.3', '7.0.2', '6.0.0', '7.0.0-beta.1'])).toBe('6.0.0')
+  expect(nextVersionAfter('7.0.2', ['5.9.3', '7.0.2'])).toBeUndefined()
+  expect(nextVersionAfter('not-a-version', ['1.0.0'])).toBeUndefined()
+})
+
+test('freshness grades FAIL beyond the 14-day window, INFO within it, held and unknown as recorded', () => {
+  const now = new Date('2026-09-03T00:00:00Z')
+  const graded = gradeDependencyFreshness(
+    [
+      { name: 'stale-lib', current: '1.0.0' },
+      { name: 'fresh-lib', current: '1.0.0' },
+      { name: 'typescript', current: '5.9.3' },
+      { name: 'unknown-lib', current: '1.0.0' }
+    ],
+    new Map([
+      [
+        'stale-lib',
+        new Map([
+          ['1.1.0', '2026-08-01T00:00:00Z'],
+          ['1.2.0', '2026-09-02T00:00:00Z']
+        ])
+      ],
+      ['fresh-lib', new Map([['1.1.0', '2026-08-25T00:00:00Z']])]
+    ]),
+    new Map([['typescript', 'vendored packages still target TS 5']]),
+    now
+  )
+  expect(graded).toEqual([
+    { state: 'stale', name: 'stale-lib', current: '1.0.0', next: '1.1.0', ageDays: 33 },
+    { state: 'fresh', name: 'fresh-lib', current: '1.0.0', next: '1.1.0', ageDays: 9 },
+    { state: 'held', name: 'typescript', current: '5.9.3', reason: 'vendored packages still target TS 5' },
+    { state: 'unknown', name: 'unknown-lib', current: '1.0.0' }
   ])
 })

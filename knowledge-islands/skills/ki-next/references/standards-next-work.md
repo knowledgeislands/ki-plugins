@@ -47,6 +47,8 @@ Do not manufacture a roadmap item merely to close a trivial work trade. Converse
 
 After a terminal decision, report the next condition required by the sender's observation policy. `unattended` and `receipt` permit release after receipt; `decision` waits for a terminal decision; `completion` waits through decision and, for adopted work, local completion. Applied work and retained knowledge satisfy completion directly, while decline or supersession resolves it without completion. In progress, parked, and clarify retain the outbound copy whenever its policy still waits. Recommend receiver pruning only after sender release is observable; `ki-next` never performs a peer write or infers release from silence.
 
+Receiver-local standing knowledge intake is not an inbound trade disposition. When `ki-trades` validates a marked `STI-*` capture against an exact active subtype grant, route the knowledge proportionately: augment an existing record only inside its established goal and boundary; create a local draft for a distinct insight, decision, dependency, or scope; or retain directly as canonical knowledge when knowledge itself is the outcome. A public contract or implementation consequence still becomes receiver-local work. Never infer selection, priority, implementation, acceptance, completion, or publication authority from the standing route, source repository, or Agora membership.
+
 ## 3. Review relevance
 
 Run this pass for `--review`, or briefly when grounded evidence shows a material concern.

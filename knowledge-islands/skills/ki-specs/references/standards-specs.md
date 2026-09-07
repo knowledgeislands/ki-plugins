@@ -61,6 +61,8 @@ _Verify:_ a built page at `/culture/` has `<link rel="canonical" href="{site.url
 
 IDs are **append-only, sequential per registered prefix, and never reused**. A retired requirement keeps its number, its title struck through with a `(deprecated)` note (a deprecated entry is exempt from the statement/verify checks). **Never renumber to tidy up** — stable IDs are what let tests, commits, and cross-references point at a requirement over time.
 
+When a requirement's behaviour moves wholesale into an upstream tool or library, an area file may instead retire it into a `## Retired to the tool` section: unheaded bullets of the form `- <ID>[, <ID>…] — <what moved>: <where it lives now>`, with the retired IDs left of the em dash and the citation to their new home right of it. A serial retired this way **stays claimed** — the checker reads it as present when verifying the sequence, and flags it if a requirement heading ever redefines it. Only IDs left of the em dash are read as retired; IDs to the right are citations, not claims.
+
 ## The Gaps backlog
 
 Each area file may end with a `## Gaps` section (the heading may extend, e.g. `## Gaps & candidate behaviours`). It holds **unnumbered** bullets: known divergences from the contract, or desirable behaviours not yet built. Gaps are deliberately ID-less so they sit **outside** the as-built contract — a backlog to consider, not something to test against. The checker exempts everything under a `## Gaps …` heading from ID and requirement checks. Promote a gap to a numbered requirement only once it is built and true.

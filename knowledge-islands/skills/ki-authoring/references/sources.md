@@ -16,6 +16,14 @@ The sources behind [the enforcement standard](standards-authoring.md), [the Mark
 | [GitHub alert guidance][ga] | GitHub alert labels, purpose, and Markdown form             | 2026-08-12    |
 | [TOML spec][toml]           | TOML syntax for the shared `.ki.toml`                | 2026-08-12    |
 
+## Advisory
+
+Advisory sources inform local judgment conventions but are not specifications, mechanical findings, or universal Knowledge Islands policy.
+
+| Source                | Informs                                                 | Last reviewed |
+| --------------------- | ------------------------------------------------------- | ------------- |
+| [Standard Readme][sr] | README entry-point structure and reader discoverability | 2026-08-29    |
+
 [cm]: https://spec.commonmark.org/
 [ru]: https://rumdl.dev/rules
 [rgs]: https://rumdl.dev/global-settings/
@@ -23,13 +31,15 @@ The sources behind [the enforcement standard](standards-authoring.md), [the Mark
 [rr]: https://github.com/rvben/rumdl/releases
 [ga]: https://docs.github.com/en/contributing/style-guide-and-content-model/style-guide#alerts
 [toml]: https://toml.io/en/v1.1.0
+[sr]: https://github.com/RichardLitt/standard-readme
 
 ## Last review
 
 REFRESH last run **2026-08-12**. CommonMark 0.31.2, TOML 1.1.0, GitHub alerts, rumdl's rules/configuration/CLI documentation, and the rumdl release surface were rechecked.
 
+- **Standard Readme:** Reviewed as a library-oriented advisory source. Purpose, orientation, proportional navigation, installation, usage, contribution, and licence discoverability informed the local README convention; fixed headings, ordering, badges, line thresholds, and licence placement were not imported.
 - **CommonMark:** accessible. Version 0.31.2 (released 2024-01-28) confirmed still current; no newer version. Syntax baseline unchanged.
-- **rumdl:** v0.2.54 released 2026-08-11. Direct `rumdl 0.2.54 check --fix` reproductions preserve the MD005 nested-list and MD075 table-followed-prose fixtures. The included `dda35d54d654` fix also treats an aliased wikilink as one MD056 cell under the Obsidian flavor; other flavors deliberately retain GFM pipe semantics. This repository uses the standard flavor and forbids wikilinks, so MD056 is enabled for detection and listed as unfixable to prevent a destructive standard-flavor autofix. `MD033`, `MD036`, and `MD057` remain separate house/content decisions. The global-settings and CLI references are the authority for config discovery and `check --fix`, rather than the rules page alone.
+- **rumdl:** v0.2.54 released 2026-08-11. A 2026-08-20 direct `rumdl 0.2.54 check --fix` reproduction confirms that MD005 still misreads an ordered list inside a blockquote nested in a list item, and MD075 still misreads pipe-formatted rows after a blockquote; both remain disabled because their fixes can rewrite valid structure. The included `dda35d54d654` fix also treats an aliased wikilink as one MD056 cell under the Obsidian flavor; other flavors deliberately retain GFM pipe semantics. This repository uses the standard flavor and forbids wikilinks, so MD056 is enabled for detection and listed as unfixable to prevent a destructive standard-flavor autofix. `MD033`, `MD036`, and `MD057` remain separate house/content decisions. The global-settings and CLI references are the authority for config discovery and `check --fix`, rather than the rules page alone.
 - **GitHub alerts:** added as a judgment convention. GitHub documents five labels (`NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION`), advises using alerts sparingly, and reserves them for information important enough to break prose flow.
 - **TOML:** v1.1.0 remains current. Its additions are additive and do not affect value quoting, short inline arrays, or explanatory comments. Key and table identity are intentionally excluded here because `ki-repo` owns that semantic contract.
 - **Convention change this run:** table column alignment moves from the mechanical layer to the judgment layer, because no rumdl setting reproduces the former conditional padding. The wide-table → footnote convention is now load-bearing rather than advisory.

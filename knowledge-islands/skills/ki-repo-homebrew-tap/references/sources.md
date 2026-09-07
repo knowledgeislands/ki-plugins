@@ -4,7 +4,7 @@
 
 The authoritative Homebrew sources behind the [Homebrew tap standard](standards-homebrew-tap.md) and [Audit Rubric](rubric.md). This skill **wraps an external standard**: Homebrew defines what a valid tap and formula are, and the in-house standard is only the tap-**shape** layer on top. Mode REFRESH reads this file, re-fetches each source, diffs it against the standard, rubric, and structured `scripts/rubric/items/index.ts`, then **bumps the `Last reviewed` dates** and refreshes the `## Last review` block below (what changed is recorded in the commit, not a changelog). This is the skill's memory of where the standard comes from—keep it current.
 
-A finding is only **spec-driven** if it traces to the Authoritative table (Homebrew's own rules); everything else is this skill's tap-shape convention and should be labelled as such so it is not mistaken for a Homebrew requirement.
+A finding is only **spec-driven** if it traces to the Authoritative table (Homebrew's own rules); everything else is this skill's tap-shape convention and should be labelled as such so it is not mistaken for a Homebrew requirement. The Advisory table below is weaker again: it informs guidance and judgment review, and never produces a mechanical finding.
 
 ## Authoritative (Homebrew)
 
@@ -29,6 +29,14 @@ A finding is only **spec-driven** if it traces to the Authoritative table (Homeb
 
 ※ The `brew test-bot` CI action a tap MAY run — the backstop when a local audit has no `brew`.
 
+## Advisory (non-normative)
+
+| Tag    | Source                        | Governs | Last reviewed |
+| ------ | ----------------------------- | ------- | ------------- |
+| README | [Standard Readme][standardreadme] | ⁂       | 2026-08-28    |
+
+⁂ The section set a tap README follows (title, description, Install, Usage, Contributing, License) with the `## Formulae` table as an extra section — advisory shape guidance for EDUCATE, CONFORM, and `TAP-J5` only. It creates no mechanical check: generic README composition is `ki-authoring`'s and README presence is `ki-repo`'s.
+
 ## Last review
 
 REFRESH last run **2026-07-09** (initial authoring). The standard was written against the live Homebrew documentation as of this date and against the reference tap `knowledgeislands/homebrew-tap` (`Formula/mgit.rb`). No prior review to diff against.
@@ -38,8 +46,10 @@ REFRESH last run **2026-07-09** (initial authoring). The standard was written ag
 - **Homebrew is a live target.** The Cookbook and `brew audit`/`brew style` cops change without a versioned spec release — hence the `quarterly` cadence rather than `on-change`. Re-diff the required-fields list and the `desc` cops each cycle.
 - **`TAP-4` is a mirror.** The ≤ 80-character and no-leading-article rule is copied from `brew style` so the check runs without invoking `brew`. If that cop changes upstream, update the item in `scripts/rubric/items/tap.ts` or it will disagree with `brew`.
 - **No `head` / `bottle` guidance yet.** The standard covers stable versioned-tarball formulae only; if a KI tool ever ships bottles or a `head` spec, extend the standard and rubric.
+- **Standard Readme is advisory, added 2026-08-28.** It sits outside Homebrew's rules and must stay advisory here: if `ki-authoring` gains its own README convention set (KI-HARNESS-GOV-048), reconcile this entry with it rather than letting the two diverge.
 
 [cookbook]: https://docs.brew.sh/Formula-Cookbook
+[standardreadme]: https://github.com/RichardLitt/standard-readme
 [audit]: https://docs.brew.sh/Manpage#audit-options-formulacask-
 [style]: https://docs.brew.sh/Formula-Cookbook#audit-the-formula
 [acceptable]: https://docs.brew.sh/Acceptable-Formulae

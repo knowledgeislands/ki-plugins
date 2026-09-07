@@ -8,6 +8,7 @@ id: KI-EXAMPLE-BATCH-001
 repository: https://github.com/knowledgeislands/ki-example
 approved: true
 approved_at: 2026-07-01T09:00:00Z
+authority_mode: reviewed-items
 approved_payload_sha256: <SHA-256 of the approved frontmatter and body before Run ledger>
 run_id: KI-EXAMPLE-BATCH-001-RUN-001
 timebox_ends_at: 2026-07-01T11:00:00Z

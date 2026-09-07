@@ -43,7 +43,7 @@ An index, not a memory: one line per memory file, in this exact shape —
   <!-- headroom:learn:end -->
   ```
 
-  If present, both markers must appear, in order, with the generated date line between them.
+  If present, both markers must appear, in order, with the generated date line between them. The renderer may use either Markdown emphasis marker (`_` or `*`) for that line.
 
 ## Repairing a regenerated cross-repo learned pattern
 

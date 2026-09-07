@@ -34,9 +34,7 @@ const SPEC_1: RubricItem<SpecificationsContext> = {
             }
           ]
         if (context.malformed)
-          return [
-            { status: 'VIOLATION', message: '.ki.toml is malformed or unsafe.', subject: '.ki.toml' }
-          ]
+          return [{ status: 'VIOLATION', message: '.ki.toml is malformed or unsafe.', subject: '.ki.toml' }]
         if (!context.table)
           return [
             {

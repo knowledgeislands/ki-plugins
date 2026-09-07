@@ -21,7 +21,7 @@ Do not select another candidate, promote a horizon, invent plan detail, or treat
 
 1. Record the full current `HEAD` commit ID as the immutable baseline.
 2. Transition only the approved item to `in-progress`.
-3. Commit the coherent lifecycle start before implementation where repository practice requires it.
+3. Begin implementation without requiring a standalone lifecycle-start commit. The `in-progress` update may land with the first coherent implementation change, or the completed delivery may land directly from the previously committed `ready` state to `awaiting-review` when every review gate is satisfied.
 
 The baseline describes the starting evidence; it is not a substitute for verification.
 

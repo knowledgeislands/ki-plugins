@@ -1,5 +1,5 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { basename, dirname, join, relative, resolve } from 'node:path'
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs'
+import { basename, dirname, join, relative, resolve, sep } from 'node:path'
 import type { RubricPublication } from '../../shared/rubric.ts'
 import {
   createKiShapeContext,
@@ -38,6 +38,43 @@ const isLocalGovernanceSource = (directory: string): boolean =>
   basename(directory) === 'ki-self' &&
   basename(dirname(directory)) === 'skills' &&
   basename(dirname(dirname(directory))) === '.agents'
+
+const table = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+
+const sourceHarnessName = (directory: string): string | undefined => {
+  let source: string
+  try {
+    source = realpathSync(directory)
+  } catch {
+    return undefined
+  }
+
+  let root = source
+  while (dirname(root) !== root) {
+    const configuration = join(root, '.ki.toml')
+    if (existsSync(configuration)) {
+      const skillPath = relative(root, source)
+      if (skillPath !== 'skills' && !skillPath.startsWith(`skills${sep}`)) return undefined
+      try {
+        const skills = table(Bun.TOML.parse(readFileSync(configuration, 'utf8')))?.skills
+        const harness = table(table(skills)?.['ki-repo-harness'])
+        const identity = table(table(skills)?.['ki-repo'])?.repository
+        const match =
+          typeof identity === 'string'
+            ? /^https:\/\/github\.com\/[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\/([a-z0-9](?:[a-z0-9._-]*[a-z0-9])?)$/.exec(
+                identity
+              )
+            : null
+        return harness && match ? match[1] : undefined
+      } catch {
+        return undefined
+      }
+    }
+    root = dirname(root)
+  }
+  return undefined
+}
 
 const relativeImportSpecifiers = (source: string): string[] =>
   [...source.matchAll(/\b(?:from\s+|import\s*\(\s*|require\s*\(\s*)['"](\.\.?\/[^'"]+)['"]/g)].map(
@@ -213,6 +250,8 @@ const createKiShapeEvidence = (
 
   return {
     ...createKiShapeFrontmatterEvidence({ frontmatter, scriptNames, localGovernanceSource }),
+    ...(localGovernanceSource ? {} : { sourceHarnessName: sourceHarnessName(skillDirectory) }),
+    rubricCatalogue: existsSync(join(scriptsDirectory, 'rubric', 'items', 'index.ts')),
     referencePaths,
     operatingModesSection: section,
     bodyModes: extractBodyModes(section),

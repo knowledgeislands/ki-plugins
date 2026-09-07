@@ -45,9 +45,9 @@ Layout, executable, distribution, versioning, and judgment criteria.
   - _Review prompt:_ The tool follows the XDG Base Directory specification for config, state, and cache.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Revise the tool repository through its responsible maintainer, record a named gap, or record an explicit justified exclusion.
-- **TOOL-SCHEMA [J] — Persisted manifest schema** — Each evolving persisted structural format declares and strictly validates its own integer schema, provides migration or clear rejection for incompatible forms, and does not add a ceremonial schema to stable leaf metadata. (standards-tool-repositories.md)
+- **TOOL-SCHEMA [J] — Persisted manifest schema** — Each evolving persisted structural format declares and strictly validates its own integer schema, accepts only implemented forms, and does not add a ceremonial schema to stable leaf metadata. (standards-tool-repositories.md)
   - _Evidence scope:_ The target command-line tool repository and the evidence named by this criterion.
-  - _Review prompt:_ Each evolving persisted structural format declares and strictly validates its own integer schema, provides migration or clear rejection for incompatible forms, and does not add a ceremonial schema to stable leaf metadata.
+  - _Review prompt:_ Each evolving persisted structural format declares and strictly validates its own integer schema, accepts only implemented forms, and does not add a ceremonial schema to stable leaf metadata.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Revise the tool repository through its responsible maintainer, record a named gap, or record an explicit justified exclusion.
 - **TOOL-INSTALL [M] — Installer executable** — `install.sh` is a physical executable file. (standards-tool-repositories.md)
@@ -168,9 +168,10 @@ Man-page linting requirements.
   - _Review prompt:_ A physical manual documents the supported release and local-development installation paths, including manual installation or linking, and identifies the canonical completion action without assigning shell-startup mutation to the tool installer.
   - _Outcomes:_ conforming; guidance revision required; ownership decision required
   - _Conforming guidance:_ Update the manual’s supported installation and completion guidance while retaining the shell-startup ownership boundary.
-- **MAN-STYLE [J] — Manual source and layout** — A physical manual uses portable roff macros, documents each configuration format canonically in FILES, uses a literal \& after each .SH / .SS followed by .PP before prose or a structural macro, and receives a rendered-spacing inspection after mandoc lint. (standards-tool-repositories.md)
+- **MAN-STYLE [M + J] — Manual source and layout** — A physical manual uses portable roff macros, documents each configuration format canonically in FILES, uses a literal \& after each .SH / .SS, uses .PP only before prose, and receives a rendered-spacing inspection after mandoc lint. (standards-tool-repositories.md)
+  - _Remediation:_ automatic
   - _Evidence scope:_ The physical manual source, its roff macros, FILES section, and rendered spacing inspection.
-  - _Review prompt:_ A physical manual uses portable roff macros, documents each configuration format canonically in FILES, uses a literal \& after each .SH / .SS followed by .PP before prose or a structural macro, and receives a rendered-spacing inspection after mandoc lint.
+  - _Review prompt:_ A physical manual uses portable roff macros, documents each configuration format canonically in FILES, uses a literal \& after each .SH / .SS, uses .PP only before prose, and receives a rendered-spacing inspection after mandoc lint.
   - _Outcomes:_ conforming; manual layout revision required; rendered inspection required
   - _Conforming guidance:_ Correct the roff source and FILES documentation, then inspect rendered spacing in addition to passing mandoc lint.
 

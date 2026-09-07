@@ -1,7 +1,7 @@
 ---
 name: ki-recap
 ki-kind: process
-ki-depends-on: []
+ki-depends-on: [ki-authoring]
 description: >
   Recaps a live session: summarises changes, decisions, and files; surfaces only unfinished session work; and routes durable learnings. Use for "recap this session", "what's outstanding", or "harvest what we learned". It does not select backlog work—that is `ki-next`—or mechanically mine historical transcripts.
 argument-hint: 'recap [--runtime detect|claude|codex] [--transcript <session-file>] | help'
@@ -17,7 +17,7 @@ Three legs, always in this order:
 
 1. **Summarise** what happened this session — changes, decisions, files touched.
 2. **Surface what is outstanding** — only unfinished threads and explicitly deferred fixes from this session. Always check whether the session's work is fully committed — dirty files this session touched are outstanding; dirty files from other threads and generic future work are out of scope. A roadmap item or Stream **added this session** is "what happened", not outstanding.
-3. **Harvest the learnings** — dead-ends, workarounds, conventions discovered in-session — and route each through the [knowledge-promotion standard](../../governance/ki-authoring/references/standards-knowledge-promotion.md): distinguish a durable learning from unfinished work, then choose its narrowest appropriate owner. Confirm with the user before writing anywhere durable.
+3. **Harvest the learnings** — dead-ends, workarounds, conventions discovered in-session — and route each through `ki-authoring`'s knowledge-promotion convention set: distinguish a durable learning from unfinished work, then choose its narrowest appropriate owner. Confirm with the user before writing anywhere durable.
 
 When the user asks for coverage, or several materially different discussion points would otherwise be hard to trace, add a bounded **Discussion coverage** matrix after the three legs and before Actions. It is an optional reviewer aid, never a fourth source of truth or a claim of transcript completeness; the full procedure fixes its four columns, closed dispositions, and evidence limits.
 

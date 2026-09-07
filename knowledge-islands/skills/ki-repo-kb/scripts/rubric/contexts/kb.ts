@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs'
+import { accessSync, constants, existsSync, lstatSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import type {
   AuditOutcome,
@@ -14,6 +14,31 @@ export const STAGING = ['+', '-'] as const
 const CONFIG = '.ki.toml'
 const CONFIG_TABLE = 'ki-repo-kb'
 const SNAKE_CASE = /^[a-z][a-z0-9_]*$/
+const TRADE_RECORD = /^TRD-[0-9a-f]{8}\.md$/
+
+const delegatedNoteTypeRecord = (
+  relativePath: string,
+  zones: { readonly streams: string; readonly inbound: string; readonly outbound: string }
+): boolean => {
+  if (relativePath.startsWith(`${zones.streams}/Roadmap/`) || relativePath.startsWith(`${zones.streams}/Housekeeping/`))
+    return true
+
+  const segments = relativePath.split('/')
+  if (
+    segments[0] === zones.inbound &&
+    segments[1] === '_AUTHORISATIONS' &&
+    segments.length === 3 &&
+    segments[2]?.endsWith('.md')
+  )
+    return true
+
+  return (
+    (segments[0] === zones.inbound || segments[0] === zones.outbound) &&
+    segments[1] === '_TRADES' &&
+    segments.length === 5 &&
+    TRADE_RECORD.test(segments[4] ?? '')
+  )
+}
 
 type KiKbConfig = {
   keys: Record<string, string>
@@ -31,6 +56,14 @@ export type KbEvidenceFinding = {
 
 const isDirectory = (path: string): boolean =>
   existsSync(path) && !lstatSync(path).isSymbolicLink() && lstatSync(path).isDirectory()
+const isReadableDirectory = (path: string): boolean => {
+  try {
+    accessSync(path, constants.R_OK)
+    return statSync(path).isDirectory()
+  } catch {
+    return false
+  }
+}
 const isFile = (path: string): boolean =>
   existsSync(path) && !lstatSync(path).isSymbolicLink() && lstatSync(path).isFile()
 const sample = (values: readonly string[], maximum = 10): string =>
@@ -178,7 +211,7 @@ export const collectKbAuditEvidence = (target: string): readonly KbEvidenceFindi
   }
   const configPath = join(root, CONFIG)
   const parsed = isFile(configPath) ? parseConfig(readFileSync(configPath, 'utf8')) : { value: null, malformed: false }
-  const hasCanonicalZone = ZONES.some((zone) => isDirectory(join(root, zone)))
+  const hasCanonicalZone = ZONES.some((zone) => isReadableDirectory(join(root, zone)))
   if (!parsed.value && !parsed.malformed && !hasCanonicalZone) {
     add(
       'NOT_APPLICABLE',
@@ -235,7 +268,7 @@ export const collectKbAuditEvidence = (target: string): readonly KbEvidenceFindi
   }
   for (const zone of ZONES) {
     const folder = zoneOf(zone)
-    if (!isDirectory(join(root, folder))) {
+    if (!isReadableDirectory(join(root, folder))) {
       add('FAIL', 'ZONE-1', `Required zone ${zone} is missing.`, `${folder}/`)
       continue
     }
@@ -310,7 +343,10 @@ export const collectKbAuditEvidence = (target: string): readonly KbEvidenceFindi
   const missingNoteType: string[] = []
   const legacyType: string[] = []
   const misplacedOutputs: string[] = []
-  const outbound = `${zoneOf('-')}/`
+  const inboundZone = zoneOf('+')
+  const outboundZone = zoneOf('-')
+  const outbound = `${outboundZone}/`
+  const delegatedZones = { streams: zoneOf('Streams'), inbound: inboundZone, outbound: outboundZone }
   for (const path of markdownFiles(root)) {
     const value = frontmatter(readFileSync(path, 'utf8'))
     if (!value) continue
@@ -321,8 +357,10 @@ export const collectKbAuditEvidence = (target: string): readonly KbEvidenceFindi
     }
     for (const key of value.keys) if (!SNAKE_CASE.test(key)) badKeys.push(`${relative}: ${key}`)
     for (const key of required) if (!value.keys.includes(key)) missingRequired.push(`${relative} (${key})`)
-    if (!value.noteType) missingNoteType.push(relative)
-    if (value.keys.includes('type')) legacyType.push(relative)
+    if (!delegatedNoteTypeRecord(relative, delegatedZones)) {
+      if (!value.noteType) missingNoteType.push(relative)
+      if (value.keys.includes('type')) legacyType.push(relative)
+    }
     if ((value.noteType === 'session-digest' || value.noteType === 'handoff') && !relative.startsWith(outbound))
       misplacedOutputs.push(relative)
   }

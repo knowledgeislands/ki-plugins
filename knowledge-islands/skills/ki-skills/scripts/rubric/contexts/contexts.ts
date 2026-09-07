@@ -128,9 +128,11 @@ export type KiShapeSkillContext = {
   kiKind: string
   governanceSkill: boolean
   localGovernanceSource: boolean
+  sourceHarnessName?: string
   argumentHint: string | undefined
   hintVerbs: readonly string[]
   scriptNames: readonly string[]
+  rubricCatalogue: boolean
   referencePaths: readonly string[]
   operatingModesSection: string | null
   bodyModes: ReadonlySet<string>
@@ -201,9 +203,11 @@ const emptyKiShapeSkill: KiShapeSkillContext = {
   kiKind: '',
   governanceSkill: false,
   localGovernanceSource: false,
+  sourceHarnessName: undefined,
   argumentHint: undefined,
   hintVerbs: [],
   scriptNames: [],
+  rubricCatalogue: false,
   referencePaths: [],
   operatingModesSection: null,
   bodyModes: new Set(),

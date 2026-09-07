@@ -3,6 +3,7 @@ name: ki-repo-website-cloudflare
 ki-kind: governance
 ki-shared-dependencies: [ki-skills:rubric]
 ki-depends-on: [ki-repo-website]
+contributes: ['.gitignore']
 description: >
   Governs Cloudflare hosting for either Knowledge Islands website implementation using Workers Static Assets, never Pages as the deployment target. Audits `wrangler.jsonc`, rejects the legacy `pages_build_output_dir` marker and any `main` server entry, matches `assets.directory` to `dist/`, and covers Workers Builds, workers.dev, custom domains, and deploy scripts. Use when publishing a content site or interactive app on Cloudflare or diagnosing a static deployment failure. Depends only on the neutral `ki-repo-website` seam.
 argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
@@ -10,7 +11,7 @@ argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
 
 # Knowledge Islands Cloudflare hosting standard
 
-Apply the house convention for serving a built static site on **Cloudflare Workers Static Assets**: one site Worker points at the build's `dist/`, exposes the intended domains, enables observability, and is reached through the `ki:site:*` script family.
+Apply the house convention for serving a built static site on **Cloudflare Workers Static Assets**: one site Worker points at the build's `dist/`, may expose custom domains, enables observability, and is reached through the `ki:site:*` script family.
 
 This is a base-agnostic standard skill selected by `[skills.ki-repo-website-cloudflare]` in `.ki.toml`. It owns only the deploy/serve delta for the static-site Worker. `ki-repo-website` owns the build that emits `dist/`; `ki-engineering` owns the toolchain. Companion Workers and general Cloudflare or Wrangler concerns route to the `cloudflare` and `wrangler` skills.
 
@@ -28,7 +29,6 @@ Use these references progressively:
   "name": "<site-name>",
   "compatibility_date": "<YYYY-MM-DD>",
   "assets": { "directory": "./dist" },
-  "routes": [{ "pattern": "example.com", "custom_domain": true }],
   "observability": { "enabled": true }
 }
 ```
@@ -36,7 +36,7 @@ Use these references progressively:
 Three rules define the boundary:
 
 1. Use Workers Static Assets and `wrangler deploy`; Pages is not a deployment target for new projects.
-2. Treat `assets.directory` as the seam to the `dist/` emitted by `ki-repo-website`.
+2. Consume `[skills.ki-repo-website].site-root` (default `apps/site`) and treat its `dist/` as the build seam; the hosting table remains keyless.
 3. Keep the site assets-only: no `main` means no server-side Worker code executes, making a published “no control plane” claim mechanically verifiable.
 
 ## Composition

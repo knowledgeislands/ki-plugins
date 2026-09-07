@@ -9,6 +9,7 @@ import { RECORD } from '../items/records.ts'
 import { RELEASE } from '../items/release.ts'
 import { ROUTE } from '../items/routes.ts'
 import { SCAFFOLD } from '../items/scaffold.ts'
+import { STANDING } from '../items/standing.ts'
 import { STATUS } from '../items/status.ts'
 import { createTradesSession, tradeReadmes } from './trades.ts'
 
@@ -43,6 +44,22 @@ const tradeConfiguration = (
 ): Record<string, unknown> => ({
   ...(mapBonus === undefined ? {} : { map_bonus: mapBonus }),
   routes: routes(peers, kinds)
+})
+
+const standingConfiguration = (
+  peer: string,
+  direction: 'export' | 'import',
+  subtype = 'shared-maintenance'
+): Record<string, unknown> => ({
+  ...(direction === 'import'
+    ? { subtypes: { knowledge: { [subtype]: 'Receiver-owned shared maintenance evidence.' } } }
+    : {}),
+  routes: {
+    [peer]: {
+      [direction]: ['knowledge'],
+      standing: { [direction]: { knowledge: [subtype] } }
+    }
+  }
 })
 
 const writeRepositoryConfiguration = (
@@ -176,7 +193,15 @@ const writeRecord = (root: string, direction: '+' | '-', peerIdentity: string, i
 
 const mechanicalOutcomes = (
   session: ReturnType<typeof createTradesSession>,
-  family: typeof CONFIG | typeof ROUTE | typeof SCAFFOLD | typeof RECORD | typeof AUTH | typeof STATUS | typeof RELEASE,
+  family:
+    | typeof CONFIG
+    | typeof ROUTE
+    | typeof SCAFFOLD
+    | typeof RECORD
+    | typeof AUTH
+    | typeof STATUS
+    | typeof RELEASE
+    | typeof STANDING,
   code?: string
 ) => {
   const item = code ? family.items.find((candidate) => candidate.code === code) : family.items[0]
@@ -240,6 +265,105 @@ test('map bonus is bounded presentation metadata', () => {
     message: 'map_bonus must be an integer from 0 through 3',
     subject: '.ki.toml'
   })
+})
+
+test('standing intake is knowledge-only, receiver-defined, and layered on an ordinary route', () => {
+  const { home, local } = fixture()
+  const session = createTradesSession(
+    options(local, home, {
+      subtypes: {
+        work: { maintenance: 'Unsupported work subtype.' },
+        knowledge: { 'Bad Subtype': '', known: 'Known receiver vocabulary.' }
+      },
+      routes: {
+        'peer/repo': {
+          standing: {
+            import: { knowledge: ['unknown', 'unknown'] },
+            export: { work: ['known'] }
+          }
+        }
+      }
+    })
+  )
+
+  const messages = mechanicalOutcomes(session, CONFIG).map((outcome) => outcome.message)
+  expect(messages).toContain('subtype vocabulary work is unsupported; standing intake is knowledge-only')
+  expect(messages).toContain('knowledge subtype Bad Subtype must be a lower-case hyphenated identifier')
+  expect(messages).toContain('knowledge subtype Bad Subtype must have a non-empty receiver-owned description')
+  expect(messages).toContain('route peer/repo standing import subtype unknown is not defined by the receiver')
+  expect(messages).toContain('route peer/repo standing import knowledge must not repeat a subtype')
+  expect(messages).toContain('route peer/repo standing import requires the ordinary knowledge import route')
+  expect(messages).toContain('route peer/repo standing export kind work is unsupported')
+})
+
+test('standing intake activates only for an exact reciprocal receiver-owned subtype grant', () => {
+  const { home, local, peer } = fixture()
+  writeFileSync(
+    join(peer, '.ki.toml'),
+    [
+      '[skills.ki-repo]',
+      'repository = "https://github.com/peer/repo"',
+      '',
+      '[skills.ki-trades]',
+      '',
+      '[skills.ki-trades.routes."local/repo"]',
+      'export = ["knowledge"]',
+      '',
+      '[skills.ki-trades.routes."local/repo".standing.export]',
+      'knowledge = ["shared-maintenance"]',
+      ''
+    ].join('\n')
+  )
+
+  const active = createTradesSession(options(local, home, standingConfiguration('peer/repo', 'import')))
+  expect(mechanicalOutcomes(active, ROUTE)).toContainEqual({
+    status: 'PASS',
+    message:
+      'standing knowledge shared-maintenance https://github.com/local/repo ← https://github.com/peer/repo active',
+    subject: 'https://github.com/peer/repo'
+  })
+
+  const oneSided = createTradesSession(
+    options(local, home, standingConfiguration('peer/repo', 'import', 'other-maintenance'))
+  )
+  expect(mechanicalOutcomes(oneSided, ROUTE)).toContainEqual({
+    status: 'INFO',
+    message: 'standing import other-maintenance to https://github.com/peer/repo awaits matching sender declaration',
+    subject: 'https://github.com/peer/repo'
+  })
+})
+
+test('marked standing intake blocks fail closed on malformed provenance', () => {
+  const { home, local } = fixture()
+  const directory = join(local, 'docs')
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(
+    join(directory, 'capture.md'),
+    [
+      '# Capture',
+      '',
+      '<!-- ki-trades:standing-intake -->',
+      '```toml',
+      'schema = "unknown"',
+      'id = "STI-NOTHEX"',
+      'source = "not-a-repository"',
+      'source_ref = "floating"',
+      'receiver = "https://github.com/other/repo"',
+      'kind = "work"',
+      'subtype = "Bad Subtype"',
+      'captured_at = "tomorrow"',
+      'capture = "elsewhere.md#capture"',
+      '```',
+      ''
+    ].join('\n')
+  )
+
+  const session = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
+  const messages = mechanicalOutcomes(session, STANDING).map((outcome) => outcome.message)
+  expect(messages).toContain('standing intake schema must be ki-trades/standing-intake/v1')
+  expect(messages).toContain('standing intake id must use STI plus eight lower-case hexadecimal characters')
+  expect(messages).toContain('standing intake kind must be knowledge')
+  expect(messages).toContain('standing intake capture must point into docs/capture.md')
 })
 
 test('declared routes remain pending until the other repository registers and reciprocates', () => {
@@ -539,6 +663,42 @@ test('each trade kind accepts only its supported observation policies', () => {
   expect(messages).toContain('observation must be one of receipt, decision, completion')
   expect(messages).toContain('knowledge trades require observation receipt')
   expect(messages).toContain('work trades require observation decision or completion')
+})
+
+test('itemized subtype classifies knowledge only and never upgrades work', () => {
+  const { home, local } = fixture()
+  const knowledgeId = 'TRD-000000c1'
+  const workId = 'TRD-000000c2'
+  writeRecord(
+    local,
+    '-',
+    'peer/repo',
+    knowledgeId,
+    record(knowledgeId, 'local/repo', 'peer/repo', [], undefined, 'knowledge', 'receipt').replace(
+      'source_ref: KI-SOURCE-FND-001',
+      'source_ref: KI-SOURCE-FND-001\nsubtype: shared-maintenance'
+    )
+  )
+  writeRecord(
+    local,
+    '-',
+    'peer/repo',
+    workId,
+    record(workId, 'local/repo', 'peer/repo').replace(
+      'source_ref: KI-SOURCE-FND-001',
+      'source_ref: KI-SOURCE-FND-001\nsubtype: shared-maintenance'
+    )
+  )
+
+  const session = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
+  expect(mechanicalOutcomes(session, RECORD)).toContainEqual({
+    status: 'VIOLATION',
+    message: 'subtype is optional classification for itemized knowledge trades only',
+    subject: `-/_TRADES/peer/repo/${workId}.md`
+  })
+  expect(
+    mechanicalOutcomes(session, RECORD).some((outcome) => outcome.subject === `-/_TRADES/peer/repo/${knowledgeId}.md`)
+  ).toBeFalse()
 })
 
 test('each trade kind accepts every supported observation policy', () => {

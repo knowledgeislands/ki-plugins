@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { KI_SHAPE } from '../items/ki-shape.ts'
@@ -56,6 +56,59 @@ const createSkill = (relativeDirectory: string, frontmatter = ''): string => {
   return directory
 }
 
+const sourceSkill = (owner: string, options: { declaresHarness?: boolean; refreshOwner?: string } = {}): string => {
+  const root = mkdtempSync(join(tmpdir(), 'ki-skills-source-harness-'))
+  temporaryDirectories.push(root)
+  writeFileSync(
+    join(root, '.ki.toml'),
+    [
+      '[skills.ki-repo]',
+      `repository = "https://github.com/example/${owner}"`,
+      ...(options.declaresHarness === false ? [] : ['', '[skills.ki-repo-harness]', 'prefix = "example"']),
+      ''
+    ].join('\n')
+  )
+  const directory = join(root, 'skills', 'ki-example')
+  mkdirSync(directory, { recursive: true })
+  const refreshOwner = options.refreshOwner ?? owner
+  writeFileSync(
+    join(directory, 'SKILL.md'),
+    `---
+name: ki-example
+ki-depends-on: []
+ki-kind: governance
+description: Example source capability.
+argument-hint: 'audit | conform | educate | refresh | help'
+---
+
+# KI Example
+
+## Operating modes
+
+### Mode AUDIT
+
+Inspect the selected repository.
+
+### Mode CONFORM
+
+Apply safe corrections.
+
+### Mode EDUCATE
+
+Explain the capability.
+
+### Mode REFRESH
+
+Refresh only the canonical files in ${refreshOwner}. When invoked from an installed copy, stop and redirect to ${refreshOwner}.
+
+### Mode HELP
+
+Describe this capability.
+`
+  )
+  return directory
+}
+
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) rmSync(directory, { recursive: true, force: true })
 })
@@ -69,6 +122,20 @@ const evidence = (directory: string) => {
   }
 }
 
+const refreshOutcomes = (directory: string) => {
+  const shape = evidence(directory).shape
+  const item = KI_SHAPE.items.find(({ code }) => code === 'KI-SHAPE-14')
+  if (!item?.mechanical || !('audit' in item.mechanical)) throw new Error('KI-SHAPE-14 mechanical audit is unavailable')
+  return { skill: shape.skill, outcomes: item.mechanical.audit.run(shape) }
+}
+
+const directShapeOutcomes = (directory: string) => {
+  const shape = evidence(directory).shape
+  const item = KI_SHAPE.items.find(({ code }) => code === 'KI-SHAPE-15')
+  if (!item?.mechanical || !('audit' in item.mechanical)) throw new Error('KI-SHAPE-15 mechanical audit is unavailable')
+  return item.mechanical.audit.run(shape)
+}
+
 describe('repository-local ki-self source', () => {
   test('recognises only the canonical .agents/skills/ki-self shape', () => {
     const result = evidence(createSkill('.agents/skills/ki-self'))
@@ -77,6 +144,22 @@ describe('repository-local ki-self source', () => {
     expect(result.name.localGovernanceSource).toBe(true)
     expect(result.shape.skill?.localGovernanceSource).toBe(true)
     expect(result.shape.skill?.refreshText).toContain('.agents/skills/ki-self/')
+  })
+
+  test('requires the native direct catalogue without allowing legacy runners', () => {
+    const directory = createSkill('.agents/skills/ki-self')
+
+    expect(directShapeOutcomes(directory)).toContainEqual({
+      status: 'VIOLATION',
+      message: '`scripts/rubric/items/index.ts` catalogue is required for direct governance operations'
+    })
+
+    mkdirSync(join(directory, 'scripts/rubric/items'), { recursive: true })
+    writeFileSync(join(directory, 'scripts/rubric/items/index.ts'), 'export default {}\n')
+
+    expect(directShapeOutcomes(directory)).toEqual([
+      { status: 'PASS', message: 'governance skills expose no legacy runner entrypoints' }
+    ])
   })
 
   test.each([
@@ -88,6 +171,49 @@ describe('repository-local ki-self source', () => {
     expect(result.name.name === result.name.directoryName).toBe(nameMatchesDirectory)
     expect(result.name.localGovernanceSource).toBe(false)
     expect(result.shape.skill?.localGovernanceSource).toBe(false)
+  })
+})
+
+describe('compatible Harness refresh ownership', () => {
+  test.each(['ki-agentic-harness', 'hnr-agentic-harness'])(
+    'accepts a declared source Harness naming %s as its configured repository identity',
+    (owner) => {
+      const result = refreshOutcomes(sourceSkill(owner))
+
+      expect(result.skill?.sourceHarnessName).toBe(owner)
+      expect(result.outcomes).toEqual([
+        { status: 'PASS', message: `REFRESH states its ${owner} ownership precondition` }
+      ])
+    }
+  )
+
+  test('rejects an unconfigured, malformed, or wrongly named compatible source owner', () => {
+    const undeclared = refreshOutcomes(sourceSkill('hnr-agentic-harness', { declaresHarness: false }))
+    const malformedDirectory = sourceSkill('hnr-agentic-harness')
+    writeFileSync(join(malformedDirectory, '..', '..', '.ki.toml'), '[skills.ki-repo\n')
+    const malformed = refreshOutcomes(malformedDirectory)
+    const wrongName = refreshOutcomes(sourceSkill('hnr-agentic-harness', { refreshOwner: 'other-agentic-harness' }))
+
+    expect(undeclared.skill?.sourceHarnessName).toBeUndefined()
+    expect(undeclared.outcomes[0]?.status).toBe('VIOLATION')
+    expect(malformed.skill?.sourceHarnessName).toBeUndefined()
+    expect(malformed.outcomes[0]?.status).toBe('VIOLATION')
+    expect(wrongName.skill?.sourceHarnessName).toBe('hnr-agentic-harness')
+    expect(wrongName.outcomes[0]?.status).toBe('VIOLATION')
+  })
+
+  test('reads the compatible owner from the source of an installed copy', () => {
+    const source = sourceSkill('hnr-agentic-harness')
+    const consumer = mkdtempSync(join(tmpdir(), 'ki-skills-installed-copy-'))
+    temporaryDirectories.push(consumer)
+    const installed = join(consumer, '.agents', 'skills', 'ki-example')
+    mkdirSync(join(consumer, '.agents', 'skills'), { recursive: true })
+    symlinkSync(source, installed)
+
+    const result = refreshOutcomes(installed)
+
+    expect(result.skill?.sourceHarnessName).toBe('hnr-agentic-harness')
+    expect(result.outcomes[0]?.status).toBe('PASS')
   })
 })
 

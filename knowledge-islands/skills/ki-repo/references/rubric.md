@@ -55,6 +55,16 @@ Required repository files and document quality, using a local checkout when avai
   - _Remediation:_ automatic
 - **FILES-4 [M] — Runtime skill ignore contract** — Generated skill links are ignored for each declared runtime, while a repository-local .agents/skills/ki-self source remains committed. (standards-repository.md)
   - _Remediation:_ automatic
+- **FILES-5 [M] — Configuration conformance header** — The root .ki.toml opens with the exact lightweight declaration that identifies it as Knowledge Islands repository configuration and explains that its presence declares conformance. (standards-configuration.md)
+  - _Remediation:_ automatic
+- **FILES-6 [M] — Compositional ignore contract** — Root .gitignore contains dependency-stable, marker-bounded blocks owned by declared skills and a terminal unmanaged section. (standards-repository.md)
+  - _Remediation:_ automatic
+- **FILES-7 [M] — Unmanaged ignore inventory** — Repository-specific ignore rules remain visible below the terminal unmanaged header for later fleet reconciliation. (standards-repository.md)
+  - _Remediation:_ diagnostic — Review recurring unmanaged rules across the fleet and assign only genuinely portable rules to a skill.
+- **FILES-8 [M] — Legacy .ki output absent** — The retired .ki output tree is absent; audit exposes any return and conform removes only proven untracked audits/conform output. (standards-repository.md)
+  - _Remediation:_ automatic
+- **FILES-9 [M] — Configuration presentation structure** — Substantial .ki.toml files use exact ordered neighbourhood banners, open with the foundation block, and keep each explicit skill owner with its child tables. (standards-configuration.md)
+  - _Remediation:_ diagnostic — Reorder source without changing parsed TOML: retain the exact header first, add only needed recognised banners, and keep each owner block contiguous.
 - **FILES-J1 [J] — Repository document content** — README and license content is accurate and current. (standards-repository.md)
   - _Evidence scope:_ The repository README and license.
   - _Review prompt:_ Read the README and license and assess whether they accurately describe and license this repository.
@@ -114,10 +124,15 @@ Declared and live repository visibility.
 
 → [standard](standards-repository.md)
 
-Public repository topic conventions.
+Public repository discovery-topic conventions.
 
-- **TOPICS-1 [M] — Public repository topics** — A public repository carries the standard topic set unless explicitly overridden. (standards-repository.md)
-  - _Remediation:_ diagnostic — Set the required public topics or record an explicit override, then rerun the audit.
+- **TOPICS-1 [M] — Public repository topics** — A public repository carries a non-empty topic set, and where `package.json` declares "keywords" the topics agree with them modulo GitHub normalisation, unless explicitly overridden. (standards-repository.md)
+  - _Remediation:_ diagnostic — Set the repository's discovery topics — syncing `package.json` "keywords" where present — or record an explicit override, then rerun the audit.
+- **TOPICS-2 [J] — Topic fit** — The topic set accurately describes the repository, and each common estate topic that applies is present. (standards-repository.md)
+  - _Evidence scope:_ The public topic set (and any `package.json` "keywords") against the repository purpose and the common estate topics.
+  - _Review prompt:_ Judge whether the topics describe what this repository actually is, and whether any common estate topic applies but is missing.
+  - _Outcomes:_ conforming; gap; exclusion
+  - _Conforming guidance:_ Adjust the topics and keywords, record a named gap, or record why a common topic does not apply.
 
 ## BP — Branch protection
 

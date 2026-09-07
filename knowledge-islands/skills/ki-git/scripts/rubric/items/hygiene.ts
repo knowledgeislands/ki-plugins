@@ -4,13 +4,14 @@ import type { GitRubricContext } from '../contexts/git.ts'
 const HYGIENE_1: RubricItem<GitRubricContext> = {
   code: 'HYGIENE-1',
   title: 'Git working hygiene preserves unrelated state',
-  description: 'Git work preserves shared state through explicit paths, worker-local indexes, and serialized commits.',
+  description:
+    'Git work preserves a potentially shared working tree through thread-local touched paths, explicit staging, contested-path coordination, and serialized commit windows.',
   sources: ['standards-git.md'],
   judgment: {
     scope:
-      'The shared working tree (`git status --short`), worker-local Git indexes, staged paths, expected HEAD, and Git write operations for the selected work.',
+      'The pre-edit and current working tree (`git status --short`), expected `HEAD`, the thread-local touched-path set, touched and staged diffs, contested paths, and Git write operations for the selected work.',
     prompt:
-      'After recording current working-tree and expected-HEAD evidence, assess whether each delegated worker used its assigned Git index, staging is limited to intended paths, unrelated changes remain untouched, and shared-HEAD commits are safely serialised.',
+      'After recording the pre-edit state and expected `HEAD`, assess whether the thread tracked every path it may have changed, withheld pre-existing or overlapping paths for coordination, staged only enumerated uncontested paths, preserved unrelated staged and unstaged work, and serialised the commit window that advances shared `HEAD`.',
     outcomes: [
       'conforming',
       'state inspection required',
@@ -18,7 +19,7 @@ const HYGIENE_1: RubricItem<GitRubricContext> = {
       'operation coordination required'
     ],
     guidance:
-      'Inspect the working tree, pass the assigned `GIT_INDEX_FILE` on every worker Git write, stage only explicit intended paths, leave unrelated work untouched, and have the orchestrator serialize commits after re-checking HEAD.'
+      'Maintain a thread-local touched-path set, re-check status, `HEAD`, touched diffs, and staged paths before committing, and use `git add -- <path>...` only for enumerated uncontested paths. Never use `git add -A`, `git add .`, `git add -u`, `git commit -a`, `git commit -am`, or broad wildcard pathspecs in a shared tree. Leave contested and unrelated work untouched, and serialize only the shared-index and commit window.'
   }
 }
 

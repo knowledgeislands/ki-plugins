@@ -52,6 +52,17 @@ test('judgment prompts name focused evidence without inventing a Git executor', 
   expect(items.every((item) => item.mechanical === undefined)).toBeTrue()
 })
 
+test('hygiene guidance retains the shared-working-tree safety boundary', () => {
+  const hygiene = catalogue.families.find((family) => family.code === 'HYGIENE')?.items[0]
+  const guidance = hygiene?.judgment?.guidance ?? ''
+
+  expect(guidance).toContain('thread-local touched-path set')
+  expect(guidance).toContain('git add -- <path>...')
+  expect(guidance).toContain('git add -A')
+  expect(guidance).toContain('git commit -a')
+  expect(guidance).toContain('serialize only the shared-index and commit window')
+})
+
 test('family modules expose only one complete family', async () => {
   const files = readdirSync(import.meta.dir)
     .filter((file) => file.endsWith('.ts') && file !== 'index.ts' && !file.endsWith('.test.ts'))

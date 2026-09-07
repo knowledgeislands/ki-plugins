@@ -16,9 +16,7 @@ export const createLinearSession = ({ repository }: RubricContextOptions): Rubri
       { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki.toml' }
     ]
   if (!existsSync(config))
-    mapping = [
-      { status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki.toml' }
-    ]
+    mapping = [{ status: 'NOT_APPLICABLE', message: 'No KI repository configuration is present.', subject: '.ki.toml' }]
   else {
     try {
       const parsed = TOML.parse(readFileSync(config, 'utf8')) as { skills?: Record<string, unknown> }

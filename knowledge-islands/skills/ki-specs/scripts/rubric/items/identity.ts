@@ -73,7 +73,7 @@ const ID_3: RubricItem<SpecIdentityContext> = {
   code: 'ID-3',
   title: 'requirement IDs are sequential per prefix and unique across the corpus',
   description:
-    'Requirement IDs are append-only, sequential within each registered prefix, never reused, and unique across the corpus.',
+    'Requirement IDs are append-only, sequential within each registered prefix, never reused, and unique across the corpus. A serial listed under a "Retired to the tool" section stays claimed: it is not a gap, and it is never redefined.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
@@ -96,21 +96,32 @@ const ID_3: RubricItem<SpecIdentityContext> = {
                     message: `${requirement.id} is already defined by ${requirement.duplicateOf}; IDs are append-only and never reused.`,
                     subject: requirement.file
                   })),
-                ...[...new Set(context.requirements.map((requirement) => requirement.prefix))].flatMap((prefix) => {
-                  const serials = context.requirements
-                    .filter((requirement) => requirement.prefix === prefix)
-                    .map((requirement) => requirement.serial)
-                    .sort((left, right) => left - right)
-                  const present = new Set(serials)
-                  const missing = Array.from({ length: Math.max(...serials, 0) }, (_, index) => index + 1).filter(
-                    (serial) => !present.has(serial)
-                  )
-                  return missing.map((serial) => ({
+                ...context.retired
+                  .filter((entry) => context.requirements.some((requirement) => requirement.id === entry.id))
+                  .map((entry) => ({
                     status: 'VIOLATION' as const,
-                    message: `${prefix}-${String(serial).padStart(3, '0')} is missing; serials are append-only and sequential per prefix.`,
-                    subject: context.requirements.find((requirement) => requirement.prefix === prefix)?.file
-                  }))
-                })
+                    message: `${entry.id} is retired to the tool but still defined as a requirement; a retired serial stays claimed and is never redefined.`,
+                    subject: entry.file
+                  })),
+                ...[...new Set([...context.requirements, ...context.retired].map((entry) => entry.prefix))].flatMap(
+                  (prefix) => {
+                    const serials = [...context.requirements, ...context.retired]
+                      .filter((entry) => entry.prefix === prefix)
+                      .map((entry) => entry.serial)
+                      .sort((left, right) => left - right)
+                    const present = new Set(serials)
+                    const missing = Array.from({ length: Math.max(...serials, 0) }, (_, index) => index + 1).filter(
+                      (serial) => !present.has(serial)
+                    )
+                    return missing.map((serial) => ({
+                      status: 'VIOLATION' as const,
+                      message: `${prefix}-${String(serial).padStart(3, '0')} is missing; serials are append-only and sequential per prefix.`,
+                      subject:
+                        context.requirements.find((requirement) => requirement.prefix === prefix)?.file ??
+                        context.retired.find((entry) => entry.prefix === prefix)?.file
+                    }))
+                  }
+                )
               ],
               'Requirement IDs are sequential within each prefix and unique across the corpus.'
             )

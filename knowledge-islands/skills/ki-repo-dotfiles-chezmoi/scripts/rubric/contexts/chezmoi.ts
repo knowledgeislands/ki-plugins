@@ -98,10 +98,7 @@ const repositoryState = (repository: string): RepositoryState => {
 const hasDeclaration = (repository: string, state: RepositoryState): boolean => {
   if (state !== 'physical' || pathState(join(repository, '.ki.toml')) !== 'file') return false
   try {
-    const document = Bun.TOML.parse(readFileSync(join(repository, '.ki.toml'), 'utf8')) as Record<
-      string,
-      unknown
-    >
+    const document = Bun.TOML.parse(readFileSync(join(repository, '.ki.toml'), 'utf8')) as Record<string, unknown>
     const skills = document.skills
     const table =
       skills && typeof skills === 'object' && !Array.isArray(skills)

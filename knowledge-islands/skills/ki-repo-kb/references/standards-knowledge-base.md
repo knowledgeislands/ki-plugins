@@ -44,6 +44,8 @@ A base that follows the structure and defines the notes store needs nothing more
 
 The zone set is fixed, but a base may hold a zone under a different local folder name — whether **mid-migration** (renaming toward the canonical name) or as a **standing local naming choice**. Any canonical zone (`Calendar` / `Pillars` / `Resources` / `Streams` / `Admin`) or staging area (`+` / `-`) may be aliased. So that the skill works against the real layout without hard-coding any one base's folders, the local folder name is a declared, reviewable override rather than a model change. (Bases that use an alias are recorded in [the source list](sources.md) for REFRESH.)
 
+A required zone is present when its resolved path is a readable directory, including a symbolic link that resolves to one. Dangling links and links to files do not satisfy the zone layout. Recognising a linked zone as present does not relax the separate containment and safe-write checks used by CONFORM.
+
 It lives in the base's `.ki.toml` under the skill's own table (the shared-file contract is owned by `ki-repo`; this skill owns the keys inside its table):
 
 ```toml

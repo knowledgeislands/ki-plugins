@@ -157,13 +157,7 @@ const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefi
       Array.isArray(configuredThemes) &&
       configuredThemes.some((theme) => typeof theme !== 'string' || !THEME_RE.test(theme))
     ) {
-      add(
-        'FAIL',
-        'ROAD-6',
-        'ki-work-roadmap themes must contain only lowercase kebab-case names',
-        STANDARD,
-        '.ki.toml'
-      )
+      add('FAIL', 'ROAD-6', 'ki-work-roadmap themes must contain only lowercase kebab-case names', STANDARD, '.ki.toml')
       return undefined
     }
     if (Array.isArray(configuredThemes) && new Set(configuredThemes).size !== configuredThemes.length) {

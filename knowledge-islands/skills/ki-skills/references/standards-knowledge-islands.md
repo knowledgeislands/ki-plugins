@@ -41,6 +41,8 @@ A skill includes only the classes it needs. A bare `standards.md`, `<topic>-stan
 
 When a KI-governed skill needs durable, generated local state that is neither a source script nor a reference, it stores it in a root `.ki-meta/` directory. This is the one KI-specific addition to the portable `references/` / `scripts/` / `assets/` support-directory vocabulary; it remains local implementation state, not a second skill root. (rubric **LAY-3**)
 
+A committed repository-local `.agents/skills/ki-self/` source is the one direct-governance exception to installed-Harness resolution. It still publishes `scripts/rubric/items/index.ts`, is executable only when the repository explicitly declares `[skills.ki-self]`, and remains subject to the retired-runner prohibition. Its REFRESH mode names the repository-owned source rather than a Harness owner.
+
 ## 3. Cross-skill collision
 
 Most conventions audit one `SKILL.md` in isolation; these check it against its **siblings** (so an audit runs the linter over the whole set, not one skill). No two descriptions in a set should declare the **same quoted trigger phrase** — two skills firing on the identical phrase compete at selection time. Beyond exact strings, where two skills could plausibly fire on one request, **each** description names the other as the off-ramp — the reciprocal `ki-repo-mcp` ↔ `ki-skills` pattern; a one-directional guard is a half-fix. This promotes the per-skill _option_ of naming non-triggers into a **set-level requirement** wherever real overlap exists. (COMMUNITY, ki-agentic-harness README)

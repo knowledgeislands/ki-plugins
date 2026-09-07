@@ -13,7 +13,7 @@ argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 
 # Knowledge Islands interactive website standard
 
-Apply this skill to one interactive browser application. The current house implementation is React with Vite, producing static `dist/` output through the `ki-repo-website` lifecycle seam.
+Apply this skill to one interactive browser application. The current house implementation is React with Vite, producing static `dist/` output through the `ki-repo-website` lifecycle seam. Resolve the app, its `package.json`, Vite configuration, source entry, ordinary `build` and `dev` scripts, and output from the core skill's selected `site-root`; this implementation table remains keyless. The repository root retains the public `ki:site:*` aliases.
 
 Do not add Eleventy around a React SPA merely to satisfy a website standard. Eleventy does not bundle the application JavaScript, so that pairing creates two build systems without a content-collection need. Select `ki-repo-website-content` instead only when Markdown/data page generation is the primary architecture.
 

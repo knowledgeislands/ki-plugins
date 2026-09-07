@@ -5,6 +5,7 @@ The cross-cutting contract for the shared **`.ki.toml`** file every Knowledge Is
 ## Contents
 
 - [The shared file & the compliance marker](#the-shared-file--the-compliance-marker)
+- [Presentation neighbourhoods](#presentation-neighbourhoods)
 - [Harnesses and the skills namespace](#harnesses-and-the-skills-namespace)
 - [Marker vs config tables](#marker-vs-config-tables)
 - [Validate your own table](#validate-your-own-table)
@@ -19,6 +20,31 @@ The cross-cutting contract for the shared **`.ki.toml`** file every Knowledge Is
 A repo declares its configuration in **one** `.ki.toml` at its root — not one file per concern. It is shared: several skills may read it, each from its own section. This keeps a repo's declared config in a single reviewable place and lets a skill discover what it needs without a bespoke file.
 
 Its **presence is the marker of a Knowledge Islands–compliant repo**, and the **gate of the coverage cascade** (below): a repo that carries `.ki.toml` has opted into the house standards, and the standard-holding skills are what hold it to them, each reading its own table where it needs declared config. Onboarding a repo (adding the file) is the act of making it compliant; `ki-repo` requires it as a Layer-1 root file, is the skill that audits it, and — because it is the gate — is also the skill that checks the repo declares the other standards that govern it (_Coverage enforcement_, below).
+
+Every file opens with this exact lightweight declaration:
+
+```toml
+# Knowledge Islands repository configuration.
+# Its presence declares conformance with the Knowledge Islands repository standard.
+```
+
+The header makes the marker legible without requiring a reader to know the filename contract. A future specification may replace the second line with a stable reference, but repositories use this exact wording until that reference exists.
+
+## Presentation neighbourhoods
+
+A compact `.ki.toml` with at most two declared skill roots beyond the required `ki-repo` and `ki-authoring` foundation MAY omit neighbourhood banners. A substantial file with three or more additional skill roots MUST use the exact three-line `Foundation` banner and at least one other needed banner from this stable sequence:
+
+- **Foundation** — `[repo]`, `[skills.ki-repo]`, `[skills.ki-authoring]`, and their immediate configuration.
+- **Repository shape** — the primary repository kind and its structural adapters.
+- **Governance and runtime** — general governance capabilities, bindings, runtime-specific adapters, and their owner configuration.
+- **Change management** — the work selector, selected adapter, housekeeping, and related delivery capabilities.
+- **Relationships** — Agora and trade declarations, normally toward the end because their keyed collections can dominate longer files.
+
+Use only the neighbourhoods the repository needs. Foundation stays first: `[repo]` remains the first table, `[skills.ki-repo]` the first skill root, and `[skills.ki-authoring]` follows the repository contract it presents. After that, owner affinity takes precedence over a global alphabetic sort. Within a neighbourhood, keep a skill's explicit root and all of its subordinate configuration contiguous, with the root before any child table or dotted child assignment. Otherwise retain a stable local order; alphabetic order is useful only where it does not separate an owner from its adapters or configuration.
+
+Neighbourhood comments are navigational and carry no consumer-visible semantics. The exact conformance header and its following blank line remain the first bytes of the file; decorative rules and section banners follow them. `ki-authoring` owns their TOML presentation, including the strong preference for compact dotted child keys when a complete entry remains readable on one line and the nested-table escape for complex records.
+
+Each used banner MUST use the exact three-line comment form, appear at most once, introduce a non-empty declaration group, and follow the sequence above. An owner block MUST NOT cross a neighbourhood banner. `ki-repo` mechanically diagnoses these source-level rules without reserialising TOML or assigning every skill to a hard-coded neighbourhood. `ki-authoring` retains the judgment of whether a non-foundation declaration is placed under the most meaningful banner and whether optional banners improve a compact file.
 
 ## Harnesses and the skills namespace
 
@@ -36,8 +62,7 @@ visibility = "public"
 license = "MIT"          # SPDX id; default MIT when unset. "UNLICENSED" for proprietary.
 supported_runtimes = ["claude-code", "chatgpt-codex"] # required agent-runtime support surface
 
-[skills.ki-repo.checks]
-branch-protection = true
+checks.branch-protection = true
 ```
 
 `[skills]` is a namespace, not a skill: it makes "this key is a declaration" structural rather than a guess about how the key is spelled. A repository-level setting that belongs to no skill lives in `[repo]` and is never mistaken for one.
@@ -78,7 +103,7 @@ A `[skills.<name>]` table plays one or both of two roles:
 - **Marker (opt-in)** — its _presence_ declares "this skill governs this repo." The bare header is enough; it needs no keys.
 - **Config** — it carries per-repo declarations the skill reads (data the standard fits to, or `[…checks]` divergences).
 
-The two are separable: a base on the canonical zone names declares a bare `[skills.ki-repo-kb]` (marker only, no keys); a base that renames a zone adds a `[skills.ki-repo-kb.zones]` alias (config). The marker/opt-in skills are `ki-engineering`, `-kb`, `-streams`, `-website`, `-website-cloudflare`, `-mcp`, `-skills`, and `-subagents`. `ki-repo` is the **bedrock marker** — the file's very presence is what makes the repo a ki-repo. `ki-authoring` governs every markdown repo, but it is **declared, not assumed**: every repo carries a bare `[skills.ki-authoring]` table like any other coverage (a missing one is a FAIL — `authoring-baseline`, [ADR-KI-HARNESS-005](../../../../docs/decisions/ADR-KI-HARNESS-005-validate-down-ki-config-toml-contract.md)). There is no injected/cascade-exempt baseline: coverage is purely what the config declares (ADR-KI-HARNESS-007).
+The two are separable: a base on the canonical zone names declares a bare `[skills.ki-repo-kb]` (marker only, no keys); a base that renames a zone adds a `[skills.ki-repo-kb.zones]` alias (config). The marker/opt-in skills are `ki-engineering`, `-kb`, `-streams`, `-website`, `-website-cloudflare`, `-mcp`, `-skills`, and `-subagents`. `ki-repo` is the **bedrock marker** — the file's very presence is what makes the repo a ki-repo. `ki-authoring` governs every markdown repo, but it is **declared, not assumed**: every repo carries a bare `[skills.ki-authoring]` table like any other coverage (a missing one is a FAIL — `authoring-baseline`, [ADR-KI-HARNESS-005](../../../../docs/decisions/ADR-KI-HARNESS-005-validate-down-ki-toml-contract.md)). There is no injected/cascade-exempt baseline: coverage is purely what the config declares (ADR-KI-HARNESS-007).
 
 So **what an absent table means is per-skill**, and that is exactly what _Coverage enforcement_ (below) checks:
 
@@ -128,7 +153,7 @@ The detection signals `ki-repo` uses (one recursive tree read + `package.json`):
 | `ki-repo-kb-streams` | `Streams/` zone | `[skills.ki-repo-kb-streams]` |
 | `ki-repo-website` | either website implementation signal below | `[skills.ki-repo-website]` |
 | `ki-repo-website-content` | `eleventy.config.*` | `[skills.ki-repo-website-content]` |
-| `ki-repo-website-app` | Vite config plus React and Vite dependencies | `[skills.ki-repo-website-app]` |
+| `ki-repo-website-app` | Vite config plus React and Vite dependencies at the core-selected site root | `[skills.ki-repo-website-app]` |
 | `ki-repo-website-cloudflare` | a `wrangler.*` config | `[skills.ki-repo-website-cloudflare]` |
 | `ki-repo-mcp` | `@modelcontextprotocol/sdk` dependency | `[skills.ki-repo-mcp]` |
 | `ki-repo-plugins` | `.claude-plugin/marketplace.json` | `[skills.ki-repo-plugins]` |
@@ -141,7 +166,7 @@ The detection signals `ki-repo` uses (one recursive tree read + `package.json`):
 | `ki-subagents-codex` | `.codex/agents/**/*.toml` | `[skills.ki-subagents-codex]` |
 | `ki-checkpoint` | `+/_CHECKPOINTS/` subarea | `[skills.ki-checkpoint]` |
 
-This is the **one place** `ki-repo` reads across skill tables — and it reads only table **presence**, never another skill's keys (_validate down, ignore across_ still governs table _contents_). It is an **audit-time enforcement** run by `repo`'s auditor, not behaviour baked into the regular use of each skill. A repo opts out of a single signal with a `coverage-<skill> = false` entry under `[skills.ki-repo.checks]`. Website keys are independent: `coverage-website`, `coverage-website-content`, `coverage-website-app`, and `coverage-website-cloudflare` do not disable one another.
+This is the **one place** `ki-repo` reads across skill tables. It normally reads only table **presence**; app discovery also consumes the core-owned `site-root` solely to locate the selected Vite config and package manifest. The website core still owns and validates that value, preserving _validate down, ignore across_ for its contents. It is an **audit-time enforcement** run by `repo`'s auditor, not behaviour baked into the regular use of each skill. A repo opts out of a single signal with a `coverage-<skill> = false` entry under `[skills.ki-repo.checks]`. Website keys are independent: `coverage-website`, `coverage-website-content`, `coverage-website-app`, and `coverage-website-cloudflare` do not disable one another.
 
 No marker table is decorative — each is read by code. Most are read by their **owning** skill's auditor too (`-engineering`/`-kb`/`-streams`/`-website`/`-website-cloudflare`/`-mcp`/`-plugins` each read their own table when run). `ki-skills`, `ki-subagents`, and its runtime adapters are the documented exception: their checkers lint artifact sets (`SKILL.md` files or native agent projections), not a repo's config, so their opt-in tables are read only by `ki-repo`'s coverage check.
 
@@ -153,7 +178,7 @@ No marker table is decorative — each is read by code. Most are read by their *
 
 The **schema and conformer** inside a table belong to the skill that owns it: that skill documents the allowed keys and may emit or update its canonical fragment while preserving unrelated content. `ki-repo` owns the shared file-level contract and the two required foundation markers. No operation embeds another skill's TOML template or edits that skill's table directly. This retains one shared `.ki.toml`, one table per skill, read-only access across table boundaries, and validate-down/conform-down ownership.
 
-`ki-repo`'s own foundation action establishes the required markers. For a missing file it writes one canonical `[skills.ki-repo]` default block followed by one bare `[skills.ki-authoring]`. For a partial file it appends only whichever exact root marker is absent; `[skills.ki-repo.checks]` alone is not an exact `[skills.ki-repo]` marker. Existing content remains an exact byte-for-byte prefix — including values, comments, ordering, and existing newline bytes — repeat runs are idempotent, and dry-run writes nothing. CONFORM applies the local repair while live GitHub changes remain separately confirmed work.
+`ki-repo`'s own foundation action establishes the opening declaration and required markers. For a missing file it writes the exact header, one canonical `[skills.ki-repo]` default block, and one bare `[skills.ki-authoring]`. For a partial file it prepends only the missing header and appends only whichever exact root marker is absent; `[skills.ki-repo.checks]` alone is not an exact `[skills.ki-repo]` marker. Apart from that bounded prepend and append, existing content remains byte-for-byte unchanged — including values, comments, ordering, and existing newline bytes — repeat runs are idempotent, and dry-run writes nothing. CONFORM applies the local repair while live GitHub changes remain separately confirmed work.
 
 The native configuration and activation flow runs this owner leg without embedding a TOML template or writing another skill's table. It re-reads the result before resolving the declared operations from the verified installed collection; it does not vendor an executor. No-seed/no-config activation remains an empty-set operation, so this flow does not recreate an injected baseline.
 

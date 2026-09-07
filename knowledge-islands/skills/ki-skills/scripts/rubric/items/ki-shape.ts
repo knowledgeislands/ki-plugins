@@ -16,7 +16,7 @@ const KI_SHAPE_2: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-2',
   title: 'skills compose or optionally augment rather than extend',
   description:
-    '**Composition and optional augmentation are the only dependent inter-skill relationships — the base-coupled extension pattern is retired.** Formal composition means selecting one skill necessarily selects and runs another governance capability before adding its delta; declare it in `ki-depends-on:`. An optional augmentation is declared in `ki-optional-depends-on:` and applies only when the named capability is active in the same scope; it never makes that capability mandatory or claims composition. List order is not semantic. Separately coverage-detected standards are audited alongside, off-ramps are routing, and `ki-shared-dependencies:` is packaging — none is composition. What a base needs differently is **declared, not forked**: data in the repo\'s own `.ki-config` table (read validate-down), prose in its `CLAUDE.md` — never a `<base>-kb`-style skill that takes the shared modes by name. _Delegation between two standards (kb → streams) is composition at sub-scope and is declared by the delegating parent._ The linter flags **endorsement of the retired pattern** (telling a base to ship/"prefer" an extension skill, or that a skill "delegates the modes back" / "extends this one") as a mechanical heuristic; the **[J]** gate is that every claimed composition has the matching dependency edge and no adjacent relationship is mislabeled as composition.',
+    '**Composition and optional augmentation are the only dependent inter-skill relationships — the base-coupled extension pattern is retired.** Formal composition means selecting one skill necessarily selects and runs another governance capability before adding its delta; declare it in `ki-depends-on:`. An optional augmentation is declared in `ki-optional-depends-on:` and applies only when the named capability is active in the same scope; it never makes that capability mandatory or claims composition. List order is not semantic. Separately coverage-detected standards are audited alongside, off-ramps are routing, and `ki-shared-dependencies:` is packaging — none is composition. What a base needs differently is **declared, not forked**: data in the repo\'s own `.ki.toml` table (read validate-down), prose in its `CLAUDE.md` — never a `<base>-kb`-style skill that takes the shared modes by name. _Delegation between two standards (kb → streams) is composition at sub-scope and is declared by the delegating parent._ The linter flags **endorsement of the retired pattern** (telling a base to ship/"prefer" an extension skill, or that a skill "delegates the modes back" / "extends this one") as a mechanical heuristic; the **[J]** gate is that every claimed composition has the matching dependency edge and no adjacent relationship is mislabeled as composition.',
   sources: ['ki-agentic-harness README', '`ki-engineering`'],
   mechanical: {
     level: 'WARN',
@@ -34,7 +34,7 @@ const KI_SHAPE_2: RubricItem<KiShapeRubricContext> = {
         const violations = skill.retiredExtensionFiles.map((file) => ({
           status: 'VIOLATION' as const,
           message:
-            'endorses the retired base-coupled extension pattern (ship/"prefer" an extension skill, "delegates the modes back", "extends this one") — relationships are composition only; declare base differences in .ki-config / CLAUDE.md, per KI-SHAPE-2',
+            'endorses the retired base-coupled extension pattern (ship/"prefer" an extension skill, "delegates the modes back", "extends this one") — relationships are composition only; declare base differences in .ki.toml / CLAUDE.md, per KI-SHAPE-2',
           subject: file
         }))
         const [first, ...rest] = violations
@@ -338,7 +338,7 @@ const KI_SHAPE_14: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-14',
   title: 'REFRESH states its ownership precondition',
   description:
-    "_REFRESH states its ownership precondition._ REFRESH's write target is normally the skill's own canonical files under `skills/<name>/` in `ki-agentic-harness` — a governance skill's `### Mode REFRESH` section (or, per REF-5, its `references/mode-refresh.md`) must name `ki-agentic-harness` as the only place it writes, and instruct the agent to stop and redirect when invoked from an installed copy (to the harness, or — for a pattern recurring across bases — to `ki-repo-kb`'s IMPROVE mode). The one committed repository-local source at `.agents/skills/ki-self/` instead names that local source and stops to promote reusable rules to their shared owner. Missing either half **WARNs**. Process skills (KI-SHAPE-3) are exempt; a skill with no REFRESH section at all is already caught by KI-SHAPE-12.",
+    "_REFRESH states its ownership precondition._ REFRESH's write target is normally the skill's own canonical files under `skills/<name>/` in `ki-agentic-harness` — or in a compatible source Harness that declares `ki-repo-harness` and its canonical repository identity. A governance skill's `### Mode REFRESH` section (or, per REF-5, its `references/mode-refresh.md`) must name that exact source owner as the only place it writes, and instruct the agent to stop and redirect when invoked from an installed copy (to the harness, or — for a pattern recurring across bases — to `ki-repo-kb`'s IMPROVE mode). The one committed repository-local source at `.agents/skills/ki-self/` instead names that local source and stops to promote reusable rules to their shared owner. Missing either half **WARNs**. Process skills (KI-SHAPE-3) are exempt; a skill with no REFRESH section at all is already caught by KI-SHAPE-12.",
   sources: ['ADR-KI-HARNESS-SKILLS-001', 'ADR-KI-HARNESS-SKILLS-006'],
   mechanical: {
     level: 'WARN',
@@ -352,9 +352,14 @@ const KI_SHAPE_14: RubricItem<KiShapeRubricContext> = {
       run: ({ skill }) => {
         if (!skill?.governanceSkill || !skill.refreshText)
           return [{ status: 'NOT_APPLICABLE', message: 'the target has no governance REFRESH procedure to inspect' }]
+        const owner = skill.sourceHarnessName ?? 'ki-agentic-harness'
+        const ownerPattern = new RegExp(
+          `(?:^|[^a-z0-9-])${owner.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=$|[^a-z0-9-])`,
+          'i'
+        )
         const namesOwner = skill.localGovernanceSource
           ? /\.agents\/skills\/ki-self/.test(skill.refreshText)
-          : /ki-agentic-harness/.test(skill.refreshText)
+          : ownerPattern.test(skill.refreshText)
         const stopsAndRedirects = skill.localGovernanceSource
           ? /\bstop(s)?\b[\s\S]{0,160}\bpromot\w*/i.test(skill.refreshText)
           : /\bstop(s)?\b[\s\S]{0,160}\b(redirect|names?|route)/i.test(skill.refreshText)
@@ -364,7 +369,7 @@ const KI_SHAPE_14: RubricItem<KiShapeRubricContext> = {
                 status: 'PASS',
                 message: skill.localGovernanceSource
                   ? 'REFRESH states the repository-local ownership precondition'
-                  : 'REFRESH states its harness-only precondition'
+                  : `REFRESH states its ${owner} ownership precondition`
               }
             ]
           : [
@@ -372,7 +377,7 @@ const KI_SHAPE_14: RubricItem<KiShapeRubricContext> = {
                 status: 'VIOLATION',
                 message: skill.localGovernanceSource
                   ? 'REFRESH section does not state the repository-local ownership precondition — it should name `.agents/skills/ki-self/` and instruct stopping to promote reusable rules to their shared owner'
-                  : 'REFRESH section does not state the harness-only precondition — it should name `ki-agentic-harness` as the only place it writes and instruct stopping/redirecting when invoked from an installed copy'
+                  : `REFRESH section does not state the ${owner} ownership precondition — it should name \`${owner}\` as the only place it writes and instruct stopping/redirecting when invoked from an installed copy`
               }
             ]
       }
@@ -381,9 +386,14 @@ const KI_SHAPE_14: RubricItem<KiShapeRubricContext> = {
 }
 
 const auditKiShape15 = ({ skill }: KiShapeRubricContext): RubricOutcomes<AuditOutcome> => {
-  if (!skill?.governanceSkill || skill.localGovernanceSource)
+  if (!skill?.governanceSkill)
     return [{ status: 'NOT_APPLICABLE', message: 'the target is not a direct governance capability' }]
   const violations: AuditOutcome[] = []
+  if (!skill.rubricCatalogue)
+    violations.push({
+      status: 'VIOLATION',
+      message: '`scripts/rubric/items/index.ts` catalogue is required for direct governance operations'
+    })
   for (const script of ['govern.ts', 'educate.ts', 'audit.ts', 'conform.ts'])
     if (skill.scriptNames.includes(script))
       violations.push({
@@ -400,7 +410,7 @@ const KI_SHAPE_15: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-15',
   title: 'governance skills expose no legacy runner entrypoints',
   description:
-    '_Direct governance operation shape._ A governance skill exposes its rubric catalogue from `scripts/rubric/items/index.ts`; `ki` resolves and hosts that catalogue from the verified installed harness. `scripts/govern.ts`, `scripts/educate.ts`, `scripts/audit.ts`, and `scripts/conform.ts` are retired, with no compatibility runner or fallback. REFRESH is harness-only. Process skills and the committed repository-local `.agents/skills/ki-self/` source are exempt.',
+    '_Direct governance operation shape._ A governance skill exposes its rubric catalogue from `scripts/rubric/items/index.ts`; `ki` resolves and hosts that catalogue from a verified installed Harness or the exact explicitly declared repository-local `.agents/skills/ki-self/` source. `scripts/govern.ts`, `scripts/educate.ts`, `scripts/audit.ts`, and `scripts/conform.ts` are retired, with no compatibility runner or fallback. Process skills are exempt.',
   sources: ['standards-knowledge-islands.md §2', 'ADR-KI-HARNESS-007'],
   mechanical: {
     level: 'FAIL',

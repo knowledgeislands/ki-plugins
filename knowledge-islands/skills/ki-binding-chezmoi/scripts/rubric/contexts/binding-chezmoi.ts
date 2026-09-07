@@ -16,10 +16,8 @@ export type BindingChezMoiContext = {
 
 const physical = (path: string): boolean =>
   existsSync(path) && lstatSync(path).isFile() && !lstatSync(path).isSymbolicLink()
-const include = (content: string, data: string, partial: string): boolean =>
-  new RegExp(
-    `{{-?\\s*(?:template\\s+${JSON.stringify(partial)}\\s+\\.|include\\s+${JSON.stringify(data)})\\s*-?}}`
-  ).test(content)
+const callsPartial = (content: string, partial: string): boolean =>
+  new RegExp(`{{-?\\s*template\\s+${JSON.stringify(partial)}\\s+[^}]+-?}}`).test(content)
 
 const inspectRepository = (repository: string): Omit<BindingChezMoiContext, 'rubric'> => {
   if (!existsSync(repository))
@@ -76,21 +74,19 @@ const inspectRepository = (repository: string): Omit<BindingChezMoiContext, 'rub
         if (entry.name.endsWith('.tmpl')) unsafePaths.push(subject)
         continue
       }
-      if (subject.startsWith('.chezmoidata/') && /\.ya?ml$/i.test(entry.name))
+      if (subject.startsWith('.chezmoidata/') && /mcp.*\.ya?ml$/i.test(entry.name))
         data.push({ path: subject, pattern: 'data-merge', source: readSource(path) })
-      if (entry.name === 'mcp-servers.yaml')
+      else if (entry.name === 'mcp-servers.yaml')
         data.push({ path: subject, pattern: 'managed-source', source: readSource(path) })
-      if (subject === '.chezmoitemplates/mcp-servers-json.tmpl') templates.push(subject)
+      if (subject === '.chezmoitemplates/mcp-servers-json' || subject === '.chezmoitemplates/mcp-servers-json.tmpl')
+        templates.push(subject)
       if (entry.name.endsWith('.tmpl') && subject !== '.chezmoitemplates/mcp-servers-json.tmpl' && physical(path))
         targets.push({ path: subject, content: readFileSync(path, 'utf8') })
     }
   }
   walk(repository)
   const wiredTargets = targets
-    .filter(
-      ({ content }) =>
-        data.some(({ path }) => include(content, path, 'mcp-servers-json.tmpl')) && templates.length === 1
-    )
+    .filter(({ content }) => templates.some((path) => callsPartial(content, path.slice('.chezmoitemplates/'.length))))
     .map(({ path }) => path)
     .sort()
   return {

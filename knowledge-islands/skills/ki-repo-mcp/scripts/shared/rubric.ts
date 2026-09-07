@@ -253,6 +253,7 @@ export type RubricSession<RootContext> = {
 
 export type SkillRubricDefinition<RootContext> = RubricDefinition<RootContext> & {
   contract: 1
+  packageScripts?: readonly `ki:${string}`[]
   /**
    * The host awaits this, so a skill may gather evidence asynchronously and yield the event
    * loop while it does. A synchronous session stays valid and assignable, which is what lets

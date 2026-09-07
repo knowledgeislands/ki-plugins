@@ -17,6 +17,7 @@ type ClaudeTarget =
 type CoworkFile = { path: string; subject: string; status: 'already' | 'pending' | 'unsafe' }
 export type ClaudeBindingContext = {
   rubric: RubricPublicationContext
+  home: string
   source: string
   sourceState: SourceState
   code: ClaudeTarget
@@ -44,14 +45,27 @@ const target = (path: string): ClaudeTarget => {
     return { kind: 'invalid', path }
   }
 }
-const same = (entry: ServerEntry, actual: Record<string, unknown> | undefined): boolean => {
+const sameEnvironment = (expected: Readonly<Record<string, string | { op: string }>>, actual: unknown): boolean => {
+  if (!actual || typeof actual !== 'object' || Array.isArray(actual)) return false
+  const received = actual as Record<string, unknown>
+  if (JSON.stringify(Object.keys(received).sort()) !== JSON.stringify(Object.keys(expected).sort())) return false
+  return Object.entries(expected).every(([key, value]) =>
+    typeof value === 'string' ? received[key] === value : typeof received[key] === 'string' && received[key]
+  )
+}
+const renderedCommand = (command: string): string =>
+  command.startsWith('/') ? command : (Bun.which(command) ?? command)
+const renderedArgument = (argument: string, home: string): string =>
+  argument === '~' ? home : argument.startsWith('~/') ? join(home, argument.slice(2)) : argument
+const same = (entry: ServerEntry, actual: Record<string, unknown> | undefined, home: string): boolean => {
   if (!actual) return false
-  if ('url' in entry) return actual.type === entry.transports['claude-code'] && actual.url === entry.url
+  if ('url' in entry) return actual.type === 'url' && actual.url === entry.url
   return (
-    actual.type === 'stdio' &&
-    actual.command === entry.command &&
-    JSON.stringify(actual.args ?? []) === JSON.stringify(entry.args) &&
-    JSON.stringify(actual.env ?? {}) === JSON.stringify(entry.env)
+    (actual.type === undefined || actual.type === 'stdio') &&
+    actual.command === renderedCommand(entry.command) &&
+    JSON.stringify(actual.args ?? []) ===
+      JSON.stringify(entry.args.map((argument) => renderedArgument(argument, home))) &&
+    sameEnvironment(entry.env, actual.env)
   )
 }
 const enabled = (json: Record<string, unknown>) =>
@@ -93,6 +107,7 @@ export const createClaudeBindingSession = ({
     base = join(home, 'Library', 'Application Support', 'Claude', 'local-agent-mode-sessions')
   const context: ClaudeBindingContext = {
     rubric: { publication },
+    home,
     source,
     sourceState: readSource(source),
     code: target(join(home, '.claude.json')),
@@ -113,8 +128,9 @@ export const createClaudeBindingSession = ({
 export const targetMatches = (
   sourceState: SourceState,
   client: 'claude-code' | 'claude-desktop',
-  targetState: ClaudeTarget
+  targetState: ClaudeTarget,
+  home: string
 ): ReturnType<typeof targeted> | null =>
   sourceState.kind === 'valid' && targetState.kind === 'valid'
-    ? targeted(sourceState.entries, client).filter((entry) => !same(entry, targetState.servers[entry.name]))
+    ? targeted(sourceState.entries, client).filter((entry) => !same(entry, targetState.servers[entry.name], home))
     : null

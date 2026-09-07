@@ -1,6 +1,6 @@
 # Bootstrap exemplars
 
-These examples illustrate the scope boundaries in [the bootstrap standard](standards-bootstrap.md). For the exact options supported by an installed release, use `ki help`.
+These examples illustrate the scope boundaries in [the bootstrap standard](standards-bootstrap.md). For the exact options supported by an installed release, use `ki --help`.
 
 ## First-time setup
 
@@ -69,10 +69,10 @@ ki repo skill remove ki-work-roadmap --repo .
 Use a checkout only through the explicit development switch:
 
 ```sh
-ki dev local set /absolute/path/to/ki-agentic-harness
-ki dev local on
+ki dev local set knowledgeislands/ki-agentic-harness /absolute/path/to/ki-agentic-harness
+ki dev local on knowledgeislands/ki-agentic-harness
 ki repo audit --repo /absolute/path/to/governed-repository
-ki dev local off
+ki dev local off knowledgeislands/ki-agentic-harness
 ```
 
 The first command validates the checkout before switching the canonical installed payload. The last restores the verified archive; proximity to a checkout never changes resolution by itself.

@@ -123,6 +123,44 @@ test('comment-only or ambiguous template references do not count as wiring', () 
   )
 })
 
+test('the extensionless ChezMoi partial and function-style template call are valid wiring', () => {
+  const repository = fixture()
+  rmSync(join(repository, '.chezmoitemplates', 'mcp-servers-json.tmpl'))
+  writeFileSync(join(repository, '.chezmoitemplates', 'mcp-servers-json'), '{{/* render partial */}}\n')
+  writeFileSync(
+    join(repository, 'dot_config', 'surface.json.tmpl'),
+    '{{ template "mcp-servers-json" (dict "client" "claude-code") }}\n'
+  )
+  const context = createBindingChezMoiSession({
+    mode: 'audit',
+    repository,
+    userHome: tmpdir(),
+    configuration: {}
+  }).subjects[0]?.context() as BindingChezMoiContext
+  const family = catalogue.families[0] as RubricFamily<BindingChezMoiContext, BindingChezMoiContext>
+  expect(context.templates).toEqual(['.chezmoitemplates/mcp-servers-json'])
+  expect(context.wiredTargets).toEqual(['dot_config/surface.json.tmpl'])
+  expect(family.items.find((item) => item.code === 'BINDCHEZ-4')?.mechanical?.audit.run(context)[0]?.status).toBe(
+    'PASS'
+  )
+  expect(family.items.find((item) => item.code === 'BINDCHEZ-5')?.mechanical?.audit.run(context)[0]?.status).toBe(
+    'PASS'
+  )
+})
+
+test('unrelated ChezMoi YAML data is not treated as an MCP source', () => {
+  const repository = fixture()
+  writeFileSync(join(repository, '.chezmoidata', 'trusted-folders.yaml'), 'trustedFolders: []\n')
+  const context = createBindingChezMoiSession({
+    mode: 'audit',
+    repository,
+    userHome: tmpdir(),
+    configuration: {}
+  }).subjects[0]?.context() as BindingChezMoiContext
+  expect(context.data).toHaveLength(1)
+  expect(context.data[0]?.path).toBe('.chezmoidata/mcps.yaml')
+})
+
 test('malformed renderer data cannot pass as source structure', () => {
   const repository = fixture()
   writeFileSync(

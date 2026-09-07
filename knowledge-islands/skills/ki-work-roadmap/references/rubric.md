@@ -64,6 +64,11 @@ Canonical generated-index structure, placement, and readiness.
   - _Remediation:_ diagnostic — Correct the configured repository code, theme vocabulary, or fixed area map from authoritative repository configuration.
 - **ROAD-7 [M] — issue-allocation ledger** — docs/roadmap/_ISSUES.md records the repository-wide or fixed-area high-water marks, preventing a pruned issue number from being reused. (standards-repository-roadmaps.md)
   - _Remediation:_ automatic
+- **ROAD-8 [J] — lifecycle and pruning commit boundaries** — Lifecycle transitions may share their coherent work commit; a prune-only commit removes one or more eligible records only after each has landed as done. (standards-repository-roadmaps.md)
+  - _Evidence scope:_ The Git history and proposed commits that create or transition work records, land accepted done records, or prune selected records.
+  - _Review prompt:_ Review whether lifecycle changes are grouped with their coherent work without requiring intermediate-state commits, and whether every prune commit follows a prior committed done state and contains only eligible work-record removals.
+  - _Outcomes:_ conforming; lifecycle commit over-separated; committed done state missing; prune commit mixed
+  - _Conforming guidance:_ Combine lifecycle changes with the planning, implementation, review, or closure unit they describe. Before pruning, land each selected record as done; then remove one or more eligible records in a dedicated prune-only commit.
 
 ## ITEM — items
 

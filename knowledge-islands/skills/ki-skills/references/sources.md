@@ -76,9 +76,9 @@ The OpenAI News page is a discovery source, not a normative standard. On each RE
 
 | Tag | Source | Scope | Last reviewed |
 | --- | --- | --- | --- |
-| COMMUNITY | [Skill Authoring Patterns][patterns] | Patterns and feedback | 2026-07-04 |
-| COMMUNITY | [obra/superpowers writing-skills][superpowers]† | Convergent conventions | 2026-06-18 |
-| COMMUNITY | [skills.sh — Open Agent Skills Ecosystem][skills-sh] | Registry and security | 2026-07-04 |
+| COMMUNITY | [Skill Authoring Patterns][patterns] | Patterns and feedback | 2026-08-22 |
+| COMMUNITY | [obra/superpowers writing-skills][superpowers]† | Convergent conventions | 2026-08-22 |
+| COMMUNITY | [skills.sh — Open Agent Skills Ecosystem][skills-sh] | Registry and security | 2026-08-22 |
 | GASTOWN | [Gas Town Hall][gastown-hall] | Multi-agent orchestration and harness-practice discovery | 2026-07-29 |
 | FAFF | [shftwst/faff][faff] | Claude Code delivery-harness and autonomy-gate discovery | 2026-07-29 |
 
@@ -104,11 +104,11 @@ The README is cited only for the harness's five-part structure. Local decision r
 
 ## Last review
 
-REFRESH last run **2026-08-12**. It fetched [the documentation index][agentskills-index] first; it still lists the same nine pages and the specification retains the portable format and budgets. The review corrected authority and runtime-overlay claims without changing capability scope.
+REFRESH last run **2026-08-22**. It fetched [the documentation index][agentskills-index] first; it still lists the same nine pages and the specification retains the portable format and budgets. The review reconciled current description-voice guidance without otherwise changing capability scope.
 
 - **SPEC:** portable fields and constraints remain current. `allowed-tools` is the only portable tool declaration and remains experimental; `disallowed-tools` is not in the specification.
 - **Agent Skills home:** accessible; three-stage progressive disclosure (metadata ~100 tok / instructions < 5000 tok / resources on demand). Spec unchanged.
-- **BP (Anthropic platform best-practices):** accessible; full page fetched. No new guidance beyond the standard — confirms third-person description, gerund naming, < 500-line body, progressive disclosure, ToC > 100 lines, ≥ 3 evaluations, Haiku/Sonnet/Opus testing, forward-slash paths, one-default-with-escape-hatch, fully-qualified `ServerName:tool_name`, plan-validate-execute, justified constants, and the authoring checklist.
+- **Description voice:** the current Agent Skills description guide prefers direct imperative phrasing, while Anthropic and community guidance retains third person. The portable rule now accepts either activation-oriented form and continues to reject first-/second-person explanation.
 - **CC:** `disallowed-tools` and `background` remain Claude Code extensions; the former accepts a string or YAML list, while `background` applies only with `context: fork`.
 - **OA:** OpenAI documents `.agents/skills` discovery, initial name/description/path listings, `agents/openai.yaml`, and `allow_implicit_invocation`. Description remains the primary signal for implicit matching, not the only listed metadata.
 - **ENG:** published 2025-10-16 and updated 2025-12-18; it remains rationale, not a normative source.
@@ -116,7 +116,7 @@ REFRESH last run **2026-08-12**. It fetched [the documentation index][agentskill
 - **OPENAI (OpenAI News):** added as a discovery source. Future REFRESH runs scan it for articles materially relevant to agent skills, agentic practice, or authoring workflows; an article is supporting evidence, not a normative rule by itself.
 - **GASTOWN (Gas Town Hall):** added as a discovery source. Future REFRESH runs scan its announcements and documentation for material multi-agent orchestration or harness-practice lessons; its practice is supporting evidence, not a normative rule by itself.
 - **FAFF (shftwst/faff):** added as a discovery source. Future REFRESH runs review its delivery-loop contracts, autonomy levels, and gate design for transferable lessons; its Claude Code-specific implementation is supporting evidence, not a portable rule by itself.
-- **COMMUNITY (generativeprogrammer.com Skill Authoring Patterns):** accessible; page dated 2026-04-19, unchanged since last run. 14 named patterns incl. Known Gotchas, Autonomy Calibration, Exclusion Clause; confirms the 1024 / 1536 caps, < 500 lines, third-person "pushy" descriptions. Repeats the soft ~300-line split trigger — compatible with (and below) our 500-line WARN; still not adopted as a separate cap.
+- **COMMUNITY:** the reviewed pattern guide, Superpowers guidance, and skills.sh registry remain supporting evidence. They introduce no further portable constraint; the soft ~300-line split suggestion remains below our 500-line WARN and is not adopted as a separate cap.
 - **`skills-ref`:** the repository now explicitly labels the reference library demonstration-only and not for production. Keep it as supporting validation evidence; the specification remains the normative baseline.
 - **In-house scan:** the then-current governed skill set passed its skill-quality audit, including `ki-skills` itself. Exact commands and fleet counts are intentionally omitted because both change as the host and skill set evolve.
 - **Open watch-items:** re-fetch `superpowers` directly next run (carried forward).

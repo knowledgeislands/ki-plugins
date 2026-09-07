@@ -44,10 +44,10 @@ Canonical decision-record filenames and serial namespaces.
 
 → [standard](standards-decision-records.md)
 
-The first Decision Record in a newly marked collection adopts the instrument itself.
+The first Decision Record in every collection adopts the instrument itself.
 
-- **ROOT-1 [M] — Adoption root for a new collection** — An index marked `<!-- ki-decision-records: adoption-root -->` begins with `GDR-<SCOPE>-001: Adopting Decision Records`. Existing unmarked collections are migration cases and are not rewritten automatically. (standards-decision-records.md)
-  - _Remediation:_ diagnostic — Create or correct the marked collection root with a human review of its record identity and contents.
+- **ROOT-1 [M] — Every collection begins by adopting the instrument** — Every collection begins its index with `GDR-<SCOPE>-001` whose title contains "Adopting Decision Records" (a compound title such as "Adopt decision records and documentation instruments" satisfies it). (standards-decision-records.md)
+  - _Remediation:_ diagnostic — Create or retitle the collection root with a human review of its record identity and contents.
 
 ## FM — frontmatter checks
 

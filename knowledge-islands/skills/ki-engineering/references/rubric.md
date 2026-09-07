@@ -85,11 +85,11 @@ CI installs the declared toolchain and runs canonical repository gates.
 
 The direct CLI boundary, lifecycle idioms, and clean cutover discipline.
 
-- **SCR-1 [M] — KI script naming law** — Every script is a permitted bare lifecycle idiom or carries the `ki:` prefix; a bare non-idiom name is drift. (standards-engineering.md)
+- **SCR-1 [M] — KI script naming law** — Every script is a permitted bare lifecycle idiom, a capability-owned `ki:` name, a repository-owned `self:` name with a non-empty suffix, or an exactly excluded external bare name. (standards-engineering.md)
   - _Remediation:_ diagnostic — Revise the package scripts to meet the governed script surface, then rerun the audit.
 - **SCR-2 [M] — Repository maintenance stays CLI-owned** — Package scripts do not invoke `ki repo audit`, `ki repo conform`, or `ki repo educate`, whether for the whole repository or a focused skill; repositories invoke the installed CLI directly. (standards-engineering.md)
   - _Remediation:_ automatic
-- **SCR-3 [M] — Exact script claims cover the governed surface** — Every `ki:` script is claimed by exactly one resolved capability or is exactly excluded as user-owned external tooling; `ki:deps:update` is present; retired tool families and aggregate governance aliases are absent. (standards-engineering.md)
+- **SCR-3 [M] — Exact script claims cover the governed surface** — Every `ki:` script is claimed by exactly one resolved capability, every `self:` script names repository ownership directly, and exact exclusions cover only externally constrained bare names; `ki:deps:update` is present; retired tool families and aggregate governance aliases are absent. (standards-engineering.md)
   - _Remediation:_ automatic
 - **SCR-4 [M] — Per-skill wrapper aliases absent** — Package scripts contain no derived `ki:<skill>:<mode>` aliases and no command that invokes `.ki`, `govern.ts`, `educate.ts`, an adapter, or a vendored runtime. (standards-engineering.md)
   - _Remediation:_ automatic
@@ -185,12 +185,12 @@ Declared dependency ranges are canonically ordered and aligned.
 
 Available dependency updates are surfaced and deliberately applied.
 
-- **DEPS-1 [M + J] — Dependencies are current** — `bun outdated` reports no available updates; available updates are reviewed through `ki repo conform`. (standards-engineering.md)
+- **DEPS-1 [M + J] — Dependencies are current** — `bun outdated` reports no available updates; a newer release opens a 14-day adoption window — informational while open, failing once the next unadopted release is two weeks old — with deliberate holds recorded as `dependency_holds` in `.ki.toml`. (standards-engineering.md)
   - _Remediation:_ guarded — Review each available dependency update and apply the selected versions deliberately, then rerun the audit.
   - _Evidence scope:_ Every available dependency update and its release notes, compatibility impact, and lockfile change.
   - _Review prompt:_ Should each available update be adopted now without violating repository compatibility or release commitments?
   - _Outcomes:_ adopt; defer; exclusion
-  - _Conforming guidance:_ Apply the approved update, record a deliberate deferral with its owner, or record an explicit exclusion.
+  - _Conforming guidance:_ Apply the approved update, or record a deliberate hold as a `dependency_holds` entry (`"<name> — <reason>"`) under `[skills.ki-engineering]` — a hold is visible for as long as it stands and flagged as stale once the package is current.
 
 ## GEN — Generated surfaces
 
@@ -238,7 +238,7 @@ Runner-neutral tests and the conditional Vitest coverage profile.
   - _Remediation:_ diagnostic — Align the test runner or Vitest coverage configuration with the declared test capability, then rerun the audit.
 - **TEST-3 [M] — Vitest test-source exclusion** — Under the Vitest profile, coverage excludes `src/**/*.test.ts`. (standards-engineering.md)
   - _Remediation:_ diagnostic — Align the test runner or Vitest coverage configuration with the declared test capability, then rerun the audit.
-- **TEST-4 [M] — Vitest monorepo scoping** — Under the Vitest profile, workspace repos scope include, exclude, and reportsDirectory to the workspace rather than a flat root. (standards-engineering.md)
+- **TEST-4 [M] — Vitest report output and workspace scoping** — Under the Vitest profile, coverage writes to reports/coverage and monorepos keep reports and test globs inside the owning workspace. (standards-engineering.md)
   - _Remediation:_ diagnostic — Align the test runner or Vitest coverage configuration with the declared test capability, then rerun the audit.
 - **TEST-5 [M] — Vitest coverage command passes** — Under the Vitest profile, `bun run test:coverage` exits clean when the companion script exists. (standards-engineering.md)
   - _Remediation:_ diagnostic — Align the test runner or Vitest coverage configuration with the declared test capability, then rerun the audit.
@@ -278,7 +278,7 @@ Environment templates, development-mode confinement, and portable paths.
   - _Remediation:_ diagnostic — Add an appropriately redacted environment example template for the declared capability, then rerun the audit.
 - **ENV-2 [M] — Development NODE_ENV confinement** — `NODE_ENV=development` appears only in dev or inspect scripts, never start, build, or test. (standards-engineering.md)
   - _Remediation:_ diagnostic — Confine `NODE_ENV=development` to development or inspection scripts, then rerun the audit.
-- **ENV-3 [J] — Real environment files are protected** — Real non-example `.env.*` files are gitignored and the loader has the Node parity call. (standards-engineering.md)
+- **ENV-3 [J] — Real environment files are protected** — Real non-example `.env.*` files are protected by the root `.gitignore` and the loader has the Node parity call. (standards-engineering.md)
   - _Evidence scope:_ Real environment files and every loader that reads them.
   - _Review prompt:_ Are real environment files ignored and is the loader Node-parity-safe?
   - _Outcomes:_ conforming; gap; exclusion

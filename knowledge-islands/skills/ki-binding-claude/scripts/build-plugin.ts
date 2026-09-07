@@ -255,6 +255,27 @@ const supportsClaude = (skillPath: string): boolean => {
   return runtimes === undefined || runtimes.split(',').some((runtime) => runtime.trim() === 'claude-code')
 }
 
+const declaredDependencies = (skillPath: string): readonly string[] => {
+  const body = readFileSync(join(skillPath, 'SKILL.md'), 'utf8')
+  const match = /^---\n([\s\S]*?)\n---(?:\n|$)/.exec(body)
+  if (!match?.[1]) throw new Error(`projected skill has invalid frontmatter: ${skillPath}`)
+  const frontmatter = Bun.YAML.parse(match[1]) as Record<string, unknown>
+  const value = frontmatter['ki-depends-on']
+  if (!Array.isArray(value) || value.some((dependency) => typeof dependency !== 'string' || !NAME.test(dependency)))
+    throw new Error(`projected skill has invalid ki-depends-on: ${skillPath}`)
+  return value as readonly string[]
+}
+
+export const validateProjectedSkillDependencies = (
+  skills: readonly { readonly name: string; readonly dependsOn: readonly string[] }[]
+): void => {
+  const names = new Set(skills.map((skill) => skill.name))
+  for (const skill of skills)
+    for (const dependency of skill.dependsOn)
+      if (!names.has(dependency))
+        throw new Error(`projected skill dependency is absent: ${skill.name} requires ${dependency}`)
+}
+
 export const createBuildPluginManifest = ({ outDir, marketplace, plugin }: BuildPluginOptions): BuildPluginManifest => {
   const outputRoot = assertSafeOutput(outDir, plugin)
   const root = outputRoot.path
@@ -280,6 +301,9 @@ export const createBuildPluginManifest = ({ outDir, marketplace, plugin }: Build
     if (skillSources[index - 1]?.name === skillSources[index]?.name)
       throw new Error(`duplicate projected skill name: ${skillSources[index]?.name}`)
   }
+  validateProjectedSkillDependencies(
+    skillSources.map(({ name, source }) => ({ name, dependsOn: declaredDependencies(source) }))
+  )
   const agentSources = lstatOrAbsent(AGENTS_DIR)
     ? readdirSync(AGENTS_DIR)
         .filter((file) => file.endsWith('.md'))

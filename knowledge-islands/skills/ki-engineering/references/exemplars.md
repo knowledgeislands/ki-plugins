@@ -27,7 +27,7 @@ All 10 KI TS/Bun repos carry this config verbatim. The `$schema` pins the Biome 
 
 ```json
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.12/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": { "includes": ["src/**", "*.ts", "*.json"], "ignoreUnknown": true },
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
@@ -81,6 +81,8 @@ Used by every `mcp-*` repo. The universal invariants (`strict`, `nodenext`, `noE
 
 The governance surface is direct native `ki repo audit` / `ki repo conform` commands after CI or the user has acquired the verified active skill collection. Repositories do not expose `ki:audit`, `ki:conform`, or derived scoped package-script aliases to local runners. The registered `ki-engineering` rubric runs Biome, TypeScript, syncpack, and knip internally, while `ki-authoring` owns the Markdown tool pass. The critical trap is a non-`test` script calling `bun test`: it bypasses the governed package script and invokes Bun's own runner. Use `bun run test` outside the bare `test` entrypoint; that entrypoint may select a runner, whether `vitest run`, `bun test`, or another whole-suite command.
 
+Repository-local operations make their ownership visible with the `self:` prefix, for example `self:vendor:clone`, `self:typecheck`, or `self:cf:build`. They require no capability claim or `script_exclusions` entry. Keep an exact exclusion only when an external system fixes a bare script name that cannot be migrated.
+
 ```jsonc
 {
   "scripts": {
@@ -107,22 +109,30 @@ The harness's [actual package manifest](../../../../package.json) uses the same 
 
 This runner-neutral profile does not opt into `test:coverage`, `test:watch`, or the Vitest threshold checks. Its bare `test` entrypoint may use `bun test` to glob its suite; other scripts continue to delegate through `bun run test`.
 
-### Monorepo: workspace-scoped vitest coverage (§0, §6)
+### Monorepo: ownership roots and workspace-scoped Vitest coverage (§0, §6)
 
-In a `workspaces` repo (`"workspaces": ["site", "ingress"]`) the flat `src/**` globs and root `coverage/` become **workspace-relative** — artifacts sit under the workspace that owns them, never the repo root. The 100%-threshold rule is unchanged; only the paths move.
+The root manifest declares only the ownership groups present in that repository. Bun accepts multiple globs, so a mixed library/application/example repository can state its shape directly rather than forcing every role under one generic directory:
+
+```jsonc
+{
+  "workspaces": ["packages/*", "apps/*", "examples/*"]
+}
+```
+
+`packages/*` holds consumable libraries, `apps/*` holds deployables such as `apps/site`, and `examples/*` holds authored examples. An additional justified ownership root remains possible. In any workspace repo the flat `src/**` globs and root coverage output become **workspace-relative** — artifacts sit under the workspace that owns them, never the repo root. The 100%-threshold rule is unchanged; only the paths move.
 
 ```ts
-// vitest.config.ts (monorepo — tests + coverage scoped to the site/ workspace)
+// vitest.config.ts (monorepo — tests + coverage scoped to the apps/site workspace)
 export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['site/scripts/**/*.test.ts'], // under the workspace, not src/**
+    include: ['apps/site/scripts/**/*.test.ts'], // under the workspace, not src/**
     coverage: {
       provider: 'v8',
-      reportsDirectory: 'site/coverage', // gitignored as /site/coverage, not root /coverage
-      include: ['site/scripts/seed-model.ts', 'site/scripts/body-regen.ts'],
-      exclude: ['site/scripts/**/*.test.ts'],
+      reportsDirectory: 'apps/site/reports/coverage',
+      include: ['apps/site/scripts/seed-model.ts', 'apps/site/scripts/body-regen.ts'],
+      exclude: ['apps/site/scripts/**/*.test.ts'],
       thresholds: { statements: 100, branches: 100, functions: 100, lines: 100 }
     }
   }

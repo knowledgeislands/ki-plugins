@@ -69,7 +69,7 @@ export const SCRIPTS: RubricFamily<EngineeringRubricContext, ScriptsRubricContex
     mechanical(
       'SCR-1',
       'KI script naming law',
-      'Every script is a permitted bare lifecycle idiom or carries the `ki:` prefix; a bare non-idiom name is drift.',
+      'Every script is a permitted bare lifecycle idiom, a capability-owned `ki:` name, a repository-owned `self:` name with a non-empty suffix, or an exactly excluded external bare name.',
       'FAIL',
       (context) => context.scr1
     ),
@@ -84,7 +84,7 @@ export const SCRIPTS: RubricFamily<EngineeringRubricContext, ScriptsRubricContex
     mechanical(
       'SCR-3',
       'Exact script claims cover the governed surface',
-      'Every `ki:` script is claimed by exactly one resolved capability or is exactly excluded as user-owned external tooling; `ki:deps:update` is present; retired tool families and aggregate governance aliases are absent.',
+      'Every `ki:` script is claimed by exactly one resolved capability, every `self:` script names repository ownership directly, and exact exclusions cover only externally constrained bare names; `ki:deps:update` is present; retired tool families and aggregate governance aliases are absent.',
       'FAIL',
       (context) => context.scr3,
       { conform: true }

@@ -62,9 +62,9 @@ export const TEST: RubricFamily<EngineeringRubricContext, TestRubricContext> = {
     ),
     mechanical(
       'TEST-4',
-      'Vitest monorepo scoping',
-      'Under the Vitest profile, workspace repos scope include, exclude, and reportsDirectory to the workspace rather than a flat root.',
-      'WARN',
+      'Vitest report output and workspace scoping',
+      'Under the Vitest profile, coverage writes to reports/coverage and monorepos keep reports and test globs inside the owning workspace.',
+      'FAIL',
       (context) => context.test4
     ),
     mechanical(

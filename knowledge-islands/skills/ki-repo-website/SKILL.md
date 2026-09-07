@@ -15,7 +15,7 @@ argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 
 Apply the generator- and provider-neutral website contract. A website declares `[skills.ki-repo-website]`, selects exactly one of `ki-repo-website-content` or `ki-repo-website-app`, and may independently select a hosting adapter such as `ki-repo-website-cloudflare`.
 
-The shared seam is a generated `dist/` beside the selected site root and three root package scripts: `ki:site:build`, `ki:site:dev`, and `ki:site:clean`. The implementation skill owns what those commands run. The hosting adapter owns how `dist/` is published.
+The shared seam is a generated `dist/` beside the selected site root and three public aliases in the repository root `package.json`: `ki:site:build`, `ki:site:dev`, and `ki:site:clean`. Those aliases delegate to ordinary scripts in the selected site package. The default site root is `apps/site`; `[skills.ki-repo-website] site-root = "."` retains a flat repository, and another safe relative path is an explicit override. This core skill alone owns that path. The implementation skill owns what the local commands run. The hosting adapter owns how `dist/` is published.
 
 Read [the website core standard](references/standards-website.md) for the contract, [the generated rubric](references/rubric.md) for exact checks, and [the source list](references/sources.md) in REFRESH mode.
 
@@ -50,6 +50,8 @@ REFRESH writes only in `ki-agentic-harness`; when invoked from an installed copy
 Explain the purpose, composition choice, modes, and off-ramps, then stop without inspecting or changing a repository.
 
 ## Boundaries
+
+Configuration writers leave `[skills.ki-repo-website]` keyless for the implicit `apps/site` default and add `site-root` only for an explicit override. Audit diagnoses `site-root = "apps/site"` as redundant configuration whose removal preserves the selected root.
 
 - Content collections, Eleventy, templates, and design tokens → `ki-repo-website-content`.
 - Interactive React/Vite application structure → `ki-repo-website-app`.

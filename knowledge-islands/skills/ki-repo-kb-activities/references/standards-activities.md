@@ -8,7 +8,7 @@ The default collection is `Admin/Operations/Activities/`. One note named `<Activ
 
 A base may declare a different relative collection path with `activities_dir` under `[skills.ki-repo-kb-activities]`. The path must remain beneath the base and must not traverse a symbolic link. The optional `harness` key names a harness root, absolute or relative to the base, used only to resolve declared skill names at `skills/<name>/SKILL.md`. These are the only recognized keys; AUDIT warns on unknown keys and leaves every sibling configuration table untouched.
 
-When activity notes exist, `Activities.md` lists every note. CONFORM may safely create a missing index or append missing entries to a regular index file. It must not create the collection directory, replace a non-regular index entry, follow a symbolic link, or write directly; it prepares one proposal for the host.
+When activity notes exist, `Activities.md` lists every note. A repository-standard Obsidian wikilink, with or without an alias, or a Markdown link satisfies index coverage; link-shaped text inside a fenced code block does not. CONFORM may safely create a missing index or append missing entries to a regular index file. It must not create the collection directory, replace a non-regular index entry, follow a symbolic link, or write directly; it prepares one proposal for the host.
 
 ## Frontmatter
 

@@ -44,16 +44,51 @@ test('the default export is the sole catalogue entrypoint and families are compl
     'OWN-1',
     'OWN-2',
     'TOML-values',
+    'TOML-structure',
     'TOML-comments',
     'SYNC-1'
   ])
 })
 
-test('the owned rumdl template enables repaired rules and prevents the standard-flavor MD056 destructive fix', () => {
-  expect(RUMDL_DEFAULT).not.toContain('"MD005"')
-  expect(RUMDL_DEFAULT).not.toContain('"MD075"')
+test('the owned rumdl template preserves unsafe structural rules and prevents the standard-flavor MD056 destructive fix', () => {
+  expect(RUMDL_DEFAULT).toContain('"MD005"')
+  expect(RUMDL_DEFAULT).toContain('"MD075"')
   expect(RUMDL_DEFAULT).not.toMatch(/disable = \[[^\]]*"MD056"/)
   expect(RUMDL_DEFAULT).toContain('unfixable = ["MD056"]')
+})
+
+test('rumdl leaves valid list-nested blockquotes unchanged with the canonical template', () => {
+  const repository = temporaryRepository()
+  const configuration = join(repository, 'rumdl.toml')
+  const markdown = join(repository, 'fixture.md')
+  const contents =
+    '# Fixture\n\n1. Item\n\n   > Quoted content:\n   >\n   > 1. First nested point\n   > 2. Second nested point\n'
+  writeFileSync(configuration, RUMDL_DEFAULT)
+  writeFileSync(markdown, contents)
+
+  const result = spawnSync('bunx', ['rumdl', 'check', '--config', configuration, '--fix', markdown], {
+    encoding: 'utf8'
+  })
+
+  expect(result.status).toBe(0)
+  expect(readFileSync(markdown, 'utf8')).toBe(contents)
+})
+
+test('rumdl leaves pipe rows after a blockquote unchanged with the canonical template', () => {
+  const repository = temporaryRepository()
+  const configuration = join(repository, 'rumdl.toml')
+  const markdown = join(repository, 'fixture.md')
+  const contents =
+    '# Fixture\n\n> | Type | Meaning |\n> | --- | --- |\n> | `one` | First value |\n>\n| `two` | Second value |\n'
+  writeFileSync(configuration, RUMDL_DEFAULT)
+  writeFileSync(markdown, contents)
+
+  const result = spawnSync('bunx', ['rumdl', 'check', '--config', configuration, '--fix', markdown], {
+    encoding: 'utf8'
+  })
+
+  expect(result.status).toBe(0)
+  expect(readFileSync(markdown, 'utf8')).toBe(contents)
 })
 
 test('rumdl 0.2.54 reports a standard-flavor wikilink table without truncating it during fix', () => {

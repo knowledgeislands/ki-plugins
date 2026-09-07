@@ -44,25 +44,37 @@ Workers Static Assets hosting standard.
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
 - **WCF-9 [M] — observability** — observability.enabled is true. (standards-cloudflare-hosting.md#3-the-site-wranglerjsonc-shape)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
-- **WCF-10 [M-heuristic + J] — custom-domain routes** — Routes use custom_domain where appropriate. (standards-cloudflare-hosting.md#3-the-site-wranglerjsonc-shape)
+- **WCF-10 [M-heuristic + J] — optional custom-domain routes** — When a custom domain is declared, at least one route uses custom_domain. (standards-cloudflare-hosting.md#3-the-site-wranglerjsonc-shape)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
   - _Evidence scope:_ The Cloudflare Worker, static assets, deployment configuration, and evidence named by this criterion.
-  - _Review prompt:_ Verify the custom-domain routes name the correct apex and www host, or document the intentional workers.dev-only exception.
+  - _Review prompt:_ When custom-domain routes are declared, verify they name the intended apex and any www host; workers.dev-only hosting needs no exception.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Revise the hosting design through the responsible site owner, record a named gap, or record an explicit justified exclusion.
-- **WCF-13 [M + J] — deploy script** — A deploy script runs wrangler deploy. (standards-cloudflare-hosting.md#4-the-script-family)
+- **WCF-13 [M + J] — deploy script** — The selected site package deploys with Wrangler and the repository root delegates the public alias. (standards-cloudflare-hosting.md#4-the-script-family)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
   - _Evidence scope:_ The Cloudflare Worker, static assets, deployment configuration, and evidence named by this criterion.
   - _Review prompt:_ Confirm the real deployment path builds a current dist before invoking wrangler deploy; do not execute deployment during audit or conform.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Revise the hosting design through the responsible site owner, record a named gap, or record an explicit justified exclusion.
-- **WCF-14 [M + J] — preview script** — A preview script runs wrangler dev. (standards-cloudflare-hosting.md#4-the-script-family)
+- **WCF-14 [M + J] — preview script** — The selected site package previews with Wrangler and the repository root delegates the public alias. (standards-cloudflare-hosting.md#4-the-script-family)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
   - _Evidence scope:_ The Cloudflare Worker, static assets, deployment configuration, and evidence named by this criterion.
   - _Review prompt:_ Verify the preview script builds the site before wrangler dev and serves the same dist seam as production.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Revise the hosting design through the responsible site owner, record a named gap, or record an explicit justified exclusion.
-- **WCF-19 [M + J] — companion Worker boundary** — Companion Workers remain out of scope. (standards-cloudflare-hosting.md#6-boundaries--what-is-not-in-scope)
+- **WCF-25 [M + J] — version-upload authority** — An optional local upload script and its public alias create an undeployed Worker version only through explicit remote-effect authority. (standards-cloudflare-hosting.md#4-the-script-family)
+  - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
+  - _Evidence scope:_ The Cloudflare Worker, static assets, deployment configuration, and evidence named by this criterion.
+  - _Review prompt:_ Confirm audits, conformance, local builds, tests, and dry evaluation inspect ki:site:upload without executing Wrangler; only an explicitly authorised operator or Workers Builds service may supply Cloudflare credentials and create the remote version.
+  - _Outcomes:_ conforming; gap; exclusion
+  - _Conforming guidance:_ Revise the hosting design through the responsible site owner, record a named gap, or record an explicit justified exclusion.
+- **WCF-26 [M + J] — the Cloudflare guide** — A tracked guide at docs/guides/cloudflare.md records the dashboard-owned settings — Workers Builds commands, domains, redirects — that wrangler.jsonc cannot express. (standards-cloudflare-hosting.md#6-the-cloudflare-guide--dashboard-owned-settings)
+  - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
+  - _Evidence scope:_ The Cloudflare Worker, static assets, deployment configuration, and evidence named by this criterion.
+  - _Review prompt:_ Confirm the guide records the exact dashboard-owned values — Workers Builds build/deploy commands and root directory, domain and redirect choices, workers.dev — matching the live dashboard, and duplicates nothing wrangler.jsonc already declares.
+  - _Outcomes:_ conforming; gap; exclusion
+  - _Conforming guidance:_ Revise the hosting design through the responsible site owner, record a named gap, or record an explicit justified exclusion.
+- **WCF-19 [M + J] — companion Worker boundary** — Companion Workers remain out of scope. (standards-cloudflare-hosting.md#7-boundaries--what-is-not-in-scope)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
   - _Evidence scope:_ The Cloudflare Worker, static assets, deployment configuration, and evidence named by this criterion.
   - _Review prompt:_ Confirm configs classified as companions have main without assets and route their bindings, secrets, and runtime concerns to cloudflare/wrangler.
@@ -70,9 +82,9 @@ Workers Static Assets hosting standard.
   - _Conforming guidance:_ Revise the hosting design through the responsible site owner, record a named gap, or record an explicit justified exclusion.
 - **WCF-20 [M] — hosting opt-in** — The Cloudflare opt-in table is present. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
-- **WCF-21 [M] — opt-in validation** — The opt-in site root is valid. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
+- **WCF-21 [M] — opt-in validation** — The hosting table is keyless and consumes the valid website-core site root. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
-- **WCF-22 [M + J] — hosting delta** — This remains the hosting delta only. (standards-cloudflare-hosting.md#6-boundaries--what-is-not-in-scope)
+- **WCF-22 [M + J] — hosting delta** — This remains the hosting delta only. (standards-cloudflare-hosting.md#7-boundaries--what-is-not-in-scope)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
   - _Evidence scope:_ The Cloudflare Worker, static assets, deployment configuration, and evidence named by this criterion.
   - _Review prompt:_ Confirm Workers Builds, account/domain binding, and deployed behavior separately without expanding this rubric into the site build or general Worker concerns.

@@ -35,17 +35,9 @@ const KI_CONFIG: RubricItem<McpApplicabilityContext> = {
             context.root
           )
         if (context.config === 'missing')
-          return outcome(
-            'VIOLATION',
-            'Shared configuration file is missing; ki-repo owns its creation.',
-            '.ki.toml'
-          )
+          return outcome('VIOLATION', 'Shared configuration file is missing; ki-repo owns its creation.', '.ki.toml')
         if (context.config === 'unsafe')
-          return outcome(
-            'VIOLATION',
-            '.ki.toml is not a regular file; marker repair remains report-only.',
-            '.ki.toml'
-          )
+          return outcome('VIOLATION', '.ki.toml is not a regular file; marker repair remains report-only.', '.ki.toml')
         if (context.config === 'malformed')
           return outcome(
             'VIOLATION',

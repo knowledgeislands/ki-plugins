@@ -23,7 +23,7 @@ homebrew-tap/            # named homebrew-<x> — Homebrew requires the prefix f
 ├── Formula/
 │   ├── mgit.rb          # one formula per tool, filename = formula name
 │   └── <tool>.rb
-├── README.md            # a "## Formulae" table listing every formula + its source repo
+├── README.md            # Standard Readme shape; a "## Formulae" table lists every formula + its source repo
 ├── .github/workflows/   # OPTIONAL brew test-bot CI (brew audit/style/install on PR)
 └── .ki.toml      # [skills.ki-repo] + [skills.ki-repo-homebrew-tap] (keyless opt-in marker)
 ```
@@ -92,4 +92,5 @@ This skill **rides `ki-repo`** (the tap is first a git repo: README, LICENSE, `.
 - The standard sits on top of a **moving external spec** (Homebrew's Formula Cookbook, `brew audit`, `brew style`/rubocop). When citing a formula requirement, know whether it is **spec-driven** (traces to a Homebrew source in [the source list](references/sources.md)) or **house shape**—never present a tap-shape preference as a Homebrew "MUST". Run Mode REFRESH when in doubt.
 - `TAP-7` never runs Homebrew from hosted audit. Obtain `brew style`, `brew audit --strict`, and `brew test-bot` evidence through an explicitly authorized isolated diagnostic; unavailable package-manager evidence is not a structural PASS.
 - Marker `[skills.ki-repo-homebrew-tap]` is a **keyless opt-in table**, validate-down (like `[skills.ki-repo-mcp]`): its presence is the whole config; any key under it is unknown and WARNed.
+- The tap README follows [Standard Readme](https://github.com/RichardLitt/standard-readme) — Install and Usage carrying the `brew install` command, Contributing routing packaging bugs here and tool bugs upstream, and the `## Formulae` table as the tap's extra section. That shape is **advisory**: only the table is mechanical (`TAP-6`), generic README composition is `ki-authoring`'s, and README presence is `ki-repo`'s.
 - No `exemplars.md` is bundled: the compact complete formula above and the README table in the standard already illustrate the only reusable output shapes, so a separate exemplar would duplicate them.

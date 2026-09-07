@@ -5,7 +5,7 @@ ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 owns: ['.editorconfig', '.rumdl.toml']
 description: >
-  Defines Knowledge Islands Markdown, TOML, and knowledge-placement conventions. Use to format or audit Markdown or TOML, decide where a durable learning belongs, or refresh house style. Use `ki-skills` for a SKILL.md, `ki-repo` for a configuration contract, and `ki-engineering` for the toolchain.
+  Defines Knowledge Islands Markdown, TOML, README composition, and knowledge-placement conventions. Use to format or audit Markdown or TOML, shape a repository README, decide where a durable learning belongs, or refresh house style. Use `ki-skills` for a SKILL.md, `ki-repo` for repository requirements or a configuration contract, and `ki-engineering` for the toolchain.
 argument-hint: 'audit <path> | conform <path> | educate <target> | help | refresh'
 ---
 
@@ -31,12 +31,12 @@ Like every governance skill it carries the universal **AUDIT · CONFORM · EDUCA
 ### Mode AUDIT — check a document against house style
 
 1. **Run the hosted structured checker** — `ki repo audit --skill ki-authoring --repo <repo-path>`. The catalogue prepares the formatter evidence with shell-free argument arrays, so the check is self-sufficient in a repository with or without `ki-engineering` or a `package.json`. The host owns findings, reporting, and the non-zero exit on any FAIL.
-2. Apply the **judgment** (`[J]`) criteria from [the rubric](references/rubric.md) — the response summary counts them as unevaluated but does not manufacture findings for work a reviewer has not performed. Wide tables that should spill to footnotes, non-descriptive link text, and unclear TOML values or comments. Do not assess keys or table identity here: `ki-repo` owns that contract.
+2. Apply the **judgment** (`[J]`) criteria from [the rubric](references/rubric.md) — the response summary counts what remains unevaluated, but does not manufacture findings for review work the checker did not perform. Does a wide table spill into footnotes? Is link text descriptive? Do existing TOML values, comments, and configuration structure read clearly? Do not assess what keys or table identities mean here: `ki-repo` owns that contract.
 3. **Report** by location → criterion → fix; lead with FAIL findings, then judgment findings. Trade records under `+/_TRADES/` and `-/_TRADES/` are authored Markdown like any other and are formatted with the rest. Their integrity is a property of meaning, not bytes: `ki-trades` `AUTH-1` compares a record against the sender's copy through a projection that ignores formatting, so formatting them changes nothing it checks. An exclusion list was the weaker guarantee — it only avoided touching the records, never verified them, and never covered Biome at all.
 
 ### Mode CONFORM — bring a document into house style
 
-1. Apply the judgment transforms in place — wide tables → footnotes (the marker series), descriptive link text, and TOML value/comment presentation — per the Convention sets. Do not rename TOML keys or change table structure.
+1. Apply judgment transforms in place — wide tables → footnotes (using the marker series), descriptive link text, and TOML value, comment, and presentation structure — following the Convention sets below. Do not rename TOML keys or change parsed table semantics.
 2. Run `ki repo conform --skill ki-authoring --repo <repo-path>` to settle the mechanical layer (transient `MD052` until reference definitions land). Table alignment is **not** mechanical — no rumdl setting reproduces the former conditional padding, so keeping a table readable is judgment work. The owned-file item prepares early transactional writes; the Markdown item requests late formatter commands from the host.
 3. Re-run AUDIT until the mechanical gate is clean and the judgment criteria pass.
 
@@ -62,9 +62,10 @@ Each set is a self-contained reference, loaded on demand. Read the one relevant 
 
 - **[Authoring enforcement](references/standards-authoring.md)** — wholly owned configuration, the Markdown formatter/linter gate, and the safe hosted conform boundary.
 - **[Markdown authoring](references/standards-markdown.md)** — wide tables → footnotes (with the marker series), link style, and what to leave to the linter. The footnote-marker series, in order, is `†` `‡` `§` `¶` `‖` (then doubled: `††` `‡‡` `§§` `¶¶` `‖‖`), reset per table — omitting `*`, which collides with markdown emphasis; where one table needs two footnote categories, a visually distinct second series `※` `❡` `¤` `¥` separates them. (Stated here so it is reachable without opening the reference; the worked example, gotchas, and rationale stay in the reference.)
-- **[TOML formatting](references/standards-toml.md)** — value quoting, short arrays, and comments; `ki-repo` owns key and table semantics.
+- **[TOML formatting](references/standards-toml.md)** — value quoting, short arrays, comments, neighbourhood banners, and compact dotted child keys; `ki-repo` owns key and table semantics.
+- **[README composition](references/standards-readme.md)** — purpose-first entry points, proportional navigation and examples, discoverable user routes, and explicit library-template exclusions.
 - **[Knowledge promotion](references/standards-knowledge-promotion.md)** — runtime-neutral placement, evidence, and reconciliation for durable learnings; it routes knowledge deliberately without mining transcripts or creating guide areas automatically.
-- **[Worked exemplars](references/exemplars.md)** — annotated illustrations of the conventions in practice: the footnote-marker series and table spill, relative-link style, and a well-formed `.ki.toml` table. Reach for these when a rule's application is a judgment call.
+- **[Worked exemplars](references/exemplars.md)** — annotated illustrations of the conventions in practice: the footnote-marker series and table spill, relative-link style, and a well-formed `.ki.toml` structure. Reach for these when a rule's application is a judgment call.
 
 Out of scope by design, with their natural homes:
 

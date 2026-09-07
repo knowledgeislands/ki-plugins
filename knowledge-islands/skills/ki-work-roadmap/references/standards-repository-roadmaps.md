@@ -12,6 +12,7 @@ A repository whose `.ki.toml` declares `repo_type = "kb"` uses `ki-repo-kb-strea
 - [Horizons](#horizons)
 - [Horizon transitions and readiness](#horizon-transitions-and-readiness)
 - [Work-item discipline](#work-item-discipline)
+- [Lifecycle commit boundaries](#lifecycle-commit-boundaries)
 - [Trade review](#trade-review)
 - [Conform and educate](#conform-and-educate)
 
@@ -64,9 +65,9 @@ themes = ["foundation-tooling", "governance-consistency"]
 For fixed-area mode, the same table instead declares each durable area code and its human-readable theme:
 
 ```toml
-[skills.ki-work-roadmap.areas]
-FND = "foundation-tooling"
-GOV = "governance-consistency"
+[skills.ki-work-roadmap]
+areas.FND = "foundation-tooling"
+areas.GOV = "governance-consistency"
 ```
 
 The array or area-map values are the complete allowed theme vocabulary. Every item's `theme` must be declared; in fixed-area mode its `area` must be declared and map to that theme. A repository must not mix issuing modes. Keep horizons, lifecycle values, work-item location, and reporting behaviour universal rather than per-repository configuration.
@@ -86,7 +87,7 @@ The root orientation holds no horizon headings or item list.
 
 Work items are draft-only until they enter the common delivery lifecycle.
 
-Completed work is removed by an explicit prune after its accepted item record has been committed.
+Completed work is removed only through the lifecycle and pruning commit boundary below.
 
 Continuous practices belong in a standard or orientation file, not among finite work items.
 
@@ -150,6 +151,12 @@ An optional flat `waiting_on_trades: [TRD-…]` field identifies the exact trade
 An explicit later prune path or glob removes only the resolved `done` items; the selection itself is the deletion authority and does not need a second confirmation. `ki-work-housekeeping` templates may spawn linked ordinary work records; their cadence does not create a second delivery lifecycle.
 
 A done work item linked from an adopted completion-observation trade remains retained until sender release is observable. Roadmap review and pruning report that external reference as a guard and refuse to remove the linked work record while it is unresolved.
+
+## Lifecycle commit boundaries
+
+Lifecycle states record operational truth; a transition does not create a mandatory standalone Git commit. Commit a status update with the coherent planning, implementation, review, or closure changes it describes. Git history need not contain every intermediate lifecycle state: an item's first committed form may already be `ready` when capture, shaping, and readiness approval form one coherent operation, and implementation may take a committed `ready` item to `awaiting-review` with its delivery changes after passing through `in-progress` operationally. The state that lands must satisfy its own evidence and authority gates.
+
+Pruning is the exception. Repository history must contain the selected item as `done` in a commit earlier than the commit that deletes it. A prune commit contains only the removal of one or more explicitly selected, eligible `done` work records; it does not combine a lifecycle transition, implementation, acceptance, or unrelated change. This preserves an inspectable accepted record before its later cleanup without forcing every earlier transition into a separate commit.
 
 ## Trade review
 

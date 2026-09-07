@@ -12,14 +12,14 @@ The standard pins versions in `packageManager`, `engines`, `biome.json`'s `$sche
 
 | Tag | Source | Governs | Pinned at | Last reviewed |
 | --- | --- | --- | --- | --- |
-| BUN | [Bun releases][bun] | `packageManager` and `mise` runtime line; Bun-install / Node-run split | declared and resolved `1.3.14` | 2026-08-12 |
-| NODE | [Node release schedule][node] | `engines.node >= 22` for `dist/` | declared floor `>=22` | 2026-08-12 |
-| BIOME | [Biome releases][biome] | `biome.json` schema + formatter/linter config | declared and resolved `2.5.7` | 2026-08-12 |
-| TS | [TypeScript releases][ts] | `tsconfig` / `tsconfig.build` compiler options | declared range and resolved `7.0.2` | 2026-08-12 |
-| VITEST | [Vitest guide][vitest] | config-gated test profile + 100% coverage (`vitest run`, v8) | capability-selected | 2026-08-12 |
-| SYNCPACK | [syncpack releases][syncpack] | package ordering inside engineering audit/conform | declared range and resolved `15.3.3` | 2026-08-12 |
-| MDLINT | [rumdl releases][rumdl] | Markdown audit/conform inside `ki-authoring` ❡ | declared `^0.2.54`, resolved `0.2.54` | 2026-08-12 |
-| KNIP | [knip releases][knip] | dependency + dead-code checks inside engineering audit/conform | declared range and resolved `6.32.0` | 2026-08-12 |
+| BUN | [Bun releases][bun] | `packageManager` and `mise` runtime line; Bun-install / Node-run split | declared and resolved `1.4.1` | 2026-09-04 |
+| NODE | [Node release schedule][node] | `engines.node >= 22` for `dist/` | declared floor `>=22` | 2026-09-04 |
+| BIOME | [Biome releases][biome] | `biome.json` schema + formatter/linter config | declared and resolved `2.5.12` | 2026-09-04 |
+| TS | [TypeScript releases][ts] | `tsconfig` / `tsconfig.build` compiler options | declared range and resolved `7.0.2` | 2026-09-04 |
+| VITEST | [Vitest guide][vitest] | config-gated test profile + 100% coverage (`vitest run`, v8) | capability-selected at `5.0.0` | 2026-09-04 |
+| SYNCPACK | [syncpack releases][syncpack] | package ordering inside engineering audit/conform | declared range and resolved `15.3.3` | 2026-09-04 |
+| MDLINT | [rumdl releases][rumdl] | Markdown audit/conform inside `ki-authoring` ❡ | declared `^0.2.64`, resolved `0.2.64` | 2026-09-04 |
+| KNIP | [knip releases][knip] | dependency + dead-code checks inside engineering audit/conform | declared range and resolved `6.34.0` | 2026-09-04 |
 
 ❡ The Markdown mechanical pass.
 
@@ -41,10 +41,10 @@ The standard is a **deliberately selected house shape**, not a vote count. Curre
 
 ## Last review
 
-REFRESH last run **2026-08-12**. Cadence: monthly, alongside the other governance skills.
+REFRESH last run **2026-09-04**. Cadence: monthly, alongside the other governance skills.
 
-- **Reconciled declared and resolved evidence:** the canonical harness declares Bun `1.3.14`, Biome `2.5.7`, TypeScript `^7.0.2`, syncpack `^15.3.3`, knip `^6.32.0`, and rumdl `^0.2.54`; its committed lock resolves `1.3.14`, `2.5.7`, `7.0.2`, `15.3.3`, `6.32.0`, and `0.2.54` respectively.
-- **Current upstream comparison:** Bun `1.3.14`, Biome `2.5.7`, TypeScript `7.0.2`, syncpack `15.3.3`, and rumdl `0.2.54` match the reviewed releases. Knip has a newer `6.32.2` release, but the selected `^6.32.0` range already admits that compatible update; this review does not force a lockfile refresh unrelated to the confirmed rumdl fixes.
+- **Reconciled declared and resolved evidence:** the canonical harness declares Bun `1.4.1`, Biome `2.5.12`, TypeScript `^7.0.2`, syncpack `^15.3.3`, knip `^6.34.0`, and rumdl `^0.2.64`; its committed lock resolves those releases.
+- **Current upstream comparison:** Bun `1.4.1`, Biome `2.5.12`, TypeScript `7.0.2`, Vitest `5.0.0`, syncpack `15.3.3`, knip `6.34.0`, and rumdl `0.2.64` match the reviewed releases.
 - **Authority correction:** upstream release pages establish availability, `package.json` establishes the selected compatible range, and `bun.lock` establishes this harness's resolved evidence. Sibling inventory is supporting observation only; the prior hard-coded repository count is removed from this skill.
 - **Toolchain contract correction:** the current ADR, standard, catalogue, and source record agree that registered native operations own governance and code-tool execution; retired package aliases are not restored.
 

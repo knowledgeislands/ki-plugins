@@ -2,7 +2,7 @@ import type { AuditOutcome, RubricFamily, RubricItem } from '../../shared/rubric
 import type { McpRubricContext, McpToolsContext } from '../contexts/mcp.ts'
 
 const STANDARD = 'standards-mcp-servers.md#3-tool-naming'
-const RESULT_STANDARD = 'standards-mcp-servers.md#12-spec-conformance-tool-results-errors--metadata'
+const RESULT_STANDARD = 'standards-mcp-servers.md#13-spec-conformance-tool-results-errors--metadata'
 
 const registrations = (source: string): string[] => {
   const callers = new Set(['registerTool'])
@@ -51,9 +51,7 @@ const TOOL_1: RubricItem<McpToolsContext> = {
             subject: 'src/tools'
           })
         }
-        const resultFiles = context.resultFiles.filter((file) =>
-          /\b(?:structuredContent|jsonResult)\b/.test(file.content)
-        )
+        const resultFiles = context.files.filter((file) => /\b(?:structuredContent|jsonResult)\b/.test(file.content))
         for (const file of resultFiles)
           checks.push({
             status: /\boutputSchema\b/.test(file.content) ? 'PASS' : 'VIOLATION',

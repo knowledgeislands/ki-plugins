@@ -5,11 +5,15 @@ const hash = 'a'.repeat(64)
 const input = (overrides: Partial<BatchCycleInput> = {}): BatchCycleInput => ({
   authorisation: {
     approved: true,
+    authorityMode: 'reviewed-items',
+    authorityEvidence: null,
     repository: 'knowledgeislands/ki-agentic-harness',
     timeboxActive: true,
     itemIds: ['TEST-001'],
     approvedPayloadSha256: hash,
-    runBinding: { id: 'TEST-BATCH-RUN-001', approvedPayloadSha256: hash }
+    runBinding: { id: 'TEST-BATCH-RUN-001', approvedPayloadSha256: hash },
+    completionTarget: 'awaiting-review',
+    closureItemIds: []
   },
   adapter: { kind: 'local', adapter: 'roadmap' },
   repository: { path: 'knowledgeislands/ki-agentic-harness', clean: true, gatesPass: true },
@@ -120,6 +124,33 @@ test('admits a named dependent item only after its in-batch dependency', () => {
   ).toMatchObject({
     kind: 'stop',
     reason: 'TEST-002 is not after its in-batch dependency TEST-001',
+    writes: false
+  })
+})
+
+test('coordinates outcome-authorised delivery only with evidence and complete closure scope', () => {
+  const outcome = {
+    ...input().authorisation,
+    authorityMode: 'outcome' as const,
+    authorityEvidence: 'Current human authority.',
+    completionTarget: 'done' as const,
+    closureItemIds: ['TEST-001']
+  }
+  expect(evaluateBatchCycle(input({ authorisation: outcome }))).toEqual({
+    kind: 'coordinate',
+    itemIds: ['TEST-001'],
+    writes: false
+  })
+
+  expect(evaluateBatchCycle(input({ authorisation: { ...outcome, authorityEvidence: null } }))).toMatchObject({
+    kind: 'stop',
+    reason: 'outcome-authorised batch lacks current human authority evidence',
+    writes: false
+  })
+
+  expect(evaluateBatchCycle(input({ authorisation: { ...outcome, closureItemIds: [] } }))).toMatchObject({
+    kind: 'stop',
+    reason: 'done completion target lacks closure authority for every item',
     writes: false
   })
 })

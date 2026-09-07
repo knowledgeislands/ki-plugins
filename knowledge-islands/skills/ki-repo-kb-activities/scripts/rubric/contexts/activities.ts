@@ -92,12 +92,21 @@ const parseFrontmatter = (text: string): { value: Readonly<Record<string, string
   }
 }
 
-export const markdownLinkTargets = (text: string): ReadonlySet<string> => {
+const normaliseIndexTarget = (target: string): string => {
+  const relativeTarget = target.trim().replace(/^\.\//, '').split('#', 1)[0] ?? ''
+  return relativeTarget && !relativeTarget.endsWith('.md') ? `${relativeTarget}.md` : relativeTarget
+}
+
+export const indexLinkTargets = (text: string): ReadonlySet<string> => {
   const targets = new Set<string>()
   const prose = text.replace(/^```[\s\S]*?^```\s*$/gm, '')
   for (const match of prose.matchAll(/\[[^\]]+\]\((?:<([^>]+)>|([^\s)]+))(?:\s+['"][^)]*['"])?\)/g)) {
     const target = (match[1] ?? match[2] ?? '').trim()
-    if (target) targets.add(target.replace(/^\.\//, ''))
+    if (target) targets.add(normaliseIndexTarget(target))
+  }
+  for (const match of prose.matchAll(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]/g)) {
+    const target = match[1]?.trim() ?? ''
+    if (target) targets.add(normaliseIndexTarget(target))
   }
   return targets
 }
@@ -203,7 +212,7 @@ export const createActivitiesSession = ({
             ensureIndex: () => {
               if (!activitiesAvailable || unsafeIndexEntry || notes.length === 0) return
               const content = indexDraft || '# Activities'
-              const targets = markdownLinkTargets(content)
+              const targets = indexLinkTargets(content)
               const missing = notes.filter((note) => !targets.has(note.indexLink))
               if (missing.length === 0) return
               const prefix = content.trimEnd()

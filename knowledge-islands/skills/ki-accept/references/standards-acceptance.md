@@ -29,6 +29,8 @@ Append the terminal closure evidence required by the selected local adapter and 
 
 Retain the done record as recoverable history. Do not delete it as part of closure.
 
+The closure transition does not require a standalone commit and may land with its coherent acceptance evidence or directly coupled reconciliation. It must, however, land as a committed `done` record before any later prune commit.
+
 For a linked housekeeping run, verify that the template's `active-run` names this exact work-record identity and that the run's `housekeeping_template` and `scheduled_for` evidence agree. Only after the accepted completion is recorded, atomically set the template's `last-run` to the run's scheduled date and clear `active-run`.
 
 Failed, abandoned, and superseded runs do not advance successful-run evidence and retain their `active-run` link until a separate explicit template disposition or replacement. A disposition clears the old link without changing `last-run`. A replacement atomically substitutes the already-created, verified new linked identity without changing `last-run`; `ki-next` alone creates that new linked draft. Never infer a disposition or replacement from a failed gate, missing evidence, or silence.
@@ -39,14 +41,10 @@ Failed, abandoned, and superseded runs do not advance successful-run evidence an
 2. Resolve the full matching set before deleting anything. Confirm every result is a regular canonical record with `status: done`.
 3. For each candidate, inspect declared trade evidence. Refuse to prune a done record linked from an adopted completion-observation trade until sender release is observable. Missing or uncertain trade evidence is a stop, not permission.
 4. The explicit paths or globs are the deletion authority. Do not ask for a second confirmation merely because the complete resolved set contains more than one done item.
-5. Delete only the complete resolved regular eligible set, then run the applicable repository gates and record the cleanup coherently.
-
-Do not broaden a supplied glob, prune an accepted-but-not-done item, follow a symlink, or delete a record because it looks old.
+5. Confirm repository history contains every selected record as `done` in a commit earlier than the proposed deletion. Delete only the complete resolved regular eligible set, then run the applicable repository gates. Commit the removal of one or more eligible records as a dedicated prune-only commit containing no lifecycle transition or unrelated work. Do not broaden the supplied glob, prune an accepted-but-not-done item, follow a symlink, or delete a record merely because it looks old.
 
 `ki repo roadmap prune` is a separate native non-KB host operation: it sweeps every selected repository's canonical regular `done` roadmap items after validating the complete selected set. It does not approve closure, choose records by inference, delete a non-terminal or retained-trade record, or replace this procedure when an explicit path or glob selection is required.
 
 ## Controlled acceptance models
 
-`scripts/internal/acceptance-cycle.ts` and `scripts/internal/prune-selection.ts` expose pure no-write models. Their focused fixtures cover adapter resolution, remote refusal, canonical root and lifecycle evidence, exact review headings, human and approval-bound batch authority, housekeeping success and non-success dispositions, traversal, symlink, incomplete-set, non-terminal, retained-trade, and eligible selected-prune paths.
-
-The models do not read a live adapter, alter a lifecycle, update a template, delete a file, run a command, or contact an external system.
+`scripts/internal/acceptance-cycle.ts` and `scripts/internal/prune-selection.ts` expose pure no-write models. Their focused fixtures cover adapter resolution, remote refusal, canonical-root lifecycle evidence, exact review headings, human approval-bound batch authority, housekeeping success and non-success dispositions, traversal, symlink, incomplete-set, non-terminal, prior committed-`done`, retained-trade, and eligible selected-prune paths with a prune-only commit boundary. The models do not read a live adapter, alter lifecycle state, update a template, delete a file, run a command, or contact an external system.

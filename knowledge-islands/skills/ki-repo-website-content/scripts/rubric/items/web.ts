@@ -99,8 +99,10 @@ const configRule = (
       )
   )
 
-const script = (context: WebsiteContext, base: string): string | undefined =>
-  context.scripts[`ki:site:${base}`] ?? context.scripts[`ki:${base}`] ?? context.scripts[base]
+const script = (context: WebsiteContext, name: string): string | undefined => context.scripts[name]
+
+const siteDistPath = (context: WebsiteContext): string =>
+  context.siteRoot === '.' ? 'dist' : `${context.siteRoot}/dist`
 
 const WEB_1 = mechanical(
   'WEB-1',
@@ -113,7 +115,7 @@ const WEB_1 = mechanical(
       /^\^3\./.test(context.deps['@11ty/eleventy'] ?? ''),
       `@11ty/eleventy ${context.deps['@11ty/eleventy']}`,
       '@11ty/eleventy not a dependency',
-      'package.json'
+      context.packagePath
     )
 )
 
@@ -132,9 +134,9 @@ const WEB_2 = mechanical(
       ? found.map((name) => ({
           status: 'VIOLATION' as const,
           message: `${name} present — this skill governs Eleventy sites, not ${name}`,
-          subject: 'package.json'
+          subject: context.packagePath
         }))
-      : [{ status: 'PASS', message: 'no application-framework or React/Vite dependency', subject: 'package.json' }]
+      : [{ status: 'PASS', message: 'no application-framework or React/Vite dependency', subject: context.packagePath }]
   }
 )
 
@@ -158,7 +160,7 @@ const WEB_3 = mechanical(
       usesTsx
         ? 'tsx detected (legacy TypeScript runner)'
         : 'no modern Bun or Node runner is declared in package scripts',
-      'package.json'
+      context.packagePath
     )
   }
 )
@@ -179,24 +181,33 @@ const WEB_5 = judgment(
 
 const WEB_6 = mechanical(
   'WEB-6',
-  'Site workspace configuration',
-  'One Eleventy configuration lives under the `site/` workspace; a flat configuration is WARN.',
+  'Site-root configuration',
+  'One Eleventy configuration lives at the site root selected by `[skills.ki-repo-website].site-root`.',
   'FAIL',
   (context) => {
     const stop = inactive(context)
     if (stop) return stop
+    if (!context.siteRoot)
+      return [
+        {
+          status: 'VIOLATION',
+          message: 'no valid site-root selected by [skills.ki-repo-website]'
+        }
+      ]
     if (!context.cfgName)
-      return [{ status: 'VIOLATION', message: 'no physical eleventy.config.{ts,js,mjs,cjs} at repo root or site/' }]
-    return context.siteRoot
-      ? [{ status: 'PASS', message: `site/${context.cfgName} present`, subject: context.siteAt(context.cfgName) }]
-      : [
-          {
-            status: 'VIOLATION',
-            level: 'WARN',
-            message: `${context.cfgName} is flat; the standard requires the site/ workspace`,
-            subject: context.cfgName
-          }
-        ]
+      return [
+        {
+          status: 'VIOLATION',
+          message: `no physical eleventy.config.{ts,js,mjs,cjs} at selected site root ${context.siteRoot}/`
+        }
+      ]
+    return [
+      {
+        status: 'PASS',
+        message: `${context.siteAt(context.cfgName)} present at the selected site root`,
+        subject: context.siteAt(context.cfgName)
+      }
+    ]
   }
 )
 
@@ -211,8 +222,8 @@ const WEB_7 = mechanical(
 const WEB_8 = judgment(
   'WEB-8',
   'Workspace declaration',
-  'The root package manifest declares a workspace containing `site`.',
-  'Does the root workspace declaration include `site`?'
+  'The root package manifest declares a workspace covering the selected site root.',
+  'Does the root workspace declaration cover `[skills.ki-repo-website].site-root` (conventionally `apps/site` via `apps/*`)?'
 )
 
 const WEB_9 = mechanical(
@@ -233,9 +244,9 @@ const WEB_9 = mechanical(
 
 const WEB_10 = judgment(
   'WEB-10',
-  'Site script prefix',
-  'Every site script carries the `site:` prefix.',
-  'Do site scripts carry the required `site:` prefix?'
+  'Local script ownership',
+  'The selected site package uses ordinary local script names while the repository root owns public `ki:site:*` aliases.',
+  'Does the selected site package avoid duplicating the root-owned public `ki:site:*` aliases?'
 )
 
 const WEB_11 = judgment(
@@ -434,8 +445,8 @@ const WEB_29 = judgment(
 
 const WEB_30 = mechanical(
   'WEB-30',
-  'Site build and development scripts',
-  'Build invokes Eleventy and development uses `concurrently`.',
+  'Local build and development scripts',
+  'The selected site package has a local `build` script invoking Eleventy and a local `dev` script using `concurrently`.',
   'WARN',
   (context) => {
     const stop = inactive(context)
@@ -444,16 +455,16 @@ const WEB_30 = mechanical(
     const development = script(context, 'dev')
     return [
       build && /eleventy/.test(build)
-        ? { status: 'PASS', message: 'build script invokes Eleventy', subject: 'package.json' }
+        ? { status: 'PASS', message: 'build script invokes Eleventy', subject: context.packagePath }
         : {
             status: 'VIOLATION',
             level: 'FAIL',
             message: 'no build script invoking Eleventy',
-            subject: 'package.json'
+            subject: context.packagePath
           },
       development && /concurrently/.test(development)
-        ? { status: 'PASS', message: 'development script uses concurrently', subject: 'package.json' }
-        : { status: 'VIOLATION', message: 'no concurrently development script', subject: 'package.json' }
+        ? { status: 'PASS', message: 'development script uses concurrently', subject: context.packagePath }
+        : { status: 'VIOLATION', message: 'no concurrently development script', subject: context.packagePath }
     ]
   },
   { overrideLevels: ['FAIL'] }
@@ -461,8 +472,8 @@ const WEB_30 = mechanical(
 
 const WEB_31 = mechanical(
   'WEB-31',
-  'Development script fan-out',
-  'The development script fans out to CSS watch and Eleventy serve scripts.',
+  'Local development script fan-out',
+  'The local `dev` script fans out to local `dev:css` and `dev:serve` scripts.',
   'WARN',
   (context) => {
     const stop = inactive(context)
@@ -471,8 +482,8 @@ const WEB_31 = mechanical(
     return development && /concurrently/.test(development)
       ? ['dev:css', 'dev:serve'].map((part) => ({
           status: script(context, part) ? ('PASS' as const) : ('VIOLATION' as const),
-          message: script(context, part) ? `ki:site:${part} present` : `ki:site:${part} missing`,
-          subject: 'package.json'
+          message: script(context, part) ? `${part} present` : `${part} missing`,
+          subject: context.packagePath
         }))
       : [{ status: 'NOT_APPLICABLE', message: 'development script has no concurrently fan-out' }]
   }
@@ -480,45 +491,31 @@ const WEB_31 = mechanical(
 
 const WEB_32 = mechanical(
   'WEB-32',
-  'Site cleanup script',
-  '`ki:site:clean` is present.',
+  'Local cleanup script',
+  'A local `clean` script is present in the selected site package.',
   'WARN',
   (context) =>
     inactive(context) ??
-    one(Boolean(script(context, 'clean')), 'clean script present', 'no ki:site:clean script', 'package.json')
+    one(Boolean(script(context, 'clean')), 'clean script present', 'no local clean script', context.packagePath)
 )
 
 const WEB_33 = mechanical(
   'WEB-33',
   'Dist ignore',
-  'Generated site output is gitignored at the correct workspace path.',
+  'Generated site output is gitignored at the selected site-root path.',
   'FAIL',
   (context) => {
     const stop = inactive(context)
     if (stop) return stop
     const text = context.read('.gitignore')
-    const correct = context.siteRoot ? /^\s*\/?site\/dist\/?\s*$/m.test(text) : /^\s*\/?dist\/?\s*$/m.test(text)
-    const misplaced = context.siteRoot && /^\s*\/dist\/?\s*$/m.test(text)
-    if (correct)
-      return [
-        {
-          status: 'PASS',
-          message: `${context.siteRoot ? 'site/dist/' : 'dist/'} is correctly gitignored`,
-          subject: '.gitignore'
-        }
-      ]
-    return [
-      {
-        status: 'VIOLATION',
-        ...(misplaced ? { level: 'FAIL' as const } : {}),
-        message: misplaced
-          ? 'gitignore has root /dist but the site workspace emits site/dist/'
-          : `${context.siteRoot ? 'site/dist/' : 'dist/'} is not gitignored`,
-        subject: '.gitignore'
-      }
-    ]
-  },
-  { conform: (context) => context.addDistIgnore?.() }
+    const distPath = siteDistPath(context)
+    const escapedDistPath = distPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const correct = new RegExp(String.raw`^\s*/?${escapedDistPath}/?\s*$`, 'm').test(text)
+    const globalDist = /^\s*dist\/?\s*$/m.test(text)
+    if (correct || globalDist)
+      return [{ status: 'PASS', message: `${distPath}/ is correctly gitignored`, subject: '.gitignore' }]
+    return [{ status: 'VIOLATION', message: `${distPath}/ is not gitignored`, subject: '.gitignore' }]
+  }
 )
 
 const WEB_34 = judgment(
@@ -538,8 +535,8 @@ const WEB_35 = judgment(
 const WEB_36 = judgment(
   'WEB-36',
   'Hosting seam handoff',
-  'The exact site/dist output is consumed by the separately selected Cloudflare projection without claiming deployment or runtime success.',
-  'Does the selected hosting projection consume site/dist, with parsed configuration and runtime/deployment evidence kept separate?'
+  'The exact `<site-root>/dist` output is consumed by the separately selected hosting projection without claiming deployment or runtime success.',
+  'Does the selected hosting projection consume `<site-root>/dist`, with parsed configuration and runtime/deployment evidence kept separate?'
 )
 
 const WEB_37 = judgment(
@@ -559,7 +556,7 @@ const WEB_38 = judgment(
 const WEB_39 = mechanical(
   'WEB-39',
   'Parseable package manifest',
-  '`package.json` is physical and parseable.',
+  'The selected site package manifest is physical and parseable.',
   'FAIL',
   (context) =>
     inactive(context) ??
@@ -567,7 +564,7 @@ const WEB_39 = mechanical(
       context.packageOk,
       'package.json present and parseable',
       'package.json missing, unsafe, or unparseable',
-      'package.json'
+      context.packagePath
     )
 )
 
@@ -582,7 +579,7 @@ const WEB_40 = mechanical(
       Boolean(context.deps['@tailwindcss/cli']),
       `@tailwindcss/cli ${context.deps['@tailwindcss/cli']}`,
       '@tailwindcss/cli not a dependency',
-      'package.json'
+      context.packagePath
     )
 )
 

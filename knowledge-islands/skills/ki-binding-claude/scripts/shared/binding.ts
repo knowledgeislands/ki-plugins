@@ -1,7 +1,7 @@
 import { existsSync, lstatSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-declare const Bun: { YAML: { parse(input: string): unknown } }
+declare const Bun: { YAML: { parse(input: string): unknown }; which(command: string): string | null }
 
 export const CLIENTS = ['mcporter', 'claude-code', 'claude-desktop', 'chatgpt-codex'] as const
 export type Client = (typeof CLIENTS)[number]

@@ -4,6 +4,9 @@ import type { RubricContextOptions, RubricPublicationContext, RubricSession } fr
 
 const CONFIG_FILE = '.ki.toml'
 const CONFIG_SECTION = 'ki-repo-website-cloudflare'
+const WEBSITE_CONFIG_SECTION = 'ki-repo-website'
+const DEFAULT_SITE_ROOT = 'apps/site'
+export const GUIDE_PATH = 'docs/guides/cloudflare.md'
 const WRANGLER_FILES = ['wrangler.jsonc', 'wrangler.json', 'wrangler.toml'] as const
 const SKIPPED_DIRECTORIES = new Set(['.git', '.wrangler', 'dist', 'node_modules'])
 
@@ -36,14 +39,27 @@ export type WebsiteCloudflareContext = {
   readonly configuration: {
     readonly state: ConfigurationState
     readonly keys: readonly string[]
-    readonly siteRoot: string | null
+    readonly siteRoot: string
+    readonly siteRootValid: boolean
+    readonly siteRootConfigured: boolean
     readonly appDeclared: boolean
   }
   readonly package: {
+    readonly path: string
+    readonly state: PackageState
+    readonly scripts: Readonly<Record<string, string>>
+  }
+  readonly rootPackage: {
+    readonly path: 'package.json'
     readonly state: PackageState
     readonly scripts: Readonly<Record<string, string>>
   }
   readonly gitignore: {
+    readonly state: TextState
+    readonly text: string
+  }
+  readonly guide: {
+    readonly path: typeof GUIDE_PATH
     readonly state: TextState
     readonly text: string
   }
@@ -134,7 +150,22 @@ const inspectWranglerConfig = (root: string, path: string): WranglerConfigEviden
   }
 }
 
-const collectWranglerConfigs = (root: string): readonly WranglerConfigEvidence[] => {
+const normaliseSiteRoot = (siteRoot: string): string => siteRoot.replace(/^\.\//, '').replace(/\/$/, '') || '.'
+
+const safeSiteRoot = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  (value === '.' ||
+    (value.length > 0 &&
+      !isAbsolute(value) &&
+      !/^[A-Za-z]:[\\/]/.test(value) &&
+      !value.includes('\\') &&
+      value.split('/').every((part) => part.length > 0 && part !== '.' && part !== '..')))
+
+const collectWranglerConfigs = (
+  root: string,
+  siteRoot: string,
+  siteRootValid: boolean
+): readonly WranglerConfigEvidence[] => {
   const paths = new Set<string>(WRANGLER_FILES)
   try {
     for (const entry of readdirSync(root, { withFileTypes: true })) {
@@ -143,6 +174,10 @@ const collectWranglerConfigs = (root: string): readonly WranglerConfigEvidence[]
     }
   } catch {
     return []
+  }
+  if (siteRootValid) {
+    const normalised = normaliseSiteRoot(siteRoot)
+    for (const file of WRANGLER_FILES) paths.add(normalised === '.' ? file : join(normalised, file))
   }
   return [...paths]
     .sort()
@@ -155,31 +190,51 @@ const inspectConfiguration = (
 ): {
   readonly state: ConfigurationState
   readonly keys: readonly string[]
-  readonly siteRoot: string | null
+  readonly siteRoot: string
+  readonly siteRootValid: boolean
+  readonly siteRootConfigured: boolean
   readonly appDeclared: boolean
 } => {
   const kind = nodeKind(path)
-  if (kind === 'missing') return { state: 'missing', keys: [], siteRoot: null, appDeclared: false }
-  if (kind !== 'file') return { state: 'unsafe', keys: [], siteRoot: null, appDeclared: false }
+  const empty = {
+    keys: [],
+    siteRoot: DEFAULT_SITE_ROOT,
+    siteRootValid: true,
+    siteRootConfigured: false,
+    appDeclared: false
+  }
+  if (kind === 'missing') return { state: 'missing', ...empty }
+  if (kind !== 'file') return { state: 'unsafe', ...empty, siteRootValid: false }
   const text = readRegularText(path)
-  if (text === null) return { state: 'unsafe', keys: [], siteRoot: null, appDeclared: false }
+  if (text === null) return { state: 'unsafe', ...empty, siteRootValid: false }
   try {
     const parsed = Bun.TOML.parse(text) as Record<string, unknown>
     const skills = parsed.skills as Record<string, unknown> | undefined
     const appDeclared = skills?.['ki-repo-website-app'] !== undefined
+    const website = skills?.[WEBSITE_CONFIG_SECTION]
+    const websiteTable =
+      website && typeof website === 'object' && !Array.isArray(website) ? (website as Record<string, unknown>) : null
+    const siteRootConfigured = websiteTable !== null && Object.hasOwn(websiteTable, 'site-root')
+    const siteRootValue = websiteTable?.['site-root']
+    const siteRoot = safeSiteRoot(siteRootValue) ? siteRootValue : DEFAULT_SITE_ROOT
+    const siteRootValid =
+      website !== undefined && websiteTable !== null && (!siteRootConfigured || safeSiteRoot(siteRootValue))
     const candidate = skills?.[CONFIG_SECTION]
-    if (candidate === undefined) return { state: 'absent', keys: [], siteRoot: null, appDeclared }
+    if (candidate === undefined)
+      return { state: 'absent', keys: [], siteRoot, siteRootValid, siteRootConfigured, appDeclared }
     if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate))
-      return { state: 'malformed', keys: [], siteRoot: null, appDeclared }
+      return { state: 'malformed', keys: [], siteRoot, siteRootValid, siteRootConfigured, appDeclared }
     const table = candidate as Record<string, unknown>
     return {
       state: 'present',
       keys: Object.keys(table),
-      siteRoot: typeof table['site-root'] === 'string' ? table['site-root'] : null,
+      siteRoot,
+      siteRootValid,
+      siteRootConfigured,
       appDeclared
     }
   } catch {
-    return { state: 'malformed', keys: [], siteRoot: null, appDeclared: false }
+    return { state: 'malformed', ...empty, siteRootValid: false }
   }
 }
 
@@ -225,12 +280,29 @@ export const createWebsiteCloudflareSession = ({
 }: RubricContextOptions): RubricSession<WebsiteCloudflareRubricContext> => {
   const target = resolve(repository)
   const targetExists = nodeKind(target) === 'directory'
-  const configs = targetExists ? collectWranglerConfigs(target) : []
   const configuration = targetExists
     ? inspectConfiguration(join(target, CONFIG_FILE))
-    : { state: 'missing' as const, keys: [], siteRoot: null, appDeclared: false }
-  const siteConfigs = configs.filter((config) => config.state === 'present' && config.hasAssets)
-  const companionConfigs = configs.filter((config) => config.state === 'present' && !config.hasAssets && config.hasMain)
+    : {
+        state: 'missing' as const,
+        keys: [],
+        siteRoot: DEFAULT_SITE_ROOT,
+        siteRootValid: true,
+        siteRootConfigured: false,
+        appDeclared: false
+      }
+  const configs = targetExists
+    ? collectWranglerConfigs(target, configuration.siteRoot, configuration.siteRootValid)
+    : []
+  const expectedSiteDirectory = normaliseSiteRoot(configuration.siteRoot)
+  const siteConfigs = configuration.siteRootValid
+    ? configs.filter(
+        (config) => config.state === 'present' && config.hasAssets && configDirectory(config) === expectedSiteDirectory
+      )
+    : []
+  const companionConfigs = configs.filter(
+    (config) => configDirectory(config) !== expectedSiteDirectory && config.state === 'present' && config.hasMain
+  )
+  const packagePath = configuration.siteRoot === '.' ? 'package.json' : join(configuration.siteRoot, 'package.json')
   const hosting: WebsiteCloudflareContext = {
     targetExists,
     applicable: configuration.state === 'present' || configs.length > 0,
@@ -238,8 +310,19 @@ export const createWebsiteCloudflareSession = ({
     siteConfigs,
     companionConfigs,
     configuration,
-    package: targetExists ? inspectPackage(join(target, 'package.json')) : { state: 'missing' as const, scripts: {} },
-    gitignore: targetExists ? inspectText(join(target, '.gitignore')) : { state: 'missing' as const, text: '' }
+    package: {
+      path: packagePath,
+      ...(targetExists ? inspectPackage(join(target, packagePath)) : { state: 'missing' as const, scripts: {} })
+    },
+    rootPackage: {
+      path: 'package.json',
+      ...(targetExists ? inspectPackage(join(target, 'package.json')) : { state: 'missing' as const, scripts: {} })
+    },
+    gitignore: targetExists ? inspectText(join(target, '.gitignore')) : { state: 'missing' as const, text: '' },
+    guide: {
+      path: GUIDE_PATH,
+      ...(targetExists ? inspectText(join(target, GUIDE_PATH)) : { state: 'missing' as const, text: '' })
+    }
   }
   const context: WebsiteCloudflareRubricContext = { rubric: { publication }, hosting }
 

@@ -6,12 +6,12 @@ This skill owns the **site-build delta**. The toolchain it sits on (Bun mandate,
 
 Use this implementation when the website is a collection of pages generated from Markdown or structured data. A single interactive SPA is a legitimate non-adoption: select `ki-repo-website-app` instead. Eleventy does not bundle React application JavaScript, so combining both implementations would introduce two build systems and is outside the current standard.
 
-The standard applies only when a repository declares `[skills.ki-repo-website-content]` in `.ki.toml`. An `eleventy.config.{ts,js,mjs,cjs}` file at the repository root or under `site/` is coverage evidence for `ki-repo`, not local selection authority; an undeclared site receives one `NOT_APPLICABLE` result here.
+The standard applies only when a repository declares a keyless `[skills.ki-repo-website-content]` table in `.ki.toml`. The content skill consumes the site root selected by `[skills.ki-repo-website].site-root`; it does not declare a second path key. An `eleventy.config.{ts,js,mjs,cjs}` file is coverage evidence for `ki-repo`, not local selection authority; an undeclared site receives one `NOT_APPLICABLE` result here.
 
 ## Contents
 
 - [1. Stack](#1-stack)
-- [2. Repo layout — the `site/` workspace](#2-repo-layout--the-site-workspace)
+- [2. Repo layout — the selected site application](#2-repo-layout--the-selected-site-application)
 - [3. The `src/` shape](#3-the-src-shape)
 - [4. `eleventy.config.ts` patterns](#4-eleventyconfigts-patterns)
 - [5. Tailwind 4, config-less](#5-tailwind-4-config-less)
@@ -28,15 +28,15 @@ The standard applies only when a repository declares `[skills.ki-repo-website-co
 - **Bun is mandated** as the package manager and runtime. The Bun-install / Node-run split, the `packageManager: bun@…` pin, `engines`, aggregate/scoped audit wiring, and internal code-tool checks are `ki-engineering`'s — this standard assumes them.
 - **Lucide** provides icons, copied from `node_modules` as a passthrough and initialised client-side (no build-time icon framework).
 
-## 2. Repo layout — the `site/` workspace
+## 2. Repo layout — the selected site application
 
-Every house 11ty/Cloudflare site repo is a **monorepo** in the `ki-engineering` sense (§0 there): the root `package.json` declares a `workspaces` array, and the site is always its own workspace package under **`site/`** — even a single-concern repo, which declares `"workspaces": ["site"]` from day one. There is no flat 11ty-site layout: starting at `site/` means adding a companion deployable later (a bot, an ingress Worker — **out of this skill's scope**, see [SKILL.md](../SKILL.md) boundaries) is a pure addition (`["site", "ingress"]`), never a repo-wide migration.
+Every house 11ty/Cloudflare site repo is a **monorepo** in the `ki-engineering` sense (§0 there): the root `package.json` declares a `workspaces` array, and the site is its own application workspace. The conventional site root is **`apps/site/`**, covered by `"workspaces": ["apps/*"]` from day one. A repository may explicitly select another safe repository-relative root through `[skills.ki-repo-website].site-root`; `site-root = "."` is the flat-layout override. Adding a companion deployable later (a bot or ingress Worker — **out of this skill's scope**, see [SKILL.md](../SKILL.md) boundaries) is then a pure addition rather than a migration of reusable packages.
 
-- The site lives under `site/` (`site/eleventy.config.ts`, `site/src/`), with its own `site/package.json` and `site/tsconfig.json` (the workspace package).
-- The build emits **`./dist`** — i.e. **`dist/` lives inside the `site/` workspace** (`site/dist/`). Each workspace owns its own output directory; no cross-workspace output coupling. The hosting Worker (`ki-repo-website-cloudflare` §2) points `assets.directory` at `./dist` from `site/wrangler.jsonc`.
-- Scripts take the workspace-name `site:` prefix (`ki:site:build`, `ki:site:dev`, `ki:site:dev:css`, `ki:site:dev:serve`, `ki:site:clean`), per the monorepo shape.
+- The site lives at `<site-root>/` (conventionally `apps/site/`) with its own `eleventy.config.ts`, `src/`, `package.json`, and `tsconfig.json`.
+- The build emits **`./dist`** inside the selected site root (`<site-root>/dist/`; conventionally `apps/site/dist/`). Each application workspace owns its output directory, with no cross-workspace output coupling. A hosting adapter consumes that exact path.
+- The selected site package owns ordinary local scripts: `build`, `dev`, `dev:css`, `dev:serve`, and `clean`. The repository root owns the public `ki:site:*` lifecycle aliases through `ki-repo-website`; the content package does not duplicate them.
 
-The site root is "the directory that contains `eleventy.config.ts`" — always `site/`. The `workspaces` declaration (and thus the shape) is governed by `ki-engineering`; this skill assumes it.
+The site root is the directory selected by the website core and containing `eleventy.config.ts`. The `workspaces` declaration is governed by `ki-engineering`; this skill verifies its content-specific consequences.
 
 ## 3. The `src/` shape
 
@@ -75,7 +75,7 @@ The config is `export default function (eleventyConfig) { … return { dir, … 
 - **Tailwind in the lifecycle.** `eleventyConfig.on('eleventy.before', ({ runMode }) => …)` runs the Tailwind CLI with `--minify` when `runMode` is **not** `serve`/`watch` (i.e. a one-shot build), and `addWatchTarget('…/dist/assets/css/main.css')` reloads the dev server when the parallel `--watch` process rewrites the CSS. **This is invariant 4.**
 - **Lucide passthrough** + an `external-link-icons` transform that appends an external-link glyph to `https?://` anchors.
 - **Filters**, where used: `jsonDump` (debug), `unique`, `groupBy`. **Collections** sorted by front-matter order keys where a content section needs ordering.
-- **`return { dir: { input: 'src', output: './dist', includes: '_includes', data: '_data' }, htmlTemplateEngine: 'njk', markdownTemplateEngine: 'njk', templateFormats: ['njk','md','html'] }`** — output resolves to `dist/` inside the `site/` workspace (`site/dist/`), per §2.
+- **`return { dir: { input: 'src', output: './dist', includes: '_includes', data: '_data' }, htmlTemplateEngine: 'njk', markdownTemplateEngine: 'njk', templateFormats: ['njk','md','html'] }`** — output resolves to `dist/` inside the selected site root, per §2.
 
 ## 5. Tailwind 4, config-less
 
@@ -100,13 +100,13 @@ The config is `export default function (eleventyConfig) { … return { dir, … 
 
 ## 8. Dev-workflow delta
 
-The site-specific scripts (aggregate/scoped governance and direct code-tool checks are engineering's):
+The selected site package owns the content-specific local scripts; the root-owned public lifecycle aliases belong to `ki-repo-website`:
 
-- **`ki:site:dev`** — `concurrently` runs the Tailwind `--watch` (`ki:site:dev:css`) and the Eleventy `--serve --port 3000` (`ki:site:dev:serve`) in parallel, named `css`,`11ty`.
-- **`ki:site:build`** — `bun …/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts` (the `eleventy.before` hook compiles Tailwind with `--minify`).
-- **`ki:site:clean`** — removes `dist/` (and `.wrangler/` where present). TypeScript checking runs inside the registered `ki-engineering` rubric; `ki repo audit` is the aggregate gate, so the site does not add parallel `types` or `verify` scripts.
+- **`dev`** — `concurrently` runs Tailwind `--watch` through `dev:css` and Eleventy `--serve --port 3000` through `dev:serve`, named `css`,`11ty`.
+- **`build`** — invokes `bun …/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts`; the `eleventy.before` hook compiles Tailwind with `--minify`.
+- **`clean`** — removes `dist/` and `.wrangler/` where present.
 
-All site scripts take the `site:` prefix — the site is always the `site/` workspace of a monorepo (§2).
+TypeScript checking runs inside the registered `ki-engineering` rubric; do not add parallel `types` or `verify` scripts. These ordinary scripts execute within the selected site package. Root `ki:site:build`, `ki:site:dev`, and `ki:site:clean` aliases delegate to them; that public seam belongs to `ki-repo-website`.
 
 ## 9. The `dist/` contract
 
@@ -117,4 +117,4 @@ The build's output, and the **only** thing `ki-repo-website-cloudflare` needs:
 - for a public site, `sitemap.xml` + `robots.txt`;
 - `dist/` is **gitignored** and fully regenerated by the build — never hand-edited. When a source route is removed or renamed, run `ki:site:clean` immediately before the validation build and confirm its former output path is absent: Eleventy does not prune obsolete output itself.
 
-`dist/` sits inside the `site/` workspace (`site/dist/`), per §2. The hosting skill points `assets.directory` at `./dist` from `site/wrangler.jsonc`. **Building `dist/` is this skill; serving it is `ki-repo-website-cloudflare`.**
+`dist/` sits inside the selected site root (`<site-root>/dist/`; conventionally `apps/site/dist/`), per §2. A selected hosting adapter points at that exact output. **Building `dist/` is this skill; serving it belongs to the hosting adapter.**

@@ -3,7 +3,7 @@ import {
   type ActivitiesContext,
   type ActivitiesRubricContext,
   type ActivityNote,
-  markdownLinkTargets
+  indexLinkTargets
 } from '../contexts/activities.ts'
 
 const SOURCE = 'standards-activities.md'
@@ -36,7 +36,8 @@ const oneOrMore = <Outcome>(values: readonly Outcome[]): RubricOutcomes<Outcome>
 const ACT_S_1: RubricItem<ActivitiesContext> = {
   code: 'ACT-S-1',
   title: 'activity index',
-  description: '`Activities.md` exists when one or more activity notes exist and lists every note.',
+  description:
+    '`Activities.md` exists when one or more activity notes exist and links every note with Markdown or Obsidian wikilinks.',
   sources: [SOURCE],
   mechanical: {
     level: 'WARN',
@@ -64,7 +65,7 @@ const ACT_S_1: RubricItem<ActivitiesContext> = {
               subject: context.index.relative
             }
           ]
-        const targets = markdownLinkTargets(context.index.content)
+        const targets = indexLinkTargets(context.index.content)
         const missing = context.notes.filter((note) => !targets.has(note.indexLink))
         return missing.length
           ? oneOrMore(

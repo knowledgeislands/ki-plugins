@@ -28,8 +28,7 @@ const options = (repository: string, mode: 'audit' | 'conform'): RubricContextOp
   configuration: {}
 })
 
-const declareSpecs = (repository: string): void =>
-  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-specs]\n')
+const declareSpecs = (repository: string): void => writeFileSync(join(repository, '.ki.toml'), '[skills.ki-specs]\n')
 
 const fixture = (): { repository: string; area: string; original: string } => {
   const repository = temporaryDirectory('ki-specs-')
@@ -257,6 +256,56 @@ test('a serial gap within a prefix is reported', () => {
   const outcomes = mechanicalItem(ID, 'ID-3').audit.run(identityContext(session))
 
   expect(outcomes[0]).toMatchObject({ status: 'VIOLATION', message: expect.stringContaining('AUTH-001') })
+})
+
+test('serials retired to the tool stay claimed and are not gaps', () => {
+  const { repository, area } = fixture()
+  writeFileSync(
+    area,
+    [
+      '# Authentication',
+      '',
+      '### AUTH-003 — Session lifetime',
+      '',
+      'A session MUST expire.',
+      '',
+      '_Verify:_ session test.',
+      '',
+      '## Retired to the tool',
+      '',
+      '- AUTH-001, AUTH-002 — token issue and expiry: DOMAIN-003 in the tool specifies them.',
+      ''
+    ].join('\n')
+  )
+  const session = createSpecsSession(options(repository, 'audit'))
+  const outcomes = mechanicalItem(ID, 'ID-3').audit.run(identityContext(session))
+
+  expect(outcomes[0]?.status).toBe('PASS')
+})
+
+test('a retired serial that is still defined as a requirement is reported', () => {
+  const { repository, area } = fixture()
+  writeFileSync(
+    area,
+    [
+      '# Authentication',
+      '',
+      '### AUTH-001 — Session lifetime',
+      '',
+      'A session MUST expire.',
+      '',
+      '_Verify:_ session test.',
+      '',
+      '## Retired to the tool',
+      '',
+      '- AUTH-001 — session lifetime: the tool owns it now.',
+      ''
+    ].join('\n')
+  )
+  const session = createSpecsSession(options(repository, 'audit'))
+  const outcomes = mechanicalItem(ID, 'ID-3').audit.run(identityContext(session))
+
+  expect(outcomes[0]).toMatchObject({ status: 'VIOLATION', message: expect.stringContaining('retired') })
 })
 
 test('a requirement cannot borrow a keyword or Verify hook from a later H2 or Gaps section', () => {

@@ -193,6 +193,8 @@ export type RubricContextOptions = {
   repository: string
   userHome: string
   configuration: Readonly<Record<string, unknown>>
+  /** Exact, duplicate-free claims aggregated from this repository's resolved skills. */
+  packageScriptClaims: readonly PackageScriptClaim[]
   /**
    * Reports progress while the session works. Absent when the host is not displaying
    * progress; a rubric must produce identical findings either way and must never depend on
@@ -203,6 +205,11 @@ export type RubricContextOptions = {
   publication?: RubricPublication
   /** Host-resolved repository-skill activation evidence and native proposal capability. */
   repositorySkills?: RepositorySkillActivation
+}
+
+export type PackageScriptClaim = {
+  script: string
+  skill: string
 }
 
 /**

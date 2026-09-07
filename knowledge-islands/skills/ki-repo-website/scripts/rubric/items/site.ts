@@ -7,6 +7,8 @@ const remediation = {
   guidance: 'Align the shared website declaration and lifecycle seam, then rerun the audit.'
 }
 const skip = (context: WebsiteCoreContext): readonly AuditOutcome[] | null => (context.applicable ? null : [])
+const skipInvalidRoot = (context: WebsiteCoreContext): readonly AuditOutcome[] | null =>
+  context.siteRootValid ? null : []
 const item = (
   code: string,
   title: string,
@@ -32,33 +34,71 @@ const SITE_1 = item('SITE-1', 'Website opt-in', 'The neutral website table is pr
 
 const SITE_2 = item(
   'SITE-2',
-  'Website opt-in validation',
-  'The neutral marker table is keyless.',
+  'Website configuration',
+  'The website table relies on the implicit apps/site default or contains only a safe site-root override.',
   'WARN',
   (context) => {
     const stopped = skip(context)
     if (stopped) return stopped
-    return context.configurationKeys.length === 0
-      ? [{ status: 'PASS', message: 'The website core table is keyless.', subject: '.ki.toml' }]
-      : context.configurationKeys.map((key) => ({
-          status: 'VIOLATION' as const,
-          message: `Unknown key under [skills.ki-repo-website]: ${key}.`,
-          subject: '.ki.toml'
-        }))
+    const unknown = context.configurationKeys.filter((key) => key !== 'site-root')
+    const redundantDefault = context.siteRootValid && context.siteRootConfigured && context.siteRoot === 'apps/site'
+    return unknown.length === 0 && context.siteRootValid && !redundantDefault
+      ? [
+          {
+            status: 'PASS',
+            message: `The website site root resolves to ${context.siteRoot}.`,
+            subject: '.ki.toml'
+          }
+        ]
+      : [
+          ...(context.siteRootValid
+            ? []
+            : [
+                {
+                  status: 'VIOLATION' as const,
+                  message: 'site-root must be "." or a canonical safe relative path.',
+                  subject: '.ki.toml'
+                }
+              ]),
+          ...(redundantDefault
+            ? [
+                {
+                  status: 'VIOLATION' as const,
+                  message: 'site-root = "apps/site" restates the implicit default; remove the key.',
+                  subject: '.ki.toml'
+                }
+              ]
+            : []),
+          ...unknown.map((key) => ({
+            status: 'VIOLATION' as const,
+            message: `Unknown key under [skills.ki-repo-website]: ${key}.`,
+            subject: '.ki.toml'
+          }))
+        ]
   }
 )
 
 const SITE_3 = item(
   'SITE-3',
-  'Package manifest',
-  'The root package manifest is safely parseable.',
+  'Package manifests',
+  'The root and selected site package manifests are safely parseable.',
   'FAIL',
   (context) => {
     const stopped = skip(context)
     if (stopped) return stopped
-    return context.packageState === 'present'
-      ? [{ status: 'PASS', message: 'package.json is safely parseable.', subject: 'package.json' }]
-      : [{ status: 'VIOLATION', message: `package.json is ${context.packageState}.`, subject: 'package.json' }]
+    const invalid = skipInvalidRoot(context)
+    if (invalid) return invalid
+    const manifests = [
+      { path: 'package.json', state: context.packageState },
+      ...(context.sitePackagePath === 'package.json'
+        ? []
+        : [{ path: context.sitePackagePath, state: context.sitePackageState }])
+    ]
+    return manifests.map(({ path, state }) =>
+      state === 'present'
+        ? { status: 'PASS' as const, message: `${path} is safely parseable.`, subject: path }
+        : { status: 'VIOLATION' as const, message: `${path} is ${state}.`, subject: path }
+    )
   }
 )
 
@@ -66,6 +106,8 @@ const requiredScript = (code: string, key: string, purpose: string) =>
   item(code, key, `The root package exposes ${key}.`, 'WARN', (context) => {
     const stopped = skip(context)
     if (stopped) return stopped
+    const invalid = skipInvalidRoot(context)
+    if (invalid) return invalid
     return context.scripts[key]?.trim()
       ? [{ status: 'PASS', message: `${key} is present for ${purpose}.`, subject: 'package.json' }]
       : [{ status: 'VIOLATION', message: `${key} is absent.`, subject: 'package.json' }]
@@ -79,10 +121,18 @@ const SITE_7 = item(
   (context) => {
     const stopped = skip(context)
     if (stopped) return stopped
-    const ignored = context.gitignore !== null && /^\s*\/?(?:site\/)?dist\/?\s*$/m.test(context.gitignore)
+    const invalid = skipInvalidRoot(context)
+    if (invalid) return invalid
+    const ignored =
+      context.gitignore?.split(/\r?\n/).some((line) => {
+        const rule = line.trim().replace(/^\//, '')
+        return (
+          rule === 'dist/' || rule === 'dist' || rule === context.distPath || rule === context.distPath.slice(0, -1)
+        )
+      }) ?? false
     return ignored
-      ? [{ status: 'PASS', message: 'A local dist output is gitignored.', subject: '.gitignore' }]
-      : [{ status: 'VIOLATION', message: 'Neither dist/ nor site/dist/ is gitignored.', subject: '.gitignore' }]
+      ? [{ status: 'PASS', message: `${context.distPath} is gitignored.`, subject: '.gitignore' }]
+      : [{ status: 'VIOLATION', message: `${context.distPath} is not gitignored.`, subject: '.gitignore' }]
   }
 )
 

@@ -10,7 +10,7 @@ Edit the source in the harness (`skills/`, `agents/governance/`), then regenerat
 
 ```bash
 # from a ki-agentic-harness checkout
-bun run ki:binding:build-plugin /path/to/ki-plugins
+bun run ki:binding:claude:build-plugin /path/to/ki-plugins
 git -C /path/to/ki-plugins add -A && git -C /path/to/ki-plugins commit -m "regen: <what changed in the harness>"
 ```
 

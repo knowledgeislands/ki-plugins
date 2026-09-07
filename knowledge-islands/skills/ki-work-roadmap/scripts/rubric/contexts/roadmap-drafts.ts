@@ -19,8 +19,9 @@ const safeToDraft = (repository: string, findings: readonly Finding[]): boolean 
 export const createRoadmapDraft = (_repository: string, findings: readonly Finding[]): RoadmapDraft | undefined => {
   if (!safeToDraft(_repository, findings)) return undefined
   const writes: ConformWrite[] = []
-  const addWrite = (path: string, content: string): void => {
-    if (!writes.some((write) => write.path === path)) writes.push({ path, content })
+  const addWrite = (path: string, content: string, create = false): void => {
+    if (!writes.some((write) => write.path === path))
+      writes.push(create ? { path, content, create: true } : { path, content })
   }
   const scaffoldIssueLedger = (): void => {
     if (existsSync(join(_repository, 'docs', 'roadmap', ISSUE_LEDGER))) return
@@ -31,7 +32,7 @@ export const createRoadmapDraft = (_repository: string, findings: readonly Findi
       areas.set(item.area, Math.max(areas.get(item.area) ?? 0, item.serial))
     }
     const highestRetained = Math.max(0, ...items.map((item) => item.serial))
-    addWrite(`docs/roadmap/${ISSUE_LEDGER}`, issueLedger(areas.size ? areas : highestRetained))
+    addWrite(`docs/roadmap/${ISSUE_LEDGER}`, issueLedger(areas.size ? areas : highestRetained), true)
   }
   return {
     normaliseRoot: () => {

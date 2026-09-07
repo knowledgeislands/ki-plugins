@@ -8,6 +8,7 @@ import { RECORD } from './records.ts'
 import { RELEASE } from './release.ts'
 import { ROUTE } from './routes.ts'
 import { SCAFFOLD } from './scaffold.ts'
+import { STANDING } from './standing.ts'
 import { STATUS } from './status.ts'
 
 export default {
@@ -15,5 +16,5 @@ export default {
   name: 'ki-trades',
   concern: 'Cross-repository trades',
   createSession: createTradesSession,
-  families: [RUBRIC, CONFIG, ROUTE, SCAFFOLD, RECORD, AUTH, STATUS, RELEASE, ADOPTION]
+  families: [RUBRIC, CONFIG, ROUTE, SCAFFOLD, RECORD, AUTH, STATUS, RELEASE, STANDING, ADOPTION]
 } satisfies SkillRubricDefinition<TradesRubricContext>

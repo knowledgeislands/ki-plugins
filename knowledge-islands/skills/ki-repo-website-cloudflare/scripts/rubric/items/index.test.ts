@@ -3,6 +3,7 @@ import definition, * as catalogueModule from './index.ts'
 import * as familyModule from './wcf.ts'
 
 test('the catalogue exposes the complete ordered Cloudflare hosting family', () => {
+  expect(definition.packageScripts).toEqual(['ki:site:deploy', 'ki:site:preview', 'ki:site:upload'])
   expect(definition.families.map((family) => family.code)).toEqual(['RUBRIC', 'WCF'])
   expect(definition.families[1]?.items.map((item) => item.code)).toEqual([
     'WCF-1',
@@ -15,6 +16,8 @@ test('the catalogue exposes the complete ordered Cloudflare hosting family', () 
     'WCF-10',
     'WCF-13',
     'WCF-14',
+    'WCF-25',
+    'WCF-26',
     'WCF-19',
     'WCF-20',
     'WCF-21',

@@ -47,6 +47,12 @@ test('canonical home and membership declarations pass local shape validation', (
         'knowledge-islands': {
           owner: 'https://github.com/knowledgeislands/home',
           purpose: 'Knowledge Islands maintained repositories',
+          order: [
+            'https://github.com/knowledgeislands/tools-ki',
+            'https://github.com/example/plain-git-repository',
+            'https://github.com/knowledgeislands/home'
+          ],
+          references: ['https://github.com/example/plain-git-repository'],
           members: { 'https://github.com/knowledgeislands/tools-ki': 'maintainer' }
         }
       },
@@ -60,7 +66,10 @@ test('canonical home and membership declarations pass local shape validation', (
   )
 
   expect(outcomes(session, CONFIG)).toEqual([
-    { status: 'PASS', message: 'Agora homes use canonical owner identity, purpose, and approved member shape.' }
+    {
+      status: 'PASS',
+      message: 'Agora homes use canonical owner identity, purpose, ordered projection, and approved member shape.'
+    }
   ])
   expect(outcomes(session, MEMBERSHIP)).toEqual([
     { status: 'PASS', message: 'Agora memberships use canonical home and role shape.' }
@@ -133,6 +142,60 @@ test('unknown fields fail closed and a local declaration never becomes reciproca
       }
     ])
   )
+})
+
+test('ordered projection is a duplicate-free prefix of the declared participants', () => {
+  const root = fixture()
+  const session = createAgoraSession(
+    options(root, {
+      homes: {
+        team: {
+          owner: 'https://github.com/knowledgeislands/home',
+          purpose: 'Team work',
+          order: [
+            'https://github.com/knowledgeislands/tools-ki',
+            'https://github.com/knowledgeislands/tools-ki',
+            'https://github.com/knowledgeislands/unknown'
+          ],
+          members: { 'https://github.com/knowledgeislands/tools-ki': 'maintainer' }
+        }
+      }
+    })
+  )
+
+  expect(outcomes(session, CONFIG).map((outcome) => outcome.message)).toEqual([
+    'home team order repeats https://github.com/knowledgeislands/tools-ki',
+    'home team order repository https://github.com/knowledgeislands/unknown must name its owner, member, or reference'
+  ])
+})
+
+test('external references are canonical, unique, non-member, and owner-selected', () => {
+  const root = fixture()
+  const session = createAgoraSession(
+    options(root, {
+      homes: {
+        team: {
+          owner: 'https://github.com/knowledgeislands/home',
+          purpose: 'Team work',
+          references: [
+            'not a repository',
+            'https://github.com/knowledgeislands/home',
+            'https://github.com/knowledgeislands/tools-ki',
+            'https://github.com/knowledgeislands/tools-ki'
+          ],
+          members: { 'https://github.com/knowledgeislands/tools-ki': 'maintainer' }
+        }
+      }
+    })
+  )
+
+  expect(outcomes(session, CONFIG).map((outcome) => outcome.message)).toEqual([
+    'home team references entries must be canonical HTTPS GitHub repositories',
+    'home team must not reference its own repository',
+    'home team repository https://github.com/knowledgeislands/tools-ki must not be both a member and reference',
+    'home team references repeats https://github.com/knowledgeislands/tools-ki',
+    'home team repository https://github.com/knowledgeislands/tools-ki must not be both a member and reference'
+  ])
 })
 
 test('local shape requires each home to name its declaring owner', () => {

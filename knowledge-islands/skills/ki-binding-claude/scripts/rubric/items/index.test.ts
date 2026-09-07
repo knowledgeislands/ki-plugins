@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { RubricFamily } from '../../shared/rubric.ts'
@@ -64,4 +64,29 @@ test('the Claude target needs explicit URL transport and full definition equalit
   }).subjects[0]?.context() as ClaudeBindingContext
   const family = catalogue.families[0] as RubricFamily<ClaudeBindingContext, ClaudeBindingContext>
   expect(family.items[0]?.mechanical?.audit.run(context)[0]?.status).toBe('VIOLATION')
+})
+
+test('the Claude target compares literals exactly without reading rendered secret values', () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-binding-claude-repository-'))
+  const home = mkdtempSync(join(tmpdir(), 'ki-binding-claude-home-'))
+  temporaryDirectories.push(repository, home)
+  const source = join(home, 'mcp-servers.yaml')
+  process.env.KI_MCP_SOURCE = source
+  mkdirSync(join(home, 'Library', 'Application Support', 'Claude'), { recursive: true })
+  writeFileSync(
+    source,
+    'mcpServers:\n  - name: ki-stdio\n    clients: [claude-desktop]\n    command: /usr/bin/node\n    args: [~/server.mjs]\n    env:\n      ACCESS_LEVEL: read\n      TOKEN: { op: op://vault/item/field }\n'
+  )
+  writeFileSync(
+    join(home, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json'),
+    `{"mcpServers":{"ki-stdio":{"command":"/usr/bin/node","args":["${home}/server.mjs"],"env":{"ACCESS_LEVEL":"read","TOKEN":"resolved-secret"}}}}\n`
+  )
+  const context = createClaudeBindingSession({
+    mode: 'audit',
+    repository,
+    userHome: home,
+    configuration: {}
+  }).subjects[0]?.context() as ClaudeBindingContext
+  const family = catalogue.families[0] as RubricFamily<ClaudeBindingContext, ClaudeBindingContext>
+  expect(family.items[0]?.mechanical?.audit.run(context)[1]?.status).toBe('PASS')
 })

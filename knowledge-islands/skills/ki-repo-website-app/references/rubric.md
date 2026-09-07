@@ -36,13 +36,15 @@ React/Vite client application implementation.
   - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.
 - **APP-5 [M] — Application entry** — index.html and a React main module are present. (standards-app-site.md)
   - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.
-- **APP-6 [M] — App build command** — ki:site:build runs vite build. (standards-app-site.md)
+- **APP-6 [M] — App build command** — The selected site package build script runs vite build. (standards-app-site.md)
   - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.
-- **APP-7 [M] — App development command** — ki:site:dev runs Vite. (standards-app-site.md)
+- **APP-7 [M] — App development command** — The selected site package dev script runs Vite. (standards-app-site.md)
   - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.
 - **APP-8 [M] — Dist output** — Vite emits the shared dist seam. (standards-app-site.md)
   - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.
 - **APP-9 [M] — App opt-in** — The app implementation table is present. (standards-app-site.md)
   - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.
 - **APP-10 [M] — App opt-in validation** — The app marker table is keyless. (standards-app-site.md)
+  - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.
+- **APP-11 [M] — Test pattern reaches component files** — A declared test include covers the component extension as well as the module one. (standards-app-site.md)
   - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.

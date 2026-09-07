@@ -2,14 +2,14 @@
 
 **Refresh:** external-spec · 180d
 
-Recorded sources cover independent evidence surfaces (see [the Claude-state standard](standards-claude-state.md) §3): native Claude memory selection and loading, Headroom-rendered output and optional database operations, and the `mcp-claude-housekeeping` source payload. A source record never proves a current server registration, access exposure, or executed audit. Update `last reviewed` on every REFRESH, whether or not anything changed.
+Recorded sources cover independent evidence surfaces (see [the Claude-state standard](standards-claude-state.md) §3): native Claude memory selection and loading, Headroom-rendered output and optional database operations, and the `mcp-housekeeping-claude` source payload. A source record never proves a current server registration, access exposure, or executed audit. Update `last reviewed` on every REFRESH, whether or not anything changed.
 
 | Source                                                                  | Last reviewed |
 | ----------------------------------------------------------------------- | ------------- |
 | Recorded native Claude settings evidence (`autoMemoryDirectory`)         | 2026-08-12    |
 | [extraheadroom.com/reduce-claude-code-costs][headroom-tools]            | 2026-07-04    |
 | Recorded Headroom CLI evidence: tracked 0.31.0; installed 0.34.0        | 2026-08-12    |
-| `@knowledgeislands/mcp-claude-housekeeping` source README + tool surface | 2026-07-09    |
+| `@knowledgeislands/mcp-housekeeping-claude` source README + tool surface | 2026-07-09    |
 
 ## Notes
 

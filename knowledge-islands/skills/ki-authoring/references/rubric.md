@@ -81,6 +81,11 @@ Reviewer-applied TOML formatting conventions.
   - _Review prompt:_ Assess whether TOML strings and short lists follow the house formatting.
   - _Outcomes:_ conforming; reformat required; exception required
   - _Conforming guidance:_ Use double-quoted strings and inline short lists, or record the external-contract exception.
+- **TOML-structure [J] — TOML configuration remains compact and navigable** — Mechanically valid `.ki.toml` structure still uses semantically appropriate neighbourhood banners, while readable short subordinate maps use dotted keys under their explicit owner root. (standards-toml.md#configuration-structure)
+  - _Evidence scope:_ Every substantial `.ki.toml` and each short subordinate map in convention scope.
+  - _Review prompt:_ Assess whether each declaration sits under a meaningful neighbourhood banner and whether dotted child keys keep the complete entry readable.
+  - _Outcomes:_ conforming; restructure recommended; nested form justified
+  - _Conforming guidance:_ Use only needed neighbourhood banners and compact dotted child keys; retain a nested table when comments, length, or further structure make it clearer.
 - **TOML-comments [J] — non-obvious TOML keys explain their rationale** — Non-obvious keys carry a preceding `#` comment explaining why they exist. (standards-toml.md#keys-and-values)
   - _Evidence scope:_ Every non-obvious authored TOML key in the convention scope.
   - _Review prompt:_ Assess whether non-obvious TOML keys carry a preceding rationale comment.

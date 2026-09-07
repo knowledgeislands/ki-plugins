@@ -25,16 +25,16 @@ Every repo carries these at the root. A local audit reads the selected checkout'
 | --- | --- |
 | `README.md` | The repo's entry point. |
 | `LICENSE` | The declared license's text (default MIT); proprietary copyright text if `license` is `UNLICENSED`. |
-| `.gitignore` | Keeps build/dep noise out of history and excludes generated runtime skill links. |
+| `.gitignore` | Composes declared skill-owned ignores, retains visible repository-specific rules, and excludes generated output. |
 | `.editorconfig` | Shared editor defaults across the workspace toolchain. |
 | `CLAUDE.md` | Agent instructions — the always-loaded anchor for any repo-specific gate or convention (skills rubric SHAPE-7). |
-| `.ki.toml` | Declares this repo's expected config under `[skills.ki-repo]`. † |
+| `.ki.toml` | Opens with the standard conformance header and declares expected config under `[skills.ki-repo]`. † |
 
 † The values it carries: mandatory `title` and `description`, `visibility`, the declared `license` (SPDX id, default MIT), and any per-repo check overrides. A repository that declares `ki-work-roadmap` also carries its stable `repo_code` here.
 
-**Baseline governance is declared, not assumed.** Every Knowledge Islands repo is governed by `ki-repo` **and** `ki-authoring`; both are required declarations — a `.ki.toml` missing `[skills.ki-authoring]` is a FAIL (`authoring-baseline`). Authoring is no longer an implicit universal hidden in the tooling ([ADR-KI-HARNESS-005](../../../../docs/decisions/ADR-KI-HARNESS-005-validate-down-ki-config-toml-contract.md)); the config shows the full governance set. Portable tokenomics and the real environment capabilities mapped from `[skills.ki-repo].supported_runtimes` are likewise explicit required capabilities. `ki-repo` derives the exact names and checks their declarations without reading sibling-owned contents; verified source resolution and managed runtime projections remain host evidence.
+**Baseline governance is declared, not assumed.** Every Knowledge Islands repo is governed by `ki-repo` **and** `ki-authoring`; both are required declarations — a `.ki.toml` missing `[skills.ki-authoring]` is a FAIL (`authoring-baseline`). Authoring is no longer an implicit universal hidden in the tooling ([ADR-KI-HARNESS-005](../../../../docs/decisions/ADR-KI-HARNESS-005-validate-down-ki-toml-contract.md)); the config shows the full governance set. Portable tokenomics and the real environment capabilities mapped from `[skills.ki-repo].supported_runtimes` are likewise explicit required capabilities. `ki-repo` derives the exact names and checks their declarations without reading sibling-owned contents; verified source resolution and managed runtime projections remain host evidence.
 
-**Foundation scaffolding is owner-controlled and append-only.** `ki-repo` owns the file-level contract and writes its `[skills.ki-repo]` block plus the required bare `[skills.ki-authoring]` foundation marker. Its native CONFORM session creates a missing file with both, or appends only a missing exact root marker to a partial file; a dotted `[skills.ki-repo.checks]` sub-table alone does not satisfy `[skills.ki-repo]`. It preserves all existing bytes, is idempotent, and makes no write in dry-run. Sibling skills may conform their own tables under the validate-down/conform-down boundary. CONFORM completes this local repair before any separately confirmed live GitHub work and carries no TOML template for another skill.
+**Foundation scaffolding is owner-controlled and bounded.** `ki-repo` owns the file-level contract and writes the exact opening conformance header, its `[skills.ki-repo]` block, and the required bare `[skills.ki-authoring]` foundation marker. Its native CONFORM session creates a missing file with all three, or prepends only a missing header and appends only a missing exact root marker to a partial file; a dotted `[skills.ki-repo.checks]` sub-table alone does not satisfy `[skills.ki-repo]`. Apart from those bounded additions it preserves all existing bytes, is idempotent, and makes no write in dry-run. Sibling skills may conform their own tables under the validate-down/conform-down boundary. CONFORM completes this local repair before any separately confirmed live GitHub work and carries no TOML template for another skill.
 
 **Native self-check capability is required.** A confirmed ki-repo must be auditable by resolving its declared governance roots to compatible registered operations in the verified active installed collection. It is not self-sufficient by carrying a vendored `.ki/bin` runner: package-local runners, manifests, and a nearby harness checkout are not execution fallbacks.
 
@@ -46,9 +46,24 @@ Every repo carries these at the root. A local audit reads the selected checkout'
 
 **Runtime skill ignore contract.** `.gitignore` follows the declared `supported_runtimes`: `claude-code` requires `.claude/skills/*`; `chatgpt-codex` requires `.agents/skills/*`. Every repository re-includes the reserved canonical `.agents/skills/ki-self/` source with `!.agents/skills/ki-self/` and `!.agents/skills/ki-self/**`, regardless of the declared runtime set, so it remains trackable whenever a repository elects to author it. These rules keep bootstrap-created links out of history without excluding the canonical local source.
 
+**Compositional ignore contract.** `ki-repo` is the sole writer of the root `.gitignore`. It derives a dependency-stable sequence of marker-bounded blocks from the repository's declared skills, while each contributing skill owns only the rules and explanatory comment in its named block. This central composition is one atomic file proposal: contributing skills do not race to write overlapping versions of `.gitignore`.
+
+The `ki-repo` block reserves `reports/` at any depth for disposable generated reports and includes common OS/editor temporary files, local Claude settings, log files, and the runtime-skill rules above. It deliberately leaves `.vscode/` and a generic `logs` directory unmanaged because repositories may commit shared editor configuration or durable operational logs. `ki-engineering` contributes dependencies, compiled output where no website skill owns it, TypeScript caches, package-manager logs, and real environment files. `ki-repo-website` contributes its generated `dist/` seam. `ki-repo-website-cloudflare` contributes `.wrangler/` and `.dev.vars`. A skill with no portable generated or local-only artifact contributes no block merely to appear in the file.
+
+Every composed file ends with these exact lines:
+
+```gitignore
+# Unmanaged repository-specific ignores
+# These rules are preserved but are not currently reconciled by a KI skill.
+```
+
+Existing non-managed rules are retained below that header and reported as informational inventory rather than silently promoted, reordered into a skill block, or deleted. REFRESH reviews recurring fleet patterns and assigns a rule to a skill only when the producing capability and portability boundary are clear. Malformed managed markers fail closed: CONFORM does not rewrite the file until the marker structure is repaired.
+
+A repository that authors this source explicitly declares `[skills.ki-self]`. The native `ki` host may then resolve only the exact physical, contained `.agents/skills/ki-self/` source and its `scripts/rubric/items/index.ts` catalogue as `repository-local:ki-self`; every other repository skill remains an installed-Harness capability. The local provider is not activated, repaired, or upgraded as a managed runtime projection.
+
 ### `.ki/` — legacy migration state, not an executor
 
-Under ADR-KI-HARNESS-012, `.ki/` is not a governance working-artifacts area or an execution surface. The former vendored checker tree, aggregate runner, wrapper, and manifest are retired without a compatibility path; `ki repo` must never invoke `.ki/bin`, a manifest payload, or a nearby checkout. Existing `.ki` runner and manifest material is examined only by an explicit, fail-closed migration operation and is never removed without complete ownership proof.
+Under ADR-KI-HARNESS-012, `.ki/` is not a governance working-artifacts area or an execution surface. The former vendored checker tree, aggregate runner, wrapper, and manifest are retired without a compatibility path; `ki repo` must never invoke `.ki/bin`, a manifest payload, or a nearby checkout. `.ki` is deliberately not ignored, and any physical return is a failure even when a stale ignore rule would otherwise hide it. CONFORM may remove only an untracked physical `.ki` tree whose complete contents are regular files and directories below `.ki/audits/` or `.ki/conform/`; tracked paths, links, special files, or any other child fail closed without removing recognised content.
 
 No document may represent a legacy `.ki/bin` runner as the current self-check contract or as a fallback. Repository activation belongs to the native `ki` host. A rubric may request an exact capability set, but only the host may resolve verified sources, preflight every declaration and managed discovery link, publish a bounded dry-run or apply plan, and re-audit the result. The rubric receives no direct filesystem or subprocess activation capability.
 
@@ -104,11 +119,7 @@ For every repo on github.com:
 | Projects | Off | Unused. |
 | Discussions | Off | Unused. |
 
-Public repos (`mcp-*`) additionally:
-
-| Setting | Value                                                          |
-| ------- | -------------------------------------------------------------- |
-| Topics  | `mcp`, `model-context-protocol`, `claude`, `typescript`, `bun` |
+Public repos additionally carry **topics** — per-repo discovery metadata, not a fixed org set. Topics are effectively the repository's keywords: the same terms belong in `package.json` `"keywords"`, where they also reach any published npm package. Mechanically (`TOPICS-1`), a public repo's topic set must be non-empty, and where `package.json` declares `"keywords"` the two lists must agree modulo GitHub's normalisation (lowercase, spaces to hyphens) — keywords are the in-repo source of truth. Which topics to choose is judgment (`TOPICS-2`): pick terms that describe what the repository actually is, and consider whether each **common estate topic** applies — currently `typescript`, `bun`, `claude`, and, for MCP servers, `mcp` and `model-context-protocol`. A common topic that doesn't apply is simply omitted, never a failure; REFRESH's estate scan harvests newly common topics and keywords into this consider list.
 
 **`main` is open by default** — no branch protection, so direct pushes are allowed and no PR, status check, or linear-history rule gates it. Squash-only merge (above) keeps history tidy for PRs that do happen, but nothing forces work through a PR. A repo that _wants_ a protected `main` overrides the `branch-protection` check on (see [Per-repo overrides](#per-repo-overrides)) — protection is then `main`: require a PR (0 approvals), the `build` status check, linear history, no force-push, no deletion, admins **not** enforced.
 
@@ -175,10 +186,12 @@ The rubric carries the **org default** for every check. Most are bedrock — fil
 | `wiki`              | on          | Wiki disabled.                                      |
 | `projects`          | on          | Projects disabled.                                  |
 | `issues`            | on          | Issues enabled.                                     |
-| `topics`            | on          | _(public)_ carries the standard topic set.          |
+| `topics`            | on          | _(public)_ non-empty topics, synced with keywords †. |
 | `secret-scanning`   | on          | _(public)_ secret scanning enabled.                 |
 | `push-protection`   | on          | _(public)_ secret-scanning push protection enabled. |
 | `structure`         | on          | Declares at least one repo-structure table §.       |
+
+† `topics` requires a non-empty topic set that agrees with `package.json` `"keywords"` (modulo GitHub normalisation) where keywords exist — see the topics rule above.
 
 ‡ When enforced, `branch-protection` requires: a PR (0 approvals), the `build` status check, linear history; no force-push/deletion; admins not enforced.
 
@@ -193,9 +206,9 @@ The rubric carries the **org default** for every check. Most are bedrock — fil
 
 ## Coverage cascade
 
-`.ki.toml`'s presence is the **gate** (Layer 1): once it confirms the repo is a ki-repo, the auditor checks the repo **declares an opt-in `[skills.ki-<skill>]` table for every governance skill whose applicability it can detect**. Website signals are deliberately separate: Eleventy requires the neutral website core plus the content implementation; React/Vite requires the core plus the app implementation; Wrangler independently requires the Cloudflare hosting adapter. A `Streams/` zone, MCP SDK dependency, plugin manifest, specification tree, tool layout, Homebrew formula, or skill source similarly selects only its own standard. Detected-but-undeclared WARNs; a declared table with no matching artifact WARNs as possibly stale.
+`.ki.toml`'s presence is the **gate** (Layer 1): once it confirms the repo is a ki-repo, the auditor checks that the repo **declares an opt-in `[skills.ki-<skill>]` table for every governance skill whose applicability it can detect**. Website signals are deliberately separate: Eleventy requires the neutral website core plus the content implementation; React/Vite requires the core plus the app implementation; Wrangler independently requires the Cloudflare hosting adapter. React/Vite discovery resolves the Vite configuration and dependencies from the core-owned `site-root`, including the default `apps/site/package.json`. A `Streams/` zone, MCP SDK dependency, plugin manifest, specification tree, tool layout, Homebrew formula, or skill source similarly selects only its own standard. Detected-but-undeclared WARNs; a declared table with no matching artifact WARNs as possibly stale.
 
-A repo that is **not** a ki-repo (no `.ki.toml`) is never coverage-checked — it just takes the `ki-config` FAIL, so a lookalike repo (an `eleventy.config` but no marker) is not falsely told to opt in. This is `ki-repo`'s single cross-table read, and it reads only table **presence**, never another skill's keys. The full signal list and the marker-vs-config model live in [the `.ki.toml` standard](standards-configuration.md#coverage-enforcement). Silence one signal with `coverage-<skill> = false` under `[skills.ki-repo.checks]`.
+A repo that is **not** a ki-repo (no `.ki.toml`) is never coverage-checked — it just takes the `ki-config` FAIL, so a lookalike repo (an `eleventy.config` but no marker) is not falsely told to opt in. This is `ki-repo`'s single cross-table read. It normally reads only table **presence**; the one value it consumes is the core website `site-root`, solely to locate the app evidence whose coverage it detects. The owning website skill validates that value. The full signal list and the marker-vs-config model live in [the `.ki.toml` standard](standards-configuration.md#coverage-enforcement). Silence one signal with `coverage-<skill> = false` under `[skills.ki-repo.checks]`.
 
 The cascade's companion is a **primary-structure** rule: a repo declares at most one of `[skills.ki-repo-project]` and `[skills.ki-repo-kb]`. Project is the explicit default for non-KB repositories; KB is the mutually exclusive Knowledge Base primary. Declaring both FAILs (`repo-structure`, bedrock — not overridable). The remaining `ki-repo-*` standards are composable specialisations and do not count. Declaring neither WARNs (`structure`) so every governed repository makes its primary model visible.
 
@@ -206,8 +219,8 @@ Website composition has its own narrower cardinality. A repository declaring `[s
 `gh` CLI, authenticated with the GitHub **Administration** permission required for each target repository. The commands below are a reference plan, not an unattended conformer: inspect the live state and exact target set, show the proposed diff, and obtain explicit confirmation before each mutation batch. (zsh: use an array, not a bare string — unquoted `$var` does not word-split.)
 
 ```zsh
-all=(ki-arcadia-principal ki-agentic-harness ki-repo-website mcp-claude-housekeeping mcp-git-audit mcp-gsuite mcp-kb-fs mcp-ki-repo-kb-notion-mirror mcp-m365)
-public=(mcp-claude-housekeeping mcp-git-audit mcp-gsuite mcp-kb-fs mcp-ki-repo-kb-notion-mirror mcp-m365)
+all=(ki-arcadia-principal ki-agentic-harness ki-repo-website mcp-housekeeping-claude mcp-git-audit mcp-gsuite mcp-kb-fs mcp-ki-repo-kb-notion-mirror mcp-m365)
+public=(mcp-housekeeping-claude mcp-git-audit mcp-gsuite mcp-kb-fs mcp-ki-repo-kb-notion-mirror mcp-m365)
 
 # Layer 1 — each repo declares its config in .ki.toml (committed via PR like any file).
 #   Native conform scaffolds/repairs [skills.ki-repo] + [skills.ki-authoring] only.
@@ -222,11 +235,10 @@ for r in $all; do
     --delete-branch-on-merge=true --enable-wiki=false --enable-projects=false
 done
 
-# Layer 2 — descriptions (per repo) and topics (public)
+# Layer 2 — descriptions and topics (both per repo; topics public-only).
+# Topics mirror the repo's package.json "keywords" — set both from the same list.
 gh repo edit knowledgeislands/<name> --description "…"
-for r in $public; do
-  gh repo edit "knowledgeislands/$r" --add-topic mcp --add-topic model-context-protocol --add-topic claude --add-topic typescript --add-topic bun
-done
+gh repo edit "knowledgeislands/<name>" --add-topic <keyword-1> --add-topic <keyword-2> …
 
 # Layer 2 — branch protection is overridable, default OFF. Default: `main` open — strip any leftover protection:
 for r in $all; do gh api -X DELETE "repos/knowledgeislands/$r/branches/main/protection" 2>/dev/null || true; done
@@ -260,7 +272,7 @@ The native command resolves declared operations and checks every applicable laye
 
 ### What is read locally and what is read from GitHub
 
-Evidence comes from two distinct sources, and every finding identifies which one supplied it. A local checkout is primary for Layer 1 file presence, `.ki.toml`, tree-based coverage, and `package.json`; it includes tracked, staged, and unignored working-tree content. A local unpushed change therefore appears in a local audit. If a caller explicitly selects a local target and it cannot be read, the audit fails that local evidence collection rather than falling back to GitHub.
+Evidence comes from two distinct sources, and every finding identifies which one supplied it. A local checkout is primary for Layer 1 file presence, `.ki.toml`, tree-based coverage, and `package.json`; it includes tracked, staged, and unignored working-tree content, plus an explicit physical check for the forbidden `.ki` tree. A local unpushed change therefore appears in a local audit. If a caller explicitly selects a local target and it cannot be read, the audit fails that local evidence collection rather than falling back to GitHub.
 
 An organisation or other filesystem-free remote run reads that same file and configuration evidence from the repository's GitHub default branch. This lets a scheduled or sandboxed judgmental run assess a repository without granting it filesystem access. It sees published state, not a developer's checkout.
 

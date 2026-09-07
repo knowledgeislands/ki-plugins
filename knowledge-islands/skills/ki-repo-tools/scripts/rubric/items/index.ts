@@ -12,6 +12,7 @@ export default {
   contract: 1,
   name: 'ki-repo-tools',
   concern: 'command-line tool repository structure',
+  packageScripts: ['ki:tools:lint-man'],
   createSession: createToolsSession,
   families: [RUBRIC, TOOL, SHELL, LANG, COMPLETION, MAN, CONFIG]
 } satisfies SkillRubricDefinition<ToolsRubricContext>

@@ -32,7 +32,7 @@ The tracked readable rubric is the exact publication of the structured catalogue
 
 Required zones, indexes, staging, and output placement.
 
-- **ZONE-1 [M] — required zone layout** — Calendar/, Pillars/, Resources/, Streams/, and Admin/ are present, resolving each through a declared zone alias. (standards-knowledge-base.md)
+- **ZONE-1 [M] — required zone layout** — Calendar/, Pillars/, Resources/, Streams/, and Admin/ resolve through any declared zone alias to readable directories, including directory symlinks. (standards-knowledge-base.md)
   - _Remediation:_ diagnostic — Correct the required zone layout or placement, then rerun the audit.
 - **ZONE-2 [M] — same-name zone indexes** — Each present zone has its same-name index note. (standards-knowledge-base.md)
   - _Remediation:_ automatic
@@ -103,7 +103,7 @@ Frontmatter mechanics and note-authoring judgment.
   - _Remediation:_ diagnostic — Close the affected frontmatter fence, then rerun the audit.
 - **NOTE-1b [M] — snake_case frontmatter keys** — Top-level frontmatter keys use snake_case. (standards-frontmatter.md)
   - _Remediation:_ diagnostic — Rename affected top-level frontmatter keys to snake_case, then rerun the audit.
-- **NOTE-1c [M] — explicit note type metadata** — Every governed KB note frontmatter uses note_type and never the legacy generic type field. (standards-frontmatter.md)
+- **NOTE-1c [M] — explicit note type metadata** — Every KB-owned note frontmatter uses note_type and never the legacy generic type field; adapter and protocol records remain with their owning skills. (standards-frontmatter.md)
   - _Remediation:_ diagnostic — Replace the generic type field with note_type, preserving its value, then rerun the audit.
 - **NOTE-2 [J] — note naming convention** — Calendar notes are dated and other note names follow the base convention. (standards-knowledge-base.md)
   - _Evidence scope:_ Sampled notes and the base naming convention.

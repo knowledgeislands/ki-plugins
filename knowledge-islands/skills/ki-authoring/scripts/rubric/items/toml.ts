@@ -14,6 +14,22 @@ const TOML_VALUES: RubricItem<TomlRubricContext> = {
   }
 }
 
+const TOML_STRUCTURE: RubricItem<TomlRubricContext> = {
+  code: 'TOML-structure',
+  title: 'TOML configuration remains compact and navigable',
+  description:
+    'Mechanically valid `.ki.toml` structure still uses semantically appropriate neighbourhood banners, while readable short subordinate maps use dotted keys under their explicit owner root.',
+  sources: ['standards-toml.md#configuration-structure'],
+  judgment: {
+    scope: 'Every substantial `.ki.toml` and each short subordinate map in convention scope.',
+    prompt:
+      'Assess whether each declaration sits under a meaningful neighbourhood banner and whether dotted child keys keep the complete entry readable.',
+    outcomes: ['conforming', 'restructure recommended', 'nested form justified'],
+    guidance:
+      'Use only needed neighbourhood banners and compact dotted child keys; retain a nested table when comments, length, or further structure make it clearer.'
+  }
+}
+
 const TOML_COMMENTS: RubricItem<TomlRubricContext> = {
   code: 'TOML-comments',
   title: 'non-obvious TOML keys explain their rationale',
@@ -33,5 +49,5 @@ export const TOML: RubricFamily<AuthoringRubricContext, TomlRubricContext> = {
   description: 'Reviewer-applied TOML formatting conventions.',
   standard: 'standards-toml.md',
   selectContext: (context: AuthoringRubricContext) => context.toml,
-  items: [TOML_VALUES, TOML_COMMENTS]
+  items: [TOML_VALUES, TOML_STRUCTURE, TOML_COMMENTS]
 }

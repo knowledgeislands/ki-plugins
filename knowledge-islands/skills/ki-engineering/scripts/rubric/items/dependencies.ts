@@ -16,7 +16,7 @@ export const DEPENDENCIES: RubricFamily<EngineeringRubricContext, DependenciesRu
       code: 'DEPS-1',
       title: 'Dependencies are current',
       description:
-        '`bun outdated` reports no available updates; available updates are reviewed through `ki repo conform`.',
+        '`bun outdated` reports no available updates; a newer release opens a 14-day adoption window — informational while open, failing once the next unadopted release is two weeks old — with deliberate holds recorded as `dependency_holds` in `.ki.toml`.',
       sources: ['standards-engineering.md'],
       mechanical: {
         level: 'WARN',
@@ -34,7 +34,7 @@ export const DEPENDENCIES: RubricFamily<EngineeringRubricContext, DependenciesRu
           'Should each available update be adopted now without violating repository compatibility or release commitments?',
         outcomes: ['adopt', 'defer', 'exclusion'],
         guidance:
-          'Apply the approved update, record a deliberate deferral with its owner, or record an explicit exclusion.'
+          'Apply the approved update, or record a deliberate hold as a `dependency_holds` entry (`"<name> — <reason>"`) under `[skills.ki-engineering]` — a hold is visible for as long as it stands and flagged as stale once the package is current.'
       }
     }
   ]

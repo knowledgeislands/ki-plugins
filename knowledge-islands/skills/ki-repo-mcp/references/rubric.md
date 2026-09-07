@@ -15,6 +15,7 @@ Line-by-line criteria for auditing ki-repo-mcp. Classifications are derived from
 - [UTIL — Shared utilities](#util--shared-utilities)
 - [TEST — Test wiring](#test--test-wiring)
 - [TOOL — Tool surface](#tool--tool-surface)
+- [PROTO — Protocol profile](#proto--protocol-profile)
 - [PKG — Package entry points](#pkg--package-entry-points)
 - [SCR — MCP scripts](#scr--mcp-scripts)
 - [CI — Smoke CI](#ci--smoke-ci)
@@ -96,12 +97,21 @@ Selected Vitest coverage excludes generated and pure-wiring MCP layers.
 
 Tool names, result envelopes, schemas, and registration order form a stable MCP surface.
 
-- **TOOL-1 [M + J] — MCP tool surface** — Registered tool names use snake-case app/resource/action forms; source-local structured output declarations are paired with outputSchema; and group registration order is stable. This is not runtime registration, security, or response evidence. (standards-mcp-servers.md#3-tool-naming, standards-mcp-servers.md#12-spec-conformance-tool-results-errors--metadata)
+- **TOOL-1 [M + J] — MCP tool surface** — Registered tool names use snake-case app/resource/action forms; source-local structured output declarations are paired with outputSchema; and group registration order is stable. This is not runtime registration, security, or response evidence. (standards-mcp-servers.md#3-tool-naming, standards-mcp-servers.md#13-spec-conformance-tool-results-errors--metadata)
   - _Remediation:_ diagnostic — Correct the observed tool surface with the owning API and security decisions.
   - _Evidence scope:_ The full public MCP tool surface, result envelopes, annotations, documentation, and applicable OAuth requirements.
   - _Review prompt:_ Review plural/singular resource choices, CLI mirroring and README catalogues; confirm the annotation-driven access gate, annotation presets, dry-run defaults, read default, audit/error envelopes, path and subprocess hardening, bounded schemas, error aggregation, output sanitisation, and the applicable OAuth security requirements. Optional metadata remains opt-in.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Make API or security changes only with the owning authority; otherwise record a named gap or explicit justified exclusion.
+
+## PROTO — Protocol profile
+
+→ [standard](standards-mcp-servers.md#12-protocol-profiles)
+
+The installed MCP server package selects one protocol era and its matching stdio and result contract.
+
+- **PROTO-1 [M] — Protocol profile** — The declared server dependency selects exactly one supported protocol profile: @modelcontextprotocol/sdk major 1 for legacy 2025-11-25, or @modelcontextprotocol/server major 2 for modern 2026-07-28 with complete result discriminators and the SDK-owned stdio boundary. (standards-mcp-servers.md#12-protocol-profiles)
+  - _Remediation:_ diagnostic — Use one supported MCP server package family and satisfy only its selected protocol profile; migrate through a separately reviewed receiver-owned work item.
 
 ## PKG — Package entry points
 

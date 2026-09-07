@@ -32,21 +32,27 @@ Other skills MAY define a narrowly-scoped trailer block as durable evidence for 
 
 Select one of three approaches from repository policy, the requested review boundary, and whether work must proceed concurrently:
 
-- **`single-working-copy-on-main`** — use for a small, focused, independently verified change when local instructions permit direct commits and no isolated review boundary is needed.
-- **`single-working-copy-on-branch-with-pr`** — use when one delivery is active in the working copy and protection, the user, or a useful isolated review boundary calls for a branch and pull request.
+- **`single-working-copy-on-main`** — use for small, focused, independently verified changes when local instructions permit direct commits and no isolated review boundary is needed. Human and agent threads may share the working copy when they retain disjoint file-level change boundaries and coordinate Git writes.
+- **`single-working-copy-on-branch-with-pr`** — use when one delivery is active in the working copy and protection, the user, or a useful isolated review boundary calls for a branch and pull request. Multiple threads may contribute to that one delivery under the same shared-working-tree hygiene.
 - **`worktrees-with-pr`** — use when concurrent or independently isolated deliveries need separate branches, indexes, and working files. Give each branch its own worktree and PR, then integrate through the repository's review and merge policy.
 
-Do not invent a branch or pull-request requirement where protection, the user, the review boundary, or concurrent isolation does not call for one. Conversely, do not keep concurrent branch work in one working copy merely because separate indexes are possible.
+Do not invent a branch, pull-request, or worktree requirement merely because several actors may modify one working copy. Use worktrees when concurrent deliveries require separate branches or isolated working files; do not keep independent branch work in one working copy merely because separate indexes are possible.
 
 ## Safe Git hygiene
 
-Treat the working tree as shared state: inspect it before staging, stage only the intended paths, and keep unrelated changes out of a commit.
+Treat every working tree as potentially shared by other human and agent threads, even when no concurrent actor is currently visible. Inspect `git status --short` and record the current `HEAD` before editing.
 
-Read-only Git commands may run independently. Worktrees are the clear approach when concurrent deliveries need separate working files and PRs. If explicitly coordinating concurrent delegated work in one worktree instead, assign each worker a unique temporary index path and pass it on every Git write command: `GIT_INDEX_FILE=<worker-index> git <write-command>`. This isolates staging but does not isolate working files or branches.
+Each thread maintains a thread-local touched-path set containing every file it may have changed. Add paths as work proceeds, including both sides of a rename and any created, deleted, or generated file. This set is a file-level safety boundary, not a claim to individual lines, and it need not be written into the repository.
 
-Separate indexes do not serialize shared `HEAD`. The orchestrator must serialize commits, re-check the expected `HEAD` before each commit, and integrate one verified explicit-path commit at a time. A worker must stop and report if its expected baseline changes; it must not rebase, reset, or repair another worker's index or history.
+Record paths already dirty before first touch as pre-existing rather than claiming them. A path is contested when it was pre-existing, appears in another actor's touched-path set, or contains changes the current thread cannot fully account for. Do not stage or commit a contested path until the actors coordinate ownership of the complete file change; file-level tracking does not justify silently taking another actor's hunks.
 
-Prefer recoverable, explicit-path commits after independently verified work.
+Editing and read-only Git commands may proceed concurrently across disjoint paths. Serialize the short Git write window that uses the shared index or advances shared `HEAD`; any human or agent thread may take that window and commit its own work. Immediately before staging, re-check `HEAD`, `git status --short`, the touched-path diff, and existing staged paths. If `HEAD` moved, revalidate the touched paths against the new baseline. If the index contains another actor's staged work, leave it untouched and coordinate rather than clearing, replacing, or including it.
+
+Stage only fully enumerated touched paths, using `git add -- <path>...`, and inspect the staged names and diff before committing. Never use whole-tree or implicit collection such as `git add -A`, `git add .`, `git add -u`, `git commit -a`, `git commit -am`, or a broad wildcard pathspec in a shared working tree: each can absorb another actor's work. A commit may include only uncontested paths from the committing thread's touched-path set.
+
+For a delegated worker that must stage outside the shared commit window, a unique temporary `GIT_INDEX_FILE` may isolate its preparatory staging. A separate index does not isolate working files, serialize `HEAD`, or confer commit authority; the worker or coordinator still revalidates the touched paths and takes the same serialized commit window before advancing `HEAD`.
+
+Prefer recoverable, explicit-path commits after independently verified work. A thread must stop and report rather than rebasing, resetting, restoring, or repairing another actor's working files, index, or history.
 
 Do not remove a lock merely because it exists, interrupt a live Git process to clear one, or use destructive history or worktree operations without explicit authority.
 
@@ -72,7 +78,7 @@ The harness publishes hook payload sources; `ki-repo-dotfiles-chezmoi` may regis
 
 `ki-git` neither installs hooks nor writes runtime settings.
 
-The native rubric exposes these four policy families as **judgment-only** review prompts. A rendered audit therefore leaves them unassessed until a reviewer records an outcome; it must never be interpreted as a Git-state pass. Gather the criterion's focused read-only evidence first: current status and intended paths for hygiene, current branch, worktree, protection, concurrency, and review evidence for the working approach, proposed diff and message for commit shape, and physical-worktree/process/file-type evidence for a lock candidate. The rubric does not execute Git commands or a private wrapper on the reviewer's behalf.
+The native rubric exposes these four policy families as **judgment-only** review prompts. A rendered audit therefore leaves them unassessed until a reviewer records an outcome; it must never be interpreted as a Git-state pass. Gather the criterion's focused read-only evidence first: current and pre-edit status, expected `HEAD`, the thread's touched-path set, touched and staged diffs, and any contested paths for hygiene; current branch, worktree, protection, concurrency, and review evidence for the working approach; proposed diff and message for commit shape; and physical-worktree/process/file-type evidence for a lock candidate. The rubric does not execute Git commands or a private wrapper on the reviewer's behalf.
 
 No compatible mechanical enforcement, `.ki.toml` activation, user-skill activation, or commit-message enforcement exists yet.
 

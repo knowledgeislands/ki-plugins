@@ -6,6 +6,7 @@ import type { RubricContextOptions } from '../../shared/rubric.ts'
 import { KI } from '../items/applicability.ts'
 import { CI } from '../items/ci.ts'
 import { PKG } from '../items/package.ts'
+import { PROTO } from '../items/protocol.ts'
 import { TOOL } from '../items/tools.ts'
 import { createMcpSession } from './mcp.ts'
 
@@ -90,6 +91,18 @@ const ciItem = () => {
   return item.mechanical
 }
 
+const protocolItem = () => {
+  const item = PROTO.items.find((candidate) => candidate.code === 'PROTO-1')
+  if (!item?.mechanical) throw new Error('PROTO-1 mechanical item is missing')
+  return item.mechanical
+}
+
+const writeDependencies = (packagePath: string, dependencies: Record<string, string>): void => {
+  const packageJson = JSON.parse(readFileSync(packagePath, 'utf8')) as Record<string, unknown>
+  packageJson.dependencies = dependencies
+  writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`)
+}
+
 test('audit is read-only and returns one stable prepared context', () => {
   const { repository, config, configContent, packagePath, packageContent } = fixture()
   const session = createMcpSession(options(repository, 'audit'))
@@ -171,6 +184,24 @@ test('result-envelope checks bind each helper use to its own source file', () =>
   })
 })
 
+test('result-envelope evidence ignores helper and main modules', () => {
+  const { repository } = fixture()
+  writeFileSync(join(repository, 'src', 'utils', 'results.ts'), 'const jsonResult = { structuredContent: {} }\n')
+  writeFileSync(join(repository, 'src', 'main', 'example.ts'), 'const structuredContent = {}\n')
+
+  const session = createMcpSession(options(repository, 'audit'))
+  const { context } = rootContext(session)
+  const item = TOOL.items.find((candidate) => candidate.code === 'TOOL-1')
+  const outcomes = item?.mechanical?.audit.run(TOOL.selectContext(context)) ?? []
+
+  expect(outcomes).not.toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ status: 'VIOLATION', subject: 'src/utils/results.ts' }),
+      expect.objectContaining({ status: 'VIOLATION', subject: 'src/main/example.ts' })
+    ])
+  )
+})
+
 test('smoke execution is reported without launching repository code', () => {
   const { repository } = fixture()
   const session = createMcpSession(options(repository, 'audit'))
@@ -181,6 +212,112 @@ test('smoke execution is reported without launching repository code', () => {
       status: 'INFO',
       message: 'Run `bun run ki:test:smoke` explicitly; hosted rubric execution does not launch repository scripts.',
       subject: 'package.json'
+    }
+  ])
+})
+
+test('legacy v1 package selects the legacy profile without modern-only checks', () => {
+  const { repository, packagePath } = fixture()
+  writeDependencies(packagePath, { '@modelcontextprotocol/sdk': '^1.30.0' })
+  const { context } = rootContext(createMcpSession(options(repository, 'audit')))
+
+  expect(protocolItem().audit.run(PROTO.selectContext(context))).toEqual([
+    {
+      status: 'PASS',
+      message:
+        '@modelcontextprotocol/sdk ^1.30.0 selects the conformant legacy 2025-11-25 profile; modern-only checks do not apply.',
+      subject: 'package.json'
+    }
+  ])
+})
+
+test('modern v2 package requires serveStdio and complete result discriminators', () => {
+  const { repository, packagePath } = fixture()
+  writeDependencies(packagePath, { '@modelcontextprotocol/server': '2.0.0' })
+  writeFileSync(
+    join(repository, 'src', 'mcp-server', 'index.ts'),
+    "import { serveStdio } from '@modelcontextprotocol/server/stdio'\nserveStdio(() => ({}))\n"
+  )
+  writeFileSync(
+    join(repository, 'src', 'utils', 'results.ts'),
+    "export const jsonResult = () => ({ resultType: 'complete' as const })\nexport const errorResult = () => ({ resultType: 'complete' as const })\n"
+  )
+  const { context } = rootContext(createMcpSession(options(repository, 'audit')))
+
+  expect(protocolItem().audit.run(PROTO.selectContext(context))).toEqual([
+    {
+      status: 'PASS',
+      message: '@modelcontextprotocol/server 2.0.0 selects the modern 2026-07-28 profile.',
+      subject: 'package.json'
+    },
+    {
+      status: 'PASS',
+      message: 'Modern profile source does not retain the legacy SDK server boundary.',
+      subject: 'src'
+    },
+    {
+      status: 'PASS',
+      message: 'Modern profile uses the supported SDK-owned serveStdio boundary.',
+      subject: 'src/mcp-server'
+    },
+    {
+      status: 'PASS',
+      message: 'Every result helper carries resultType: "complete" (2).',
+      subject: 'src/utils/results.ts'
+    }
+  ])
+})
+
+test('modern v2 profile rejects a result helper missing its discriminator', () => {
+  const { repository, packagePath } = fixture()
+  writeDependencies(packagePath, { '@modelcontextprotocol/server': '2.0.0' })
+  writeFileSync(join(repository, 'src', 'mcp-server', 'index.ts'), 'serveStdio(() => ({}))\n')
+  writeFileSync(
+    join(repository, 'src', 'utils', 'results.ts'),
+    "export const jsonResult = () => ({ resultType: 'complete' as const })\nexport const errorResult = () => ({ isError: true })\n"
+  )
+  const { context } = rootContext(createMcpSession(options(repository, 'audit')))
+
+  expect(protocolItem().audit.run(PROTO.selectContext(context))).toContainEqual({
+    status: 'VIOLATION',
+    message: 'Result helpers require 2 complete discriminators; found 1.',
+    subject: 'src/utils/results.ts'
+  })
+})
+
+test('protocol profile rejects mixed package families and unknown majors', () => {
+  const { repository, packagePath } = fixture()
+  writeDependencies(packagePath, {
+    '@modelcontextprotocol/sdk': '^1.30.0',
+    '@modelcontextprotocol/server': '2.0.0'
+  })
+  let context = rootContext(createMcpSession(options(repository, 'audit'))).context
+  expect(protocolItem().audit.run(PROTO.selectContext(context))[0]).toMatchObject({
+    status: 'VIOLATION',
+    subject: 'package.json'
+  })
+
+  writeDependencies(packagePath, { '@modelcontextprotocol/server': '3.0.0' })
+  context = rootContext(createMcpSession(options(repository, 'audit'))).context
+  expect(protocolItem().audit.run(PROTO.selectContext(context))[0]).toEqual({
+    status: 'VIOLATION',
+    message:
+      '@modelcontextprotocol/server 3.0.0 has an unsupported or unrecognised major; modern profile requires major 2.',
+    subject: 'package.json'
+  })
+})
+
+test('legacy-only package cannot claim the modern serveStdio boundary', () => {
+  const { repository, packagePath } = fixture()
+  writeDependencies(packagePath, { '@modelcontextprotocol/sdk': '^1.30.0' })
+  writeFileSync(join(repository, 'src', 'mcp-server', 'index.ts'), 'serveStdio(() => ({}))\n')
+  const { context } = rootContext(createMcpSession(options(repository, 'audit')))
+
+  expect(protocolItem().audit.run(PROTO.selectContext(context))).toEqual([
+    {
+      status: 'VIOLATION',
+      message: 'Modern v2 server markers are present while package.json selects only the legacy v1 SDK profile.',
+      subject: 'src'
     }
   ])
 })

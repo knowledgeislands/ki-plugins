@@ -13,6 +13,7 @@ const input = (overrides: Partial<PruneSelectionInput> = {}): PruneSelectionInpu
       symlink: false,
       canonical: true,
       status: 'done',
+      committedDone: true,
       retainedByCompletionObservationTrade: false
     }
   ],
@@ -23,6 +24,25 @@ test('selects only the complete eligible explicit done-record set without writes
   expect(evaluatePruneSelection(input())).toEqual({
     kind: 'selected',
     paths: ['KI-HARNESS-001-complete.md'],
+    commitBoundary: 'prune-only',
+    writes: false
+  })
+})
+
+test('groups multiple eligible done records under one prune-only commit boundary', () => {
+  const first = input().candidates[0]
+  if (!first) throw new Error('fixture must include one prune candidate')
+  expect(
+    evaluatePruneSelection(
+      input({
+        selectors: ['KI-HARNESS-00*-complete.md'],
+        candidates: [first, { ...first, path: 'KI-HARNESS-002-complete.md' }]
+      })
+    )
+  ).toEqual({
+    kind: 'selected',
+    paths: ['KI-HARNESS-001-complete.md', 'KI-HARNESS-002-complete.md'],
+    commitBoundary: 'prune-only',
     writes: false
   })
 })
@@ -53,6 +73,20 @@ test('stops without writes for an invalid root, traversal, incomplete resolution
   ).toMatchObject({
     kind: 'stop',
     reason: 'KI-HARNESS-001-complete.md is not done',
+    writes: false
+  })
+  expect(
+    evaluatePruneSelection(input({ candidates: [{ ...input().candidates[0], committedDone: false }] }))
+  ).toMatchObject({
+    kind: 'stop',
+    reason: 'KI-HARNESS-001-complete.md has not landed as done',
+    writes: false
+  })
+  expect(
+    evaluatePruneSelection(input({ candidates: [{ ...input().candidates[0], committedDone: 'unknown' }] }))
+  ).toMatchObject({
+    kind: 'stop',
+    reason: 'KI-HARNESS-001-complete.md has uncertain committed done evidence',
     writes: false
   })
   expect(

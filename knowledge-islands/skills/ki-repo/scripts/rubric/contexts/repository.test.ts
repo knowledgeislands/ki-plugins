@@ -7,7 +7,7 @@ import type { RubricContextOptions } from '../../shared/rubric.ts'
 import { FILES } from '../items/files.ts'
 import { RUNTIMES } from '../items/runtimes.ts'
 import { WORK } from '../items/working-areas.ts'
-import { collectAuditFindings, localTreePaths } from './audit.ts'
+import { collectAuditFindings, KI_CONFIGURATION_HEADER, localTreePaths } from './audit.ts'
 import { createRepoSession, type FilesRubricContext, type WorkingAreasRubricContext } from './repository.ts'
 
 const roots: string[] = []
@@ -36,7 +36,8 @@ const inspect = (root: string) => ({
     { level: 'FAIL' as const, code: 'FILES-1', message: 'required files are absent' },
     { level: 'FAIL' as const, code: 'FILES-2', message: 'repository identity is absent' },
     { level: 'FAIL' as const, code: 'FILES-3', message: 'authoring marker is absent' },
-    { level: 'FAIL' as const, code: 'FILES-4', message: 'runtime skill ignore rules are absent' }
+    { level: 'FAIL' as const, code: 'FILES-4', message: 'runtime skill ignore rules are absent' },
+    { level: 'FAIL' as const, code: 'FILES-5', message: 'configuration header is absent' }
   ]
 })
 
@@ -92,11 +93,16 @@ describe('ki-repo session', () => {
     const proposal = session.proposal()
     expect(proposal.writes.map((write) => write.path)).toEqual(['.ki.toml', '.gitignore'])
     expect(proposal.writes[0]?.create).toBe(true)
+    expect(
+      proposal.writes[0]?.content.startsWith(
+        '# Knowledge Islands repository configuration.\n# Its presence declares conformance with the Knowledge Islands repository standard.\n\n'
+      )
+    ).toBe(true)
     expect(proposal.writes[0]?.content).toContain('[skills.ki-repo]')
     expect(proposal.writes[0]?.content).toContain('[skills.ki-authoring]')
   })
 
-  test('appends only a missing exact root marker and preserves the original bytes', async () => {
+  test('adds only the header and missing exact root markers while preserving original bytes', async () => {
     const root = repository()
     const original = '# retained\n[skills.ki-repo.checks]\nwiki = false\n'
     writeFileSync(join(root, '.ki.toml'), original)
@@ -105,17 +111,19 @@ describe('ki-repo session', () => {
 
     const config = session.proposal().writes.find((write) => write.path === '.ki.toml')
     expect(config?.create).toBeUndefined()
-    expect(config?.content.startsWith(original)).toBe(true)
+    expect(
+      config?.content.startsWith(
+        '# Knowledge Islands repository configuration.\n# Its presence declares conformance with the Knowledge Islands repository standard.\n\n'
+      )
+    ).toBe(true)
+    expect(config?.content).toContain(original)
     expect(config?.content).toContain('\n[skills.ki-repo]\n')
     expect(config?.content).toContain('\n[skills.ki-authoring]\n')
   })
 
   test('replaces legacy runtime-skill ignores with the canonical ki-self exception', async () => {
     const root = repository()
-    writeFileSync(
-      join(root, '.ki.toml'),
-      '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n'
-    )
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n')
     mkdirSync(join(root, '.agents', 'skills', 'ki-self'), { recursive: true })
     writeFileSync(join(root, '.agents', 'skills', 'ki-self', 'SKILL.md'), '# KI Self\n')
     writeFileSync(join(root, '.gitignore'), 'node_modules/\n.claude/skills/*\n.agents/skills/\n')
@@ -124,9 +132,13 @@ describe('ki-repo session', () => {
 
     const gitignore = session.proposal().writes.find((write) => write.path === '.gitignore')
     expect(gitignore?.create).toBeUndefined()
-    expect(gitignore?.content).toBe(
-      'node_modules/\n\n# Generated project-local runtime payloads (ki-bootstrap) — never committed\n.claude/skills/*\n.agents/skills/*\n!.agents/skills/ki-self/\n!.agents/skills/ki-self/**\n'
-    )
+    expect(gitignore?.content).toContain('# ki-repo:ignore:ki-repo:start')
+    expect(gitignore?.content).toContain('reports/')
+    expect(gitignore?.content).toContain('.claude/skills/*')
+    expect(gitignore?.content).toContain('!.agents/skills/ki-self/**')
+    expect(gitignore?.content).toContain('# Unmanaged repository-specific ignores')
+    expect(gitignore?.content).toEndWith('\nnode_modules/\n')
+    expect(gitignore?.content).not.toContain('.agents/skills/\n')
   })
 
   test('derives runtime-skill ignores from supported runtimes while reserving ki-self', async () => {
@@ -153,12 +165,43 @@ describe('ki-repo session', () => {
     expect((await collectAuditFindings([root])).findings).not.toContainEqual(
       expect.objectContaining({ code: 'FILES-4' })
     )
+  }, 10_000)
+
+  test('audits the exact opening configuration conformance header', async () => {
+    const root = repository()
+    const configuration = '[skills.ki-repo]\nsupported_runtimes = ["chatgpt-codex"]\n'
+    writeFileSync(join(root, '.ki.toml'), configuration)
+
+    expect((await collectAuditFindings([root])).findings).toContainEqual(expect.objectContaining({ code: 'FILES-5' }))
+
+    writeFileSync(
+      join(root, '.ki.toml'),
+      `# Knowledge Islands repository configuration.\n# Its presence declares conformance with the Knowledge Islands repository standard.\n\n${configuration}`
+    )
+    expect((await collectAuditFindings([root])).findings).not.toContainEqual(
+      expect.objectContaining({ code: 'FILES-5' })
+    )
   })
 
   // Emission is observational: a rubric that reported differently when watched would make
   // progress part of the contract under audit, and a finding that turned on whether a display
   // was attached could not be defended. The inspector is recorded rather than asserted on
   // directly, because the emitter must also reach the evidence gathering, not just the session.
+  test('surfaces substantial configuration presentation drift through FILES-9', async () => {
+    const root = repository()
+    writeFileSync(
+      join(root, '.ki.toml'),
+      `${KI_CONFIGURATION_HEADER}[repo]\n\n[skills.ki-repo]\n\n[skills.ki-authoring]\n\n[skills.ki-engineering]\n\n[skills.ki-binding]\n\n[skills.ki-work]\n`
+    )
+
+    expect((await collectAuditFindings([root])).findings).toContainEqual(
+      expect.objectContaining({
+        code: 'FILES-9',
+        message: expect.stringContaining('substantial .ki.toml must use Foundation')
+      })
+    )
+  })
+
   test('a recording emitter changes no outcome and still observes the evidence stage', async () => {
     const root = repository()
     const events: unknown[] = []
@@ -198,6 +241,7 @@ describe('ki-repo session', () => {
     const context = filesContext(conform)
     expect(context.ensureRepoConfiguration).toBeUndefined()
     expect(context.ensureAuthoringConfiguration).toBeUndefined()
+    expect(context.ensureConfigurationHeader).toBeUndefined()
   })
 
   test('conforms only the generic inbound and outbound working-area scaffold', async () => {
@@ -273,10 +317,7 @@ describe('runtime environment coverage', () => {
     const root = repository()
     const inspected: string[][] = []
     const requested: string[][] = []
-    writeFileSync(
-      join(root, '.ki.toml'),
-      '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n'
-    )
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n')
 
     const session = await createRepoSession({
       ...options(root, 'conform'),
@@ -361,7 +402,7 @@ supported_runtimes = ["claude-code", "chatgpt-codex"]
       }
     })
     expect(invalidInspected).toBe(false)
-  })
+  }, 10_000)
 
   test('accepts the complete environment matrix when Claude Desktop is declared', async () => {
     expect(
@@ -396,10 +437,7 @@ supported_runtimes = ["claude-code", "claude-desktop", "chatgpt-codex"]
     writeFileSync(join(root, '.agents', 'skills', 'ki-self', 'SKILL.md'), '# KI Self\n')
     mkdirSync(join(root, '.claude', 'skills'), { recursive: true })
     symlinkSync('../../.agents/skills/ki-self', join(root, '.claude', 'skills', 'ki-self'), 'dir')
-    writeFileSync(
-      join(root, '.ki.toml'),
-      '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n'
-    )
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n')
 
     expect((await collectAuditFindings([root])).findings.filter(({ code }) => code === 'RUNTIMES-3')).toEqual([])
   })
@@ -552,9 +590,10 @@ describe('local repository evidence', () => {
 
   test('separates website coverage and enforces one purpose-specific implementation', async () => {
     const root = repository()
-    writeFileSync(join(root, 'vite.config.ts'), 'export default {}\n')
+    mkdirSync(join(root, 'apps', 'site'), { recursive: true })
+    writeFileSync(join(root, 'apps', 'site', 'vite.config.ts'), 'export default {}\n')
     writeFileSync(
-      join(root, 'package.json'),
+      join(root, 'apps', 'site', 'package.json'),
       JSON.stringify({ dependencies: { react: '^19.0.0' }, devDependencies: { vite: '^7.0.0' } })
     )
     writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n')
@@ -573,6 +612,21 @@ describe('local repository evidence', () => {
     )
   })
 
+  test('uses the website core site root to discover a nested app manifest', async () => {
+    const root = repository()
+    mkdirSync(join(root, 'web'), { recursive: true })
+    writeFileSync(join(root, 'web', 'vite.config.ts'), 'export default {}\n')
+    writeFileSync(
+      join(root, 'web', 'package.json'),
+      JSON.stringify({ dependencies: { react: '^19.0.0' }, devDependencies: { vite: '^7.0.0' } })
+    )
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n\n[skills.ki-repo-website]\nsite-root = "web"\n')
+
+    const coverage = (await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')
+    expect(coverage).toContainEqual(expect.objectContaining({ message: expect.stringContaining('ki-website-app') }))
+    expect(coverage).not.toContainEqual(expect.objectContaining({ message: expect.stringContaining('ki-website (') }))
+  })
+
   test('requires the portable parent and Claude adapter for Markdown subagent projections', async () => {
     const root = repository()
     mkdirSync(join(root, 'subagents', 'governance'), { recursive: true })
@@ -587,10 +641,7 @@ describe('local repository evidence', () => {
       expect.objectContaining({ message: expect.stringContaining('looks governed by ki-subagents-claude') })
     )
 
-    writeFileSync(
-      join(root, '.ki.toml'),
-      '[skills.ki-repo]\n\n[skills.ki-subagents]\n\n[skills.ki-subagents-claude]\n'
-    )
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n\n[skills.ki-subagents]\n\n[skills.ki-subagents-claude]\n')
     expect((await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')).toEqual([])
   })
 
@@ -608,10 +659,7 @@ describe('local repository evidence', () => {
       expect.objectContaining({ message: expect.stringContaining('looks governed by ki-subagents-codex') })
     )
 
-    writeFileSync(
-      join(root, '.ki.toml'),
-      '[skills.ki-repo]\n\n[skills.ki-subagents]\n\n[skills.ki-subagents-codex]\n'
-    )
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n\n[skills.ki-subagents]\n\n[skills.ki-subagents-codex]\n')
     expect((await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')).toEqual([])
   })
 

@@ -9,7 +9,7 @@ The quotable standard behind the [skills.ki-repo-homebrew-tap](../SKILL.md) skil
 - [Repo layout](#repo-layout)
 - [Formula shape](#formula-shape)
 - [Sourcing — versioned tarball, never HEAD](#sourcing--versioned-tarball-never-head)
-- [The README formulae table](#the-readme-formulae-table)
+- [The tap README](#the-tap-readme)
 - [CI — brew test-bot](#ci--brew-test-bot)
 - [Config marker](#config-marker)
 - [What `brew` checks that this skill does not](#what-brew-checks-that-this-skill-does-not)
@@ -30,7 +30,7 @@ The repository must be named `homebrew-<x>` _(spec)_. Homebrew strips the `homeb
 homebrew-tap/
 ├── Formula/
 │   └── <tool>.rb           # one formula per tool; filename = formula name (shape)
-├── README.md               # a "## Formulae" table (shape)
+├── README.md               # Standard Readme shape, with a "## Formulae" table (shape)
 ├── .github/workflows/      # OPTIONAL brew test-bot (shape)
 ├── LICENSE                 # ki-repo's
 └── .ki.toml          # [skills.ki-repo] + [skills.ki-repo-homebrew-tap] (shape)
@@ -59,9 +59,11 @@ The `desc` length and article rules are `brew style`'s; `TAP-4` mirrors them so 
 
 `url` MUST point at a **tagged-release tarball** — `https://github.com/<owner>/<repo>/archive/refs/tags/vX.Y.Z.tar.gz` or a `/releases/download/…` asset — paired with the `sha256` of that tarball _(shape, reinforcing Homebrew's stable-formula guidance)_. A formula that installs from a branch or `head "…"` alone is unreproducible; a stable formula pins a version. The version in the tag drives `#{version}` in the formula, so the `test do` block's `--version` assertion stays honest.
 
-## The README formulae table
+## The tap README
 
-The README carries a `## Formulae` table listing **every** formula, its description, and a link to its source `tools-*` repo _(shape)_:
+A tap README is read by someone deciding whether and how to install a tool, so it follows [Standard Readme][standardreadme] _(shape, advisory)_: a title, a one-line description, then `Install` and `Usage`. `Install` carries `brew install <owner>/<x>/<formula>` and the fact that naming the tap in the install argument taps it implicitly; a `Dependencies` subsection names Homebrew itself, and an `Updating` subsection gives `brew update` and `brew upgrade`. A `Contributing` section matters more here than in most repos because packaging bugs and tool bugs belong in different repositories, and the README is where a reader learns which is which.
+
+The `## Formulae` table is the tap's own extra section inside that shape. It lists **every** formula, its description, and a link to its source `tools-*` repo _(shape)_:
 
 ```markdown
 | Formula | Description                         | Source                                        |
@@ -69,7 +71,7 @@ The README carries a `## Formulae` table listing **every** formula, its descript
 | `mgit`  | Run commands across many git repos. | [tools-mgit](https://github.com/…/tools-mgit) |
 ```
 
-Every `Formula/*.rb` must appear in this table (`TAP-6`); a formula the table omits is an undiscoverable install.
+Every `Formula/*.rb` must appear in this table (`TAP-6`); a formula the table omits is an undiscoverable install. That table is the only mechanical README requirement this skill carries. The Standard Readme section set above is advisory — guidance for EDUCATE and CONFORM and for the `TAP-J5` judgment review, never a hosted finding — because generic README composition is `ki-authoring`'s and README presence is `ki-repo`'s.
 
 ## CI — brew test-bot
 
@@ -84,4 +86,5 @@ The tap opts into governance with a keyless `[skills.ki-repo-homebrew-tap]` tabl
 `TAP-7` never runs `brew style` or `brew audit` from hosted audit. Those package-manager commands own the deep formula rules—dependency correctness, `bin`/`libexec` conventions, deprecated DSL, mirror/livecheck hygiene, and RuboCop style—and require separately authorized isolated diagnostics against the intended tap. Static audit reports only parsed source shape: that the tap has a `Formula/` directory, that a versioned tarball rather than HEAD is used, that the README lists the formula, and that the `[skills.ki-repo-homebrew-tap]` marker is present. Missing package-manager evidence is unavailable evidence, not a structural PASS.
 
 [cookbook]: https://docs.brew.sh/Formula-Cookbook
+[standardreadme]: https://github.com/RichardLitt/standard-readme
 [testbot]: https://docs.brew.sh/Brew-Test-Bot

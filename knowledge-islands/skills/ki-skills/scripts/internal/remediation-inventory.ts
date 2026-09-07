@@ -71,21 +71,23 @@ export const PROMOTION_REVIEW: readonly PromotionReview[] = [
   {
     skill: 'ki-decision-records',
     criterion: 'FM-3',
-    disposition: 'deferred',
-    rationale: 'GOV-040 must first resolve the conflicting Decision Record and Knowledge Base type authorities.'
+    disposition: 'promoted',
+    rationale:
+      'GOV-040 resolved metadata authority; the canonical frontmatter normaliser now removes retired generic type fields.'
   },
   {
     skill: 'ki-decision-records',
     criterion: 'FM-4',
-    disposition: 'deferred',
-    rationale: 'GOV-040 must first resolve the conflicting Decision Record and Knowledge Base type authorities.'
+    disposition: 'promoted',
+    rationale:
+      'GOV-040 resolved metadata authority; the canonical frontmatter normaliser now inserts the required decision-type fields.'
   },
   {
     skill: 'ki-decision-records',
     criterion: 'INDEX-4',
-    disposition: 'deferred',
+    disposition: 'promoted',
     rationale:
-      'A preserving ordered-index normaliser is substantial concern-specific parser work and belongs to its own owner record.'
+      'The Decision Record context now provides a preserving ordered-index normaliser that repairs decision links without replacing unrelated index content.'
   },
   {
     skill: 'ki-engineering',

@@ -14,15 +14,17 @@ The authoritative definition of frontmatter fields for all notes in a Knowledge 
 
 | Field | Required (KB repos) | Description |
 | --- | --- | --- |
-| `note_type` | Yes | The note's **kind** (sole classifier); location-constrained — see taxonomy below |
+| `note_type` | Yes for KB-owned notes† | The note's **kind** (sole classifier); location-constrained — see taxonomy below |
 | `updated` | Recommended | Timestamp of the last substantive change, `YYYY-MM-DDTHH:MM:SSZ` |
 | `reviewed` | Recommended | Timestamp of the last human review; a note is **stale** when `reviewed` is absent or earlier than `updated` |
 | `created` | Optional | Timestamp set once on creation; never changed |
-| `status` | Note-type-specific | Set by the note's `note_type` where it has a lifecycle/state, not universal† |
+| `status` | Note-type-specific | Set by the note's `note_type` where it has a lifecycle/state, not universal‡ |
 | `tags` | Optional | Topical / temporal / source labels (`topic/*`, `date/*`, `source/*`) — retained, but never the **kind** classifier |
 | `author` | Recommended | `AI-assisted` / `Manual` / `Mixed` |
 
-† Component-specific status values remain under their component owners while KB-wide metadata reconciliation is pending.
+† NOTE-1c delegates metadata classification for `Streams/Roadmap/**`, `Streams/Housekeeping/**`, direct batch records under `+/_AUTHORISATIONS/`, and nested `TRD-*.md` protocol records under either staging zone to their owning skills. Direct KB-owned session digests under `-/_DIGESTS/` and handoffs immediately under `-/_TRADES/` remain governed here.
+
+‡ Component-specific status values remain under their component owners while KB-wide metadata reconciliation is pending.
 
 **Freshness** is carried by the timestamps, not by `status`: a note is current while `reviewed` is at or after its last `updated`, and goes stale once `updated` moves ahead of `reviewed` (or `reviewed` is absent). `status` is reserved for a `note_type`'s own lifecycle where it has one — for example `ki-repo-kb-activities` uses `active` / `inactive`.
 

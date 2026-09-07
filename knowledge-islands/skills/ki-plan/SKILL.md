@@ -20,7 +20,7 @@ The class-level standard—horizons, identity, and file shape—is owned by `ki-
 
 `ki-plan` resolves the selected record through the repository adapter and enriches it in place. `ki-next` captures and promotes drafts; this skill never creates a duplicate plan record.
 
-For the selected `roadmap` adapter it adds the work-item execution sections; for selected `kb-streams` it applies the same record model inside the Streams container. Readiness is explicit and all-or-nothing: validate every named record before publishing any `ready` transition, then commit the coherent transition once. GitHub Issues and Linear selections stop without writes until their remote process execution exists.
+For the selected `roadmap` adapter it adds the work-item execution sections; for selected `kb-streams` it applies the same record model inside the Streams container. Readiness is explicit and all-or-nothing: validate every named record before publishing any `ready` transition. Commit the resulting state with its coherent planning unit; the transition does not require a standalone commit, and an item may first land as `ready` when capture, shaping, and approval occur together. GitHub Issues and Linear selections stop without writes until their remote process execution exists.
 
 ## Responsibility boundary
 

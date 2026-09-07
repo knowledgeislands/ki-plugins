@@ -1,6 +1,6 @@
 # Workspace MCP Standard
 
-The canonical shape shared by every stdio MCP server in the `knowledgeislands/` workspace: `mcp-git-audit`, `mcp-ki-repo-kb-fs`, `mcp-gsuite`, `mcp-m365`, `mcp-claude-housekeeping`, `mcp-ki-repo-kb-notion-mirror`. This is the reference the `ki-repo-mcp` skill codifies and audits against. Where repos disagree, the majority shape is the standard; documented per-repo exceptions are noted inline.
+The canonical shape shared by every stdio MCP server in the `knowledgeislands/` workspace: `mcp-git-audit`, `mcp-ki-repo-kb-fs`, `mcp-gsuite`, `mcp-m365`, `mcp-housekeeping-claude`, `mcp-ki-repo-kb-notion-mirror`. This is the reference the `ki-repo-mcp` skill codifies and audits against. Where repos disagree, the majority shape is the standard; documented per-repo exceptions are noted inline.
 
 ## Applicability
 
@@ -19,10 +19,11 @@ The standard applies when a repository either declares `[skills.ki-repo-mcp]` in
 9. [tsconfig / vitest / biome](#9-tsconfig--vitest--biome)
 10. [.env.example & env vars](#10-envexample--env-vars)
 11. [Docs](#11-docs)
-12. [Spec conformance: tool results, errors & metadata](#12-spec-conformance-tool-results-errors--metadata)
-13. [OAuth security (auth-server repos)](#13-oauth-security-auth-server-repos)
+12. [Protocol profiles](#12-protocol-profiles)
+13. [Spec conformance: tool results, errors & metadata](#13-spec-conformance-tool-results-errors--metadata)
+14. [OAuth security (auth-server repos)](#14-oauth-security-auth-server-repos)
 
-> **Spec vs house style.** Sections 1–11 are the in-house **workspace convention**; §12–13 trace directly to the official MCP specification (latest released: **2026-07-28**; current sibling delivery target: **2025-11-25** while their 1.x SDK dependencies remain in place) tracked in [the source list](sources.md). The TypeScript v2 package family supports 2026-07-28, but adopting it is governed by the active re-anchor item rather than assumed by this standard. When citing a rule, know which layer it comes from — never present a workspace preference as a protocol "MUST". Mode REFRESH in the [SKILL](../SKILL.md) re-anchors §12–13 (and the annotation semantics in §4) to the current spec.
+> **Spec vs house style.** Sections 1–11 are the in-house **workspace convention**; §12–14 trace directly to the official MCP specification and supported SDK profiles tracked in [the source list](sources.md). The runtime dependency selects the applicable dated profile, so a legacy server is not falsely measured against modern-only requirements. When citing a rule, know which layer it comes from — never present a workspace preference as a protocol "MUST". Mode REFRESH in the [SKILL](../SKILL.md) re-anchors §12–14 (and the annotation semantics in §4) to the current spec.
 
 ## 1. Project layout
 
@@ -70,7 +71,7 @@ Top-level `src/` folders are identical across all six repos: `config`, `main`, `
 | mcp-ki-repo-kb-fs            | `kb`                                      |
 | mcp-gsuite              | `gsuite`                                  |
 | mcp-m365                | `m365`                                    |
-| mcp-claude-housekeeping | `claude_code`, `claude_desktop`, `vscode` |
+| mcp-housekeeping-claude | `claude_code`, `claude_desktop`, `vscode` |
 | mcp-ki-repo-kb-notion-mirror | `notion_mirror`                           |
 
 - **Plural** resource for collection ops (`git_repos_scan`, `gsuite_email_messages_search`, `kb_notes_list`).
@@ -149,7 +150,16 @@ The committed `.env*.example` template (real `.env.*` gitignored) and the `proce
 - **`SECURITY.md`** — vulnerability reporting, scope (in / out), supported versions (OAuth repos add a token-storage note). _(MCP delta: presence required.)_
 - **`CHANGELOG.md`** — release notes; present **and non-empty** (an empty stub at 1.0.0 is a finding). _(MCP delta.)_
 
-## 12. Spec conformance: tool results, errors & metadata
+## 12. Protocol profiles
+
+The server package family selects exactly one dated protocol profile. Do not add a claimable `.ki.toml` switch whose value can drift from executable code.
+
+- **Legacy profile — MCP 2025-11-25.** `@modelcontextprotocol/sdk` major 1 selects the legacy profile. Its `StdioServerTransport` entry point and legacy result envelopes remain conformant; modern-only discovery and `resultType` checks do not apply.
+- **Modern profile — MCP 2026-07-28.** `@modelcontextprotocol/server` major 2 selects the modern profile. Each synchronous `jsonResult` and `errorResult` helper returns `resultType: "complete"`. The stdio entry point supplies a per-connection server factory to the supported `serveStdio` boundary. The SDK owns `server/discover`, protocol stamping, and conservative cache defaults; the repository smoke test proves that live boundary, so source audit does not require a local `server/discover` literal or handler.
+- **Transition compatibility.** A modern server may retain deliberate legacy client fallback while the fleet migrates, but it remains a modern-profile server. The v2 `@modelcontextprotocol/client` package does not select the server profile.
+- **Fail-closed selection.** Mixed server package families, unknown majors, a modern implementation retaining only the legacy server dependency, or a v2 server retaining the legacy SDK server boundary are violations. Migration remains receiver-owned work; the audit does not rewrite dependencies or server entry points.
+
+## 13. Spec conformance: tool results, errors & metadata
 
 These trace to the MCP spec ([TOOLS](sources.md) + [CHANGELOG](sources.md), 2025-11-25). They are how the thin `tools/` layer must shape what it returns.
 
@@ -159,7 +169,7 @@ These trace to the MCP spec ([TOOLS](sources.md) + [CHANGELOG](sources.md), 2025
 - **`inputSchema` dialect.** The spec defaults schemas to JSON Schema 2020-12. zod-to-json-schema output is accepted by Claude; no action needed unless a client rejects the emitted dialect — then set an explicit `$schema`.
 - **Optional metadata** (`icons`, `title`, `execution.taskSupport`) is available as of 2025-11-25 but not part of the house standard; adopt per-repo only if a client surfaces it. Async **Tasks** (`execution.taskSupport`) are experimental and irrelevant to these short-lived stdio tools — do not flag their absence.
 
-## 13. OAuth security (auth-server repos)
+## 14. OAuth security (auth-server repos)
 
 Only the OAuth repos — **mcp-gsuite** and **mcp-m365** — have an `auth-server/` and a token store; these items do not apply to the filesystem/subprocess repos. They trace to the spec's [SEC](sources.md) and [AUTH](sources.md) pages. The §6 invariants still apply on top of these.
 

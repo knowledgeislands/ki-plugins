@@ -96,7 +96,6 @@ export type RecordsRubricContext = {
 
 export type RootRubricContext = {
   indexFile: string
-  adoptionRootRequired: boolean
   indexIds: readonly string[]
   records: readonly DecisionRecord[]
 }
@@ -438,7 +437,6 @@ export const createDecisionRecordsSession = ({
     },
     root: {
       indexFile,
-      adoptionRootRequired: indexContent.includes('<!-- ki-decision-records: adoption-root -->'),
       indexIds,
       records
     },

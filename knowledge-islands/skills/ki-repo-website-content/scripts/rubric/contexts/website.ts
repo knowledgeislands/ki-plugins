@@ -1,5 +1,5 @@
 import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs'
-import { join, relative, resolve, sep } from 'node:path'
+import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import type {
   ConformWrite,
   RubricContextOptions,
@@ -9,6 +9,8 @@ import type {
 
 const CONFIG_NAMES = ['eleventy.config.ts', 'eleventy.config.js', 'eleventy.config.mjs', 'eleventy.config.cjs'] as const
 const KI_SECTION = 'ki-repo-website-content'
+const KI_WEBSITE_SECTION = 'ki-repo-website'
+const DEFAULT_SITE_ROOT = 'apps/site'
 
 type Draft = {
   path: string
@@ -21,7 +23,8 @@ export type WebsiteContext = {
   target: string
   available: boolean
   applicable: boolean
-  siteRoot: '' | 'site'
+  siteRoot: string
+  packagePath: string
   cfgName: string
   config: string
   packageOk: boolean
@@ -47,6 +50,15 @@ const parseToml = (text: string): { document: Record<string, unknown> | null; ma
 
 const asTable = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+
+const safeSiteRoot = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  (value === '.' ||
+    (value.length > 0 &&
+      !isAbsolute(value) &&
+      !/^[A-Za-z]:[\\/]/.test(value) &&
+      !value.includes('\\') &&
+      value.split('/').every((part) => part.length > 0 && part !== '.' && part !== '..')))
 
 const physicalDirectory = (path: string): boolean => {
   if (!existsSync(path)) return false
@@ -80,21 +92,23 @@ export const createWebsiteSession = ({
     available && containedPhysical(root, at(...parts), 'file') ? readFileSync(at(...parts), 'utf8') : ''
   const isDir = (...parts: string[]) => available && containedPhysical(root, at(...parts), 'directory')
 
-  const flatCfg = CONFIG_NAMES.find((name) => containedPhysical(root, at(name), 'file'))
-  const siteCfg = CONFIG_NAMES.find((name) => containedPhysical(root, at('site', name), 'file'))
-  const siteRoot: '' | 'site' = flatCfg ? '' : siteCfg ? 'site' : ''
-  const cfgName = flatCfg ?? siteCfg ?? ''
-  const siteAt = (...parts: string[]) => (siteRoot ? join(siteRoot, ...parts) : join(...parts))
-
   const configPath = at('.ki.toml')
   const configExists = existsSync(configPath)
   const configSafe = !configExists || containedPhysical(root, configPath, 'file')
   const configRaw = configSafe && configExists ? read('.ki.toml') : ''
   const ki = configSafe ? parseToml(configRaw) : { document: null, malformed: true }
-  const kiWebsiteTable = asTable(asTable(ki.document?.skills)?.[KI_SECTION])
+  const skillTables = asTable(ki.document?.skills)
+  const kiWebsiteTable = asTable(skillTables?.[KI_SECTION])
+  const kiWebsiteCoreTable = asTable(skillTables?.[KI_WEBSITE_SECTION])
+  const configuredSiteRoot = kiWebsiteCoreTable?.['site-root']
+  const siteRoot =
+    configuredSiteRoot === undefined || !safeSiteRoot(configuredSiteRoot) ? DEFAULT_SITE_ROOT : configuredSiteRoot
+  const siteAt = (...parts: string[]) => (siteRoot ? join(siteRoot, ...parts) : join(...parts))
+  const cfgName = CONFIG_NAMES.find((name) => containedPhysical(root, at(siteAt(name)), 'file')) ?? ''
   const applicable = available && kiWebsiteTable !== null
 
-  const packageSource = read('package.json')
+  const packagePath = siteAt('package.json')
+  const packageSource = read(packagePath)
   let packageOk = true
   let packageDocument: Record<string, unknown> = {}
   try {
@@ -141,14 +155,14 @@ export const createWebsiteSession = ({
     ignoreDraft === undefined
       ? undefined
       : (): void => {
-          const correct = siteRoot
-            ? /^\s*\/?site\/dist\/?\s*$/m.test(ignoreDraft.content)
-            : /^\s*\/?dist\/?\s*$/m.test(ignoreDraft.content)
+          const distPath = siteRoot === '.' ? 'dist' : `${siteRoot}/dist`
+          const escapedDistPath = distPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          const correct = new RegExp(String.raw`^\s*/?${escapedDistPath}/?\s*$`, 'm').test(ignoreDraft.content)
           if (correct) return
           ignoreDraft.content =
             siteRoot && /^\s*\/dist\/?\s*$/m.test(ignoreDraft.content)
-              ? ignoreDraft.content.replace(/^(\s*)\/dist(\/?)(\s*)$/m, '$1/site/dist$2$3')
-              : `${ignoreDraft.content ? ignoreDraft.content.replace(/\n*$/, '\n') : ''}${siteRoot ? 'site/dist' : 'dist'}\n`
+              ? ignoreDraft.content.replace(/^(\s*)\/dist(\/?)(\s*)$/m, `$1/${distPath}$2$3`)
+              : `${ignoreDraft.content ? ignoreDraft.content.replace(/\n*$/, '\n') : ''}${distPath}\n`
         }
 
   const context: WebsiteContext = {
@@ -157,6 +171,7 @@ export const createWebsiteSession = ({
     available,
     applicable,
     siteRoot,
+    packagePath,
     cfgName,
     config: cfgName ? read(siteAt(cfgName)) : '',
     packageOk,

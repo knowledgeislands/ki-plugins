@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 import definition from './index.ts'
 
-const expectedFamilies = ['KI', 'LAY', 'DOC', 'CFG', 'UTIL', 'TEST', 'TOOL', 'PKG', 'SCR', 'CI', 'RUBRIC']
+const expectedFamilies = ['KI', 'LAY', 'DOC', 'CFG', 'UTIL', 'TEST', 'TOOL', 'PROTO', 'PKG', 'SCR', 'CI', 'RUBRIC']
 const expectedItems = [
   'KI-CONFIG',
   'LAY-1',
@@ -10,6 +10,7 @@ const expectedItems = [
   'UTIL-1',
   'TEST-1',
   'TOOL-1',
+  'PROTO-1',
   'PKG-1',
   'SCR-1',
   'CI-1',
@@ -20,6 +21,13 @@ const expectedItems = [
 test('the catalogue exposes every ordered MCP family and criterion', () => {
   expect(definition.contract).toBe(1)
   expect(definition.name).toBe('ki-repo-mcp')
+  expect(definition.packageScripts).toEqual([
+    'ki:generate:client',
+    'ki:server:mcp:dev',
+    'ki:server:mcp:inspect',
+    'ki:server:mcp:start',
+    'ki:test:smoke'
+  ])
   expect(definition.createSession).toBeFunction()
   expect(definition.families.map((family) => family.code)).toEqual(expectedFamilies)
   expect(definition.families.flatMap((family) => family.items.map((item) => item.code))).toEqual(expectedItems)
@@ -62,6 +70,7 @@ test('the catalogue and family modules keep their public surfaces narrow', async
     'scripts',
     'testing',
     'tools',
+    'protocol',
     'utilities',
     'publication'
   ]) {

@@ -103,8 +103,6 @@ Each island is introduced independently when its time comes.
 The index — `Decisions.md` in a KB, `README.md` in a code repo — is an **ordered list**, one item per DR, each linking the record by its ID and glossing what it decides, in **reveal order** (a from-scratch build narrative: roots first, then dependents, weaving the sub-scopes in). It is a list, not a table: an index is a single ordered sequence, not tabular or comparison data, so a list carries it with less markup. Per-record dates live in frontmatter, not the index; there is no decision lifecycle marker — records are living and present-state.
 
 ```markdown
-<!-- ki-decision-records: adoption-root -->
-
 1. [GDR-KI-ARCADIA-001](GDR-KI-ARCADIA-001-adopting-decision-records.md) — adopting Decision Records (the format these records follow).
 2. [SDR-KI-ARCADIA-001](SDR-KI-ARCADIA-001-knowledge-islands-the-strategy.md) — Knowledge Islands, the strategy the model serves.
 ```

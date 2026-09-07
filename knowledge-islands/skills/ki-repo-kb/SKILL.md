@@ -109,7 +109,7 @@ Almost everything is fixed by the structure above. Only these come from the host
 
 1. The host `CLAUDE.md` (auto-loaded) is the authority on the bindings above; follow it. Read the root `Admin/MEMORY.md` for active Pillars.
 2. If the base is Pillar-scoped, declare or confirm the active Pillar, then load `Pillars/<Pillar>/MEMORY.md` and any profile index. Confirm: "Session scoped to [Pillar]." If the user switches Pillar mid-session, re-scope before proceeding.
-3. Pre-flight before writing anything substantive: scope cascade loaded; if the work engages a named person/entity with a profile note, read it first; run any domain pre-flight declared in `.ki-config` (`preflight`) or the host `CLAUDE.md`.
+3. Pre-flight before writing anything substantive: scope cascade loaded; if the work engages a named person/entity with a profile note, read it first; run any domain pre-flight declared in `.ki.toml` (`preflight`) or the host `CLAUDE.md`.
 
 ## Operating modes
 

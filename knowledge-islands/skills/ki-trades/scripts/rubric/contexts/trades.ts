@@ -14,6 +14,7 @@ const IDENTITY = /^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\/[a-z0-9](?:[a-z0-9._-]*[a-
 const REPOSITORY = /^https:\/\/github\.com\/([a-z0-9](?:[a-z0-9._-]*[a-z0-9])?)\/([a-z0-9](?:[a-z0-9._-]*[a-z0-9])?)$/
 const PARTNER = /^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\/[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/
 const TRADE_ID = /^TRD-[0-9a-f]{8}$/
+const SUBTYPE = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 const UTC_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
 const FULL_COMMIT = /^[0-9a-f]{40}$/
 const TRADE_KINDS = ['work', 'knowledge'] as const
@@ -31,6 +32,7 @@ const DECISION_STATUSES = [
 ] as const
 const TERMINAL_DECISION_STATUSES = new Set<DecisionStatus>(['applied', 'adopted', 'retained', 'declined', 'superseded'])
 const SENDER_FIELDS = ['id', 'title', 'created_at', 'sender', 'receiver', 'kind', 'source_ref', 'observation'] as const
+const OPTIONAL_SENDER_FIELDS = ['subtype'] as const
 const RECEIVER_FIELDS = [
   'decision_status',
   'received_from_ref',
@@ -42,8 +44,13 @@ const RECEIVER_FIELDS = [
   'superseded_by'
 ] as const
 const PHASES = ['preparing', 'submitted', 'received'] as const
-const ALLOWED_SENDER_FIELDS = new Set<string>([...SENDER_FIELDS, 'phase'])
-const ALLOWED_INBOUND_FIELDS = new Set<string>([...SENDER_FIELDS, 'phase', ...RECEIVER_FIELDS])
+const ALLOWED_SENDER_FIELDS = new Set<string>([...SENDER_FIELDS, ...OPTIONAL_SENDER_FIELDS, 'phase'])
+const ALLOWED_INBOUND_FIELDS = new Set<string>([
+  ...SENDER_FIELDS,
+  ...OPTIONAL_SENDER_FIELDS,
+  'phase',
+  ...RECEIVER_FIELDS
+])
 const PREPARATIONS_DIRECTORY = '-/_TRADES/_PREPARATIONS'
 // Looser than ki-work-roadmap's four: a trade lands alone in another repository, where the title
 // carries the whole meaning to a reader with none of the surrounding item context.
@@ -82,6 +89,9 @@ type TradeConfiguration = {
   readonly identity?: string
   readonly exportsTo: Readonly<Record<TradeKind, readonly string[]>>
   readonly importsFrom: Readonly<Record<TradeKind, readonly string[]>>
+  readonly knowledgeSubtypes: Readonly<Record<string, string>>
+  readonly standingExports: Readonly<Record<string, readonly string[]>>
+  readonly standingImports: Readonly<Record<string, readonly string[]>>
   readonly mapBonus: number
   readonly participates: boolean
   readonly valid: boolean
@@ -129,6 +139,7 @@ export type TradesRubricContext = {
   readonly authority: OutcomeContext
   readonly status: OutcomeContext
   readonly release: OutcomeContext
+  readonly standing: OutcomeContext
   readonly judgment: TradeJudgmentContext
 }
 
@@ -176,7 +187,7 @@ const parseConfiguration = (
   subject: string
 ): { configuration: TradeConfiguration; outcomes: AuditOutcome[] } => {
   const outcomes: AuditOutcome[] = []
-  const unknown = Object.keys(value).filter((key) => key !== 'map_bonus' && key !== 'routes')
+  const unknown = Object.keys(value).filter((key) => key !== 'map_bonus' && key !== 'routes' && key !== 'subtypes')
   for (const key of unknown)
     outcomes.push({
       status: 'VIOLATION',
@@ -202,6 +213,44 @@ const parseConfiguration = (
       subject
     })
 
+  const knowledgeSubtypes: Record<string, string> = {}
+  const subtypeGroups = table(value.subtypes)
+  if (value.subtypes !== undefined && !subtypeGroups)
+    outcomes.push({
+      status: 'VIOLATION',
+      message: 'subtypes must be a table of trade-kind vocabularies',
+      subject
+    })
+  for (const key of Object.keys(subtypeGroups ?? {}).filter((key) => key !== 'knowledge'))
+    outcomes.push({
+      status: 'VIOLATION',
+      message: `subtype vocabulary ${key} is unsupported; standing intake is knowledge-only`,
+      subject
+    })
+  const declaredKnowledgeSubtypes = table(subtypeGroups?.knowledge)
+  if (subtypeGroups?.knowledge !== undefined && !declaredKnowledgeSubtypes)
+    outcomes.push({
+      status: 'VIOLATION',
+      message: 'knowledge subtypes must be a subtype-to-description table',
+      subject
+    })
+  for (const [subtype, description] of Object.entries(declaredKnowledgeSubtypes ?? {})) {
+    if (!SUBTYPE.test(subtype))
+      outcomes.push({
+        status: 'VIOLATION',
+        message: `knowledge subtype ${subtype} must be a lower-case hyphenated identifier`,
+        subject
+      })
+    if (typeof description !== 'string' || !description.trim())
+      outcomes.push({
+        status: 'VIOLATION',
+        message: `knowledge subtype ${subtype} must have a non-empty receiver-owned description`,
+        subject
+      })
+    if (SUBTYPE.test(subtype) && typeof description === 'string' && description.trim())
+      knowledgeSubtypes[subtype] = description
+  }
+
   // Routes are declared partner-first — one table per peer, keyed by `owner/name` — while the
   // rest of this skill reasons kind-first. Partner keys are unique by TOML's own prohibition on
   // defining a key twice, and ordering is immaterial to a map, so neither is re-checked here; both
@@ -214,6 +263,8 @@ const parseConfiguration = (
 
   const exportsTo: Record<TradeKind, string[]> = { work: [], knowledge: [] }
   const importsFrom: Record<TradeKind, string[]> = { work: [], knowledge: [] }
+  const standingExports: Record<string, string[]> = {}
+  const standingImports: Record<string, string[]> = {}
   const declared = table(value.routes)
   if (value.routes !== undefined && !declared)
     outcomes.push({
@@ -248,7 +299,9 @@ const parseConfiguration = (
       })
       continue
     }
-    for (const key of Object.keys(directions).filter((key) => key !== 'export' && key !== 'import'))
+    for (const key of Object.keys(directions).filter(
+      (key) => key !== 'export' && key !== 'import' && key !== 'standing'
+    ))
       outcomes.push({
         status: 'VIOLATION',
         level: 'WARN',
@@ -295,6 +348,84 @@ const parseConfiguration = (
         target[kind as TradeKind].push(home)
       }
     }
+
+    const standing = table(directions.standing)
+    if (directions.standing !== undefined && !standing)
+      outcomes.push({
+        status: 'VIOLATION',
+        message: `route ${partner} standing must be a table declaring export or import knowledge subtypes`,
+        subject
+      })
+    for (const key of Object.keys(standing ?? {}).filter((key) => key !== 'export' && key !== 'import'))
+      outcomes.push({
+        status: 'VIOLATION',
+        message: `route ${partner} standing direction ${key} is unsupported`,
+        subject
+      })
+    for (const [direction, target] of [
+      ['export', standingExports],
+      ['import', standingImports]
+    ] as const) {
+      const kinds = table(standing?.[direction])
+      if (standing?.[direction] !== undefined && !kinds) {
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `route ${partner} standing ${direction} must be a knowledge subtype table`,
+          subject
+        })
+        continue
+      }
+      for (const key of Object.keys(kinds ?? {}).filter((key) => key !== 'knowledge'))
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `route ${partner} standing ${direction} kind ${key} is unsupported`,
+          subject
+        })
+      const values = kinds?.knowledge
+      if (values === undefined) continue
+      if (!Array.isArray(values) || values.some((subtype) => typeof subtype !== 'string')) {
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `route ${partner} standing ${direction} knowledge must be an array of subtypes`,
+          subject
+        })
+        continue
+      }
+      const subtypes = values as string[]
+      if (subtypes.length === 0)
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `route ${partner} standing ${direction} knowledge must be omitted rather than empty`,
+          subject
+        })
+      if (new Set(subtypes).size !== subtypes.length)
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `route ${partner} standing ${direction} knowledge must not repeat a subtype`,
+          subject
+        })
+      for (const subtype of subtypes) {
+        if (!SUBTYPE.test(subtype))
+          outcomes.push({
+            status: 'VIOLATION',
+            message: `route ${partner} standing ${direction} subtype ${subtype} must be a lower-case hyphenated identifier`,
+            subject
+          })
+        if (direction === 'import' && !(subtype in knowledgeSubtypes))
+          outcomes.push({
+            status: 'VIOLATION',
+            message: `route ${partner} standing import subtype ${subtype} is not defined by the receiver`,
+            subject
+          })
+      }
+      if (!(Array.isArray(directions[direction]) && directions[direction].includes('knowledge')))
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `route ${partner} standing ${direction} requires the ordinary knowledge ${direction} route`,
+          subject
+        })
+      target[home] = subtypes.filter((subtype) => SUBTYPE.test(subtype))
+    }
   }
   for (const kind of TRADE_KINDS) {
     exportsTo[kind].sort((left, right) => left.localeCompare(right))
@@ -306,6 +437,9 @@ const parseConfiguration = (
       ...local,
       exportsTo,
       importsFrom,
+      knowledgeSubtypes,
+      standingExports,
+      standingImports,
       mapBonus: validMapBonus(configuredMapBonus) ? configuredMapBonus : 0,
       participates: true,
       valid: outcomes.every((outcome) => outcome.status !== 'VIOLATION' || outcome.level === 'WARN')
@@ -320,6 +454,9 @@ const parseRepositoryConfiguration = (root: string): TradeConfiguration => {
     return {
       exportsTo: { work: [], knowledge: [] },
       importsFrom: { work: [], knowledge: [] },
+      knowledgeSubtypes: {},
+      standingExports: {},
+      standingImports: {},
       mapBonus: 0,
       participates: false,
       valid: false
@@ -334,6 +471,9 @@ const parseRepositoryConfiguration = (root: string): TradeConfiguration => {
         ...repositoryIdentity(repository),
         exportsTo: { work: [], knowledge: [] },
         importsFrom: { work: [], knowledge: [] },
+        knowledgeSubtypes: {},
+        standingExports: {},
+        standingImports: {},
         mapBonus: 0,
         participates: false,
         valid: false
@@ -343,6 +483,9 @@ const parseRepositoryConfiguration = (root: string): TradeConfiguration => {
     return {
       exportsTo: { work: [], knowledge: [] },
       importsFrom: { work: [], knowledge: [] },
+      knowledgeSubtypes: {},
+      standingExports: {},
+      standingImports: {},
       mapBonus: 0,
       participates: true,
       valid: false
@@ -380,6 +523,7 @@ const routeEvidence = (
 ): {
   outcomes: readonly AuditOutcome[]
   active: ReadonlyMap<string, RegisteredRepository>
+  standingActive: ReadonlySet<string>
 } => {
   if (!local.valid || !local.identity || !local.repository)
     return {
@@ -389,16 +533,19 @@ const routeEvidence = (
           message: 'trade routes require a valid local ki-repo repository identity'
         }
       ],
-      active: new Map()
+      active: new Map(),
+      standingActive: new Set()
     }
   if (TRADE_KINDS.every((kind) => local.exportsTo[kind].length === 0 && local.importsFrom[kind].length === 0))
     return {
       outcomes: pass('No trade routes are declared.'),
-      active: new Map()
+      active: new Map(),
+      standingActive: new Set()
     }
 
   const registered = registeredRepositories(userHome)
   const active = new Map<string, RegisteredRepository>()
+  const standingActive = new Set<string>()
   const outcomes: AuditOutcome[] = []
   const physicalRoot = realpathSync(root)
   if (!registered.some((candidate) => candidate.root === physicalRoot)) {
@@ -462,11 +609,65 @@ const routeEvidence = (
       subject: peer
     })
   }
+  const validateStanding = (peer: string, direction: 'export' | 'import', subtype: string): void => {
+    const matches = registered.filter((candidate) => candidate.configuration.repository === peer)
+    const otherParty = direction === 'export' ? 'receiver' : 'sender'
+    if (matches.length !== 1) {
+      outcomes.push({
+        status: matches.length > 1 ? 'VIOLATION' : 'INFO',
+        message:
+          matches.length > 1
+            ? `standing ${direction} ${subtype} to ${peer} is ambiguous across ${matches.length} registered repositories`
+            : `standing ${direction} ${subtype} to ${peer} awaits ${otherParty} registration`,
+        subject: peer
+      })
+      return
+    }
+    const [candidate] = matches
+    if (!candidate?.configuration.participates || !candidate.configuration.valid) {
+      outcomes.push({
+        status: candidate?.configuration.participates ? 'VIOLATION' : 'INFO',
+        message: `standing ${direction} ${subtype} to ${peer} awaits valid ${otherParty} ki-trades participation`,
+        subject: peer
+      })
+      return
+    }
+    const reciprocal =
+      direction === 'export'
+        ? candidate.configuration.standingImports[local.repository ?? '']
+        : candidate.configuration.standingExports[local.repository ?? '']
+    if (!reciprocal?.includes(subtype)) {
+      outcomes.push({
+        status: 'INFO',
+        message: `standing ${direction} ${subtype} to ${peer} awaits matching ${otherParty} declaration`,
+        subject: peer
+      })
+      return
+    }
+    if (direction === 'export' && !(subtype in candidate.configuration.knowledgeSubtypes)) {
+      outcomes.push({
+        status: 'VIOLATION',
+        message: `standing export ${subtype} to ${peer} lacks receiver-owned subtype definition`,
+        subject: peer
+      })
+      return
+    }
+    outcomes.push({
+      status: 'PASS',
+      message: `standing knowledge ${subtype} ${local.repository} ${direction === 'export' ? '→' : '←'} ${peer} active`,
+      subject: peer
+    })
+    if (direction === 'import') standingActive.add(`${peer}:${subtype}`)
+  }
   for (const kind of TRADE_KINDS) {
     for (const peer of local.exportsTo[kind]) validateRoute(peer, 'export', kind)
     for (const peer of local.importsFrom[kind]) validateRoute(peer, 'import', kind)
   }
-  return { outcomes, active }
+  for (const [peer, subtypes] of Object.entries(local.standingExports))
+    for (const subtype of subtypes) validateStanding(peer, 'export', subtype)
+  for (const [peer, subtypes] of Object.entries(local.standingImports))
+    for (const subtype of subtypes) validateStanding(peer, 'import', subtype)
+  return { outcomes, active, standingActive }
 }
 
 const readMarkdownFiles = (root: string, directory: string): readonly string[] => {
@@ -484,6 +685,168 @@ const readMarkdownFiles = (root: string, directory: string): readonly string[] =
   }
   visit(path)
   return files.sort((left, right) => left.localeCompare(right))
+}
+
+const STANDING_MARKER = '<!-- ki-trades:standing-intake -->'
+const STANDING_ID = /^STI-[0-9a-f]{8}$/
+const STANDING_FIELDS = new Set([
+  'schema',
+  'id',
+  'source',
+  'source_ref',
+  'receiver',
+  'kind',
+  'subtype',
+  'captured_at',
+  'capture'
+])
+
+const gitSucceeds = (root: string, args: readonly string[]): boolean =>
+  Bun.spawnSync(['git', ...args], { cwd: root, stdout: 'ignore', stderr: 'ignore' }).exitCode === 0
+
+const standingCaptureEvidence = (
+  root: string,
+  userHome: string,
+  local: TradeConfiguration,
+  standingActive: ReadonlySet<string>
+): readonly AuditOutcome[] => {
+  if (!local.repository) return []
+  const outcomes: AuditOutcome[] = []
+  const seen = new Map<string, string>()
+  const registered = registeredRepositories(userHome)
+  const files = ['docs', 'skills'].flatMap((directory) => readMarkdownFiles(root, directory))
+  const marker = STANDING_MARKER.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+  const fence = '```'
+  const block = new RegExp(`${marker}\\s*\\n${fence}toml\\n([\\s\\S]*?)\\n${fence}`, 'gu')
+
+  for (const path of files) {
+    const markdown = readFileSync(join(root, path), 'utf8')
+    for (const match of markdown.matchAll(block)) {
+      const subject = `${path}:${markdown.slice(0, match.index).split('\n').length}`
+      let fields: Record<string, unknown>
+      try {
+        fields = table(Bun.TOML.parse(match[1] ?? '')) ?? {}
+      } catch {
+        outcomes.push({ status: 'VIOLATION', message: 'standing intake block must be valid TOML', subject })
+        continue
+      }
+      for (const key of Object.keys(fields).filter((key) => !STANDING_FIELDS.has(key)))
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `standing intake key ${key} is outside the provenance contract`,
+          subject
+        })
+      for (const key of STANDING_FIELDS)
+        if (typeof fields[key] !== 'string' || !(fields[key] as string).trim())
+          outcomes.push({
+            status: 'VIOLATION',
+            message: `standing intake ${key} must be a non-empty string`,
+            subject
+          })
+
+      const id = typeof fields.id === 'string' ? fields.id : undefined
+      const source = typeof fields.source === 'string' ? fields.source : undefined
+      const subtype = typeof fields.subtype === 'string' ? fields.subtype : undefined
+      const sourceRef =
+        typeof fields.source_ref === 'string' ? /^([0-9a-f]{40}):([^#\s]+)#([^\s]+)$/u.exec(fields.source_ref) : null
+      if (!id || !STANDING_ID.test(id))
+        outcomes.push({
+          status: 'VIOLATION',
+          message: 'standing intake id must use STI plus eight lower-case hexadecimal characters',
+          subject
+        })
+      else if (seen.has(id))
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `standing intake id ${id} duplicates ${seen.get(id)}`,
+          subject
+        })
+      else seen.set(id, subject)
+      if (fields.schema !== 'ki-trades/standing-intake/v1')
+        outcomes.push({
+          status: 'VIOLATION',
+          message: 'standing intake schema must be ki-trades/standing-intake/v1',
+          subject
+        })
+      if (!source || !REPOSITORY.test(source))
+        outcomes.push({
+          status: 'VIOLATION',
+          message: 'standing intake source must be a canonical HTTPS GitHub repository',
+          subject
+        })
+      if (!sourceRef)
+        outcomes.push({
+          status: 'VIOLATION',
+          message: 'standing intake source_ref must be <40-hex-commit>:<path>#<anchor>',
+          subject
+        })
+      if (fields.receiver !== local.repository)
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `standing intake receiver must equal ${local.repository}`,
+          subject
+        })
+      if (fields.kind !== 'knowledge')
+        outcomes.push({ status: 'VIOLATION', message: 'standing intake kind must be knowledge', subject })
+      if (!subtype || !SUBTYPE.test(subtype))
+        outcomes.push({
+          status: 'VIOLATION',
+          message: 'standing intake subtype must be a lower-case hyphenated identifier',
+          subject
+        })
+      if (typeof fields.captured_at !== 'string' || !UTC_TIMESTAMP.test(fields.captured_at))
+        outcomes.push({
+          status: 'VIOLATION',
+          message: 'standing intake captured_at must be UTC YYYY-MM-DDTHH:MM:SSZ timestamp',
+          subject
+        })
+      if (typeof fields.capture === 'string' && !fields.capture.startsWith(`${path}#`))
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `standing intake capture must point into ${path}`,
+          subject
+        })
+      if (!id || !source || !subtype || !sourceRef) continue
+
+      const peer = registered.find((candidate) => candidate.configuration.repository === source)
+      if (!peer) {
+        outcomes.push({
+          status: 'INFO',
+          message: `standing intake ${id} source repository is not locally registered; provenance is unverifiable`,
+          subject
+        })
+        continue
+      }
+      if (!gitSucceeds(peer.root, ['cat-file', '-e', `${sourceRef[1]}:${sourceRef[2]}`])) {
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `standing intake ${id} source_ref does not resolve in ${source}`,
+          subject
+        })
+        continue
+      }
+      if (standingActive.has(`${source}:${subtype}`)) {
+        outcomes.push({
+          status: 'PASS',
+          message: `standing intake ${id} matches an active exact-subtype grant`,
+          subject
+        })
+      } else if (gitSucceeds(root, ['log', '-1', '--format=%H', `-S${id}`, '--', path])) {
+        outcomes.push({
+          status: 'INFO',
+          message: `standing intake ${id} is historical; introduction-time route evidence requires review`,
+          subject
+        })
+      } else {
+        outcomes.push({
+          status: 'VIOLATION',
+          message: `standing intake ${id} lacks an active exact-subtype grant`,
+          subject
+        })
+      }
+    }
+  }
+  return outcomes
 }
 
 /** `phase` states the copy's own lifecycle, so both copies drop it before the immutable sender projection is compared. */
@@ -705,6 +1068,19 @@ const parseRecord = (root: string, path: string, direction: Direction, channels:
   const rawKind = fields.kind
   const kind =
     typeof rawKind === 'string' && TRADE_KINDS.includes(rawKind as TradeKind) ? (rawKind as TradeKind) : undefined
+  const rawSubtype = fields.subtype
+  if (rawSubtype !== undefined && (typeof rawSubtype !== 'string' || !SUBTYPE.test(rawSubtype)))
+    outcomes.push({
+      status: 'VIOLATION',
+      message: 'subtype must be a lower-case hyphenated identifier',
+      subject: path
+    })
+  if (rawSubtype !== undefined && kind !== 'knowledge')
+    outcomes.push({
+      status: 'VIOLATION',
+      message: 'subtype is optional classification for itemized knowledge trades only',
+      subject: path
+    })
   if (kind && observation) {
     const permitted = kind === 'knowledge' ? ['receipt'] : ['decision', 'completion']
     if (!permitted.includes(observation))
@@ -1096,6 +1472,7 @@ export const createTradesSession = ({
   )
   const routes = routeEvidence(root, userHome, parsedConfiguration.configuration)
   const evidence = recordEvidence(root, parsedConfiguration.configuration, routes.active)
+  const standing = standingCaptureEvidence(root, userHome, parsedConfiguration.configuration, routes.standingActive)
   let scaffoldRequested = false
   const context: TradesRubricContext = {
     rubric: { publication },
@@ -1133,6 +1510,9 @@ export const createTradesSession = ({
         ? evidence.release
         : pass('No trade release or pruning violation is observable.')
     },
+    standing: {
+      outcomes: standing.length ? standing : pass('Standing intake provenance blocks are valid.')
+    },
     judgment: {}
   }
 
@@ -1140,7 +1520,7 @@ export const createTradesSession = ({
     subjects: [
       { families: ['RUBRIC'], context: () => context },
       {
-        families: ['CONFIG', 'ROUTE', 'SCAFFOLD', 'RECORD', 'AUTH', 'STATUS', 'RELEASE', 'ADOPTION'],
+        families: ['CONFIG', 'ROUTE', 'SCAFFOLD', 'RECORD', 'AUTH', 'STATUS', 'RELEASE', 'STANDING', 'ADOPTION'],
         context: () => context
       }
     ],

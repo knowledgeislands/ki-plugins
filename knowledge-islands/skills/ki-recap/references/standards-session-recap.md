@@ -55,7 +55,7 @@ Then look only for threads left mid-change by this session: uncommitted edits, a
 
 ## 4. Harvest the learnings, and route each
 
-For each dead-end, workaround, or convention discovered this session, apply `ki-authoring`'s [knowledge-promotion standard](../../../governance/ki-authoring/references/standards-knowledge-promotion.md) — **confirm with the user before writing anywhere durable**.
+For each dead-end, workaround, or convention discovered this session, load `ki-authoring` and apply its knowledge-promotion convention set — **confirm with the user before writing anywhere durable**.
 
 The standard owns the placement ladder, promotion evidence, and duplicate-reconciliation rule; this procedure only identifies the likely route:
 

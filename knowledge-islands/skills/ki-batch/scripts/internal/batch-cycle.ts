@@ -21,11 +21,15 @@ export type BatchItem = {
 export type BatchCycleInput = {
   authorisation: {
     approved: boolean
+    authorityMode: 'reviewed-items' | 'outcome'
+    authorityEvidence: string | null
     repository: string
     timeboxActive: boolean
     itemIds: readonly string[]
     approvedPayloadSha256: string
     runBinding: { id: string; approvedPayloadSha256: string } | null
+    completionTarget: 'awaiting-review' | 'done'
+    closureItemIds: readonly string[]
   }
   adapter: AdapterResolution
   repository: {
@@ -50,6 +54,8 @@ export const evaluateBatchCycle = ({
   items
 }: BatchCycleInput): BatchCycleOutcome => {
   if (!authorisation.approved) return stop('batch authorisation is not approved')
+  if (authorisation.authorityMode === 'outcome' && !authorisation.authorityEvidence?.trim())
+    return stop('outcome-authorised batch lacks current human authority evidence')
   if (authorisation.repository !== repository.path) return stop('batch authorisation names another repository')
   if (!authorisation.timeboxActive) return stop('batch authorisation timebox has expired')
   if (adapter.kind === 'unresolved') return stop(`selected adapter is unresolved: ${adapter.reason}`)
@@ -62,6 +68,12 @@ export const evaluateBatchCycle = ({
     return stop('batch run is not bound to the approved payload')
   if (new Set(authorisation.itemIds).size !== authorisation.itemIds.length)
     return stop('batch authorisation repeats an item identifier')
+  if (
+    authorisation.completionTarget === 'done' &&
+    (authorisation.closureItemIds.length !== authorisation.itemIds.length ||
+      authorisation.itemIds.some((item) => !authorisation.closureItemIds.includes(item)))
+  )
+    return stop('done completion target lacks closure authority for every item')
   if (new Set(items.map((item) => item.id)).size !== items.length)
     return stop('canonical item resolution repeats an item identifier')
   if (!repository.clean) return stop('repository worktree is not clean')

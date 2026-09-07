@@ -94,10 +94,12 @@ const DESC_4: RubricItem<DescriptionRubricContext> = {
 
 const DESC_5: RubricItem<DescriptionRubricContext> = {
   code: 'DESC-5',
-  title: 'description is written in the third person',
-  description: 'Written in the **third person**, never first/second person.',
-  sources: ['BP', 'COMMUNITY'],
-  judgment: judgment('Is the description consistently written in the third person?')
+  title: 'description uses an activation-oriented voice',
+  description: 'Uses direct imperative or third person, never first-person or second-person explanation.',
+  sources: ['AS', 'BP', 'COMMUNITY'],
+  judgment: judgment(
+    'Does the description use direct imperative or third person without first/second-person explanation?'
+  )
 }
 
 const DESC_6: RubricItem<DescriptionRubricContext> = {

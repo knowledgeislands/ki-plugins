@@ -73,11 +73,18 @@ const WCF_2: RubricItem<WebsiteCloudflareContext> = {
       run: (context) => {
         const skip = skipped(context)
         if (skip) return skip
-        if (context.package.state === 'unsafe' || context.package.state === 'malformed')
+        if (
+          context.package.state === 'unsafe' ||
+          context.package.state === 'malformed' ||
+          context.rootPackage.state === 'unsafe' ||
+          context.rootPackage.state === 'malformed'
+        )
           return [{ status: 'VIOLATION', message: 'package.json scripts could not be safely inspected.' }]
         const legacyConfigs = context.configs.filter((config) => config.hasPagesBuildOutputDir)
-        const pagesScripts = Object.entries(context.package.scripts).filter(([, script]) =>
-          /\bwrangler\s+pages\s+deploy\b/.test(script)
+        const pagesScripts = [context.package, context.rootPackage].flatMap((manifest) =>
+          Object.entries(manifest.scripts)
+            .filter(([, script]) => /\bwrangler\s+pages\s+deploy\b/.test(script))
+            .map(([name]) => ({ name, path: manifest.path }))
         )
         const results: AuditOutcome[] = legacyConfigs.map((config) => ({
           status: 'VIOLATION',
@@ -86,10 +93,10 @@ const WCF_2: RubricItem<WebsiteCloudflareContext> = {
           subject: config.path
         }))
         results.push(
-          ...pagesScripts.map(([name]) => ({
+          ...pagesScripts.map(({ name, path }) => ({
             status: 'VIOLATION' as const,
             message: `Pages deployment remains in script ${name}; replace wrangler pages deploy with wrangler deploy.`,
-            subject: 'package.json'
+            subject: path
           }))
         )
         return results.length > 0
@@ -236,6 +243,47 @@ const WCF_24: RubricItem<WebsiteCloudflareContext> = {
   }
 }
 
+const WCF_26: RubricItem<WebsiteCloudflareContext> = {
+  code: 'WCF-26',
+  title: 'the Cloudflare guide',
+  description:
+    'A tracked guide at docs/guides/cloudflare.md records the dashboard-owned settings — Workers Builds commands, domains, redirects — that wrangler.jsonc cannot express.',
+  sources: [`${SOURCE}#6-the-cloudflare-guide--dashboard-owned-settings`],
+  mechanical: {
+    level: 'FAIL',
+    remediation: DIAGNOSTIC,
+    audit: {
+      phase: 'INSPECT',
+      run: (context) => {
+        const skip = skipped(context)
+        if (skip) return skip
+        const { guide } = context
+        return guide.state === 'present' && guide.text.trim().length > 0
+          ? [
+              {
+                status: 'PASS',
+                message: 'The Cloudflare guide is tracked, ready to carry the dashboard-owned settings.',
+                subject: guide.path
+              }
+            ]
+          : [
+              {
+                status: 'VIOLATION',
+                message:
+                  guide.state === 'missing'
+                    ? 'No docs/guides/cloudflare.md — the dashboard-owned settings (Workers Builds commands, domains, redirects) have no reconstructable record in the repository.'
+                    : 'docs/guides/cloudflare.md exists but is empty or unreadable; it must record the dashboard-owned settings.',
+                subject: guide.path
+              }
+            ]
+      }
+    }
+  },
+  judgment: judgment(
+    'Confirm the guide records the exact dashboard-owned values — Workers Builds build/deploy commands and root directory, domain and redirect choices, workers.dev — matching the live dashboard, and duplicates nothing wrangler.jsonc already declares.'
+  )
+}
+
 const WCF_6: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-6',
   title: 'generated directories ignored',
@@ -337,8 +385,8 @@ const WCF_9: RubricItem<WebsiteCloudflareContext> = {
 
 const WCF_10: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-10',
-  title: 'custom-domain routes',
-  description: 'Routes use custom_domain where appropriate.',
+  title: 'optional custom-domain routes',
+  description: 'When a custom domain is declared, at least one route uses custom_domain.',
   sources: [`${SOURCE}#3-the-site-wranglerjsonc-shape`],
   mechanical: {
     level: 'WARN',
@@ -353,10 +401,10 @@ const WCF_10: RubricItem<WebsiteCloudflareContext> = {
         if (!site) return []
         return [
           {
-            status: site.hasCustomDomain ? 'PASS' : 'VIOLATION',
+            status: site.hasCustomDomain ? 'PASS' : 'NOT_APPLICABLE',
             message: site.hasCustomDomain
               ? 'At least one route uses custom_domain.'
-              : 'No custom_domain route was found; verify whether this site intentionally uses workers.dev.',
+              : 'No custom-domain route is declared; workers.dev-only hosting is valid.',
             subject: site.path
           }
         ]
@@ -364,14 +412,19 @@ const WCF_10: RubricItem<WebsiteCloudflareContext> = {
     }
   },
   judgment: judgment(
-    'Verify the custom-domain routes name the correct apex and www host, or document the intentional workers.dev-only exception.'
+    'When custom-domain routes are declared, verify they name the intended apex and any www host; workers.dev-only hosting needs no exception.'
   )
 }
+
+const expectedRootAlias = (context: WebsiteCloudflareContext, localScript: string): string =>
+  context.configuration.siteRoot === '.'
+    ? `bun run ${localScript}`
+    : `bun run --cwd ${context.configuration.siteRoot} ${localScript}`
 
 const WCF_13: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-13',
   title: 'deploy script',
-  description: 'A deploy script runs wrangler deploy.',
+  description: 'The selected site package deploys with Wrangler and the repository root delegates the public alias.',
   sources: [`${SOURCE}#4-the-script-family`],
   mechanical: {
     level: 'WARN',
@@ -381,22 +434,46 @@ const WCF_13: RubricItem<WebsiteCloudflareContext> = {
       run: (context) => {
         const skip = skipped(context)
         if (skip) return skip
-        if (context.package.state === 'unsafe' || context.package.state === 'malformed')
+        if (
+          context.package.state === 'unsafe' ||
+          context.package.state === 'malformed' ||
+          context.rootPackage.state === 'unsafe' ||
+          context.rootPackage.state === 'malformed'
+        )
           return [
             {
               status: 'VIOLATION',
               message: 'package.json scripts could not be safely inspected.',
-              subject: 'package.json'
+              subject: context.package.path
             }
           ]
-        const named = context.package.scripts['ki:site:deploy']
-          ? (['ki:site:deploy', context.package.scripts['ki:site:deploy']] as const)
-          : context.package.scripts.deploy
-            ? (['deploy', context.package.scripts.deploy] as const)
-            : null
-        return named && /\bwrangler\s+deploy\b/.test(named[1])
-          ? [{ status: 'PASS', message: `The ${named[0]} script runs wrangler deploy.`, subject: 'package.json' }]
-          : [{ status: 'VIOLATION', message: 'No site deploy script runs wrangler deploy.', subject: 'package.json' }]
+        const local = context.package.scripts.deploy
+        const alias = context.rootPackage.scripts['ki:site:deploy']
+        const expectedAlias = expectedRootAlias(context, 'deploy')
+        return [
+          local && /\bwrangler\s+deploy\b/.test(local)
+            ? {
+                status: 'PASS',
+                message: 'The local deploy script runs wrangler deploy.',
+                subject: context.package.path
+              }
+            : {
+                status: 'VIOLATION',
+                message: 'The selected site package must expose a local deploy script that runs wrangler deploy.',
+                subject: context.package.path
+              },
+          alias === expectedAlias
+            ? {
+                status: 'PASS',
+                message: 'The public ki:site:deploy alias delegates to the selected site package.',
+                subject: context.rootPackage.path
+              }
+            : {
+                status: 'VIOLATION',
+                message: `ki:site:deploy must be exactly "${expectedAlias}".`,
+                subject: context.rootPackage.path
+              }
+        ]
       }
     }
   },
@@ -408,7 +485,7 @@ const WCF_13: RubricItem<WebsiteCloudflareContext> = {
 const WCF_14: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-14',
   title: 'preview script',
-  description: 'A preview script runs wrangler dev.',
+  description: 'The selected site package previews with Wrangler and the repository root delegates the public alias.',
   sources: [`${SOURCE}#4-the-script-family`],
   mechanical: {
     level: 'WARN',
@@ -418,18 +495,42 @@ const WCF_14: RubricItem<WebsiteCloudflareContext> = {
       run: (context) => {
         const skip = skipped(context)
         if (skip) return skip
-        if (context.package.state === 'unsafe' || context.package.state === 'malformed')
+        if (
+          context.package.state === 'unsafe' ||
+          context.package.state === 'malformed' ||
+          context.rootPackage.state === 'unsafe' ||
+          context.rootPackage.state === 'malformed'
+        )
           return [
             {
               status: 'VIOLATION',
               message: 'package.json scripts could not be safely inspected.',
-              subject: 'package.json'
+              subject: context.package.path
             }
           ]
-        const preview = context.package.scripts['ki:site:preview'] ?? context.package.scripts.preview
-        return preview && /\bwrangler\s+dev\b/.test(preview)
-          ? [{ status: 'PASS', message: 'The site preview script runs wrangler dev.', subject: 'package.json' }]
-          : [{ status: 'VIOLATION', message: 'No site preview script runs wrangler dev.', subject: 'package.json' }]
+        const local = context.package.scripts.preview
+        const alias = context.rootPackage.scripts['ki:site:preview']
+        const expectedAlias = expectedRootAlias(context, 'preview')
+        return [
+          local && /\bwrangler\s+dev\b/.test(local)
+            ? { status: 'PASS', message: 'The local preview script runs wrangler dev.', subject: context.package.path }
+            : {
+                status: 'VIOLATION',
+                message: 'The selected site package must expose a local preview script that runs wrangler dev.',
+                subject: context.package.path
+              },
+          alias === expectedAlias
+            ? {
+                status: 'PASS',
+                message: 'The public ki:site:preview alias delegates to the selected site package.',
+                subject: context.rootPackage.path
+              }
+            : {
+                status: 'VIOLATION',
+                message: `ki:site:preview must be exactly "${expectedAlias}".`,
+                subject: context.rootPackage.path
+              }
+        ]
       }
     }
   },
@@ -438,11 +539,83 @@ const WCF_14: RubricItem<WebsiteCloudflareContext> = {
   )
 }
 
+const WCF_25: RubricItem<WebsiteCloudflareContext> = {
+  code: 'WCF-25',
+  title: 'version-upload authority',
+  description:
+    'An optional local upload script and its public alias create an undeployed Worker version only through explicit remote-effect authority.',
+  sources: [`${SOURCE}#4-the-script-family`],
+  mechanical: {
+    level: 'FAIL',
+    remediation: DIAGNOSTIC,
+    audit: {
+      phase: 'INSPECT',
+      run: (context) => {
+        const skip = skipped(context)
+        if (skip) return skip
+        if (
+          context.package.state === 'unsafe' ||
+          context.package.state === 'malformed' ||
+          context.rootPackage.state === 'unsafe' ||
+          context.rootPackage.state === 'malformed'
+        )
+          return [
+            {
+              status: 'VIOLATION',
+              message: 'package.json scripts could not be safely inspected.',
+              subject: context.package.path
+            }
+          ]
+        const upload = context.package.scripts.upload
+        const alias = context.rootPackage.scripts['ki:site:upload']
+        if (!upload && !alias)
+          return [
+            {
+              status: 'NOT_APPLICABLE',
+              message: 'No optional site upload operation is declared.',
+              subject: context.package.path
+            }
+          ]
+        const expectedUpload = 'bunx wrangler versions upload'
+        const expectedAlias = expectedRootAlias(context, 'upload')
+        return [
+          upload === expectedUpload
+            ? {
+                status: 'PASS',
+                message:
+                  'The local upload script creates an undeployed Worker version; only an explicitly authorised operator or Workers Builds service may run this credentialed remote mutation.',
+                subject: context.package.path
+              }
+            : {
+                status: 'VIOLATION',
+                message: `The local upload script must be exactly "${expectedUpload}".`,
+                subject: context.package.path
+              },
+          alias === expectedAlias
+            ? {
+                status: 'PASS',
+                message: 'The public ki:site:upload alias delegates to the selected site package.',
+                subject: context.rootPackage.path
+              }
+            : {
+                status: 'VIOLATION',
+                message: `ki:site:upload must be exactly "${expectedAlias}".`,
+                subject: context.rootPackage.path
+              }
+        ]
+      }
+    }
+  },
+  judgment: judgment(
+    'Confirm audits, conformance, local builds, tests, and dry evaluation inspect ki:site:upload without executing Wrangler; only an explicitly authorised operator or Workers Builds service may supply Cloudflare credentials and create the remote version.'
+  )
+}
+
 const WCF_19: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-19',
   title: 'companion Worker boundary',
   description: 'Companion Workers remain out of scope.',
-  sources: [`${SOURCE}#6-boundaries--what-is-not-in-scope`],
+  sources: [`${SOURCE}#7-boundaries--what-is-not-in-scope`],
   mechanical: {
     level: 'WARN',
     remediation: DIAGNOSTIC,
@@ -506,13 +679,10 @@ const WCF_20: RubricItem<WebsiteCloudflareContext> = {
   }
 }
 
-const safeSiteRoot = (value: string): boolean =>
-  value === '.' || (!value.startsWith('/') && !value.split(/[\\/]/).includes('..') && !value.includes('\\'))
-
 const WCF_21: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-21',
   title: 'opt-in validation',
-  description: 'The opt-in site root is valid.',
+  description: 'The hosting table is keyless and consumes the valid website-core site root.',
   sources: [`${SOURCE}#1-model--workers-static-assets-not-pages`],
   mechanical: {
     level: 'WARN',
@@ -522,39 +692,26 @@ const WCF_21: RubricItem<WebsiteCloudflareContext> = {
       run: (context) => {
         const skip = skipped(context)
         if (skip || context.configuration.state !== 'present') return skip ?? []
-        const unknown = context.configuration.keys.filter((key) => key !== 'site-root')
-        const outcomes: AuditOutcome[] = unknown.map((key) => ({
+        const outcomes: AuditOutcome[] = context.configuration.keys.map((key) => ({
           status: 'VIOLATION',
           message: `Unknown opt-in key: ${key}.`,
           subject: '.ki.toml'
         }))
-        const siteRoot = context.configuration.siteRoot
-        if (context.configuration.keys.includes('site-root') && siteRoot === null)
+        if (!context.configuration.siteRootValid)
           outcomes.push({
             status: 'VIOLATION',
-            message: 'site-root must be a string.',
-            subject: '.ki.toml'
-          })
-        else if (siteRoot === null)
-          outcomes.push({
-            status: 'PASS',
-            message: 'No site-root override is declared; Wrangler config discovery applies.',
-            subject: '.ki.toml'
-          })
-        else if (!safeSiteRoot(siteRoot))
-          outcomes.push({
-            status: 'VIOLATION',
-            message: `site-root is not a safe relative path: ${siteRoot}.`,
+            message: 'The [skills.ki-repo-website] site-root is missing or invalid.',
             subject: '.ki.toml'
           })
         else {
+          const siteRoot = context.configuration.siteRoot
           const normalised = siteRoot.replace(/^\.\//, '').replace(/\/$/, '') || '.'
           const directories = new Set(context.configs.map(configDirectory))
           outcomes.push({
             status: directories.has(normalised) ? 'PASS' : 'VIOLATION',
             message: directories.has(normalised)
-              ? `The declared site-root ${siteRoot} holds a Wrangler config.`
-              : `The declared site-root ${siteRoot} holds no Wrangler config.`,
+              ? `The website-core site root ${siteRoot} holds a Wrangler config.`
+              : `The website-core site root ${siteRoot} holds no Wrangler config.`,
             subject: '.ki.toml'
           })
         }
@@ -568,7 +725,7 @@ const WCF_22: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-22',
   title: 'hosting delta',
   description: 'This remains the hosting delta only.',
-  sources: [`${SOURCE}#6-boundaries--what-is-not-in-scope`],
+  sources: [`${SOURCE}#7-boundaries--what-is-not-in-scope`],
   mechanical: {
     level: 'WARN',
     remediation: DIAGNOSTIC,
@@ -609,6 +766,8 @@ export const WCF: RubricFamily<WebsiteCloudflareRubricContext, WebsiteCloudflare
     WCF_10,
     WCF_13,
     WCF_14,
+    WCF_25,
+    WCF_26,
     WCF_19,
     WCF_20,
     WCF_21,

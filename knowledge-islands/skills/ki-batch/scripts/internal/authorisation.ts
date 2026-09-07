@@ -8,6 +8,8 @@ const AUTHORISATION_FIELDS = new Set([
   'repository',
   'approved',
   'approved_at',
+  'authority_mode',
+  'authority_evidence',
   'approved_payload_sha256',
   'run_id',
   'timebox_ends_at',
@@ -24,12 +26,14 @@ export type BatchAuthorisation = {
   repository: string
   approved: boolean
   approvedAt: string | null
+  authorityMode: 'reviewed-items' | 'outcome'
+  authorityEvidence: string | null
   approvedPayloadSha256: string
   runId: string
   runBinding: BatchRunBinding | null
   timeboxEndsAt: string
   itemIds: readonly string[]
-  completionTarget: 'awaiting-review'
+  completionTarget: 'awaiting-review' | 'done'
   mandatoryStops: readonly string[]
   closureItemIds: readonly string[]
 }
@@ -147,6 +151,8 @@ export const resolveBatchAuthorisation = ({
   const repository = fields.repository
   const approved = fields.approved
   const approvedAt = fields.approved_at
+  const authorityMode = fields.authority_mode === undefined ? 'reviewed-items' : fields.authority_mode
+  const authorityEvidence = fields.authority_evidence
   const payloadHash = fields.approved_payload_sha256
   const runId = fields.run_id
   const timeboxEndsAt = timestamp(fields.timebox_ends_at)
@@ -160,6 +166,12 @@ export const resolveBatchAuthorisation = ({
     return stop('batch authorisation has an invalid identity or filename')
   if (typeof repository !== 'string' || !repository) return stop('batch authorisation must name one repository')
   if (typeof approved !== 'boolean') return stop('batch authorisation must declare approval')
+  if (authorityMode !== 'reviewed-items' && authorityMode !== 'outcome')
+    return stop('batch authorisation has an invalid authority mode')
+  if (authorityMode === 'outcome' && (typeof authorityEvidence !== 'string' || authorityEvidence.trim().length === 0))
+    return stop('outcome-authorised batch lacks current human authority evidence')
+  if (authorityMode === 'reviewed-items' && authorityEvidence !== undefined && authorityEvidence !== null)
+    return stop('reviewed-item batch must not claim outcome authority evidence')
   if (approved ? !timestamp(approvedAt) : approvedAt !== null)
     return stop('batch authorisation has invalid approval evidence')
   if (typeof payloadHash !== 'string' || !/^[0-9a-f]{64}$/.test(payloadHash) || payloadHash !== actualPayloadHash)
@@ -172,10 +184,15 @@ export const resolveBatchAuthorisation = ({
   if (!timeboxEndsAt || !itemIds || !mandatoryStops || !closureItemIds)
     return stop('batch authorisation has invalid required fields')
   if (new Set(itemIds).size !== itemIds.length) return stop('batch authorisation repeats an item identifier')
-  if (fields.completion_target !== 'awaiting-review')
+  if (fields.completion_target !== 'awaiting-review' && fields.completion_target !== 'done')
     return stop('batch authorisation has an invalid completion target')
   if (closureItemIds.some((item) => !itemIds.includes(item)))
     return stop('batch authorisation grants closure outside its named items')
+  if (
+    fields.completion_target === 'done' &&
+    (closureItemIds.length !== itemIds.length || itemIds.some((item) => !closureItemIds.includes(item)))
+  )
+    return stop('done completion target must grant closure for every named item')
   if (repository !== repositoryIdentity) return stop('batch authorisation names another repository')
   if (!approved) return stop('batch authorisation is not approved')
   if (Date.parse(timeboxEndsAt) <= now.getTime()) return stop('batch authorisation timebox has expired')
@@ -187,12 +204,15 @@ export const resolveBatchAuthorisation = ({
       repository,
       approved,
       approvedAt: approvedAt as string,
+      authorityMode,
+      authorityEvidence:
+        typeof authorityEvidence === 'string' && authorityEvidence.trim() ? authorityEvidence.trim() : null,
       approvedPayloadSha256: payloadHash,
       runId,
       runBinding: binding,
       timeboxEndsAt,
       itemIds,
-      completionTarget: 'awaiting-review',
+      completionTarget: fields.completion_target,
       mandatoryStops,
       closureItemIds
     },

@@ -18,8 +18,8 @@ AUDIT runs the two sibling audits in that order, then this skill's rubric. Findi
 2. **MCP render data is present and valid.** The repository uses one of two supported patterns:
    - **Data-merge pattern:** `.chezmoidata/` contains one MCP YAML input with the portable canonical schema, merged into template data by chezmoi.
    - **Managed-source pattern:** a plain, non-templated `mcp-servers.yaml` is applied to the canonical XDG path and read from the chezmoi source tree by the render partial.
-3. **The render partial exists.** The sole `.chezmoitemplates/mcp-servers-json.tmpl` partial expands client-targeted data into a surface's `mcpServers` representation.
-4. **At least one target is wired.** A physical target `.tmpl` calls that partial with `template "mcp-servers-json.tmpl" .` or includes the selected managed source; substrings and comments do not count.
+3. **The render partial exists.** The sole `.chezmoitemplates/mcp-servers-json` partial (optionally suffixed `.tmpl`) expands client-targeted data into a surface's `mcpServers` representation.
+4. **At least one target is wired.** A physical target `.tmpl` calls the chosen partial by its exact name with `template`, or includes the selected managed source; substrings and comments do not count.
 5. **Render, apply, activation, and health remain separate.** `chezmoi diff` is reviewed before `chezmoi apply`, but source structure cannot claim a render, applied target, client activation, or runtime health. Those require separately authorised, secret-safe evidence.
 
 Both data patterns are valid. Choosing between them, selecting a partial location, deciding which targets to render, and executing `chezmoi apply` are external repository policy. The rubric reports the available evidence and missing links but deliberately proposes no files or commands.

@@ -75,12 +75,12 @@ Two delivery channels, both required for a shipped tool:
 
 ## Persisted configuration formats
 
-Use a schema only for an on-disk manifest whose **structure is expected to evolve**. It is a compatibility boundary for persisted data, not another spelling of the tool's release version.
+Use a schema only for an on-disk manifest whose **structure is expected to evolve**. It defines the current persisted structure, not another spelling of the tool's release version.
 
 - Put `schema = <integer>` at the start of a versioned manifest and accept only the versions the tool implements. An absent, malformed, or unsupported value fails clearly; never guess how to interpret it.
-- Increment the schema only for an incompatible structural change. The implementation must either migrate an older supported form deliberately or reject it with the required remediation. A newer unknown version is always rejected rather than silently downgraded.
+- Increment the schema only for an incompatible structural change. Before 1.0, implementations accept only the current form. A newer unknown version is always rejected rather than silently downgraded.
 - Keep schema parsing and writing in one owned implementation with coverage for each accepted form and each rejection path. Generated or registered manifests write the current schema explicitly.
-- Do **not** add a schema to small, stable leaf metadata with no evolving structural contract. Both mGit's `.mgit-workspace.toml` and KI's more expressive `.ki-workspace.toml` currently use schema 1, while mGit's leaf-only `.mgit-config.toml` deliberately remains unschematized metadata. Matching numbers do not make the formats interchangeable: each tool owns and validates its own contract.
+- Canonical `.ki.toml` and `.mgit.toml` documents each own and validate their schema-1 contract. Matching schema numbers do not make the formats interchangeable. Do **not** add a ceremonial schema to small, stable leaf metadata with no evolving structural contract.
 
 ## Capability conditionals
 
@@ -111,7 +111,7 @@ These are Knowledge Islands house style, established by `tools-mgit` and `tools-
 A physical `man/<tool>.1` is the installed command reference. It stays aligned with the CLI help surface and uses the same command-group vocabulary where the tool has grouped commands.
 
 - Write portable, `mandoc`-compatible roff: `.TH` for the page header; `.SH` for main sections; `.SS` for command groups; `.TP` with `.B`, `.I`, `.BR`, or `.IR` for terms and their descriptions; and `.PP` for ordinary paragraphs. Use `.nf` / `.fi` only for literal preformatted examples.
-- Put a literal `\&` line immediately after every `.SH` and `.SS`. Begin ordinary prose with `.PP` after that line; a structural macro such as `.TP` or a nested `.SS` may follow it directly. Never place bare prose immediately after a heading. This gives the rendered heading a clear visual separation without relying on renderer-specific blank-line behaviour.
+- Put a literal `\&` line immediately after every `.SH` and `.SS`. Begin ordinary prose with `.PP` after that separator; a structural macro such as `.TP` or a nested `.SS` follows the separator directly. Never leave an empty `.PP` before another structural macro. This gives the rendered heading a clear visual separation without relying on renderer-specific blank-line behaviour while remaining clean under `mandoc -T lint`.
 - Put each configuration format's schema, fields, and examples in the canonical `FILES` section. Command sections describe their commands' behaviour and may name a file, but do not repeat the file format.
 - Keep SYNOPSIS short and executable: show the general forms first, then grouped commands as term/description pairs. Use the same names and ordering as help, and describe each command in a concise active sentence.
 - Include the user-facing release and local-development installation paths that the tool supports, including where the manual is installed or linked. Identify the canonical completion action, but keep shell-startup ownership with the user's configuration layer rather than prescribing an installer-side mutation.

@@ -63,7 +63,7 @@ Requirement headings, prefixes, and append-only IDs form a coherent registry.
   - _Remediation:_ automatic
 - **ID-2 [M] — requirement prefixes are registered to their file** — Each requirement's prefix is registered in an areas table and assigned to its containing file. (standards-specs.md)
   - _Remediation:_ diagnostic — Register the prefix to its owning file or correct the requirement identifier, then rerun the audit.
-- **ID-3 [M] — requirement IDs are sequential per prefix and unique across the corpus** — Requirement IDs are append-only, sequential within each registered prefix, never reused, and unique across the corpus. (standards-specs.md)
+- **ID-3 [M] — requirement IDs are sequential per prefix and unique across the corpus** — Requirement IDs are append-only, sequential within each registered prefix, never reused, and unique across the corpus. A serial listed under a "Retired to the tool" section stays claimed: it is not a gap, and it is never redefined. (standards-specs.md)
   - _Remediation:_ diagnostic — Allocate the next unused serial for the requirement prefix and update the duplicate or gap, then rerun the audit.
 
 ## REQ — normative requirement shape

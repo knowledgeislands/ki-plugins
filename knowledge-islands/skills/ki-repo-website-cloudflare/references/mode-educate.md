@@ -7,13 +7,14 @@ Scaffold Cloudflare Workers Static Assets hosting for a new Knowledge Islands si
 - [1. Before you start — prerequisites](#1-before-you-start--prerequisites)
 - [2. Create the site `wrangler.jsonc`](#2-create-the-site-wranglerjsonc)
 - [3. Add the script family to `package.json`](#3-add-the-script-family-to-packagejson)
-- [4. Update `.gitignore`](#4-update-gitignore)
-- [5. Mark the repo with `.ki.toml`](#5-mark-the-repo-with-ki-configtoml)
+- [4. Reconcile `.gitignore`](#4-reconcile-gitignore)
+- [5. Mark the repo with `.ki.toml`](#5-mark-the-repo-with-kitoml)
 - [6. First deploy — workers.dev subdomain](#6-first-deploy--workersdev-subdomain)
 - [7. Wire the custom domain](#7-wire-the-custom-domain)
 - [8. Add the `www` redirect rule](#8-add-the-www-redirect-rule)
 - [9. Set up Cloudflare Workers Builds (CI/CD)](#9-set-up-cloudflare-workers-builds-cicd)
-- [10. Verify](#10-verify)
+- [10. Write the Cloudflare guide](#10-write-the-cloudflare-guide)
+- [11. Verify](#11-verify)
 
 ---
 
@@ -22,7 +23,7 @@ Scaffold Cloudflare Workers Static Assets hosting for a new Knowledge Islands si
 | What                                                    | Where                                       |
 | ------------------------------------------------------- | ------------------------------------------- |
 | Cloudflare account with Workers access                  | dash.cloudflare.com                         |
-| Domain added to Cloudflare (nameservers pointing to CF) | Cloudflare DNS dashboard for the zone       |
+| Optional custom domain added to Cloudflare              | Cloudflare DNS dashboard for the zone       |
 | `wrangler` CLI in `devDependencies`                     | `bun add -D wrangler`                       |
 | A built `dist/` produced by `ki-repo-website`                | run `bun run ki:site:build` once to confirm |
 
@@ -38,7 +39,7 @@ This opens a browser OAuth flow and stores user-scoped credentials outside the r
 
 ## 2. Create the site `wrangler.jsonc`
 
-The config lives at the **site root** — the repo root for a flat layout, the `site/` subfolder when the repo also has companion Workers. Use the canonical shape from the standard and adapt three fields: `name`, `compatibility_date`, and the `assets.directory` path.
+The config lives at the **site root** selected by `[skills.ki-repo-website].site-root`, which defaults to `apps/site`. Use the canonical shape from the standard and adapt three fields: `name`, `compatibility_date`, and the `assets.directory` path.
 
 ```jsonc
 {
@@ -48,12 +49,6 @@ The config lives at the **site root** — the repo root for a flat layout, the `
   // The selected website implementation builds dist/ beside this file.
   // Path is relative to THIS file.
   "assets": { "directory": "./dist" },
-  // Custom domains — apex plus www (www → apex via a Cloudflare redirect rule, see §8).
-  // Omit routes for the initial deploy if the domain is not yet in Cloudflare; add them in §7.
-  "routes": [
-    { "pattern": "example.com", "custom_domain": true },
-    { "pattern": "www.example.com", "custom_domain": true }
-  ],
   // Persist Workers logs in the dashboard (Workers & Pages → <name> → Logs).
   "observability": { "enabled": true }
 }
@@ -62,7 +57,7 @@ The config lives at the **site root** — the repo root for a flat layout, the `
 `assets.directory` notes:
 
 - **`"./dist"`** — `wrangler.jsonc` is at the repo root (`dist/` is a sibling).
-- **`"dist"`** — `wrangler.jsonc` and the build output both live in the canonical `site/` workspace.
+- **`"dist"`** — `wrangler.jsonc` and the build output both live in the canonical `apps/site/` application workspace.
 
 Set `compatibility_date` to today's date (`YYYY-MM-DD`). For a pure-assets Worker there is no runtime code, but the field is required.
 
@@ -70,63 +65,59 @@ Set `compatibility_date` to today's date (`YYYY-MM-DD`). For a pure-assets Worke
 
 ## 3. Add the script family to `package.json`
 
-Add these three scripts to the root `package.json`. Use the `site:` prefix for the `site/`-subfolder layout; drop it for a flat layout (rare):
+Add the local operations to `<site-root>/package.json`. Each command runs from the selected site workspace:
 
 ```jsonc
 {
   "scripts": {
-    "ki:site:deploy": "cd site && bunx wrangler deploy",
-    "ki:site:preview": "bun run ki:site:build && cd site && bunx wrangler dev",
-    "ki:site:clean": "rm -rf site/dist site/.wrangler"
+    "deploy": "bunx wrangler deploy",
+    "preview": "bun run build && bunx wrangler dev",
+    "upload": "bunx wrangler versions upload",
+    "clean": "rm -rf dist .wrangler"
   }
 }
 ```
 
-For a **flat** layout (no `site/` subfolder, `wrangler.jsonc` at repo root):
+Expose the stable public aliases from the root `package.json`:
 
 ```jsonc
 {
   "scripts": {
-    "ki:site:deploy": "bunx wrangler deploy",
-    "ki:site:preview": "bun run ki:site:build && bunx wrangler dev",
-    "ki:site:clean": "rm -rf dist .wrangler"
+    "ki:site:deploy": "bun run --cwd apps/site deploy",
+    "ki:site:preview": "bun run --cwd apps/site preview",
+    "ki:site:upload": "bun run --cwd apps/site upload"
   }
 }
 ```
 
-`ki:site:build` and `ki:site:dev` are owned by `ki-repo-website` — do not redefine them here.
+Replace `apps/site` with the selected site root. For `site-root = "."`, use `bun run deploy`, `bun run preview`, and `bun run upload`. The local build/dev operations and public `ki:site:build` / `ki:site:dev` aliases are owned by `ki-repo-website` — do not redefine them here.
 
 ---
 
-## 4. Update `.gitignore`
+## 4. Reconcile `.gitignore`
 
-For a flat layout, add these entries to the repository `.gitignore`:
+Declare `ki-repo-website-cloudflare`, then let `ki-repo` compose these unanchored rules into the root `.gitignore`:
 
 ```gitignore
 dist/
 .wrangler/
+.dev.vars
 ```
 
-`dist/` is regenerated on every build; committing it causes conflicts and bloats history. `.wrangler/` holds wrangler's local cache and upload state.
-
-For the canonical `site/` workspace, use the workspace-relative entries instead:
-
-```gitignore
-site/dist/
-site/.wrangler/
-```
+The unanchored rules cover flat and workspace layouts. `ki-repo-website` owns `dist/`; this skill contributes `.wrangler/` and `.dev.vars`. Do not write a competing workspace-specific block from this skill.
 
 ---
 
 ## 5. Mark the repo with `.ki.toml`
 
-Add the `[skills.ki-repo-website-cloudflare]` table so the mechanical checker can find the repo:
+Keep the implicit `apps/site` default out of configuration. Add `site-root` to `[skills.ki-repo-website]` only for an override.
+
+Keep the selected site root on the website-core table and make the hosting table keyless:
 
 ```toml
+[skills.ki-repo-website]
+
 [skills.ki-repo-website-cloudflare]
-# site-root is the path (relative to the repo root) where wrangler.jsonc lives.
-# "site" for the subfolder layout; "." for flat.
-site-root = "site"
 ```
 
 If `.ki.toml` does not yet exist, create it at the repo root. Other skills may already have their own tables in it — just append.
@@ -152,7 +143,9 @@ Expected output includes `Published <name> (Uploaded …)` and a `*.workers.dev`
 
 ## 7. Wire the custom domain
 
-This happens in the **Cloudflare dashboard**, not via `wrangler`. The `routes` block in `wrangler.jsonc` with `custom_domain: true` tells Cloudflare to serve the Worker at that domain, but Cloudflare only honours it if the domain's DNS is already managed in the same account.
+Skip this section when the workers.dev URL is the intended public endpoint. A custom domain is optional and its absence is conformant.
+
+When a custom domain is wanted, configure it in the **Cloudflare dashboard** or through `wrangler.jsonc`. A `routes` block with `custom_domain: true` tells Cloudflare to serve the Worker at that domain, but Cloudflare only honours it if the domain's DNS is already managed in the same account.
 
 1. Go to **Workers & Pages → Overview → `<name>` → Settings → Domains & Routes → Add → Custom Domain**.
 2. Enter the apex domain (`example.com`) and select **Add Custom Domain**. Alternatively, declare `custom_domain: true` under `routes` and redeploy.
@@ -191,7 +184,13 @@ If the repo runs a GitHub Action that commits to `main` before deploy (e.g. a co
 
 ---
 
-## 10. Verify
+## 10. Write the Cloudflare guide
+
+Record every dashboard-owned setting from the steps above in **`docs/guides/cloudflare.md`** — the one guide for every Cloudflare aspect of this repository ([standard §6](standards-cloudflare-hosting.md#6-the-cloudflare-guide--dashboard-owned-settings)). Capture the exact values an operator enters: the Workers Builds build command, deploy command, and root directory (§9); the domain and redirect choices (§7–8); whether `workers.dev` serves (§6). Link to `wrangler.jsonc` for everything the config already declares rather than duplicating it. From now on, a dashboard change and its guide edit travel together.
+
+---
+
+## 11. Verify
 
 Run the mechanical checker to confirm the hosting config is conformant:
 
@@ -207,4 +206,4 @@ All items should be `PASS`. The two most common first-run findings:
 Also confirm end-to-end manually:
 
 1. `bun run ki:site:preview` — builds locally and serves through the real Worker runtime at `http://localhost:8787`. Check that the site loads and internal links work.
-2. `bun run ki:site:deploy` — deploys to production. Confirm the custom domain resolves and the `www` redirect returns 301.
+2. `bun run ki:site:deploy` — deploys to production. Confirm the workers.dev URL responds; when a custom domain is configured, also confirm it resolves and the `www` redirect returns 301.

@@ -133,6 +133,36 @@ test('prose and code lookalikes do not satisfy index-link coverage', () => {
   expect(indexItem().audit.run(activityContext(session))[0]).toMatchObject({ status: 'VIOLATION' })
 })
 
+test('Obsidian wikilinks satisfy index coverage without a conform write', () => {
+  const repository = activityBase()
+  const activities = join(repository, 'Admin', 'Operations', 'Activities')
+  writeFileSync(join(activities, 'Activities.md'), '# Activities\n\n- [[Morning Briefing]]\n')
+  const session = createActivitiesSession(options(repository, 'conform'))
+  const context = activityContext(session)
+
+  expect(indexItem().audit.run(context)[0]).toMatchObject({ status: 'PASS' })
+  indexItem().conform?.run(context)
+  expect(session.proposal()).toEqual({ writes: [] })
+})
+
+test('aliased Obsidian wikilinks satisfy index coverage', () => {
+  const repository = activityBase()
+  const activities = join(repository, 'Admin', 'Operations', 'Activities')
+  writeFileSync(join(activities, 'Activities.md'), '# Activities\n\n- [[Morning Briefing|Daily briefing]]\n')
+  const session = createActivitiesSession(options(repository, 'audit'))
+
+  expect(indexItem().audit.run(activityContext(session))[0]).toMatchObject({ status: 'PASS' })
+})
+
+test('Obsidian wikilinks inside fenced code do not satisfy index coverage', () => {
+  const repository = activityBase()
+  const activities = join(repository, 'Admin', 'Operations', 'Activities')
+  writeFileSync(join(activities, 'Activities.md'), '# Activities\n\n```md\n- [[Morning Briefing]]\n```\n')
+  const session = createActivitiesSession(options(repository, 'audit'))
+
+  expect(indexItem().audit.run(activityContext(session))[0]).toMatchObject({ status: 'VIOLATION' })
+})
+
 test('malformed YAML frontmatter fails rather than appearing as an unstructured note', () => {
   const repository = activityBase()
   const activities = join(repository, 'Admin', 'Operations', 'Activities')

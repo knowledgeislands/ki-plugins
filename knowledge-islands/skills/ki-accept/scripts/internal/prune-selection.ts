@@ -4,6 +4,7 @@ export type PruneCandidate = {
   symlink: boolean
   canonical: boolean
   status: 'draft' | 'ready' | 'in-progress' | 'awaiting-review' | 'done'
+  committedDone: boolean | 'unknown'
   retainedByCompletionObservationTrade: boolean | 'unknown'
 }
 
@@ -16,7 +17,7 @@ export type PruneSelectionInput = {
 }
 
 export type PruneSelectionOutcome =
-  | { kind: 'selected'; paths: readonly string[]; writes: false }
+  | { kind: 'selected'; paths: readonly string[]; commitBoundary: 'prune-only'; writes: false }
   | { kind: 'stop'; reason: string; writes: false }
 
 const selectorIsSafe = (selector: string): boolean =>
@@ -41,6 +42,10 @@ export const evaluatePruneSelection = ({
     if (!candidate.regularFile || candidate.symlink || !candidate.canonical)
       return { kind: 'stop', reason: `${candidate.path} is not a regular canonical work record`, writes: false }
     if (candidate.status !== 'done') return { kind: 'stop', reason: `${candidate.path} is not done`, writes: false }
+    if (candidate.committedDone === false)
+      return { kind: 'stop', reason: `${candidate.path} has not landed as done`, writes: false }
+    if (candidate.committedDone === 'unknown')
+      return { kind: 'stop', reason: `${candidate.path} has uncertain committed done evidence`, writes: false }
     if (candidate.retainedByCompletionObservationTrade === true)
       return {
         kind: 'stop',
@@ -54,5 +59,10 @@ export const evaluatePruneSelection = ({
         writes: false
       }
   }
-  return { kind: 'selected', paths: candidates.map((candidate) => candidate.path), writes: false }
+  return {
+    kind: 'selected',
+    paths: candidates.map((candidate) => candidate.path),
+    commitBoundary: 'prune-only',
+    writes: false
+  }
 }

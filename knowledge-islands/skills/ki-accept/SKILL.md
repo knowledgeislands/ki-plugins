@@ -21,8 +21,8 @@ Read [the review-closure procedure](references/standards-acceptance.md) and [the
 
 1. Resolve the selected adapter and confirm one exact canonical local record at its physical root is `awaiting-review` with the roadmap-owned six-heading review packet. Remote adapters stop pending `KI-HARNESS-FND-014`.
 2. Present the review packet and require human approval by default.
-3. Record approved closure as `done` and retain the done record.
-4. Prune only fully resolved regular `done` records selected beneath the exact adapter root, excluding records retained by an unresolved completion-observation trade; the selection is the deletion authority.
+3. Record approved closure as `done`, retain the done record, and ensure that state lands before any later pruning.
+4. Prune only fully resolved regular `done` records selected beneath the exact adapter root, excluding records retained by an unresolved completion-observation trade; selection is deletion authority. A prune-only commit may remove several eligible records together but contains no lifecycle transition or unrelated work.
 
 It never chooses work, starts implementation, edits plan scope, reconstructs missing verification, or treats a recap or passing command as human approval.
 
@@ -54,5 +54,5 @@ With no target, identify the required exact accepted item or done records and st
 
 - This is a process skill, not a universal AUDIT / CONFORM / EDUCATE / REFRESH checker.
 - Human approval is the default; it is never inferred from a clean gate, a commit, a recap, or silence.
-- Done records are retained history. Process pruning is explicit destructive cleanup in either adapter; native roadmap pruning is an intentionally explicit non-KB selected-repository sweep.
+- Done records are retained history until their committed state precedes a dedicated prune-only commit. Process pruning is explicit destructive cleanup in either local adapter; native roadmap pruning is an intentionally explicit non-KB selected-repository sweep.
 - No KI CLI command, wrapper script, runtime-specific mechanism, push, or release belongs here.

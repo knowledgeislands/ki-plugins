@@ -126,10 +126,7 @@ describe('ki-repo-kb-live-artifacts session', () => {
 
   test('honours a safe configured artifacts directory', () => {
     const root = repository()
-    writeFileSync(
-      join(root, '.ki.toml'),
-      '[skills.ki-repo-kb-live-artifacts]\nartifacts_dir = "Operational/Boards"\n'
-    )
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo-kb-live-artifacts]\nartifacts_dir = "Operational/Boards"\n')
     mkdirSync(join(root, 'Operational', 'Boards'), { recursive: true })
     writeFileSync(
       join(root, 'Operational', 'Boards', 'Queue.md'),
@@ -158,10 +155,7 @@ describe('ki-repo-kb-live-artifacts session', () => {
     const outside = repository()
     mkdirSync(join(outside, 'Boards'), { recursive: true })
     symlinkSync(outside, join(root, 'linked'))
-    writeFileSync(
-      join(root, '.ki.toml'),
-      '[skills.ki-repo-kb-live-artifacts]\nartifacts_dir = "linked/Boards"\n'
-    )
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo-kb-live-artifacts]\nartifacts_dir = "linked/Boards"\n')
     const context = rootContext(createLiveArtifactsSession(options(root, 'audit')))
 
     expect(context.structure.index[0]).toMatchObject({ status: 'NOT_APPLICABLE' })

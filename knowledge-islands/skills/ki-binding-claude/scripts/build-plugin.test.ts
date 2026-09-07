@@ -19,7 +19,8 @@ import {
   type BuildPluginOptions,
   type BuildPluginTestHooks,
   parseBuildPluginArgs,
-  runBuildPlugin
+  runBuildPlugin,
+  validateProjectedSkillDependencies
 } from './build-plugin.ts'
 
 const temporaryDirectories: string[] = []
@@ -85,6 +86,18 @@ test('the plugin builder has strict help and argument handling', () => {
   expect(() => runBuildPlugin(optionsFor(import.meta.dir), noOutput)).toThrow('inside the source harness')
 })
 
+test('projected skill dependencies must remain in the generated skill set', () => {
+  expect(() =>
+    validateProjectedSkillDependencies([
+      { name: 'ki-authoring', dependsOn: [] },
+      { name: 'ki-recap', dependsOn: ['ki-authoring'] }
+    ])
+  ).not.toThrow()
+  expect(() => validateProjectedSkillDependencies([{ name: 'ki-recap', dependsOn: ['ki-authoring'] }])).toThrow(
+    'projected skill dependency is absent: ki-recap requires ki-authoring'
+  )
+})
+
 test('dry run emits the complete manifest without mutating the output root', () => {
   const outDir = temporaryOutput()
   createPreviousPair(outDir)
@@ -128,6 +141,8 @@ test('successful publication replaces both generated paths and preserves repo sc
   expect(marketplace.plugins[0]?.name).toBe('test-plugin')
   expect(lstatSync(join(outDir, 'test-plugin', 'skills', 'ki-binding', 'SKILL.md')).isFile()).toBe(true)
   expect(lstatSync(join(outDir, 'test-plugin', 'skills', 'ki-binding-claude', 'SKILL.md')).isFile()).toBe(true)
+  expect(lstatSync(join(outDir, 'test-plugin', 'skills', 'ki-recap', 'SKILL.md')).isFile()).toBe(true)
+  expect(lstatSync(join(outDir, 'test-plugin', 'skills', 'ki-authoring', 'SKILL.md')).isFile()).toBe(true)
   expectPathAbsent(join(outDir, 'test-plugin', 'skills', 'ki-binding-codex'))
   expectPathAbsent(join(outDir, '.claude-plugin', 'previous-marketplace.txt'))
   expectPathAbsent(join(outDir, 'test-plugin', 'previous-plugin.txt'))

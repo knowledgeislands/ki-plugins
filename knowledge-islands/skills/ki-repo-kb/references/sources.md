@@ -24,7 +24,7 @@ These have no URL; they are sampled at REFRESH time through each base's own `kb-
 | `ki-arcadia-principal` base[^ap] | Whether the zone model, routing test, and bindings still match a real layout and practice | 2026-08-12 |
 | `kit-legal` base[^kl] | The same, from a base further along the structure, now on the canonical zone names (alias dropped) | 2026-07-04 |
 | Other bases actively using this skill | The same, as further bases adopt the skill | 2026-07-04 |
-| Per-base `.ki-config` declarations | Which base-specific declarations recur across bases※ | 2026-08-12 |
+| Per-base `.ki.toml` declarations | Which base-specific declarations recur across bases※ | 2026-08-12 |
 
 ※ Which base-specific declarations recur across bases and should be promoted into this standard skill.
 
@@ -37,7 +37,7 @@ Per-source outcome:
 - **Knowledge Islands knowledge-base standard** — confirmed for the five-zone model, staging, Pillar unit, wikilink convention, and declared-not-forked rule. The former Focus/proposal metadata rows were retired: current Streams structure is flat adapter-owned Roadmap and Housekeeping areas. Universal metadata reconciliation remains open.
 - **`ki-arcadia-principal`** — confirmed for current configuration and layout: `repo_type = "kb"`, `ki-work.adapter = "kb-streams"`, and `Streams/Roadmap/` plus `Streams/Housekeeping/` are present. This local source check does not claim a full remote or hosted audit outcome.
 - **`kit-legal`** — confirmed. Full canonical structure on canonical zone names; no kb config table (no aliases); config now on the `[ki-*]` prefix. Hosted audit: 0 fail · 3 warn (Charter/Conformance absent, one non-snake_case key). Zone-alias binding still has no live exemplar.
-- **Per-base `.ki-config` declarations** — confirmed. No recurring base-specific declaration has emerged to promote into the standard this cycle.
+- **Per-base `.ki.toml` declarations** — confirmed. No recurring base-specific declaration has emerged to promote into the standard this cycle.
 
 Open watch-items:
 

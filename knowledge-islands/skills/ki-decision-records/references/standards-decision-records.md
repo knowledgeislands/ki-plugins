@@ -153,17 +153,13 @@ decision_type_url: https://knowledgeislands.info/specifications/decision-records
 
 ## Collection root
 
-A collection created under this standard begins by adopting the instrument itself: **`GDR-<SCOPE>-001: Adopting Decision Records`** is the first indexed record.
-
-The index carries this non-rendered provenance marker immediately before its ordered list so AUDIT can distinguish a collection created under the rule from an established migration case:
+Every collection begins by adopting the instrument itself: **`GDR-<SCOPE>-001: Adopting Decision Records`** is the first indexed record. A compound title that contains the adoption — e.g. "Adopt decision records and documentation instruments" — satisfies the rule, for a collection whose founding decision covers more than the instrument:
 
 ```markdown
-<!-- ki-decision-records: adoption-root -->
-
 1. [GDR-<SCOPE>-001](GDR-<SCOPE>-001-adopting-decision-records.md) — adopting Decision Records.
 ```
 
-An established collection without the marker is valid as-is: do not automatically insert, rename, renumber, or reposition records merely to adopt this later convention.
+The rule is unconditional: an established collection whose first record does not adopt the instrument is non-compliant, and is brought into line by retitling (or writing) its root record — not by renumbering or repositioning the rest.
 
 ## Index
 

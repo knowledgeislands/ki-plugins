@@ -127,11 +127,28 @@ const ROAD_7: RubricItem<RoadmapAuditContext> = {
   }
 }
 
+const ROAD_8: RubricItem<RoadmapAuditContext> = {
+  code: 'ROAD-8',
+  title: 'lifecycle and pruning commit boundaries',
+  description:
+    'Lifecycle transitions may share their coherent work commit; a prune-only commit removes one or more eligible records only after each has landed as done.',
+  sources: [SOURCE],
+  judgment: {
+    scope:
+      'The Git history and proposed commits that create or transition work records, land accepted done records, or prune selected records.',
+    prompt:
+      'Review whether lifecycle changes are grouped with their coherent work without requiring intermediate-state commits, and whether every prune commit follows a prior committed done state and contains only eligible work-record removals.',
+    outcomes: ['conforming', 'lifecycle commit over-separated', 'committed done state missing', 'prune commit mixed'],
+    guidance:
+      'Combine lifecycle changes with the planning, implementation, review, or closure unit they describe. Before pruning, land each selected record as done; then remove one or more eligible records in a dedicated prune-only commit.'
+  }
+}
+
 export const ROAD: RubricFamily<RoadmapRubricContext, RoadmapAuditContext> = {
   code: 'ROAD',
   title: 'roadmaps',
   description: 'Canonical generated-index structure, placement, and readiness.',
   standard: SOURCE,
   selectContext: (context) => context.roadmaps,
-  items: [ROAD_1, ROAD_2, ROAD_3, ROAD_4, ROAD_5, ROAD_6, ROAD_7]
+  items: [ROAD_1, ROAD_2, ROAD_3, ROAD_4, ROAD_5, ROAD_6, ROAD_7, ROAD_8]
 }

@@ -7,6 +7,8 @@ const remediation = {
   guidance: 'Align the interactive app with the React/Vite implementation or select the content implementation instead.'
 }
 const inactive = (context: WebsiteAppContext): readonly AuditOutcome[] | null => (context.applicable ? null : [])
+const unavailableSiteRoot = (context: WebsiteAppContext): readonly AuditOutcome[] | null =>
+  context.siteRootValid ? null : []
 const item = (
   code: string,
   title: string,
@@ -31,11 +33,12 @@ const APP_1 = item(
   'FAIL',
   (context) =>
     inactive(context) ??
+    unavailableSiteRoot(context) ??
     check(
       Boolean(context.dependencies.react && context.dependencies['react-dom']),
       'React and React DOM are declared.',
       'React and/or React DOM is absent.',
-      'package.json'
+      context.packagePath
     )
 )
 const APP_2 = item(
@@ -45,11 +48,12 @@ const APP_2 = item(
   'FAIL',
   (context) =>
     inactive(context) ??
+    unavailableSiteRoot(context) ??
     check(
       Boolean(context.dependencies.vite && context.dependencies['@vitejs/plugin-react']),
       'Vite and @vitejs/plugin-react are declared.',
       'Vite and/or @vitejs/plugin-react is absent.',
-      'package.json'
+      context.packagePath
     )
 )
 const APP_3 = item(
@@ -59,11 +63,12 @@ const APP_3 = item(
   'FAIL',
   (context) =>
     inactive(context) ??
+    unavailableSiteRoot(context) ??
     check(
       !context.hasEleventyConfig && !context.dependencies['@11ty/eleventy'],
       'No Eleventy build system is present.',
       'Eleventy is present beside the React/Vite app; select one website implementation.',
-      'package.json'
+      context.packagePath
     )
 )
 const APP_4 = item(
@@ -73,9 +78,10 @@ const APP_4 = item(
   'WARN',
   (context) =>
     inactive(context) ??
+    unavailableSiteRoot(context) ??
     check(
       Boolean(context.viteConfig),
-      `Vite config is present at ${context.siteRoot ? `${context.siteRoot}/` : ''}${context.viteConfig}.`,
+      `Vite config is present at ${context.viteConfigPath}.`,
       'No Vite config was found.'
     )
 )
@@ -85,7 +91,8 @@ const APP_5 = item(
   'index.html and a React main module are present.',
   'FAIL',
   (context) =>
-    inactive(context) ?? [
+    inactive(context) ??
+    unavailableSiteRoot(context) ?? [
       ...check(context.hasIndex, 'index.html is present.', 'index.html is absent.'),
       ...check(
         context.hasEntry,
@@ -97,40 +104,44 @@ const APP_5 = item(
 const APP_6 = item(
   'APP-6',
   'App build command',
-  'ki:site:build runs vite build.',
+  'The selected site package build script runs vite build.',
   'FAIL',
   (context) =>
     inactive(context) ??
+    unavailableSiteRoot(context) ??
     check(
-      /\bvite\s+build\b/.test(context.scripts['ki:site:build'] ?? ''),
-      'ki:site:build runs vite build.',
-      'ki:site:build does not run vite build.',
-      'package.json'
+      /\bvite\s+build\b/.test(context.scripts.build ?? ''),
+      'build runs vite build.',
+      'build does not run vite build.',
+      context.packagePath
     )
 )
 const APP_7 = item(
   'APP-7',
   'App development command',
-  'ki:site:dev runs Vite.',
+  'The selected site package dev script runs Vite.',
   'WARN',
   (context) =>
     inactive(context) ??
+    unavailableSiteRoot(context) ??
     check(
-      /\bvite(?:\s|$)/.test(context.scripts['ki:site:dev'] ?? ''),
-      'ki:site:dev runs Vite.',
-      'ki:site:dev does not run Vite.',
-      'package.json'
+      /\bvite(?:\s|$)/.test(context.scripts.dev ?? ''),
+      'dev runs Vite.',
+      'dev does not run Vite.',
+      context.packagePath
     )
 )
 const APP_8 = item('APP-8', 'Dist output', 'Vite emits the shared dist seam.', 'FAIL', (context) => {
   const stopped = inactive(context)
   if (stopped) return stopped
+  const unavailable = unavailableSiteRoot(context)
+  if (unavailable) return unavailable
   const declared = context.viteConfigSource.match(/outDir\s*:\s*['"]([^'"]+)['"]/)
   return check(
     !declared || declared[1]?.replace(/^\.\//, '').replace(/\/$/, '') === 'dist',
     declared ? 'Vite build.outDir is dist.' : 'Vite uses its default dist output.',
     `Vite build.outDir is ${declared?.[1]}, not dist.`,
-    context.viteConfig ?? undefined
+    context.viteConfigPath ?? undefined
   )
 })
 const APP_9 = item('APP-9', 'App opt-in', 'The app implementation table is present.', 'WARN', (context) => {
@@ -157,11 +168,45 @@ const APP_10 = item(
         })))
 )
 
+/*
+ * A test include that names only the module extension collects a component test
+ * silently: nothing errors, and the suite reports every other test passing. The
+ * evidence is the config's own text, so this is heuristic - it reads a declared
+ * include rather than resolving what the runner would actually match.
+ */
+const APP_11 = item(
+  'APP-11',
+  'Test pattern reaches component files',
+  'A declared test include covers the component extension as well as the module one.',
+  'WARN',
+  (context) => {
+    const inactiveResult = inactive(context)
+    if (inactiveResult) return inactiveResult
+    const unavailable = unavailableSiteRoot(context)
+    if (unavailable) return unavailable
+    const source = context.viteConfigSource
+    if (!source.includes('test:') || !source.includes('include'))
+      return [{ status: 'NOT_APPLICABLE', message: 'The site declares no test include.' }]
+
+    const names = (extension: string) => source.includes(`.test.${extension}`)
+    const missing = [names('ts') && !names('tsx') ? 'tsx' : null, names('js') && !names('jsx') ? 'jsx' : null].filter(
+      (extension): extension is string => extension !== null
+    )
+
+    return check(
+      missing.length === 0,
+      'The test include covers component files as well as modules.',
+      `The test include names no .test.${missing.join(' or .test.')} file, so a component test would be collected silently as nothing.`,
+      context.viteConfigPath ?? 'vite config'
+    )
+  }
+)
+
 export const APP: RubricFamily<WebsiteAppContext, WebsiteAppContext> = {
   code: 'APP',
   title: 'Interactive website',
   description: 'React/Vite client application implementation.',
   standard: SOURCE,
   selectContext: (context) => context,
-  items: [APP_1, APP_2, APP_3, APP_4, APP_5, APP_6, APP_7, APP_8, APP_9, APP_10]
+  items: [APP_1, APP_2, APP_3, APP_4, APP_5, APP_6, APP_7, APP_8, APP_9, APP_10, APP_11]
 }

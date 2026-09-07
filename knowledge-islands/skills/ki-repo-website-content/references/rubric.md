@@ -42,20 +42,20 @@ The static-site stack, workspace layout, generated output, and sustainable opera
   - _Review prompt:_ Is Lucide the icon source and is it wired through the intended passthrough/client pattern?
   - _Outcomes:_ conforming; revision required; design decision required
   - _Conforming guidance:_ Revise the affected website surface to meet the standard, or record the owning design decision before accepting a deliberate exception.
-- **WEB-6 [M] — Site workspace configuration** — One Eleventy configuration lives under the `site/` workspace; a flat configuration is WARN. (standards-eleventy-site.md)
+- **WEB-6 [M] — Site-root configuration** — One Eleventy configuration lives at the site root selected by `[skills.ki-repo-website].site-root`. (standards-eleventy-site.md)
   - _Remediation:_ diagnostic — Inspect the affected website surface and apply the standard through a reviewable, site-owned change.
 - **WEB-7 [M] — Roadmap** — `ROADMAP.md` is present. (standards-eleventy-site.md)
   - _Remediation:_ diagnostic — Inspect the affected website surface and apply the standard through a reviewable, site-owned change.
-- **WEB-8 [J] — Workspace declaration** — The root package manifest declares a workspace containing `site`. (standards-eleventy-site.md)
-  - _Evidence scope:_ The root package manifest declares a workspace containing `site`.
-  - _Review prompt:_ Does the root workspace declaration include `site`?
+- **WEB-8 [J] — Workspace declaration** — The root package manifest declares a workspace covering the selected site root. (standards-eleventy-site.md)
+  - _Evidence scope:_ The root package manifest declares a workspace covering the selected site root.
+  - _Review prompt:_ Does the root workspace declaration cover `[skills.ki-repo-website].site-root` (conventionally `apps/site` via `apps/*`)?
   - _Outcomes:_ conforming; revision required; design decision required
   - _Conforming guidance:_ Revise the affected website surface to meet the standard, or record the owning design decision before accepting a deliberate exception.
 - **WEB-9 [M] — Source layout** — `src/` has `_data/`, `_includes/layouts/`, `_includes/partials/`, and `assets/css/`. (standards-eleventy-site.md)
   - _Remediation:_ diagnostic — Inspect the affected website surface and apply the standard through a reviewable, site-owned change.
-- **WEB-10 [J] — Site script prefix** — Every site script carries the `site:` prefix. (standards-eleventy-site.md)
-  - _Evidence scope:_ Every site script carries the `site:` prefix.
-  - _Review prompt:_ Do site scripts carry the required `site:` prefix?
+- **WEB-10 [J] — Local script ownership** — The selected site package uses ordinary local script names while the repository root owns public `ki:site:*` aliases. (standards-eleventy-site.md)
+  - _Evidence scope:_ The selected site package uses ordinary local script names while the repository root owns public `ki:site:*` aliases.
+  - _Review prompt:_ Does the selected site package avoid duplicating the root-owned public `ki:site:*` aliases?
   - _Outcomes:_ conforming; revision required; design decision required
   - _Conforming guidance:_ Revise the affected website surface to meet the standard, or record the owning design decision before accepting a deliberate exception.
 - **WEB-11 [J] — Typed structure data** — Navigation and ordering live in a typed `_data/*.ts` source. (standards-eleventy-site.md)
@@ -126,14 +126,14 @@ The static-site stack, workspace layout, generated output, and sustainable opera
   - _Review prompt:_ Where the site is public, does it ship and scope the required discovery and application assets?
   - _Outcomes:_ conforming; revision required; design decision required
   - _Conforming guidance:_ Revise the affected website surface to meet the standard, or record the owning design decision before accepting a deliberate exception.
-- **WEB-30 [M] — Site build and development scripts** — Build invokes Eleventy and development uses `concurrently`. (standards-eleventy-site.md)
+- **WEB-30 [M] — Local build and development scripts** — The selected site package has a local `build` script invoking Eleventy and a local `dev` script using `concurrently`. (standards-eleventy-site.md)
   - _Remediation:_ diagnostic — Inspect the affected website surface and apply the standard through a reviewable, site-owned change.
-- **WEB-31 [M] — Development script fan-out** — The development script fans out to CSS watch and Eleventy serve scripts. (standards-eleventy-site.md)
+- **WEB-31 [M] — Local development script fan-out** — The local `dev` script fans out to local `dev:css` and `dev:serve` scripts. (standards-eleventy-site.md)
   - _Remediation:_ diagnostic — Inspect the affected website surface and apply the standard through a reviewable, site-owned change.
-- **WEB-32 [M] — Site cleanup script** — `ki:site:clean` is present. (standards-eleventy-site.md)
+- **WEB-32 [M] — Local cleanup script** — A local `clean` script is present in the selected site package. (standards-eleventy-site.md)
   - _Remediation:_ diagnostic — Inspect the affected website surface and apply the standard through a reviewable, site-owned change.
-- **WEB-33 [M] — Dist ignore** — Generated site output is gitignored at the correct workspace path. (standards-eleventy-site.md)
-  - _Remediation:_ automatic
+- **WEB-33 [M] — Dist ignore** — Generated site output is gitignored at the selected site-root path. (standards-eleventy-site.md)
+  - _Remediation:_ diagnostic — Inspect the affected website surface and apply the standard through a reviewable, site-owned change.
 - **WEB-34 [J] — Portable generated links** — Built HTML contains portable relative internal links. (standards-eleventy-site.md)
   - _Evidence scope:_ Built HTML contains portable relative internal links.
   - _Review prompt:_ Does the built HTML actually contain portable relative internal links?
@@ -144,9 +144,9 @@ The static-site stack, workspace layout, generated output, and sustainable opera
   - _Review prompt:_ Is dist treated as fully generated build output and never hand-edited?
   - _Outcomes:_ conforming; revision required; design decision required
   - _Conforming guidance:_ Revise the affected website surface to meet the standard, or record the owning design decision before accepting a deliberate exception.
-- **WEB-36 [J] — Hosting seam handoff** — The exact site/dist output is consumed by the separately selected Cloudflare projection without claiming deployment or runtime success. (standards-eleventy-site.md)
-  - _Evidence scope:_ The exact site/dist output is consumed by the separately selected Cloudflare projection without claiming deployment or runtime success.
-  - _Review prompt:_ Does the selected hosting projection consume site/dist, with parsed configuration and runtime/deployment evidence kept separate?
+- **WEB-36 [J] — Hosting seam handoff** — The exact `<site-root>/dist` output is consumed by the separately selected hosting projection without claiming deployment or runtime success. (standards-eleventy-site.md)
+  - _Evidence scope:_ The exact `<site-root>/dist` output is consumed by the separately selected hosting projection without claiming deployment or runtime success.
+  - _Review prompt:_ Does the selected hosting projection consume `<site-root>/dist`, with parsed configuration and runtime/deployment evidence kept separate?
   - _Outcomes:_ conforming; revision required; design decision required
   - _Conforming guidance:_ Revise the affected website surface to meet the standard, or record the owning design decision before accepting a deliberate exception.
 - **WEB-37 [J] — Volatile facts have one home** — Volatile versions and idioms have one canonical home. (standards-eleventy-site.md)
@@ -159,7 +159,7 @@ The static-site stack, workspace layout, generated output, and sustainable opera
   - _Review prompt:_ Has Mode REFRESH confirmed the cited sources and updated the review record recently enough?
   - _Outcomes:_ conforming; revision required; design decision required
   - _Conforming guidance:_ Revise the affected website surface to meet the standard, or record the owning design decision before accepting a deliberate exception.
-- **WEB-39 [M] — Parseable package manifest** — `package.json` is physical and parseable. (standards-eleventy-site.md)
+- **WEB-39 [M] — Parseable package manifest** — The selected site package manifest is physical and parseable. (standards-eleventy-site.md)
   - _Remediation:_ diagnostic — Inspect the affected website surface and apply the standard through a reviewable, site-owned change.
 - **WEB-40 [M] — Tailwind CLI dependency** — `@tailwindcss/cli` is a dependency. (standards-eleventy-site.md)
   - _Remediation:_ diagnostic — Inspect the affected website surface and apply the standard through a reviewable, site-owned change.

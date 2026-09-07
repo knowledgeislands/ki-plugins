@@ -23,10 +23,10 @@
  * The native rubric host owns execution, reporting, and exit status.
  */
 import { execFile } from 'node:child_process'
-import { existsSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
-import type { RubricEmitter } from '../../shared/rubric.ts'
+import type { PackageScriptClaim, RubricEmitter } from '../../shared/rubric.ts'
 
 // Unified severity ladder — shared by every KI checker (checker-contract).
 // area is the minted rubric code (references/rubric.md); ref is its
@@ -90,10 +90,22 @@ const mechanicalEngineeringCheckIds = new Set([
   'TOML-3'
 ])
 
+const engineeringTableHeader =
+  /^\[(?:skills\.ki-engineering|skills\."[^"]+:ki-engineering"|"[^"]+:ki-engineering")\]\s*(?:#.*)?$/m
+
+const engineeringTableBody = (configuration: string): string | undefined => {
+  const header = engineeringTableHeader.exec(configuration)
+  if (!header || header.index === undefined) return undefined
+  return configuration.slice(header.index + header[0].length).split(/^\[/m)[0] ?? ''
+}
+
 export const inspectEngineeringCheckRecords = (
   configuration: string
 ): readonly Pick<EngineeringEvidenceFinding, 'level' | 'message'>[] => {
-  const header = /^\[skills\.ki-engineering\.checks\]\s*$/m.exec(configuration)
+  const header =
+    /^\[(?:skills\.ki-engineering\.checks|skills\."[^"]+:ki-engineering"\.checks|"[^"]+:ki-engineering"\.checks)\]\s*$/m.exec(
+      configuration
+    )
   if (!header || header.index === undefined)
     return [{ level: 'NOT_APPLICABLE', message: 'no engineering check records declared' }]
   const body = configuration.slice(header.index + header[0].length).split(/^\[/m)[0] ?? ''
@@ -110,34 +122,223 @@ export const inspectEngineeringCheckRecords = (
   })
 }
 
-const scriptOwner = (key: string): string | undefined => {
-  if (key === 'ki:deps:update') return 'ki-engineering'
-  if (key === 'ki:eval') return 'ki-repo-harness'
-  if (key.startsWith('ki:binding:')) return 'ki-binding-claude'
-  if (['ki:site:deploy', 'ki:site:preview'].includes(key)) return 'ki-repo-website-cloudflare'
-  if (key.startsWith('ki:site:')) return 'ki-repo-website'
-  if (key.startsWith('ki:ingress:')) return 'ki-repo-website-cloudflare'
-  if (key === 'ki:generate:client' || key.startsWith('ki:server:') || key.startsWith('ki:test:')) return 'ki-repo-mcp'
-  if (key.startsWith('ki:tools:')) return 'ki-repo-tools'
-  if (key.startsWith('ki:self:')) return 'ki-self'
-  return undefined
+type ScriptExclusionInspection = {
+  exclusions: ReadonlySet<string>
+  messages: readonly string[]
 }
 
-// A declaration is a bare name under `[skills]`; the quoted form survives only for a skill drawn
-// from a harness outside the declared list, so both spellings are read here.
-const declaredSkillNames = (configuration: string): ReadonlySet<string> =>
-  new Set(
-    [...configuration.matchAll(/^\[skills\.(?:"[^"\n]+:(ki-[a-z0-9-]+)"|(ki-[a-z0-9-]+))\]/gm)].map(
-      (match) => (match[1] ?? match[2]) as string
-    )
+const configuredEngineeringTables = (configuration: string): readonly Record<string, unknown>[] => {
+  let parsed: Record<string, unknown>
+  try {
+    parsed = Bun.TOML.parse(configuration) as Record<string, unknown>
+  } catch {
+    return []
+  }
+  const skills = parsed.skills && typeof parsed.skills === 'object' ? (parsed.skills as Record<string, unknown>) : {}
+  const candidates = [
+    skills['ki-engineering'],
+    ...Object.entries(skills)
+      .filter(([key]) => key.endsWith(':ki-engineering'))
+      .map(([, value]) => value),
+    ...Object.entries(parsed)
+      .filter(([key]) => key.endsWith(':ki-engineering'))
+      .map(([, value]) => value)
+  ]
+  return candidates.filter(
+    (candidate): candidate is Record<string, unknown> => candidate !== null && typeof candidate === 'object'
   )
+}
+
+const BARE_SCRIPT_IDIOMS = new Set(['build', 'prepare', 'test', 'test:coverage', 'test:watch', 'clean'])
+
+const isSelfOwnedScript = (key: string): boolean => key.startsWith('self:') && key.length > 'self:'.length
+
+export const inspectScriptExclusions = (
+  configuration: string,
+  scripts: Readonly<Record<string, string>>,
+  claims: ReadonlyMap<string, PackageScriptClaim>
+): ScriptExclusionInspection => {
+  const tables = configuredEngineeringTables(configuration)
+  if (tables.length !== 1) return { exclusions: new Set(), messages: [] }
+  const configured = tables[0]?.script_exclusions
+  if (configured === undefined) return { exclusions: new Set(), messages: [] }
+  if (!Array.isArray(configured))
+    return { exclusions: new Set(), messages: ['script_exclusions must be an array of exact script names'] }
+
+  const exclusions = new Set<string>()
+  const messages: string[] = []
+  for (const entry of configured) {
+    if (typeof entry !== 'string' || entry.trim().length === 0) {
+      messages.push('script_exclusions entries must be non-empty strings')
+      continue
+    }
+    if (/[*?[\]{}]/.test(entry)) {
+      messages.push(`script exclusion ${JSON.stringify(entry)} must be exact, not a pattern`)
+      continue
+    }
+    if (exclusions.has(entry)) {
+      messages.push(`duplicate script exclusion: ${entry}`)
+      continue
+    }
+    exclusions.add(entry)
+    if (!Object.hasOwn(scripts, entry)) messages.push(`stale script exclusion names no existing script: ${entry}`)
+    const claim = claims.get(entry)
+    if (claim) messages.push(`script exclusion overlaps declared owner ${claim.skill}: ${entry}`)
+    if (entry.startsWith('ki:') && !claim)
+      messages.push(`script exclusion overlaps capability-owned ki: namespace: ${entry}`)
+    if (entry.startsWith('self:')) messages.push(`script exclusion overlaps repository-owned self: namespace: ${entry}`)
+  }
+  return { exclusions, messages }
+}
+
+// ── DEPS-1: leading-edge dependency freshness ─────────────────────────────────
+// The adoption clock is set by the NEXT version after the installed one — the
+// first release the repo has not adopted — so a fast-shipping upstream cannot
+// reset it by publishing again.
+export const DEPENDENCY_ADOPTION_WINDOW_DAYS = 14
+
+export type OutdatedPackage = { name: string; current: string }
+
+export type DependencyHoldInspection = {
+  holds: ReadonlyMap<string, string>
+  messages: readonly string[]
+}
+
+export const inspectDependencyHolds = (
+  configuration: string,
+  outdated: readonly string[]
+): DependencyHoldInspection => {
+  const tables = configuredEngineeringTables(configuration)
+  if (tables.length !== 1) return { holds: new Map(), messages: [] }
+  const configured = tables[0]?.dependency_holds
+  if (configured === undefined) return { holds: new Map(), messages: [] }
+  if (!Array.isArray(configured))
+    return { holds: new Map(), messages: ['dependency_holds must be an array of "<name> — <reason>" strings'] }
+
+  const holds = new Map<string, string>()
+  const messages: string[] = []
+  const available = new Set(outdated)
+  for (const entry of configured) {
+    if (typeof entry !== 'string' || entry.trim().length === 0) {
+      messages.push('dependency_holds entries must be non-empty strings')
+      continue
+    }
+    const separator = entry.indexOf(' — ')
+    const name = (separator === -1 ? entry : entry.slice(0, separator)).trim()
+    const reason = separator === -1 ? '' : entry.slice(separator + 3).trim()
+    if (!name || !reason) {
+      messages.push(`dependency hold ${JSON.stringify(entry)} must record a reason as "<name> — <reason>"`)
+      continue
+    }
+    if (holds.has(name)) {
+      messages.push(`duplicate dependency hold: ${name}`)
+      continue
+    }
+    holds.set(name, reason)
+    if (!available.has(name)) messages.push(`stale dependency hold names a package with no available update: ${name}`)
+  }
+  return { holds, messages }
+}
+
+// Release versions only (no prerelease): the window is opened by adoptable releases.
+const parseRelease = (raw: string): readonly [number, number, number] | undefined => {
+  const parts = /^(\d+)\.(\d+)\.(\d+)$/.exec(raw.trim())
+  return parts ? [Number(parts[1]), Number(parts[2]), Number(parts[3])] : undefined
+}
+
+const compareRelease = (a: readonly [number, number, number], b: readonly [number, number, number]): number =>
+  a[0] - b[0] || a[1] - b[1] || a[2] - b[2]
+
+/** The next release after `current` — the first one the repo has not adopted. */
+export const nextVersionAfter = (current: string, versions: readonly string[]): string | undefined => {
+  const installed = parseRelease(current)
+  if (!installed) return undefined
+  let next: { raw: string; release: readonly [number, number, number] } | undefined
+  for (const raw of versions) {
+    const release = parseRelease(raw)
+    if (!release || compareRelease(release, installed) <= 0) continue
+    if (!next || compareRelease(release, next.release) < 0) next = { raw, release }
+  }
+  return next?.raw
+}
+
+export type DependencyFreshness =
+  | { state: 'stale' | 'fresh'; name: string; current: string; next: string; ageDays: number }
+  | { state: 'held'; name: string; current: string; reason: string }
+  | { state: 'unknown'; name: string; current: string }
+
+export const gradeDependencyFreshness = (
+  outdated: readonly OutdatedPackage[],
+  publishTimes: ReadonlyMap<string, ReadonlyMap<string, string>>,
+  holds: ReadonlyMap<string, string>,
+  now: Date
+): readonly DependencyFreshness[] =>
+  outdated.map(({ name, current }) => {
+    const reason = holds.get(name)
+    if (reason !== undefined) return { state: 'held', name, current, reason }
+    const times = publishTimes.get(name)
+    const next = times ? nextVersionAfter(current, [...times.keys()]) : undefined
+    const published = next && times ? Date.parse(times.get(next) ?? '') : Number.NaN
+    if (!next || Number.isNaN(published)) return { state: 'unknown', name, current }
+    const ageDays = Math.floor((now.getTime() - published) / 86_400_000)
+    const state = ageDays >= DEPENDENCY_ADOPTION_WINDOW_DAYS ? 'stale' : 'fresh'
+    return { state, name, current, next, ageDays }
+  })
+
+export const inspectGovernedScriptSurface = (
+  configuration: string,
+  scripts: Readonly<Record<string, string>>,
+  packageScriptClaims: readonly PackageScriptClaim[]
+): { namingOffenders: readonly string[]; claimProblems: readonly string[] } => {
+  const claims = new Map(packageScriptClaims.map((claim) => [claim.script, claim]))
+  const inspected = inspectScriptExclusions(configuration, scripts, claims)
+  const retired = Object.keys(scripts).filter(
+    (key) =>
+      /^ki:lint:/.test(key) ||
+      (/^ki:deps:/.test(key) && key !== 'ki:deps:update') ||
+      key === 'ki:knip' ||
+      key === 'ki:verify' ||
+      /^ki:[a-z-]+:lint$/.test(key) ||
+      ['ki:audit', 'ki:conform', 'ki:educate', 'ki:help'].includes(key)
+  )
+  const unsupported = Object.keys(scripts).filter(
+    (key) =>
+      !BARE_SCRIPT_IDIOMS.has(key) && !isSelfOwnedScript(key) && !inspected.exclusions.has(key) && !claims.has(key)
+  )
+  return {
+    namingOffenders: Object.keys(scripts).filter(
+      (key) =>
+        !BARE_SCRIPT_IDIOMS.has(key) &&
+        !key.startsWith('ki:') &&
+        !isSelfOwnedScript(key) &&
+        !inspected.exclusions.has(key)
+    ),
+    claimProblems: [
+      ...(retired.length ? [`retired script key(s): ${retired.join(', ')}`] : []),
+      ...(unsupported.length ? [`unsupported or unclaimed script key(s): ${unsupported.join(', ')}`] : []),
+      ...inspected.messages,
+      ...(!Object.hasOwn(scripts, 'ki:deps:update') ? ['missing required ki:deps:update'] : [])
+    ]
+  }
+}
 
 /** Inspect the repository once and return the complete engineering evidence set. */
 const run = promisify(execFile)
 
+export const usesCanonicalCoverageReportsDirectory = (
+  workspaces: readonly string[],
+  reportsDirectory: string | undefined
+): boolean =>
+  workspaces.length
+    ? workspaces.some((workspace) =>
+        [`${workspace}/reports/coverage`, `./${workspace}/reports/coverage`].includes(reportsDirectory ?? '')
+      )
+    : ['reports/coverage', './reports/coverage'].includes(reportsDirectory ?? '')
+
 export const collectAuditEvidence = async (
   repo: string,
-  emit?: RubricEmitter
+  emit?: RubricEmitter,
+  packageScriptClaims: readonly PackageScriptClaim[] = []
 ): Promise<readonly EngineeringEvidenceFinding[]> => {
   const findings: Finding[] = []
   const add = (level: Level, area: string, msg: string, ref?: string, file?: string): void => {
@@ -256,6 +457,7 @@ export const collectAuditEvidence = async (
     'devDependencies',
     'dependencies',
     'workspaces',
+    'overrides',
     'lint-staged',
     // published-artifact surface → the artifact skill (e.g. ki-repo-mcp)
     'main',
@@ -447,10 +649,22 @@ export const collectAuditEvidence = async (
 
   // Repo shape — flat vs monorepo (§0). A flat repo is one root TS project (`tsc --noEmit`);
   // a monorepo declares its packages in the standard Bun `workspaces` array in package.json
-  // (e.g. ["site", "ingress"]), whose per-package tsconfigs can carry incompatible
+  // (typically ownership globs such as ["packages/*", "apps/*", "examples/*"]), whose per-package tsconfigs can carry incompatible
   // `types`/`lib`, so it is type-checked per package rather than once at the root.
+  // A trailing `/*` glob expands to the subdirectories that carry a package.json.
   const workspaces = Array.isArray(pkg.workspaces)
-    ? (pkg.workspaces as string[]).filter((w) => typeof w === 'string')
+    ? (pkg.workspaces as string[])
+        .filter((w) => typeof w === 'string')
+        .flatMap((entry) =>
+          entry.endsWith('/*')
+            ? isDir(entry.slice(0, -2))
+              ? readdirSync(at(entry.slice(0, -2)), { withFileTypes: true })
+                  .filter((child) => child.isDirectory() && has(entry.slice(0, -2), child.name, 'package.json'))
+                  .map((child) => `${entry.slice(0, -2)}/${child.name}`)
+                  .sort()
+              : []
+            : [entry]
+        )
     : []
 
   // ── core: the read-only toolchain, run directly (audit = lint WITHOUT fixing) ──
@@ -463,9 +677,9 @@ export const collectAuditEvidence = async (
     if (noTsconfig.length)
       add('FAIL', 'TSC-1', `workspaces names dir(s) without a tsconfig.json: ${noTsconfig.join(', ')}`, STD)
     for (const ws of workspaces.filter((p) => read(`${p}/tsconfig.json`)))
-      await runCheck('TSC-1', `tsc ${ws}`, `tsc --noEmit -p ${ws}/tsconfig.json`, STD)
+      await runCheck('TSC-1', `tsc ${ws}`, `bunx tsc --noEmit -p ${ws}/tsconfig.json`, STD)
   } else {
-    await runCheck('TSC-1', 'tsc --noEmit', 'tsc --noEmit', STD)
+    await runCheck('TSC-1', 'tsc --noEmit', 'bunx tsc --noEmit', STD)
   }
   await runCheck('SYNC-1', 'syncpack format (check)', 'bunx syncpack format --check', STD)
   await runCheck('KNIP-2', 'knip', 'bunx knip --no-config-hints', STD)
@@ -489,25 +703,9 @@ export const collectAuditEvidence = async (
         STD,
         'package.json'
       )
-  const retired = Object.keys(scripts).filter(
-    (key) =>
-      /^ki:lint:/.test(key) ||
-      (/^ki:deps:/.test(key) && key !== 'ki:deps:update') ||
-      key === 'ki:knip' ||
-      key === 'ki:verify' ||
-      /^ki:[a-z-]+:lint$/.test(key) ||
-      ['ki:audit', 'ki:conform', 'ki:educate', 'ki:help'].includes(key)
-  )
-  const declared = declaredSkillNames(read('.ki.toml'))
-  const unsupported = Object.keys(scripts).filter(
-    (key) => key.startsWith('ki:') && (!scriptOwner(key) || !declared.has(scriptOwner(key) as string))
-  )
-  const missingDependencyUpdate = !Object.hasOwn(scripts, 'ki:deps:update')
-  const scriptProblems = [
-    ...(retired.length ? [`retired script key(s): ${retired.join(', ')}`] : []),
-    ...(unsupported.length ? [`unsupported or undeclared-owner script key(s): ${unsupported.join(', ')}`] : []),
-    ...(missingDependencyUpdate ? ['missing required ki:deps:update'] : [])
-  ]
+  const kiConfiguration = read('.ki.toml')
+  const scriptSurface = inspectGovernedScriptSurface(kiConfiguration, scripts, packageScriptClaims)
+  const scriptProblems = scriptSurface.claimProblems
   scriptProblems.length
     ? add(
         'FAIL',
@@ -545,36 +743,106 @@ export const collectAuditEvidence = async (
     ? add('PASS', 'SCR-5', 'prepare = "husky"', STD, 'package.json')
     : add('WARN', 'SCR-5', `prepare should be "husky", got ${JSON.stringify(scripts.prepare)}`, STD, 'package.json')
 
-  // ── core: the ki: naming law — every script is a bare idiom or ki:-prefixed ────
-  // engineering-standard §2: a script is valid iff it is one of the six universal
-  // lifecycle idioms OR carries the ki: prefix. A bare non-idiom name is drift — this
-  // is what keeps the script surface fully governed (every ki:* script is asserted by
-  // some KI skill; the artifact/governance skills own their ki:* deltas).
-  const BARE_IDIOMS = new Set<string>(['build', 'prepare', 'test', 'test:coverage', 'test:watch', 'clean'])
-  const offenders = Object.keys(scripts).filter((k) => !BARE_IDIOMS.has(k) && !k.startsWith('ki:'))
+  // ── core: script ownership — bare lifecycle, ki: capability, or self: repository ──
+  // engineering-standard §2: ki:* scripts are claimed by resolved capabilities,
+  // self:* scripts name repository ownership directly, and only the six universal
+  // lifecycle idioms remain bare. Other bare names require an exact external exclusion.
+  const offenders = scriptSurface.namingOffenders
   offenders.length
     ? add(
         'FAIL',
         'SCR-1',
-        `ungoverned script name(s): ${offenders.join(', ')} — every script must be a bare lifecycle idiom (${[...BARE_IDIOMS].join(', ')}) or carry the ki: prefix (engineering-standard §2)`,
+        `ungoverned script name(s): ${offenders.join(', ')} — every script must be a bare lifecycle idiom (${[...BARE_SCRIPT_IDIOMS].join(', ')}), carry the ki: prefix, carry a non-empty self: prefix, or have an exact external exclusion (engineering-standard §2)`,
         STD,
         'package.json'
       )
-    : add('PASS', 'SCR-1', 'all scripts are bare idioms or ki:-prefixed (naming law)', STD, 'package.json')
+    : add(
+        'PASS',
+        'SCR-1',
+        'all scripts are bare lifecycle idioms, ki:-prefixed, self:-prefixed, or exactly excluded',
+        STD,
+        'package.json'
+      )
 
-  // ── advisory: dependency freshness (bun outdated) ────────────────────────────
+  // ── core: dependency freshness — leading edge (bun outdated + registry dates) ──
+  // A newer release opens the 14-day adoption window (engineering-standard §1): INFO
+  // while the window is open, FAIL once the next unadopted release is two weeks old.
   try {
     const out = (await run('/bin/sh', ['-c', 'bun outdated'], { cwd: repo, encoding: 'utf8' })).stdout.trim()
-    const pkgRows = out.split('\n').filter((l) => l.includes('│') && !l.includes('Package') && !l.includes('Current'))
-    if (pkgRows.length === 0) {
+    // bun draws the table with U+2502 on a TTY but plain ASCII pipes when piped.
+    const pkgRows = out.split('\n').filter((l) => /[│|]/.test(l) && !l.includes('Package') && !l.includes('Current'))
+    const outdated: OutdatedPackage[] = pkgRows.flatMap((row) => {
+      const cells = row
+        .split(/[│|]/)
+        .map((cell) => cell.trim())
+        .filter(Boolean)
+      const name = cells[0]?.replace(/\s*\((?:dev|peer|optional)\)$/, '')
+      return name && cells[1] && /^\d/.test(cells[1]) ? [{ name, current: cells[1] }] : []
+    })
+    if (outdated.length === 0) {
       add('PASS', 'DEPS-1', 'all packages up to date (bun outdated)', STD)
     } else {
-      add(
-        'INFO',
-        'DEPS-1',
-        `${pkgRows.length} package${pkgRows.length === 1 ? '' : 's'} have updates available — run \`ki repo conform\`:\n  ${out}`,
-        STD
+      const { holds, messages } = inspectDependencyHolds(
+        kiConfiguration ?? '',
+        outdated.map((o) => o.name)
       )
+      for (const message of messages) add('WARN', 'DEPS-1', message, STD, '.ki.toml')
+      const publishTimes = new Map<string, ReadonlyMap<string, string>>()
+      await Promise.all(
+        outdated.map(async ({ name }) => {
+          try {
+            const encoded = name.startsWith('@') ? name.replace('/', '%2F') : name
+            const response = await fetch(`https://registry.npmjs.org/${encoded}`, {
+              signal: AbortSignal.timeout(10_000)
+            })
+            if (!response.ok) return
+            const body = (await response.json()) as { time?: Record<string, string> }
+            if (!body.time) return
+            publishTimes.set(
+              name,
+              new Map(Object.entries(body.time).filter(([key]) => key !== 'created' && key !== 'modified'))
+            )
+          } catch {
+            // registry unreachable for this package — graded as unknown below
+          }
+        })
+      )
+      const graded = gradeDependencyFreshness(outdated, publishTimes, holds, new Date())
+      const dated = (state: 'stale' | 'fresh') =>
+        graded.filter((g): g is Extract<DependencyFreshness, { state: 'stale' | 'fresh' }> => g.state === state)
+      const stale = dated('stale')
+      const fresh = dated('fresh')
+      const held = graded.filter((g): g is Extract<DependencyFreshness, { state: 'held' }> => g.state === 'held')
+      const unknown = graded.filter((g) => g.state === 'unknown')
+      if (stale.length)
+        add(
+          'FAIL',
+          'DEPS-1',
+          `beyond the ${DEPENDENCY_ADOPTION_WINDOW_DAYS}-day adoption window: ${stale
+            .map((g) => `${g.name} ${g.current} → ${g.next} (available ${g.ageDays} days)`)
+            .join(', ')} — adopt the update or record a dependency hold`,
+          STD
+        )
+      if (fresh.length)
+        add(
+          'INFO',
+          'DEPS-1',
+          `within the ${DEPENDENCY_ADOPTION_WINDOW_DAYS}-day adoption window: ${fresh
+            .map((g) => `${g.name} ${g.current} → ${g.next} (available ${g.ageDays} day${g.ageDays === 1 ? '' : 's'})`)
+            .join(', ')}`,
+          STD
+        )
+      if (held.length)
+        add('INFO', 'DEPS-1', `held deliberately: ${held.map((g) => `${g.name} — ${g.reason}`).join('; ')}`, STD)
+      if (unknown.length)
+        add(
+          'INFO',
+          'DEPS-1',
+          `update available but release age unknown (registry unreachable or unversioned): ${unknown
+            .map((g) => `${g.name} ${g.current}`)
+            .join(', ')} — run \`ki repo conform\``,
+          STD
+        )
     }
   } catch {
     add('NOT_APPLICABLE', 'DEPS-1', 'bun outdated unavailable — upgrade Bun to check dependency freshness', STD)
@@ -1215,15 +1483,28 @@ export const collectAuditEvidence = async (
       // monorepo shape (§0): per-workspace artifacts and test globs are scoped to the owning
       // workspace dir, never the repo root. Check the vitest reportsDirectory and include globs
       // sit under a declared workspace (mirrors the per-workspace tsc check above).
+      if (!workspaces.length) {
+        const reportsDirectory = vc.match(/reportsDirectory\s*:\s*['"]([^'"]+)['"]/)?.[1]
+        const canonical = usesCanonicalCoverageReportsDirectory(workspaces, reportsDirectory)
+        add(
+          canonical ? 'PASS' : 'FAIL',
+          'TEST-4',
+          canonical
+            ? `coverage reportsDirectory "${reportsDirectory}" uses the canonical reports/coverage namespace`
+            : `set Vitest coverage reportsDirectory to "reports/coverage" — ${reportsDirectory ? `got "${reportsDirectory}"` : 'none set (defaults to coverage/)'}`,
+          STD,
+          vitestFile
+        )
+      }
       if (workspaces.length) {
         const underWs = (p: string) => workspaces.some((w) => p === w || p.startsWith(`${w}/`))
         const rd = vc.match(/reportsDirectory\s*:\s*['"]([^'"]+)['"]/)?.[1]
         add(
-          rd && underWs(rd) ? 'PASS' : 'WARN',
+          usesCanonicalCoverageReportsDirectory(workspaces, rd) ? 'PASS' : 'FAIL',
           'TEST-4',
-          rd && underWs(rd)
-            ? `monorepo: coverage reportsDirectory "${rd}" is under a workspace`
-            : `monorepo (§0): set the vitest coverage reportsDirectory under the owning workspace (e.g. "site/coverage"), not the repo root — ${rd ? `got "${rd}"` : 'none set (defaults to root coverage/)'}`,
+          usesCanonicalCoverageReportsDirectory(workspaces, rd)
+            ? `coverage reportsDirectory "${rd}" uses the canonical workspace reports/coverage namespace`
+            : `set Vitest coverage reportsDirectory to <workspace>/reports/coverage — ${rd ? `got "${rd}"` : 'none set (defaults to coverage/)'}`,
           STD,
           vitestFile
         )
@@ -1233,7 +1514,7 @@ export const collectAuditEvidence = async (
         const escaped = globs.filter((g) => !underWs(g))
         if (escaped.length)
           add(
-            'WARN',
+            'FAIL',
             'TEST-4',
             `monorepo (§0): vitest include glob(s) not under a workspace dir: ${escaped.join(', ')} — scope tests/coverage to the owning workspace (e.g. site/scripts/**/*.test.ts)`,
             STD,
@@ -1349,10 +1630,10 @@ export const collectAuditEvidence = async (
   }
 
   // ── core: .ki.toml qualified ki-engineering table ────────
-  const ki = read('.ki.toml')
+  const ki = kiConfiguration
   const engineeringHeader = '[skills.ki-engineering]'
   if (!ki) add('WARN', 'TOML-1', '.ki.toml missing (ki-repo owns the contract)', STD, '.ki.toml')
-  else if (!/^\[skills\.ki-engineering\]/m.test(ki)) {
+  else if (!engineeringTableHeader.test(ki)) {
     add(
       'WARN',
       'TOML-1',
@@ -1362,21 +1643,15 @@ export const collectAuditEvidence = async (
     )
   } else {
     add('PASS', 'TOML-1', `${engineeringHeader} table present`, STD, '.ki.toml')
-    // validate-down: the table is a conformance marker only — it carries no keys. Repo
-    // shape (flat vs monorepo) is read from package.json `workspaces` (§0), a standard Bun
-    // convention, not a bespoke key here. Any key directly under the table is drift.
-    const body = ki.split(/^\[skills\.ki-engineering\]/m)[1]?.split(/^\[/m)[0] ?? ''
-    const KNOWN = new Set<string>() // no keys defined; only a [skills.ki-engineering.checks] sub-table is allowed
+    // validate-down: script_exclusions and dependency_holds are the only direct keys.
+    // Repo shape (flat vs monorepo) is read from package.json `workspaces` (§0), a standard
+    // Bun convention, not a bespoke key here. Any other key directly under the table is drift.
+    const body = engineeringTableBody(ki) ?? ''
+    const KNOWN = new Set<string>(['script_exclusions', 'dependency_holds'])
     for (const m of body.matchAll(/^\s*([A-Za-z0-9_-]+)\s*=/gm)) {
       KNOWN.has(m[1])
         ? add('PASS', 'TOML-2', `known key ${m[1]}`, STD, '.ki.toml')
-        : add(
-            'WARN',
-            'TOML-2',
-            `unknown key under ${engineeringHeader}: ${m[1]} (validate-down)`,
-            STD,
-            '.ki.toml'
-          )
+        : add('WARN', 'TOML-2', `unknown key under ${engineeringHeader}: ${m[1]} (validate-down)`, STD, '.ki.toml')
     }
     for (const record of inspectEngineeringCheckRecords(ki))
       add(record.level, 'TOML-3', record.message, STD, '.ki.toml')

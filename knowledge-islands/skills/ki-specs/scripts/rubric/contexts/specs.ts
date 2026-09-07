@@ -14,6 +14,7 @@ const RFC2119 =
 const REQUIREMENT_HEADING = /^###\s+([A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*)-(\d{3,})\s+—\s+(.+?)\s*$/
 const H3 = /^###\s+(.+?)\s*$/
 const NEAR_MISS_HEADING = /^###\s+([A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-\d{3,})\s*(?:[–—-]{1,2})\s*(\S.*?)\s*$/
+const RETIRED_ID = /\b([A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*)-(\d{3,})\b/g
 
 export type SpecRequirement = {
   readonly file: string
@@ -31,6 +32,13 @@ export type DuplicatePrefixRegistration = {
   readonly prefix: string
   readonly firstFile: string
   readonly duplicateFile: string
+}
+
+export type SpecRetiredId = {
+  readonly file: string
+  readonly id: string
+  readonly prefix: string
+  readonly serial: number
 }
 
 export type SpecHeadingIssue = {
@@ -59,6 +67,7 @@ export type SpecIdentityContext = {
   readonly applicable: boolean
   readonly headingIssues: readonly SpecHeadingIssue[]
   readonly requirements: readonly SpecRequirement[]
+  readonly retired: readonly SpecRetiredId[]
   readonly normaliseHeadings?: () => void
 }
 
@@ -220,6 +229,7 @@ export const createSpecsSession = ({
   const unregisteredFiles = areaFiles.filter((file) => !registeredFiles.has(file))
   const headingIssues: SpecHeadingIssue[] = []
   const requirements: SpecRequirement[] = []
+  const retired: SpecRetiredId[] = []
   const seenIds = new Map<string, string>()
   const originals = new Map<string, string>()
 
@@ -229,6 +239,7 @@ export const createSpecsSession = ({
     originals.set(relativePath, content)
     const lines = content.split('\n')
     let inGaps = false
+    let inRetired = false
     const fileRequirements: Array<{
       index: number
       id: string
@@ -241,7 +252,20 @@ export const createSpecsSession = ({
     for (const [index, line] of lines.entries()) {
       const h2 = line.match(/^##\s+(.+?)\s*$/)
       if (h2) {
-        inGaps = /^gaps\b/i.test((h2[1] ?? '').trim())
+        const section = (h2[1] ?? '').trim()
+        inGaps = /^gaps\b/i.test(section)
+        inRetired = /^retired to the tool\b/i.test(section)
+        continue
+      }
+      if (inRetired) {
+        const bullet = line.match(/^-\s+(.*)$/)
+        if (!bullet) continue
+        // Only the claim left of the em-dash separator names retired ids; ids to the right cite where the behaviour went.
+        const claim = (bullet[1] ?? '').split('—')[0] ?? ''
+        for (const match of claim.matchAll(RETIRED_ID)) {
+          const [, prefix, serial] = match
+          if (prefix && serial) retired.push({ file, id: `${prefix}-${serial}`, prefix, serial: Number(serial) })
+        }
         continue
       }
       if (inGaps) continue
@@ -306,6 +330,7 @@ export const createSpecsSession = ({
       applicable: inspectable,
       headingIssues,
       requirements,
+      retired,
       ...(mode === 'conform'
         ? {
             normaliseHeadings: () => {

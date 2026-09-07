@@ -7,6 +7,7 @@ export default {
   contract: 1,
   name: 'ki-repo-website-cloudflare',
   concern: 'Cloudflare static-site hosting',
+  packageScripts: ['ki:site:deploy', 'ki:site:preview', 'ki:site:upload'],
   createSession: createWebsiteCloudflareSession,
   families: [RUBRIC, WCF]
 } satisfies SkillRubricDefinition<WebsiteCloudflareRubricContext>

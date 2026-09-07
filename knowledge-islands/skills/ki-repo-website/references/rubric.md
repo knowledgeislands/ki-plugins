@@ -28,9 +28,9 @@ Generator-neutral selection, lifecycle, and dist seam.
 
 - **SITE-1 [M] — Website opt-in** — The neutral website table is present. (standards-website.md)
   - _Remediation:_ diagnostic — Align the shared website declaration and lifecycle seam, then rerun the audit.
-- **SITE-2 [M] — Website opt-in validation** — The neutral marker table is keyless. (standards-website.md)
+- **SITE-2 [M] — Website configuration** — The website table relies on the implicit apps/site default or contains only a safe site-root override. (standards-website.md)
   - _Remediation:_ diagnostic — Align the shared website declaration and lifecycle seam, then rerun the audit.
-- **SITE-3 [M] — Package manifest** — The root package manifest is safely parseable. (standards-website.md)
+- **SITE-3 [M] — Package manifests** — The root and selected site package manifests are safely parseable. (standards-website.md)
   - _Remediation:_ diagnostic — Align the shared website declaration and lifecycle seam, then rerun the audit.
 - **SITE-4 [M] — ki:site:build** — The root package exposes ki:site:build. (standards-website.md)
   - _Remediation:_ diagnostic — Align the shared website declaration and lifecycle seam, then rerun the audit.

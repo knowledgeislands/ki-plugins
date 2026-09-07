@@ -10,7 +10,7 @@ import {
   writeFileSync
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
 import { collectKbAuditEvidence, type KbRubricContext, ZONES } from '../contexts/kb.ts'
 import catalogue from './index.ts'
@@ -167,6 +167,50 @@ test('a zone alias through an intermediate symlink produces no unsafe proposal',
   expect(existsSync(join(outside, 'Resources', 'linked', 'Resources.md'))).toBe(false)
 })
 
+test('ZONE-1 accepts a readable zone symlink resolving to a directory', () => {
+  const repository = createBase()
+  const outside = mkdtempSync(join(tmpdir(), 'ki-repo-kb-resources-'))
+  temporaryDirectories.push(outside)
+  rmSync(join(repository, 'Resources'), { recursive: true })
+  symlinkSync(outside, join(repository, 'Resources'))
+
+  expect(
+    collectKbAuditEvidence(repository).filter(
+      (finding) => finding.code === 'ZONE-1' && finding.subject === 'Resources/'
+    )
+  ).toEqual([
+    {
+      level: 'PASS',
+      code: 'ZONE-1',
+      message: 'Required zone Resources is present.',
+      subject: 'Resources/'
+    }
+  ])
+})
+
+test('ZONE-1 rejects dangling and file-valued zone symlinks', () => {
+  for (const target of ['missing', 'file']) {
+    const repository = createBase()
+    const destination = join(repository, `${target}-target`)
+    if (target === 'file') writeFileSync(destination, 'not a directory\n')
+    rmSync(join(repository, 'Resources'), { recursive: true })
+    symlinkSync(destination, join(repository, 'Resources'))
+
+    expect(
+      collectKbAuditEvidence(repository).filter(
+        (finding) => finding.code === 'ZONE-1' && finding.subject === 'Resources/'
+      )
+    ).toEqual([
+      {
+        level: 'FAIL',
+        code: 'ZONE-1',
+        message: 'Required zone Resources is missing.',
+        subject: 'Resources/'
+      }
+    ])
+  }
+})
+
 test('governed note frontmatter requires note_type and rejects the generic type field', () => {
   const repository = createBase()
   const note = join(repository, 'Pillars', 'Note.md')
@@ -189,4 +233,45 @@ test('governed note frontmatter requires note_type and rejects the generic type 
       message: 'Invalid note-type metadata: missing note_type: Pillars/Note.md; legacy type: Pillars/Note.md.'
     }
   ])
+})
+
+test('adapter and protocol records delegate note-type metadata to their owning skills', () => {
+  const repository = createBase()
+  const records = [
+    'Streams/Roadmap/ITEM.md',
+    'Streams/Housekeeping/TEMPLATE.md',
+    '+/_AUTHORISATIONS/KI-EXAMPLE-BATCH-001.md',
+    '+/_TRADES/sender/repository/TRD-01234567.md',
+    '-/_TRADES/receiver/repository/TRD-89abcdef.md'
+  ]
+  for (const relativePath of records) {
+    const path = join(repository, relativePath)
+    mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(path, '---\nstatus: active\n---\n\n# Delegated record\n')
+  }
+
+  expect(collectKbAuditEvidence(repository).filter((finding) => finding.code === 'NOTE-1c')).toEqual([
+    {
+      level: 'PASS',
+      code: 'NOTE-1c',
+      message: 'Frontmatter uses note_type and does not use the legacy type field.'
+    }
+  ])
+})
+
+test('direct KB digest and handoff notes remain governed by note_type', () => {
+  const repository = createBase()
+  const digest = join(repository, '-', '_DIGESTS', 'Digest.md')
+  const handoff = join(repository, '-', '_TRADES', 'Handoff.md')
+  mkdirSync(dirname(digest), { recursive: true })
+  mkdirSync(dirname(handoff), { recursive: true })
+  writeFileSync(digest, '---\ntype: session-digest\n---\n\n# Digest\n')
+  writeFileSync(handoff, '---\nstatus: ready\n---\n\n# Handoff\n')
+
+  const finding = collectKbAuditEvidence(repository).find((candidate) => candidate.code === 'NOTE-1c')
+  expect(finding).toMatchObject({ level: 'FAIL', code: 'NOTE-1c' })
+  expect(finding?.message).toContain('missing note_type:')
+  expect(finding?.message).toContain('-/_DIGESTS/Digest.md')
+  expect(finding?.message).toContain('-/_TRADES/Handoff.md')
+  expect(finding?.message).toContain('legacy type: -/_DIGESTS/Digest.md')
 })

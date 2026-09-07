@@ -41,7 +41,8 @@ export const ENVIRONMENT: RubricFamily<EngineeringRubricContext, EnvironmentRubr
     {
       code: 'ENV-3',
       title: 'Real environment files are protected',
-      description: 'Real non-example `.env.*` files are gitignored and the loader has the Node parity call.',
+      description:
+        'Real non-example `.env.*` files are protected by the root `.gitignore` and the loader has the Node parity call.',
       sources: ['standards-engineering.md'],
       judgment: {
         scope: 'Real environment files and every loader that reads them.',

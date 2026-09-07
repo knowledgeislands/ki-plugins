@@ -107,11 +107,9 @@ The decision remains readable.
 }
 
 const rootFixture = ({
-  marker = true,
   files,
   indexIds
 }: {
-  marker?: boolean
   files: ReadonlyArray<{ file: string; id: string; title: string; sharedRecord?: boolean }>
   indexIds: readonly string[]
 }) => {
@@ -127,10 +125,7 @@ const rootFixture = ({
       return `${index + 1}. [${id}](${file?.file ?? `${id}.md`}) — ${file?.title ?? 'unknown'}.`
     })
     .join('\n')
-  writeFileSync(
-    join(directory, 'README.md'),
-    `# Decisions\n\n${marker ? '<!-- ki-decision-records: adoption-root -->\n\n' : ''}${entries}\n`
-  )
+  writeFileSync(join(directory, 'README.md'), `# Decisions\n\n${entries}\n`)
   return createDecisionRecordsSession({
     mode: 'audit',
     repository: root,
@@ -302,13 +297,24 @@ describe('new collection adoption root', () => {
     title: 'Unrelated decision'
   }
 
-  test('accepts a marked collection whose first record adopts Decision Records', () => {
+  test('accepts a collection whose first record adopts Decision Records', () => {
     const context = rootFixture({ files: [adoption], indexIds: [adoption.id] })
 
     expect(audit('ROOT-1', context as DecisionRecordsRubricContext)?.[0]?.status).toBe('PASS')
   })
 
-  test('rejects a marked collection whose first record has an unrelated classification, title, or serial', () => {
+  test('accepts a compound adoption title that contains the adoption', () => {
+    const compound = {
+      file: 'GDR-EXAMPLE-001-adopt-decision-records-and-documentation-instruments.md',
+      id: 'GDR-EXAMPLE-001',
+      title: 'Adopt decision records and documentation instruments'
+    }
+    const context = rootFixture({ files: [compound], indexIds: [compound.id] })
+
+    expect(audit('ROOT-1', context as DecisionRecordsRubricContext)?.[0]?.status).toBe('PASS')
+  })
+
+  test('rejects a collection whose first record has an unrelated classification, title, or serial', () => {
     const wrongTitle = { ...adoption, file: 'GDR-EXAMPLE-001-governance-baseline.md', title: 'Governance baseline' }
     const wrongSerial = { ...adoption, file: 'GDR-EXAMPLE-002-adopting-decision-records.md', id: 'GDR-EXAMPLE-002' }
 
@@ -318,16 +324,10 @@ describe('new collection adoption root', () => {
     }
   })
 
-  test('rejects a marked collection when the adoption root is not first in the index', () => {
+  test('rejects a collection when the adoption root is not first in the index', () => {
     const context = rootFixture({ files: [adoption, unrelated], indexIds: [unrelated.id, adoption.id] })
 
     expect(audit('ROOT-1', context as DecisionRecordsRubricContext)?.[0]?.status).toBe('VIOLATION')
-  })
-
-  test('leaves an unmarked established collection as a migration case', () => {
-    const context = rootFixture({ marker: false, files: [unrelated], indexIds: [unrelated.id] })
-
-    expect(audit('ROOT-1', context as DecisionRecordsRubricContext)?.[0]?.status).toBe('NOT_APPLICABLE')
   })
 })
 

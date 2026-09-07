@@ -7,6 +7,7 @@ export default {
   contract: 1,
   name: 'ki-repo-website',
   concern: 'generator-neutral website seam',
+  packageScripts: ['ki:site:build', 'ki:site:clean', 'ki:site:dev', 'ki:site:dev:css', 'ki:site:dev:serve'],
   createSession: createWebsiteCoreSession,
   families: [RUBRIC, SITE]
 } satisfies SkillRubricDefinition<WebsiteCoreContext>

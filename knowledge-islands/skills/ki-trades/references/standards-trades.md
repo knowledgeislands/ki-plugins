@@ -22,25 +22,59 @@ A repository participates only by declaring its own table, naming each partner o
 [skills.ki-trades]
 # Optional presentation-only map uplift; omitted means 0.
 map_bonus = 1
-
-[skills.ki-trades.routes."owner/receiver"]
-export = ["work"]
-
-[skills.ki-trades.routes."owner/sender"]
-import = ["knowledge"]
-
-[skills.ki-trades.routes."owner/peer"]
-export = ["work", "knowledge"]
-import = ["work"]
+routes."owner/receiver" = { export = ["work"] }
+routes."owner/sender" = { import = ["knowledge"] }
+routes."owner/peer" = { export = ["work", "knowledge"], import = ["work"] }
 ```
 
-The repository's canonical endpoint is `ki-repo.repository`, a required HTTPS GitHub URI. Each route has its own table, keyed by the partner's `owner/name` — the same form a trade record uses for its `sender` and `receiver` — carrying `export` and `import`, each a duplicate-free array drawn from the closed trade-kind set `work` and `knowledge`. A direction the partner does not trade is **absent**, never an empty array. Non-GitHub identities are currently unsupported: the registry, route keys, record paths, and projection cannot represent them consistently, so configuration must refuse them rather than claim portable HTTPS support.
+The repository's canonical endpoint is `ki-repo.repository`, a required HTTPS GitHub URI. Each route entry is keyed by the partner's `owner/name` — the same form a trade record uses for its `sender` and `receiver` — and carries `export` and `import`, each a duplicate-free array drawn from the closed trade-kind set `work` and `knowledge`. A direction the partner does not trade is **absent**, never an empty array. Non-GitHub identities are currently unsupported: the registry, route keys, record paths, and projection cannot represent them consistently, so configuration must refuse them rather than claim portable HTTPS support.
 
 Each partner appears exactly once: TOML's own prohibition on defining a key twice enforces that, so no hand-written uniqueness or lexical-ordering rule is needed. `[skills.ki-trades]` is declared explicitly rather than implied by its `routes` sub-table, because declaring a skill is separate from configuring it.
 
 `map_bonus` is an optional integer from `0` through `3`, defaulting to `0`. It is presentation metadata for the generated registered-estate map: it adds a small declared contribution to the repository's visible influence alongside route-derived degree and any renderer-derived organisation treatment. It does not change route activation, preparation, submission, receipt, decision, priority, or authority.
 
 A sender-declared export authorises only sender-local preparation and submission. It remains a pending observation route while the receiver is absent from the local registry, does not participate, or has not declared the matching import. Receipt requires an active reciprocal route: exactly one registered root declares the receiver's canonical home, the sender exports that kind, and the receiver imports the same kind from the sender. Filesystem visibility, one-sided declaration, or reciprocity for another kind never activates receipt. Route removal must refuse while a local preparation, submitted outbound, or retained inbound record depends on that typed route.
+
+### Knowledge subtypes and standing intake
+
+Standing intake is an optional, exact, two-sided grant layered onto an active ordinary `knowledge` route. The receiver owns and describes the accepted subtype vocabulary; the sender independently exports the same subtype. Work has no subtype or standing path.
+
+```toml
+[skills.ki-trades.subtypes.knowledge]
+shared-capability-maintenance = "Maintenance evidence about receiver-owned shared capabilities."
+
+[skills.ki-trades.routes."owner/sender"]
+import = ["knowledge"]
+
+[skills.ki-trades.routes."owner/sender".standing.import]
+knowledge = ["shared-capability-maintenance"]
+```
+
+The sender declares the reciprocal ordinary export and `[skills.ki-trades.routes."owner/receiver".standing.export]` with the exact same subtype. Subtypes are lower-case hyphenated identifiers with non-empty receiver-owned descriptions. Arrays are duplicate-free and omitted rather than empty. An absent, malformed, unknown, one-sided, cross-kind, or non-reciprocal declaration remains itemized-only; it never degrades into partial standing authority.
+
+An itemized knowledge record may carry optional `subtype` classification. Existing records without it remain valid. The field is invalid on work, and its presence never upgrades an itemized trade into standing intake.
+
+### Standing intake provenance
+
+Direct capture is receiver-local and begins with the exact marker `<!-- ki-trades:standing-intake -->` immediately followed by a TOML block:
+
+```toml
+schema = "ki-trades/standing-intake/v1"
+id = "STI-1a2b3c4d"
+source = "https://github.com/owner/sender"
+source_ref = "0123456789abcdef0123456789abcdef01234567:docs/source.md#finding"
+receiver = "https://github.com/owner/receiver"
+kind = "knowledge"
+subtype = "shared-capability-maintenance"
+captured_at = "2026-08-30T12:00:00Z"
+capture = "docs/roadmap/RECEIVER-GOV-001.md#source-analysis"
+```
+
+The marker declares the following block as governed evidence; examples without the marker are inert. `STI-` identities use eight lower-case hexadecimal characters and are unique in the receiver. `source_ref` fixes a full commit, Markdown path, and anchor in the registered source repository. `capture` points into the containing receiver-owned Markdown artifact. Audit validates schema, closed fields, identities, source resolution, receiver, knowledge kind, subtype, timestamps, and capture location.
+
+New capture requires a currently active exact-subtype standing import. Removing either standing declaration immediately blocks new direct capture. Previously committed receiver-owned evidence remains historical; audit reports its introduction-time authority for review rather than invalidating retained knowledge solely because the route was revoked.
+
+Standing intake grants no peer write, review, priority, implementation, publication, acceptance, completion, or roadmap authority. It may augment an existing record only when the insight directly supports that record's established goal and boundary. A distinct insight, decision, dependency, or scope creates receiver-local draft work. Canonical knowledge may receive a direct capture only when knowledge itself is the outcome; any public contract or implementation change still enters receiver-local work. Agora membership is presentational relationship context only and neither activates nor is required for standing intake.
 
 ## Storage and identity
 
@@ -112,6 +146,8 @@ An inbound receiver copy sets `phase: received` and adds `decision_status: uncon
 ## Copy and write authority
 
 The sender writes and removes only its preparation and outbound record and never sets receiver-local fields. The receiver creates and changes only its inbound copy. The sender projection—every sender frontmatter field and the whole body—is immutable in meaning after submission. `phase` is excluded from it, because it states what each copy is rather than what the sender asserted. Audit derives each sender projection by removing only the recognised single-line `phase` field and, on an inbound copy, the recognised single-line receiver-local fields, then compares the two copies by meaning rather than by byte: frontmatter values are unquoted and whitespace is collapsed, so rewrapping, reindenting, and requoting pass while any change to the words fails. Trade records are therefore formatted like any other authored Markdown, and are not excluded from the formatters. Where no registered peer holds the counterpart copy—most often because the sender has released—the comparison reports as unverifiable rather than passing silently.
+
+A rewritten sender projection therefore surfaces on the receiving side as an `AUTH-1` mismatch, which reads like a stale or hand-edited inbound copy. It is not: the receiver's copy may be a faithful record of what was submitted, while the outbound record has since been amended in place. Before repairing an inbound copy, compare the sender's committed history against the copy's `received_from_ref`. When the sender moved, the repair is to re-copy the current projection and update that reference, and the amendment itself is the sender's breach to answer for.
 
 Insensitivity to formatting is not a licence to normalise. A receiver never rewrites a sender-owned record to satisfy its own style, and a mismatch is escalated to the sender rather than repaired locally: audit reports, and never proposes a repair to either copy.
 

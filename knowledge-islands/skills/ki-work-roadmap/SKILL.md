@@ -5,7 +5,7 @@ ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 owns: ['ROADMAP.md']
 description: >
-  Governs flat repository work items and their concise root orientation in project repositories. Use for "audit the roadmap", "audit plans", roadmap horizons, theme grouping, work-item identity, lifecycle detail, plan dependencies, or root-orientation drift. Project work items live directly under docs/roadmap; Knowledge Bases apply the same record model under Streams/Roadmap through ki-repo-kb-streams. Records gain detail in place as they move from draft through readiness, delivery, required review, and retained completion. Process skills apply the shared lifecycle; ki-decision-records owns durable decisions.
+  Governs flat repository work items and their concise root orientation in project repositories. Use for "audit the roadmap", "audit plans", roadmap horizons, theme grouping, work-item identity, lifecycle detail, lifecycle and pruning commit boundaries, plan dependencies, or root-orientation drift. Project work items live directly under docs/roadmap; Knowledge Bases apply the same record model under Streams/Roadmap through ki-repo-kb-streams. Records gain detail in place as they move from draft through readiness, delivery, required review, and retained completion. Process skills apply the shared lifecycle; ki-decision-records owns durable decisions.
 argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 ---
 
@@ -53,5 +53,6 @@ On the cadence in [the source list](references/sources.md), compare actual repos
 - The `ki-next` process skill selects and promotes work through the readiness contract defined here.
 - The `ki-plan` process skill shapes an immediate draft through Ready.
 - `ki-implement` owns Ready → In progress → Awaiting review; `ki-accept` owns Awaiting review → Done and pruning by explicit work-record path or glob.
+- Lifecycle transitions may share a coherent planning, implementation, or closure commit; only pruning requires its own later commit after the `done` record has landed.
 - `ki-recap` and `ki-next` may recommend pruning; they never delete canonical work-item records.
 - The local `scripts/shared/rubric.ts` is the materialised compile-time contract from `ki-skills`; generic execution, findings, progress, transaction safety, rollback, and reporting belong to `ki`.

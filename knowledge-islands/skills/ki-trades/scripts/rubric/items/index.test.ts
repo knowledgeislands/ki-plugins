@@ -14,6 +14,7 @@ test('the catalogue exposes the complete ordered trade contract', () => {
     'AUTH',
     'STATUS',
     'RELEASE',
+    'STANDING',
     'ADOPTION'
   ])
   expect(definition.families.flatMap((family) => family.items.map((item) => item.code))).toEqual([
@@ -27,6 +28,7 @@ test('the catalogue exposes the complete ordered trade contract', () => {
     'AUTH-1',
     'STATUS-1',
     'RELEASE-1',
+    'STANDING-1',
     'ADOPTION-1'
   ])
 })
@@ -42,7 +44,8 @@ test('the catalogue and family modules keep narrow public surfaces', async () =>
     'release',
     'routes',
     'scaffold',
-    'status'
+    'status',
+    'standing'
   ]) {
     const module = (await import(`./${file}.ts`)) as Record<string, unknown>
     expect(Object.keys(module)).toHaveLength(1)

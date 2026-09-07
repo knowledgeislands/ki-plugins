@@ -45,13 +45,14 @@ import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync, realpat
 import { isAbsolute, join, resolve } from 'node:path'
 import { promisify } from 'node:util'
 import type { RubricEmitter } from '../../shared/rubric.ts'
+import { inspectConfigurationPresentation } from './configuration-presentation.ts'
+import { inspectGitignore, managedGitignoreBlocks } from './gitignore.ts'
 
 // ── the standard (keep in sync with references/standards-repository.md) ──────
 const DEFAULT_BRANCH = 'main'
 // The declared license defaults to MIT when `[skills.ki-repo] license` is unset. Decoupled
 // from visibility (a private repo may be MIT; a public repo may be proprietary).
 const DEFAULT_LICENSE = 'MIT'
-const TOPICS = ['mcp', 'model-context-protocol', 'claude', 'typescript', 'bun']
 const REQUIRED_CHECK = 'build'
 const ALLOWED_ACTIONS = 'all'
 // Reference-doc pointer carried on every mechanical finding.
@@ -73,6 +74,10 @@ const CHECK_DEFAULTS: Record<string, boolean> = {
   structure: true //            declares one primary repository structure
 }
 const KI_CONFIG = '.ki.toml'
+export const KI_CONFIGURATION_HEADER = `# Knowledge Islands repository configuration.
+# Its presence declares conformance with the Knowledge Islands repository standard.
+
+`
 
 // Required root files. Each entry is one or more acceptable paths (first found wins).
 const REQUIRED_FILES: [id: string, paths: string[]][] = [
@@ -169,6 +174,12 @@ async function rootPaths(nwo: string, branch: string): Promise<Set<string>> {
 const topicNames = (t: unknown): string[] =>
   Array.isArray(t) ? t.map((x) => (typeof x === 'string' ? x : (x?.name ?? x?.topic?.name))).filter(Boolean) : []
 
+// GitHub normalises a topic to lowercase-hyphenated form; package.json "keywords" are
+// compared through the same normalisation so the two lists can agree byte-for-byte.
+const normaliseTopic = (k: string): string => k.trim().toLowerCase().replace(/\s+/g, '-')
+const pkgKeywords = (pkg: Pkg | null): string[] =>
+  Array.isArray(pkg?.keywords) ? pkg.keywords.filter((k): k is string => typeof k === 'string').map(normaliseTopic) : []
+
 // The repo's parsed package.json (or null if absent / unparseable), read once from
 // the selected local checkout or GitHub default branch and reused for the
 // description-sync check and the MCP-dependency coverage signal.
@@ -206,7 +217,7 @@ const pkgHasDep = (pkg: Pkg | null, name: string): boolean =>
   Boolean(pkg?.dependencies?.[name] ?? pkg?.devDependencies?.[name])
 
 // The repo's full tree (recursive) as a set of paths, for the coverage signals that
-// look below the root (`site/wrangler.jsonc`, `skills/*/SKILL.md`, runtime subagent projections).
+// look below the root (`apps/site/wrangler.jsonc`, `skills/*/SKILL.md`, runtime subagent projections).
 // One API call; empty set on error or truncation. `rootPaths` stays the top-level
 // view the file-presence checks use.
 async function treePaths(nwo: string, branch: string): Promise<Set<string>> {
@@ -271,7 +282,7 @@ const KI_AUTHORING_DEFAULT = `# The authoring standard (Markdown/TOML house styl
 # governed by it. Declared explicitly, not assumed; its presence is the compliance marker.
 [skills.${skillTable('ki-authoring')}]
 `
-const KI_DEFAULT = `${KI_REPO_DEFAULT}\n${KI_AUTHORING_DEFAULT}`
+const KI_DEFAULT = `${KI_CONFIGURATION_HEADER}${KI_REPO_DEFAULT}\n${KI_AUTHORING_DEFAULT}`
 
 // Parse the owned table with Bun's TOML parser so quoted table keys, comments,
 // and multiline strings cannot be mistaken for schema. Returns null when the
@@ -415,15 +426,52 @@ const REPO_FIELDS =
 const WRANGLER = ['wrangler.jsonc', 'wrangler.json', 'wrangler.toml']
 const ELEVENTY = ['eleventy.config.ts', 'eleventy.config.js', 'eleventy.config.cjs', 'eleventy.config.mjs']
 const VITE = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs', 'vite.config.mts']
-type Signals = { root: Set<string>; tree: Set<string>; pkg: Pkg | null }
+const DEFAULT_SITE_ROOT = 'apps/site'
+type WebsiteRoot = { path: string | null; declared: boolean }
+type Signals = {
+  root: Set<string>
+  tree: Set<string>
+  pkg: Pkg | null
+  siteRoot: WebsiteRoot
+  sitePkg: Pkg | null
+}
+
+const safeSiteRoot = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  (value === '.' ||
+    (value.length > 0 &&
+      !isAbsolute(value) &&
+      !/^[A-Za-z]:[\\/]/.test(value) &&
+      !value.includes('\\') &&
+      value.split('/').every((part) => part.length > 0 && part !== '.' && part !== '..')))
+
+const websiteRoot = (text: string | null): WebsiteRoot => {
+  if (text === null) return { path: DEFAULT_SITE_ROOT, declared: false }
+  try {
+    const document = TOML.parse(text) as Record<string, unknown>
+    const value = declaredSkills(document)[skillTable('ki-repo-website')]
+    if (value === undefined) return { path: DEFAULT_SITE_ROOT, declared: false }
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return { path: null, declared: true }
+    const raw = (value as Record<string, unknown>)['site-root']
+    if (raw === undefined) return { path: DEFAULT_SITE_ROOT, declared: true }
+    return { path: safeSiteRoot(raw) ? raw : null, declared: true }
+  } catch {
+    return { path: null, declared: false }
+  }
+}
+
+const atWebsiteRoot = (root: string, file: string): string => (root === '.' ? file : `${root}/${file}`)
 
 const hasNamedConfig = (signals: Signals, names: readonly string[]): boolean =>
   names.some((file) => signals.root.has(file)) ||
   [...signals.tree].some((path) => names.some((file) => path.endsWith(`/${file}`)))
 
 const hasContentWebsite = (signals: Signals): boolean => hasNamedConfig(signals, ELEVENTY)
+const hasAppAt = (signals: Signals, root: string, pkg: Pkg | null): boolean =>
+  VITE.some((file) => signals.tree.has(atWebsiteRoot(root, file))) && pkgHasDep(pkg, 'react') && pkgHasDep(pkg, 'vite')
 const hasAppWebsite = (signals: Signals): boolean =>
-  hasNamedConfig(signals, VITE) && pkgHasDep(signals.pkg, 'react') && pkgHasDep(signals.pkg, 'vite')
+  (signals.siteRoot.path !== null && hasAppAt(signals, signals.siteRoot.path, signals.sitePkg)) ||
+  (!signals.siteRoot.declared && hasAppAt(signals, '.', signals.pkg))
 type ContentSource = 'local checkout' | 'GitHub default branch'
 type ContentEvidence = {
   files: Set<string>
@@ -437,15 +485,27 @@ type ContentEvidence = {
 
 function localContentEvidence(dir: string): ContentEvidence {
   const tree = localTreePaths(dir)
+  if (existsSync(join(dir, '.ki'))) tree.add('.ki')
   const files = localRootPaths(tree)
   const kiText = files.has(KI_CONFIG) ? localRaw(dir, KI_CONFIG) : null
+  const siteRoot = websiteRoot(kiText)
+  const sitePackagePath = siteRoot.path === null ? null : atWebsiteRoot(siteRoot.path, 'package.json')
+  const pkg = files.has('package.json') ? parsePkg(localRaw(dir, 'package.json')) : null
+  const sitePkg =
+    sitePackagePath === null
+      ? null
+      : sitePackagePath === 'package.json'
+        ? pkg
+        : tree.has(sitePackagePath)
+          ? parsePkg(localRaw(dir, sitePackagePath))
+          : null
   return {
     files,
     kiText,
     ki: kiText == null ? null : parseKiConfig(kiText),
     readme: files.has('README.md') ? localRaw(dir, 'README.md') : null,
     gitignore: files.has('.gitignore') ? localRaw(dir, '.gitignore') : null,
-    signals: { root: files, tree, pkg: files.has('package.json') ? parsePkg(localRaw(dir, 'package.json')) : null },
+    signals: { root: files, tree, pkg, siteRoot, sitePkg },
     source: 'local checkout'
   }
 }
@@ -453,6 +513,7 @@ function localContentEvidence(dir: string): ContentEvidence {
 async function remoteContentEvidence(nwo: string, branch: string): Promise<ContentEvidence> {
   const files = await rootPaths(nwo, branch)
   const kiText = files.has(KI_CONFIG) ? await ghRaw(nwo, KI_CONFIG) : null
+  const siteRoot = websiteRoot(kiText)
   // Independent round trips, so they overlap rather than queue: the content reads do not
   // depend on one another, and the tree call is the slowest of them.
   const [readme, gitignore, tree, pkg] = await Promise.all([
@@ -461,13 +522,22 @@ async function remoteContentEvidence(nwo: string, branch: string): Promise<Conte
     treePaths(nwo, branch),
     readRemotePkg(nwo, files)
   ])
+  const sitePackagePath = siteRoot.path === null ? null : atWebsiteRoot(siteRoot.path, 'package.json')
+  const sitePkg =
+    sitePackagePath === null
+      ? null
+      : sitePackagePath === 'package.json'
+        ? pkg
+        : tree.has(sitePackagePath)
+          ? parsePkg(await ghRaw(nwo, sitePackagePath))
+          : null
   return {
     files,
     kiText,
     ki: kiText == null ? null : parseKiConfig(kiText),
     readme,
     gitignore,
-    signals: { root: files, tree, pkg },
+    signals: { root: files, tree, pkg, siteRoot, sitePkg },
     source: 'GitHub default branch'
   }
 }
@@ -684,6 +754,13 @@ async function auditRepo(
   for (const [, paths] of REQUIRED_FILES) {
     if (!paths.some((p) => files.has(p))) fail('FILES-1', `no ${paths.join(' / ')}`, paths[0])
   }
+  // ── layer 1: legible configuration conformance marker ── FILES-5
+  if (files.has(KI_CONFIG) && kiText != null && !kiText.startsWith(KI_CONFIGURATION_HEADER))
+    fail('FILES-5', `${KI_CONFIG} must open with the Knowledge Islands conformance header`, KI_CONFIG)
+  if (files.has(KI_CONFIG) && kiText?.startsWith(KI_CONFIGURATION_HEADER)) {
+    for (const issue of inspectConfigurationPresentation(kiText).issues)
+      warn('FILES-9', `configuration presentation: ${issue}`, KI_CONFIG)
+  }
   // ── layer 1: runtime skill ignore contract (gated on the ki-repo marker) ── FILES-4
   const runtimeDeclaration = kiText == null ? undefined : parseSupportedRuntimes(kiText)
   const runtimeRules =
@@ -697,6 +774,33 @@ async function auditRepo(
       'FILES-4',
       `.gitignore must declare the generated skill rules for supported_runtimes: ${runtimeRules.join(', ')}`,
       '.gitignore'
+    )
+  // ── layer 1: compositional ignore contract and unmanaged inventory ── FILES-6/7
+  if (files.has(KI_CONFIG) && kiText != null && runtimeRules) {
+    const repositoryConfiguration = parseRepositoryConfiguration(kiText)
+    if (!repositoryConfiguration.issue && gitignore != null) {
+      const inspection = inspectGitignore(
+        gitignore,
+        managedGitignoreBlocks(repositoryConfiguration.rootTables, runtimeRules)
+      )
+      if (inspection.malformed)
+        fail('FILES-6', `.gitignore managed markers are malformed: ${inspection.malformed}`, '.gitignore')
+      else if (!inspection.conforming)
+        fail('FILES-6', '.gitignore managed blocks or terminal unmanaged section are not reconciled', '.gitignore')
+      if (!inspection.malformed && inspection.unmanagedRules.length)
+        note(
+          'FILES-7',
+          `.gitignore has ${inspection.unmanagedRules.length} unmanaged rule(s): ${inspection.unmanagedRules.join(', ')}`,
+          '.gitignore'
+        )
+    }
+  }
+  // ── layer 1: retired local output tree ── FILES-8
+  if (files.has('.ki'))
+    fail(
+      'FILES-8',
+      'retired .ki output exists; only proven untracked .ki/audits and .ki/conform content may be removed automatically',
+      '.ki'
     )
   // ── layer 1: declared authoring baseline (gated on the ki-repo marker) ── FILES-3
   // A confirmed ki-repo declares the baseline authoring standard explicitly.
@@ -941,10 +1045,24 @@ async function auditRepo(
   if (enforced('wiki') && r.hasWikiEnabled) fail('TOGGLE-1', 'Wiki is enabled (want off)')
   if (enforced('projects') && r.hasProjectsEnabled) fail('TOGGLE-1', 'Projects are enabled (want off)')
 
-  // TOPICS-1
+  // TOPICS-1: topics are per-repo discovery metadata, not a fixed org set. A public
+  // repo carries a non-empty topic set; where package.json declares "keywords" the two
+  // lists must agree modulo GitHub's normalisation (keywords are the in-repo source of
+  // truth and also reach any published npm package).
   if (r.visibility === 'PUBLIC' && enforced('topics')) {
-    const missing = TOPICS.filter((t) => !new Set(topicNames(r.repositoryTopics)).has(t))
-    if (missing.length) fail('TOPICS-1', `missing topics: ${missing.join(', ')}`)
+    const topics = new Set(topicNames(r.repositoryTopics).map(normaliseTopic))
+    const keywords = new Set(pkgKeywords(signals.pkg))
+    if (topics.size === 0)
+      fail('TOPICS-1', 'no topics — set discovery topics (sync package.json "keywords" where present)')
+    else if (keywords.size) {
+      const missing = [...keywords].filter((k) => !topics.has(k))
+      const extra = [...topics].filter((t) => !keywords.has(t))
+      if (missing.length || extra.length)
+        fail(
+          'TOPICS-1',
+          `topics and package.json "keywords" differ — missing on GitHub: ${missing.join(', ') || '—'}; not in keywords: ${extra.join(', ') || '—'}`
+        )
+    }
   }
 
   // BP-1: branch-protection — default OFF — `main` is open unless this repo sets it true.
@@ -1253,6 +1371,11 @@ const CONTENT_AREAS = new Set([
   'FILES-2',
   'FILES-3',
   'FILES-4',
+  'FILES-5',
+  'FILES-6',
+  'FILES-7',
+  'FILES-8',
+  'FILES-9',
   'KIND-1',
   'KIND-2',
   'GH-2',
@@ -1292,7 +1415,7 @@ const auditLocalContent = async (nwo: string, content: ContentEvidence): Promise
     hasIssuesEnabled: true,
     hasProjectsEnabled: false,
     hasWikiEnabled: false,
-    repositoryTopics: TOPICS,
+    repositoryTopics: pkgKeywords(content.signals.pkg),
     licenseInfo: { key: license },
     description
   }

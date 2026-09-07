@@ -20,7 +20,7 @@ This file is the **normative, quotable** standard. The checkable items and their
 - [6. Testing (capability: the repo ships tests)](#6-testing-capability-the-repo-ships-tests)
 - [7. Compiled build & CLI](#7-compiled-build--cli-capability-the-repo-compiles-to-dist)
 - [8. .env discipline](#8-env-discipline-capability-the-repo-reads-env-config)
-- [9. .ki.toml](#9-ki-configtoml--skillski-engineering-core)
+- [9. .ki.toml](#9-kitoml--skillski-engineering-core)
 
 ## Scope and layers
 
@@ -73,15 +73,15 @@ Review the explicit range and scope for coherent module structure, naming, owner
 
 Every KI TS/Bun repo is one of exactly **two shapes**, distinguished by the standard Bun `workspaces` array in the root `package.json`:
 
-| Shape        | Marker                                | Canonical examples                                     |
-| ------------ | ------------------------------------- | ------------------------------------------------------ |
-| **Flat**     | no `workspaces` key in `package.json` | the `mcp-*` repos (`mcp-kb-fs`, `mcp-gsuite`, …)       |
-| **Monorepo** | `workspaces` array in `package.json`  | every 11ty/Cloudflare website (`vallearmonia-website`) |
+| Shape | Marker | Canonical examples |
+| --- | --- | --- |
+| **Flat** | no `workspaces` key in `package.json` | one package rooted at the repository |
+| **Monorepo** | `workspaces` array in `package.json` | related libraries, deployables, and authored examples |
 
 - **Flat** is the default: all source under one root TS project, one root `tsconfig.json`, scripts unprefixed. A single root `tsc --noEmit` type-checks the whole repo (§2).
-- **Monorepo** declares its packages as workspace directories — `"workspaces": ["site", "ingress"]` (or just `["site"]`). Each workspace carries its own `package.json` and `tsconfig.json`. Because two workspaces can carry mutually incompatible `types`/`lib` (e.g. `site/` on Bun types vs `ingress/` on `@cloudflare/workers-types`), one root `tsc --noEmit` cannot span them — so the registered `ki-engineering` rubric type-checks each workspace separately (§2), while repo-specific scripts take the workspace-name prefix (`ki:site:build`, `ki:ingress:dev`).
-- **Per-workspace artifacts and test scope.** In a monorepo every build/test artifact and the config globs that produce it are **scoped to the workspace directory that owns them**, never the repo root: each workspace's compiled `dist/` (§7), its Vitest coverage output — the `reportsDirectory`, e.g. `site/coverage` (§6) — and its test files with their `include`/`exclude` globs all sit under `<workspace>/…`. The repo root carries only shared, workspace-spanning config (root `package.json`, Biome/rumdl configuration, root `.gitignore`). In the **flat** shape these same artifacts live at the root because the root _is_ the single package, so `dist/` and `coverage/` at the root are already "under the workspace". This is the one rule behind a site's output at `site/dist` (not root `dist/`) and its coverage at `site/coverage` (not root `coverage/`); when it is violated the artifact escapes its workspace and the root fills with per-package output. Cross-refs: §6 (tests), §7 (build).
-- **Content-led Eleventy websites use the `site/` workspace shape** defined by `ki-repo-website-content`. The neutral website core and Cloudflare adapter also allow a flat `dist/` consumer, including a single interactive app; they do not make the Eleventy monorepo choice universal.
+- **Monorepo** groups workspaces by ownership rather than hiding every role under a generic `workspaces/` directory. The standard roots are `packages/*` for independently consumable libraries, `apps/*` for deployable applications (including the canonical website at `apps/site`), and `examples/*` for independently authored examples. A repository declares only the globs it actually uses, for example `"workspaces": ["packages/*", "apps/*", "examples/*"]`; Bun accepts a set of workspace globs, not one prescribed parent directory. An additional root is valid when its ownership meaning is clear and a repository-specific role justifies it. Each resolved workspace carries its own `package.json` and `tsconfig.json`. Because two workspaces can carry mutually incompatible `types`/`lib` (e.g. `apps/site` on browser types and `apps/ingress` on `@cloudflare/workers-types`), one root `tsc --noEmit` cannot span them — so the registered `ki-engineering` rubric type-checks each workspace separately (§2), while repo-specific scripts use the owning role's namespace (`ki:site:build`, `ki:ingress:dev`).
+- **Per-workspace artifacts and test scope.** In a monorepo every build/test artifact and the config globs that produce it are **scoped to the workspace directory that owns them**, never the repo root: each workspace's compiled `dist/` (§7), its generated reports under `<workspace>/reports/`, and its test files with their `include`/`exclude` globs all sit under `<workspace>/…`. Coverage therefore writes to `<workspace>/reports/coverage`; browser or integration test artifacts write to `<workspace>/reports/tests`. The repo root carries only shared, workspace-spanning config (root `package.json`, Biome/rumdl configuration, root `.gitignore`). In the **flat** shape the root is the single package, so the equivalent locations are `dist/`, `reports/coverage`, and `reports/tests`. This is the one rule behind a site's output at `apps/site/dist` and its reports at `apps/site/reports/`; when it is violated the artifact escapes its workspace and the root fills with per-package output. Cross-refs: §6 (tests), §7 (build).
+- **Websites use the `apps/site` application workspace by default**, selected through `ki-repo-website`. The neutral website core and hosting adapters may support an explicit alternative or flat `dist/` consumer; they do not make one repository topology universal.
 
 The shape signal is `workspaces` in `package.json` — a standard tooling convention, read directly by the checker. It is **not** a `.ki.toml` key; `.ki.toml`'s `[skills.ki-engineering]` table is a conformance marker only (§9).
 
@@ -100,7 +100,7 @@ Repos that publish a compiled library/server add `"main"`, `"files": ["dist"]`, 
 `package.json` is **closed**: every top-level key must appear in the manifest below, mapped to the skill whose standard drives it. The checker enforces this exhaustively — a top-level key not in the manifest is **drift** (a `FAIL`), so a new key can never slip in ungoverned. This is what makes "every element is specified" a property the toolchain holds, not a hope.
 
 - **Identity & metadata** → `ki-repo`: `name`, `version`, `description`, `author`, `license`, `private`, `repository`, `homepage`, `bugs`, `keywords`.
-- **Toolchain & structure** → `ki-engineering`: `type`, `packageManager`, `engines`, `scripts`, `devDependencies`, `dependencies`, `workspaces`, `lint-staged`.
+- **Toolchain & structure** → `ki-engineering`: `type`, `packageManager`, `engines`, `scripts`, `devDependencies`, `dependencies`, `workspaces`, `overrides`, `lint-staged`. `overrides` is for resolution pinning a repository genuinely needs (a vendored `file:` mapping, a transitive-dependency fix) — not a home for version policy that belongs in `dependencies`.
 - **Published-artifact surface** → the artifact skill (e.g. `ki-repo-mcp`): `main`, `bin`, `exports`, `files`.
 
 The manifest is the **engineering** standard's because engineering owns the closed set; the per-key _content_ rules live in the owning skill (repo's metadata checks, the artifact skill's `bin`/`exports` shape). Adding a genuinely new key means adding it here **and** assigning an owner — never just dropping it into a `package.json`.
@@ -122,11 +122,17 @@ Where the repo has CI (`.github/workflows/ci.yml`), it is a single `build` job o
 
 A repository-footprint replacement prefers the correct clean end state over transitional operability. Replace the old contract directly, remove the superseded implementation in the same bounded change, and run the complete verification appropriate to the repository. Do not retain compatibility shims, dual paths, legacy aliases, or fallback runners merely to preserve an intermediate state. Git history is the recovery mechanism.
 
+### Dependency freshness — leading edge (core)
+
+KI repositories run at the leading edge: when a dependency publishes a newer release, the default is to adopt it, not to defer. A newer release opens a **14-day adoption window**, and the clock is set by the **next version after the one installed** — the first release the repository has not adopted — never by the latest, so a fast-shipping upstream cannot reset it by publishing again. Within the window an available update is informational; beyond it the repository is behind the standard and the audit fails. Updates are applied deliberately — reviewed through `ki repo conform`, or `ki:deps:update` for the blanket `bun update --latest` — and proven by the usual gates rather than assumed safe.
+
+A deliberate hold is recorded, never silent: `dependency_holds` under `[skills.ki-engineering]` (§9) lists each held package as `"<name> — <reason>"`. A held package reports as informational for as long as the hold stands, and a hold whose package has no available update is stale and flagged for removal. When the registry cannot be reached to date a release, freshness is reported as unknown rather than guessed.
+
 ## 2. The governed script surface (core)
 
-### The `ki:` naming law (core)
+### Script ownership namespaces (core)
 
-Every entry in `scripts` is **either** one of the six universal lifecycle idioms — `build`, `prepare`, `test`, `test:coverage`, `test:watch`, `clean` — **or** it carries the `ki:` prefix. There is no third option: a bare (non-`ki:`, non-idiom) script name is **drift** (a `FAIL`). A `ki:` key is supported only when exactly one resolved capability publishes that exact key in its rubric catalogue's `packageScripts` metadata; its own rubric mandates the command's required shape. `ki-engineering` claims `ki:deps:update`. The host aggregates claims from resolved skills only: a namespace is readability, never an inferred claim. Duplicate, absent, patterned, aliased, or repository-configured claims fail. A repository may instead list an actual user-owned external script as one exact, non-overlapping `script_exclusions` entry under `[skills.ki-engineering]`. The exempt six are left bare because they are universally recognized package-lifecycle verbs that every Node toolchain, CI runner, and contributor already knows.
+Every entry in `scripts` has one of three ownership shapes: one of the six universal bare lifecycle idioms — `build`, `prepare`, `test`, `test:coverage`, `test:watch`, and `clean`; a capability-owned `ki:` name; or a repository-owned `self:` name. A `self:` key MUST include a non-empty suffix and needs neither a capability claim nor a `script_exclusions` entry. Every `ki:` key is supported only when exactly one resolved capability publishes that exact key in its rubric catalogue's `packageScripts` metadata; the owning rubric mandates the command's required shape. `ki-engineering` claims `ki:deps:update`. The host aggregates claims from resolved skills only: namespace readability never implies a claim, and duplicate, absent, patterned, aliased, or repository-configured claims fail. An externally constrained bare non-idiom MAY instead use one exact, non-overlapping `script_exclusions` entry under `[skills.ki-engineering]`. The six bare names remain exempt because every Node toolchain, CI runner, and contributor recognises those package-lifecycle verbs.
 
 ### Native governance commands
 
@@ -140,7 +146,7 @@ ki repo conform
 - **`ki repo audit`** is the read-only gate; **`ki repo conform`** is the write pass. Both resolve the selected repo's declared skills to registered native operations from the verified active installed collection. Missing, incompatible, undeclared, or untrusted skills fail before an operation runs or writes.
 - Native rubric registration and focused reporting replace derived package scripts. No `.ki/bin`, generated manifest, standalone `govern.ts`, or child-process fallback participates in the execution path.
 - `clean` and `prepare` remain bare lifecycle idioms. A repo with tests exposes the complete suite through bare `test`; a compiled repo exposes bare `build`.
-- A repo MAY add only an exact script key claimed by one of its resolved capabilities. The owning skill specifies and audits its shape; `ki-self` is the local escape hatch for a repository-specific exact claim, not a `ki:self:*` family allow-list.
+- A repo MAY add a capability-owned `ki:` script only when one resolved capability claims that exact key and audits its shape. The optional repository-local `ki-self` skill may supply such exact claims when a local capability genuinely needs the governed `ki:` surface; ordinary repository operations use `self:` instead, never an inferred `ki:self:*` family.
 
 ### Code tools run inside the registered `ki-engineering` rubric
 
@@ -153,13 +159,13 @@ The code toolchain is implementation detail inside the registered native `ki-eng
 
 The former per-tool families and unified verify key are explicitly **retired** by ADR-KI-HARNESS-TOOLCHAIN-001. `ki:deps:update` is the one exception: it performs the explicit dependency-maintenance action `bun update --latest`. Any other `ki:lint:*`, `ki:deps:*`, `ki:knip`, `ki:verify`, `ki:audit`, `ki:conform`, or derived scoped key is drift: those operations belong in native rubrics resolved by `ki repo audit`/`conform`.
 
-**Monorepo type-checking (shape-driven).** A monorepo (§0) — e.g. a website with `site/` (Bun-typed Eleventy) plus `ingress/` (a Cloudflare Worker on `@cloudflare/workers-types`) — has per-workspace `tsconfig.json`s whose `types`/`lib` are mutually incompatible, so one root `tsc --noEmit` cannot type-check them all. Such a repo declares its packages in the standard Bun `workspaces` array in `package.json`:
+**Monorepo type-checking (shape-driven).** A monorepo (§0) — e.g. a website with `apps/site` plus a Cloudflare Worker at `apps/ingress`, and reusable libraries under `packages/*` — has per-workspace `tsconfig.json`s whose `types`/`lib` may be mutually incompatible, so one root `tsc --noEmit` cannot type-check them all. Such a repo declares its packages with the applicable ownership globs in the standard Bun `workspaces` array:
 
 ```jsonc
-{ "workspaces": ["site", "ingress"] }
+{ "workspaces": ["packages/*", "apps/*"] }
 ```
 
-When `workspaces` is present, the checker validates that every listed directory has a `tsconfig.json` and type-checks each directly. Biome, syncpack, and the authoring tools continue to run from their root configurations, which already span every package. The signal is `workspaces` in `package.json` (standard tooling), not a `.ki.toml` key (§9).
+When `workspaces` is present, the checker expands any `/*` glob entry to the directories that carry a `package.json`, validates that every resulting workspace has a `tsconfig.json`, and type-checks each directly. Biome, syncpack, and the authoring tools continue to run from their root configurations, which already span every package. The signal is `workspaces` in `package.json` (standard tooling), not a `.ki.toml` key (§9).
 
 ## 3. Bun vs Node (core)
 
@@ -209,10 +215,12 @@ When a repo ships tests, it exposes the whole suite through the bare `test` scri
 When a repo selects Vitest by carrying `vitest.config.*`, all of the following apply:
 
 - `"test": "vitest run"`, `"test:coverage": "vitest run --coverage"`, `"test:watch": "vitest"`.
-- `vitest.config.ts`: `globals: true`, `environment: 'node'`, `include: ['src/**/*.test.ts']`, `fileParallelism: false`, v8 coverage with **100% thresholds on all four metrics** (lines / functions / branches / statements). Tests are co-located (`src/**/*.test.ts`).
+- `vitest.config.ts`: `globals: true`, `environment: 'node'`, `include: ['src/**/*.test.ts']`, `fileParallelism: false`, v8 coverage with `reportsDirectory: 'reports/coverage'` and **100% thresholds on all four metrics** (lines / functions / branches / statements). Tests are co-located (`src/**/*.test.ts`).
 - The coverage `exclude` list always drops `src/**/*.test.ts`; **which other modules are excluded is artifact-specific** (e.g. an MCP excludes `mcp-server/index.ts`, `tools/**`, `utils/annotations.ts`) and is owned by that artifact's skill, not here.
 - **Executable helper scripts are operational tooling, not shipped `src/`, and remain outside Vitest's coverage profile.** A repo's `scripts/` (repo tooling, eval harnesses) and a skill's bundled checkers may carry standalone self-tests behind the bare `test` idiom without adding `vitest.config.*`; the 100% source-coverage rules do not apply to that runner-neutral profile. Their absence of self-tests is not automatically a coverage gap.
-- **Monorepo variant (§0).** The `src/**` globs above are the **flat-shape** form. In a monorepo each workspace scopes them to its own source root: `include`/`exclude` match that workspace's test files (e.g. `include: ['site/scripts/**/*.test.ts']`), and vitest writes coverage to a `reportsDirectory` **under the workspace** — `site/coverage`, gitignored there — never the repo root. The 100%-threshold rule and the `*.test.ts` exclude are unchanged; only the paths become workspace-relative.
+- **Monorepo variant (§0).** The `src/**` globs above are the **flat-shape** form. In a monorepo each workspace scopes them to its own source root: `include`/`exclude` match that workspace's test files (e.g. `include: ['apps/site/scripts/**/*.test.ts']`), and Vitest writes coverage to that workspace's `reports/coverage` — for example `apps/site/reports/coverage` — never the repository root. The 100%-threshold rule and the `*.test.ts` exclude are unchanged; only the paths become workspace-relative.
+
+`reports/` is the reserved disposable-report namespace supplied by `ki-repo` and ignored at every workspace depth. Test and analysis tools must be configured to write generated reports there rather than relying on a growing list of tool-default ignore rules. Build artifacts remain in their semantic seams such as `dist/`; source fixtures, snapshots intentionally reviewed in Git, and durable evaluation definitions are not reports and remain committed.
 
 Coverage is evidence of supported behaviour, not a reason to introduce an implementation-only test seam. Start a coverage-gap investigation at the nearest supported API, CLI, or other public boundary and prove every reachable path through an externally observable result. Remove a path that no supported input can reach instead of preserving it solely to satisfy a coverage threshold.
 
@@ -225,7 +233,7 @@ When a repo ships a compiled `dist/` (it has `tsconfig.build.json`, or `build` i
 - `"build": "tsc -p tsconfig.build.json"`. `"files": ["dist"]`.
 - `tsconfig.build.json` extends `tsconfig.json`: `noEmit: false`, `declaration` + `declarationMap`, `outDir: ./dist`, `rootDir: ./src`, `allowImportingTsExtensions: false`, `noUncheckedIndexedAccess: true`, `exclude: [..., "**/*.test.ts"]`.
 - **CLI chmod rule.** `build` appends `&& chmod +x dist/cli/cli.js` **iff** `src/cli/` exists, and chmods **nothing else** — in particular **not** a server/`mcp-server` bin. (Package managers set `+x` on `bin` targets at install, and launchers invoke via `node`, so the entry bin needs no chmod; the executable CLI does.) A `build` that chmods a path with no matching `src/` dir, or omits the chmod while `src/cli/` exists, is drift.
-- **Monorepo variant (§0).** In a monorepo the compiled output lands under the owning workspace (`site/dist`, `ingress/dist`), and the workspace's `files`/`clean` entries and the root `.gitignore` reference that workspace-scoped path (`/site/dist`), not a root `dist/`. A website's `dist/` seam is owned by `ki-repo-website`, its command semantics by the selected content/app implementation, and Cloudflare serving by `ki-repo-website-cloudflare`; this section governs the `tsc`-compiled case.
+- **Monorepo variant (§0).** In a monorepo the compiled output lands under the owning workspace (`packages/domain-core/dist`, `apps/ingress/dist`), and the workspace's `files`/`clean` entries and the root `.gitignore` reference that workspace-scoped path, not a root `dist/`. A website's `apps/site/dist/` seam is owned by `ki-repo-website`, its command semantics by the selected content/app implementation, and Cloudflare serving by `ki-repo-website-cloudflare`; this section governs the `tsc`-compiled case.
 
 A non-`tsc` build (for example Eleventy or Vite) is outside this section — the repository compiles by another toolchain; only the governed script surface in §2 and the core (§1–§5) apply.
 
@@ -255,7 +263,9 @@ A governed repo declares a `[skills.ki-engineering]` table. Presence marks "the 
 # below with a boolean when a local review needs an explicit exception note.
 ```
 
-The table carries **no top-level keys**. Its optional `[skills.ki-engineering.checks]` table accepts only exact mechanical rubric IDs as boolean values. The checker validates both the key set and value type, but a `false` value is an explicit local diagnostic record — it does **not** suppress a finding or turn a judgment criterion into a pass. A reviewer records the reason next to the entry and resolves it through the owning repository's change process.
+The table accepts two optional direct keys. `script_exclusions` is an array of exact externally constrained bare script names (§2). Every entry MUST be a non-empty unique string, name an existing package script exactly, contain no pattern syntax, remain outside every declared skill's script claims, and use neither the `ki:` nor `self:` namespace. A valid exclusion satisfies the complete-set check and permits that external bare script to remain outside the normal ownership namespaces; malformed, duplicate, stale, patterned, namespace-overlapping, or owner-overlapping entries fail the script contract rather than suppressing it. `dependency_holds` is an array of `"<name> — <reason>"` strings recording deliberate dependency holds (§1): every entry MUST be unique, name the held package exactly, and carry a reason after the ` — ` separator; a hold whose package has no available update is stale and flagged for removal.
+
+Its optional `[skills.ki-engineering.checks]` table accepts only exact mechanical rubric IDs as boolean values. The checker validates both the key set and value type, but a `false` value is an explicit local diagnostic record — it does **not** suppress a finding or turn a judgment criterion into a pass. A reviewer records the reason next to the entry and resolves it through the owning repository's change process.
 
 Repo shape (flat vs monorepo, §0) — which drives engineering's workspace-aware type-checking — is read from the standard Bun `workspaces` array in `package.json`, not from here. Keeping the shape signal in `package.json` means standard tooling (Bun, syncpack) sees it too, rather than hiding it behind a bespoke `.ki.toml` extension.
 

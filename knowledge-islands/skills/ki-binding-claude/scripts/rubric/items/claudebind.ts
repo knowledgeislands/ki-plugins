@@ -17,7 +17,7 @@ const CLAUDEBIND_1: RubricItem<ClaudeBindingContext> = {
     },
     audit: {
       phase: 'INSPECT',
-      run: ({ sourceState, code, desktop }) => {
+      run: ({ sourceState, code, desktop, home }) => {
         if (sourceState.kind !== 'valid')
           return [
             {
@@ -30,7 +30,7 @@ const CLAUDEBIND_1: RubricItem<ClaudeBindingContext> = {
           [desktop, 'claude-desktop', 'Claude Desktop']
         ].map(([state, client, label]) => {
           const target = state as typeof code,
-            mismatches = targetMatches(sourceState, client as 'claude-code' | 'claude-desktop', target)
+            mismatches = targetMatches(sourceState, client as 'claude-code' | 'claude-desktop', target, home)
           if (target.kind === 'unavailable')
             return {
               status: 'INFO' as const,

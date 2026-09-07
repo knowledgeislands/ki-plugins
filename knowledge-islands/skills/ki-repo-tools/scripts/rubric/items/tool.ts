@@ -134,7 +134,7 @@ const TOOL_XDG = judgment(
 const TOOL_SCHEMA = judgment(
   'TOOL-SCHEMA',
   'Persisted manifest schema',
-  'Each evolving persisted structural format declares and strictly validates its own integer schema, provides migration or clear rejection for incompatible forms, and does not add a ceremonial schema to stable leaf metadata.'
+  'Each evolving persisted structural format declares and strictly validates its own integer schema, accepts only implemented forms, and does not add a ceremonial schema to stable leaf metadata.'
 )
 
 const TOOL_INSTALL: RubricItem<ToolRepositoryContext> = {
