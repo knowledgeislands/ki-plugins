@@ -1,6 +1,10 @@
 # Knowledge Islands repository configuration.
 # Its presence declares conformance with the Knowledge Islands repository standard.
 
+# -----------------------------------------------------------------------------
+# Foundation
+# -----------------------------------------------------------------------------
+
 [repo]
 harnesses = ["knowledgeislands/ki-agentic-harness"]
 
@@ -11,24 +15,27 @@ description = "Knowledge Islands Claude plugin marketplace — the Cowork-surfac
 supported_runtimes = ["claude-code", "claude-desktop", "chatgpt-codex"]
 visibility = "public" # Cowork's extraKnownMarketplaces GitHub source must reach it.
 
-[skills.ki-git]
-
-[skills.ki-authoring]
-
-[skills.ki-repo-project]
-
-[skills.ki-repo-plugins]
-
-[skills.ki-trades]
-
-[skills.ki-trades.routes."knowledgeislands/ki-agentic-harness"]
-import = ["knowledge"]
+# The public proprietary projection intentionally retains its unresolved MIT-default license divergence.
 
 # The projection's marketplace topics supersede the source-repository defaults.
 [skills.ki-repo.checks]
 topics = false
 
-# The public proprietary projection intentionally retains its unresolved MIT-default license divergence.
+[skills.ki-authoring]
+
+# -----------------------------------------------------------------------------
+# Repository shape
+# -----------------------------------------------------------------------------
+
+[skills.ki-repo-project]
+
+[skills.ki-repo-plugins]
+
+# -----------------------------------------------------------------------------
+# Change management
+# -----------------------------------------------------------------------------
+
+[skills.ki-git]
 
 [skills.ki-tokenomics]
 
@@ -37,6 +44,15 @@ topics = false
 [skills.ki-tokenomics-claude]
 
 [skills.ki-tokenomics-codex]
+
+# -----------------------------------------------------------------------------
+# Relationships
+# -----------------------------------------------------------------------------
+
+[skills.ki-trades]
+
+[skills.ki-trades.routes."knowledgeislands/ki-agentic-harness"]
+import = ["knowledge"]
 
 [skills.ki-agora]
 
