@@ -1,5 +1,7 @@
 # CLAUDE.md — ki-plugins
 
+@AGENTS.md
+
 **This repo is generated. Do not hand-edit `.claude-plugin/` or `knowledge-islands/`.**
 
 `ki-plugins` is the Knowledge Islands Claude plugin marketplace — the Cowork-surface projection of the [ki-agentic-harness](https://github.com/knowledgeislands/ki-agentic-harness). The harness is the single source of truth; this marketplace is a lossy, per-surface projection (`ADR-KI-HARNESS-005`). Its `skills/` and `agents/` are produced by the harness's generator.
