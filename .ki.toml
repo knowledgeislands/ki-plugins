@@ -1,6 +1,8 @@
 # Knowledge Islands repository configuration.
 # Its presence declares conformance with the Knowledge Islands repository standard.
 
+# =============================================================================
+
 # -----------------------------------------------------------------------------
 # Foundation
 # -----------------------------------------------------------------------------
@@ -18,8 +20,7 @@ visibility = "public" # Cowork's extraKnownMarketplaces GitHub source must reach
 # The public proprietary projection intentionally retains its unresolved MIT-default license divergence.
 
 # The projection's marketplace topics supersede the source-repository defaults.
-[skills.ki-repo.checks]
-topics = false
+checks.topics = false
 
 [skills.ki-authoring]
 
@@ -50,12 +51,7 @@ topics = false
 # -----------------------------------------------------------------------------
 
 [skills.ki-trades]
-
-[skills.ki-trades.routes."knowledgeislands/ki-agentic-harness"]
-import = ["knowledge"]
+routes."knowledgeislands/ki-agentic-harness" = { import = ["knowledge"] }
 
 [skills.ki-agora]
-
-[skills.ki-agora.memberships.ki-all]
-home = "https://github.com/knowledgeislands/ki-agentic-harness"
-role = "maintainer"
+memberships.ki-all = { home = "https://github.com/knowledgeislands/ki-agentic-harness", role = "maintainer" }
