@@ -2,6 +2,10 @@
 
 The Knowledge Islands **Claude plugin marketplace** — the Cowork-surface packaging of the [ki-agentic-harness](https://github.com/knowledgeislands/ki-agentic-harness).
 
+## Status
+
+**Paused.** This projection is retained for possible future Cowork use, but it is not currently refreshed, developed, or treated as an active distribution surface. Its generated contents remain intact; resume it only when Cowork plugin distribution becomes useful again.
+
 This repo is a **generated projection**, not a source. The harness is the single source of truth for the Knowledge Islands skills and agents; this marketplace is a lossy, per-surface projection of it (see `ADR-KI-HARNESS-005`). Its contents are produced by the harness's generator and must never be hand-edited:
 
 ```bash
