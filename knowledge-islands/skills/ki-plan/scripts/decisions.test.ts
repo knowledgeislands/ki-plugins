@@ -40,6 +40,7 @@ test('permits readiness only as one approved, contained, dependency-ready transi
   expect(readinessDecision([{ ...ready, path: 'docs/roadmap/../outside.md' }])).toBe('refuse')
   expect(readinessDecision([{ ...ready, dependenciesReady: false }])).toBe('refuse')
   expect(readinessDecision([{ ...ready, auditClean: false }])).toBe('refuse')
+  expect(readinessDecision([{ ...ready, horizon: 'triage' }])).toBe('refuse')
 })
 
 test('uses a durable delegation packet only for its demonstrated threshold', () => {

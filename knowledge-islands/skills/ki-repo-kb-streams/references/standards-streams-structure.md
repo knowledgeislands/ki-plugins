@@ -22,7 +22,7 @@ Streams/
   Trades/          # only when a future KB trade placement is adopted
 ```
 
-`Roadmap/` and `Housekeeping/` are the initial fixed areas. They are neither horizons nor lifecycle states. A future `Trades/` area needs an explicit contract; do not create it merely because generic `ki-trades` working areas exist elsewhere in the repository.
+`Roadmap/` and `Housekeeping/` are the initial fixed areas. They are neither horizons nor lifecycle states. In particular, triage is roadmap metadata and never a `Streams/Triage/` directory. A future `Trades/` area needs an explicit contract; do not create it merely because generic `ki-trades` working areas exist elsewhere in the repository.
 
 The container does not prescribe a topical-folder or `groups` vocabulary. Where an owning adapter supports topical metadata, the receiving base chooses its vocabulary. That metadata never replaces an operational area or changes an identifier.
 
@@ -30,7 +30,11 @@ The container does not prescribe a topical-folder or `groups` vocabulary. Where 
 
 `Streams/Roadmap/` is the KB placement equivalent of a project repository’s `docs/roadmap/`. It contains flat finite work records and its `_ISSUES.md` allocation ledger. The [repository roadmap standard](../../../change-management/ki-work-roadmap/references/standards-repository-roadmaps.md) owns the record format, lifecycle, identifier grammar, and horizon metadata.
 
-Roadmap horizons and lifecycle are frontmatter fields. Do not represent `Now`, `Next`, `Soon`, `Waiting for`, `Parked`, or `Future` with paths below `Streams/Roadmap/`.
+Roadmap horizons and lifecycle are frontmatter fields. Do not represent `Triage`, `Now`, `Next`, `Soon`, `Waiting for`, `Parked`, or `Future` with paths below `Streams/Roadmap/`.
+
+Substantive prospective work is deduplicated against the canonical queue, then captured without an approval gate as a flat `status: draft`, `horizon: triage` roadmap record. Its identity is allocated from the canonical `_ISSUES.md` high-water ledger, and the capture is reported after creation. Capture records the possibility of work; it does not adopt, prioritise, plan, or authorise delivery.
+
+Explicit human approval is required before a captured record leaves triage or is renamed, rejected, or merged into another record. Approval never bypasses the shared lifecycle or done-before-prune rules, and this intake contract creates no direct discard path. Silence, discussion, and automatic capture are not approval. Apply adoption through `ki-next`; route an approved rejected, duplicate, or merged disposition to `ki-accept` so Triage reaches retained `done` before any later prune.
 
 ## Housekeeping
 

@@ -26,17 +26,17 @@ The tracked readable rubric is the exact publication of the structured catalogue
 
 Generator-neutral selection, lifecycle, and dist seam.
 
-- **SITE-1 [M] — Website opt-in** — The neutral website table is present. (standards-website.md)
+- **SITE-1 [M] — Website opt-in** — A generator-neutral website table is present. (standards-website.md)
   - _Remediation:_ diagnostic — Align the shared website declaration and lifecycle seam, then rerun the audit.
-- **SITE-2 [M] — Website configuration** — The website table relies on the implicit apps/site default or contains only a safe site-root override. (standards-website.md)
+- **SITE-2 [M] — Website configuration** — The website table declares one valid single-site selection or one valid named multi-site registry. (standards-website.md)
   - _Remediation:_ diagnostic — Align the shared website declaration and lifecycle seam, then rerun the audit.
-- **SITE-3 [M] — Package manifests** — The root and selected site package manifests are safely parseable. (standards-website.md)
+- **SITE-3 [M] — Package manifests** — The root and each selected site package manifest are safely parseable. (standards-website.md)
   - _Remediation:_ diagnostic — Align the shared website declaration and lifecycle seam, then rerun the audit.
-- **SITE-4 [M] — ki:site:build** — The root package exposes ki:site:build. (standards-website.md)
+- **SITE-4 [M] — ki:site:build** — Each site owns its local build command and the primary site owns the public seam. (standards-website.md)
   - _Remediation:_ diagnostic — Align the shared website declaration and lifecycle seam, then rerun the audit.
-- **SITE-5 [M] — ki:site:dev** — The root package exposes ki:site:dev. (standards-website.md)
+- **SITE-5 [M] — ki:site:dev** — Each site owns its local dev command and the primary site owns the public seam. (standards-website.md)
   - _Remediation:_ diagnostic — Align the shared website declaration and lifecycle seam, then rerun the audit.
-- **SITE-6 [M] — ki:site:clean** — The root package exposes ki:site:clean. (standards-website.md)
+- **SITE-6 [M] — ki:site:clean** — Each site owns its local clean command and the primary site owns the public seam. (standards-website.md)
   - _Remediation:_ diagnostic — Align the shared website declaration and lifecycle seam, then rerun the audit.
-- **SITE-7 [M] — Generated output ignored** — The local dist output is ignored by Git. (standards-website.md)
+- **SITE-7 [M] — Generated output ignored** — Every selected site dist output is ignored by Git. (standards-website.md)
   - _Remediation:_ diagnostic — Align the shared website declaration and lifecycle seam, then rerun the audit.

@@ -22,7 +22,7 @@ The authoritative definition of frontmatter fields for all notes in a Knowledge 
 | `tags` | Optional | Topical / temporal / source labels (`topic/*`, `date/*`, `source/*`) — retained, but never the **kind** classifier |
 | `author` | Recommended | `AI-assisted` / `Manual` / `Mixed` |
 
-† NOTE-1c delegates metadata classification for `Streams/Roadmap/**`, `Streams/Housekeeping/**`, direct batch records under `+/_AUTHORISATIONS/`, and nested `TRD-*.md` protocol records under either staging zone to their owning skills. Direct KB-owned session digests under `-/_DIGESTS/` and handoffs immediately under `-/_TRADES/` remain governed here.
+† NOTE-1c delegates metadata classification for `Streams/Roadmap/**`, `Streams/Housekeeping/**`, direct batch records under `+/_BATCHES/`, active `+/_CHECKPOINTS/<thread>.md` checkpoints, and peer-qualified `TRD-*.md` protocol records under either staging area to their owning skills. These records still undergo YAML, key-shape, and declared required-field checks. Nested checkpoint paths, including `_RETIRED`, are not delegated. Local session digests under `-/_DIGESTS/` remain governed here.
 
 ‡ Component-specific status values remain under their component owners while KB-wide metadata reconciliation is pending.
 
@@ -54,12 +54,11 @@ The slugs use slash-hierarchical notation: `<zone>/<arm>/<leaf>`. The zone prefi
 
 ### Outbound staging (`-/`)
 
-These note types are only valid under `-/`. Files carrying them elsewhere are a ZONE-5 FAIL (see audit rubric).
+Session digests are only valid under `-/`. Files carrying `note_type: session-digest` elsewhere are a ZONE-5 FAIL (see the audit rubric). The former `note_type: handoff` is rejected by NOTE-1c everywhere, including trade paths; cross-repository records use the schema and lifecycle owned by `ki-trades`.
 
 | Note type | Path context | Lifecycle | Defined by |
 | --- | --- | --- | --- |
-| `session-digest` | `-/_DIGESTS/*.md` | Ephemeral. Delete once content is extracted into Pillars/Streams/handoff | `ki-repo-kb` |
-| `handoff` | `-/_TRADES/*.md` | Ephemeral. Delete once recipient has routed it through their `+/` | `ki-repo-kb` |
+| `session-digest` | `-/_DIGESTS/*.md` | Delete after useful content is extracted or routed | `ki-repo-kb` |
 
 ### Calendar branch (`calendar/`)
 

@@ -1,17 +1,22 @@
 ---
 name: ki-repo-website-content
 ki-kind: governance
-ki-shared-dependencies: [ki-skills:rubric]
+ki-applicability: detected
+ki-shared-dependencies: [ki-repo-website:site-selection, ki-skills:rubric]
 ki-depends-on: [ki-repo-website]
 owns: [eleventy.config.ts, eleventy.config.js, eleventy.config.mjs, eleventy.config.cjs]
 contributes: ['.ki.toml', package.json]
 requires: [ROADMAP.md]
-description: >-
-  Governs the Knowledge Islands content-led website implementation: Eleventy 3 generates a collection of pages from Markdown and structured data, with Nunjucks, Tailwind 4 semantic tokens, and portable `dist/` output. Use for documentation, publication, and marketing sites whose primary artifact is a page collection. Do not use for a single interactive SPA; select `ki-repo-website-app` instead because Eleventy does not bundle React application JavaScript and combining them creates two build systems. Depends on the neutral `ki-repo-website` seam; Cloudflare hosting remains independent.
+description: >
+  Govern KI content sites built with Eleventy 3, Markdown or data, Nunjucks, Tailwind 4 tokens, and portable
+  `dist/`. Use for documentation, publication, or marketing pages; use `ki-repo-website-app` for a React/Vite
+  SPA and choose hosting separately.
 argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 ---
 
 # Knowledge Islands content website standard
+
+The keyless content table covers every core-selected site. A named multi-site repository may use only `sites = ["name"]` to select a non-empty subset; each selected site is audited independently.
 
 You are applying the **Knowledge Islands content website standard** — the shared way every static website in this work is built: **Eleventy 3, Nunjucks and Markdown; TypeScript run natively on Bun; Tailwind 4 config-less with design tokens**, compiling to a **portable `dist/`**. A new site is scaffolded to it; an existing one is audited and conformed against it. This skill carries that standard and the procedure.
 
@@ -50,6 +55,8 @@ Four invariants define the standard — most findings are a breach of one:
 2. **The build emits a portable `dist/`.** An `addTransform` rewrites absolute internal URLs to relative ones, so `dist/` serves from any root. This is the contract `ki-repo-website-cloudflare` consumes.
 3. **TypeScript runner is declared, not proven.** Package scripts select Bun or modern Node for TypeScript; `tsx` is not used. `.ts` + `.json5` data extensions are registered in the config. `tsc` is type-check only (engineering's layer); actual execution belongs to explicit runtime evidence.
 4. **Tailwind compiles inside the Eleventy lifecycle.** An `eleventy.before` hook runs the Tailwind CLI in build mode; dev runs a parallel `--watch` and an `addWatchTarget` on the compiled CSS.
+
+The selected site must be an application workspace. Its exact local `build` and `clean` lifecycle names plus capability-owned `ki:site:dev`, `ki:site:dev:css`, and `ki:site:dev:serve` family are owned by this content implementation and need no root `script_exclusions`; the repository root exposes only the public `ki:site:build`, `ki:site:dev`, and `ki:site:clean` seam.
 
 ## Layering — how a site repo gets fully audited
 

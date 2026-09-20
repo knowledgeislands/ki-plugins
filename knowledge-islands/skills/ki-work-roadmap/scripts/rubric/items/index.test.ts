@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
 import type { RoadmapRubricContext } from '../contexts/roadmap.ts'
-import { ISSUE_LEDGER, inspectRoadmap, issueLedger, rootRoadmap } from '../contexts/roadmap-evidence.ts'
+import { HORIZONS, ISSUE_LEDGER, inspectRoadmap, issueLedger, rootRoadmap } from '../contexts/roadmap-evidence.ts'
 import catalogue from './index.ts'
 
 const temporaryDirectories: string[] = []
@@ -45,6 +45,8 @@ status: draft
 blocks: []
 blocked_by: []
 baseline_ref: null
+created_at: 2026-09-13T12:00:00Z
+updated_at: 2026-09-13T12:00:00Z
 ---
 
 ## Goal
@@ -109,6 +111,28 @@ No open questions are recorded.
   return repository
 }
 
+const writeTerminalTriage = (repository: string, dispositionFields: string, dispositionBody = 'Not adopted.') => {
+  const item = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
+  const fields = dispositionFields ? `\n${dispositionFields}` : ''
+  writeFileSync(
+    item,
+    readFileSync(item, 'utf8')
+      .replace('horizon: next\nstatus: draft', `horizon: triage\nstatus: done${fields}`)
+      .replace(
+        /\n## Current state[\s\S]*?\n## Discussion\n/,
+        `\n## Intake disposition\n\n${dispositionBody}\n\n## Done\n\nDisposition approved and captured.\n\n## Discussion\n`
+      )
+  )
+  return item
+}
+
+const addRetainedTarget = (repository: string): void => {
+  const source = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
+  const target = join(repository, 'docs', 'roadmap', 'TEST-002-build-the-foundation.md')
+  writeFileSync(target, readFileSync(source, 'utf8').replace('id: TEST-001', 'id: TEST-002'))
+  writeFileSync(join(repository, 'docs', 'roadmap', ISSUE_LEDGER), issueLedger(2))
+}
+
 test('the structured catalogue represents the flat work-item standard', () => {
   expect(catalogue.contract).toBe(1)
   expect(catalogue.name).toBe('ki-work-roadmap')
@@ -147,6 +171,10 @@ test('the structured catalogue represents the flat work-item standard', () => {
     'TRADE-1',
     'TRADE-2'
   ])
+})
+
+test('the canonical horizons preserve the delivery queue and append Triage as separate intake', () => {
+  expect(HORIZONS).toEqual(['now', 'next', 'soon', 'waiting-for', 'parked', 'future', 'triage'])
 })
 
 test('roadmap commit guidance separates pruning rather than every lifecycle transition', () => {
@@ -193,6 +221,57 @@ test('frontmatter keys use snake_case', () => {
   )
 })
 
+test('work-item timestamps are mandatory, paired, canonical, ordered, and clock-independent', () => {
+  const repository = createFixture()
+  const item = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
+  const source = readFileSync(item, 'utf8').replace(
+    '\ncreated_at: 2026-09-13T12:00:00Z\nupdated_at: 2026-09-13T12:00:00Z',
+    ''
+  )
+  writeFileSync(item, source)
+  expect(inspectRoadmap(repository)).toContainEqual(
+    expect.objectContaining({
+      level: 'FAIL',
+      area: 'ITEM-1',
+      msg: "frontmatter is missing 'created_at'"
+    })
+  )
+  const timestamped = source.replace(
+    'baseline_ref: null',
+    'baseline_ref: null\ncreated_at: 2099-01-01T00:00:00Z\nupdated_at: 2099-01-01T00:00:01Z'
+  )
+
+  writeFileSync(item, timestamped)
+  expect(inspectRoadmap(repository).filter((finding) => finding.area === 'ITEM-2')).toEqual([])
+
+  writeFileSync(item, source.replace('baseline_ref: null', 'baseline_ref: null\ncreated_at: 2026-09-13T12:00:00Z'))
+  expect(inspectRoadmap(repository)).toContainEqual(
+    expect.objectContaining({ area: 'ITEM-2', msg: 'created_at and updated_at must be present together' })
+  )
+
+  writeFileSync(
+    item,
+    source.replace(
+      'baseline_ref: null',
+      'baseline_ref: null\ncreated_at: 2026-09-13T12:00:00Z\nupdated_at: 2026-09-13T12:00:00+00:00'
+    )
+  )
+  expect(inspectRoadmap(repository)).toContainEqual(
+    expect.objectContaining({ area: 'ITEM-2', msg: 'timestamps must use canonical RFC 3339 UTC second precision' })
+  )
+
+  writeFileSync(
+    item,
+    source.replace(
+      'baseline_ref: null',
+      'baseline_ref: null\ncreated_at: 2026-09-13T12:00:01Z\nupdated_at: 2026-09-13T12:00:00Z'
+    )
+  )
+  expect(inspectRoadmap(repository)).toContainEqual(
+    expect.objectContaining({ area: 'ITEM-2', msg: 'created_at must not be later than updated_at' })
+  )
+})
+
 test('an area-qualified work item uses its configured namespace and area ledger', () => {
   const repository = createFixture()
   writeFileSync(
@@ -233,13 +312,187 @@ test('fixed areas reject an unknown namespace and a ledger below its retained se
   )
 })
 
+test('Triage accepts draft captured work but rejects an adopted lifecycle state', () => {
+  const repository = createFixture()
+  const item = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
+  writeFileSync(item, readFileSync(item, 'utf8').replace('horizon: next', 'horizon: triage'))
+
+  expect(inspectRoadmap(repository).filter((finding) => finding.level === 'FAIL')).toEqual([])
+
+  writeFileSync(item, readFileSync(item, 'utf8').replace('status: draft', 'status: ready'))
+  expect(inspectRoadmap(repository)).toContainEqual(
+    expect.objectContaining({ area: 'ITEM-2', msg: 'open Triage item must remain draft until adopted' })
+  )
+})
+
+test('terminal Triage rejected disposition is done without delivery evidence or a baseline', () => {
+  const repository = createFixture()
+  const item = writeTerminalTriage(repository, 'intake_disposition: rejected')
+
+  expect(inspectRoadmap(repository).filter((finding) => finding.level === 'FAIL')).toEqual([])
+
+  writeFileSync(item, readFileSync(item, 'utf8').replace('baseline_ref: null', `baseline_ref: ${'a'.repeat(40)}`))
+  expect(inspectRoadmap(repository)).toContainEqual(
+    expect.objectContaining({ area: 'ITEM-2', msg: 'terminal Triage item baseline_ref must remain null' })
+  )
+})
+
+test('terminal Triage rejects delivery sections', () => {
+  for (const heading of [
+    'Current state',
+    'Steps',
+    'Files touched',
+    'Verify',
+    'Dependencies / blocks',
+    'Documentation impact',
+    'Delegation',
+    'Review'
+  ]) {
+    const repository = createFixture()
+    const item = writeTerminalTriage(repository, 'intake_disposition: rejected')
+    writeFileSync(
+      item,
+      readFileSync(item, 'utf8').replace(
+        '## Intake disposition',
+        `## ${heading}\n\nUnwarranted delivery detail.\n\n## Intake disposition`
+      )
+    )
+    expect(inspectRoadmap(repository)).toContainEqual(
+      expect.objectContaining({ area: 'ITEM-3', msg: `terminal Triage must not contain delivery sections: ${heading}` })
+    )
+  }
+})
+
+test('terminal Triage duplicate and merged dispositions require a retained target', () => {
+  for (const disposition of ['duplicate', 'merged']) {
+    const missingTargetRepository = createFixture()
+    writeTerminalTriage(missingTargetRepository, `intake_disposition: ${disposition}`)
+    expect(inspectRoadmap(missingTargetRepository)).toContainEqual(
+      expect.objectContaining({
+        area: 'ITEM-2',
+        msg: `${disposition} Triage disposition requires intake_disposition_target`
+      })
+    )
+
+    const validRepository = createFixture()
+    addRetainedTarget(validRepository)
+    writeTerminalTriage(validRepository, `intake_disposition: ${disposition}\nintake_disposition_target: TEST-002`)
+    expect(inspectRoadmap(validRepository).filter((finding) => finding.level === 'FAIL')).toEqual([])
+  }
+})
+
+test('terminal Triage requires an allowed disposition, valid target shape, and disposition rationale', () => {
+  const missingDispositionRepository = createFixture()
+  writeTerminalTriage(missingDispositionRepository, '')
+  expect(inspectRoadmap(missingDispositionRepository)).toContainEqual(
+    expect.objectContaining({
+      area: 'ITEM-2',
+      msg: 'terminal Triage intake_disposition must be rejected, duplicate, or merged'
+    })
+  )
+
+  const rejectedTargetRepository = createFixture()
+  writeTerminalTriage(rejectedTargetRepository, 'intake_disposition: rejected\nintake_disposition_target: TEST-002')
+  expect(inspectRoadmap(rejectedTargetRepository)).toContainEqual(
+    expect.objectContaining({
+      area: 'ITEM-2',
+      msg: 'rejected Triage disposition must not name intake_disposition_target'
+    })
+  )
+
+  const malformedTargetRepository = createFixture()
+  writeTerminalTriage(malformedTargetRepository, 'intake_disposition: duplicate\nintake_disposition_target: test-002')
+  expect(inspectRoadmap(malformedTargetRepository)).toContainEqual(
+    expect.objectContaining({
+      area: 'ITEM-2',
+      msg: 'intake_disposition_target must be a canonical work-item ID'
+    })
+  )
+
+  const selfTargetRepository = createFixture()
+  writeTerminalTriage(selfTargetRepository, 'intake_disposition: merged\nintake_disposition_target: TEST-001')
+  expect(inspectRoadmap(selfTargetRepository)).toContainEqual(
+    expect.objectContaining({
+      area: 'ITEM-2',
+      msg: 'intake_disposition_target must differ from the disposed item'
+    })
+  )
+
+  const unresolvedTargetRepository = createFixture()
+  writeTerminalTriage(unresolvedTargetRepository, 'intake_disposition: duplicate\nintake_disposition_target: TEST-002')
+  expect(inspectRoadmap(unresolvedTargetRepository)).toContainEqual(
+    expect.objectContaining({
+      area: 'ITEM-2',
+      msg: "intake_disposition_target 'TEST-002' must resolve to a retained work item"
+    })
+  )
+
+  const emptyRationaleRepository = createFixture()
+  writeTerminalTriage(emptyRationaleRepository, 'intake_disposition: rejected', '')
+  expect(inspectRoadmap(emptyRationaleRepository)).toContainEqual(
+    expect.objectContaining({
+      area: 'ITEM-3',
+      msg: 'terminal Triage item requires a non-empty ## Intake disposition'
+    })
+  )
+})
+
+test('intake disposition fields are forbidden outside terminal Triage', () => {
+  const repository = createFixture()
+  const item = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
+  writeFileSync(
+    item,
+    readFileSync(item, 'utf8').replace('status: draft', 'status: draft\nintake_disposition: rejected')
+  )
+
+  expect(inspectRoadmap(repository)).toContainEqual(
+    expect.objectContaining({
+      area: 'ITEM-2',
+      msg: 'intake disposition fields are valid only for terminal Triage items'
+    })
+  )
+
+  const openTriageRepository = createFixture()
+  const openTriageItem = join(openTriageRepository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
+  writeFileSync(
+    openTriageItem,
+    readFileSync(openTriageItem, 'utf8')
+      .replace('horizon: next', 'horizon: triage')
+      .replace('status: draft', 'status: draft\nintake_disposition: rejected')
+  )
+  expect(inspectRoadmap(openTriageRepository)).toContainEqual(
+    expect.objectContaining({
+      area: 'ITEM-2',
+      msg: 'intake disposition fields are valid only for terminal Triage items'
+    })
+  )
+})
+
+test('Future accepts adopted long-term draft work without a candidate marker', () => {
+  const repository = createFixture()
+  const item = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
+  writeFileSync(item, readFileSync(item, 'utf8').replace('horizon: next', 'horizon: future'))
+
+  expect(inspectRoadmap(repository).filter((finding) => finding.level === 'FAIL')).toEqual([])
+})
+
+test('the retired candidate frontmatter field is unsupported', () => {
+  const repository = createFixture()
+  const item = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
+  writeFileSync(item, readFileSync(item, 'utf8').replace('status: draft', 'status: draft\ncandidate: true'))
+
+  expect(inspectRoadmap(repository)).toContainEqual(
+    expect.objectContaining({ area: 'ITEM-1', msg: 'frontmatter has unexpected field(s): candidate' })
+  )
+})
+
 test('invalid lifecycle placement and missing execution sections fail', () => {
   const repository = createFixture()
   const item = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
   writeFileSync(
     item,
     readFileSync(item, 'utf8')
-      .replace('horizon: next\nstatus: draft', 'horizon: future\nstatus: in-progress\ncandidate: true')
+      .replace('horizon: next\nstatus: draft', 'horizon: future\nstatus: in-progress')
       .replace('## Current state', '## Baseline')
   )
   const failures = inspectRoadmap(repository).filter((finding) => finding.level === 'FAIL')

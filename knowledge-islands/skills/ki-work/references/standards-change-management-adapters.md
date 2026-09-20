@@ -4,6 +4,10 @@
 
 Change management uses one configured adapter per repository. The adapter is the authoritative source of forward-work records; the selector and process skills do not duplicate its queue or synchronise a second tracker.
 
+## Batch scaffold
+
+Declaring `[skills.ki-work]` requires the exact retained `+/_BATCHES/README.md` scaffold. `ki-work` owns and safely conforms this visible capability boundary; `ki-batch` owns record shape, authority, run ledger, and retention after more than seven inactive days. The README remains after all batch records are removed. Before undeclaring `ki-work`, resolve or remove any batch records and then remove the now-undeclared scaffold.
+
 ## Selection
 
 The repository declares exactly one supported value:

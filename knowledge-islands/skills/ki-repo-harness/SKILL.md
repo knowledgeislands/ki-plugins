@@ -1,12 +1,15 @@
 ---
 name: ki-repo-harness
 ki-kind: governance
+ki-applicability: declaration-only
 ki-runtime-binding: true
 ki-depends-on: [ki-skills, ki-subagents, ki-decision-records, ki-work-roadmap]
 ki-shared-dependencies: [ki-skills:rubric]
 contributes: [skills/README.md]
 description: >
-  Audit, conform, and design Knowledge Islands compatible harnesses — source repositories that co-locate skills, subagents, MCP servers, evals, and hooks while publishing a verified installed capability payload. Use when creating a harness, checking its five-part source layout, validating its declared capability prefix and skill identities, reviewing its CLAUDE.md orientation, confirming its `.ki.toml` harness declaration, or distinguishing source shelves from the directly installed payload. Triggers: "audit the harness", "scaffold a new harness", "does this repo follow the harness standard", "refresh the harness standard", "is this a compatible harness". Governs the container and publication boundary, not its contents: skill quality → `ki-skills`; agent quality → `ki-subagents`; repository roadmap → `ki-work-roadmap`; MCP code → `ki-repo-mcp`; engineering toolchain → `ki-engineering`; repository settings → `ki-repo`; CLI installation and activation → `tools-ki`.
+  Audit or design a KI-compatible harness that publishes skills, subagents, MCP servers, evals, and hooks as a
+  verified installed payload. Use for source layout, prefix identity, declarations, or catalogue publication;
+  each capability skill owns content quality.
 argument-hint: 'audit [path] | conform [path] | educate <name> | help | refresh'
 ---
 

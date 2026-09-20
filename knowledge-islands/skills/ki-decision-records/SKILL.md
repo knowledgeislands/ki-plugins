@@ -1,10 +1,12 @@
 ---
 name: ki-decision-records
 ki-kind: governance
+ki-applicability: detected
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Codify, audit, and maintain Decision Records in any Knowledge Islands repo — the unified instrument replacing ki-adrs and ki-kdrs. Each decision type has its own prefix: GDR- (governance), ADR- (architecture), KDR- (knowledge), SDR- (strategy), PDR- (product), DDR- (data), XDR- (security), ODR- (operations), RDR- (research). Serials are per-prefix within scope. Governs universal metadata, the Nygard five-section format, and placement: docs/decisions/ for code repos, Admin/Governance/Decisions/ for KB repos. A DR's status records document currency, never a decision lifecycle. Use when writing, auditing, or conforming decision records. Triggers: "write a DR", "create a decision record", "document this decision", "audit the DRs". Off-ramps: ki-repo-kb (island structure and frontmatter standard), ki-repo-kb-streams (Enactment Process).
+  Create or audit typed KI Decision Records for durable rationale and authority. Use `ki-specs` for accepted
+  behaviour, `ki-guides` for procedures, and `ki-work-roadmap` for future delivery.
 argument-hint: 'audit [dir] | conform [dir] | help | educate [dir] | new <scope> "<title>" | refresh'
 ---
 

@@ -1,10 +1,13 @@
 ---
 name: ki-repo-kb-activities
 ki-kind: governance
+ki-applicability: declaration-only
 ki-shared-dependencies: [ki-skills:rubric]
 ki-depends-on: []
 description: >
-  Author, audit, and manage Activity notes in a Knowledge Islands base — the operational record of what automation, scheduling, and agentic work a base has adopted. Governs the naming convention, required frontmatter, realization types, and the Activities.md index in Admin/Operations/Activities/. Checks that activities declared as slash commands have a corresponding skill, and that those declared as scheduled tasks are flagged for registration in an external scheduling system. The realization model is runtime-neutral and accepts new environment types. Triggers: "add an activity", "audit activities", "what activities does this base have", "register this as a scheduled task", "create a skill for this activity", "list my activities", "check activity conformance". For the KB zone structure use `ki-repo-kb`; for skill authoring use `ki-skills`; for the harness bundle layout use `ki-repo-harness`.
+  Create, audit, and maintain Activity notes recording automation, scheduling, and agentic work adopted by a
+  KI knowledge base. Use for activity identity, frontmatter, realisation type, index, or linked skill and
+  scheduled-task evidence; `ki-repo-kb` owns zones and `ki-skills` skill authoring.
 argument-hint: 'audit | conform | help | educate | new <name> | refresh'
 ---
 

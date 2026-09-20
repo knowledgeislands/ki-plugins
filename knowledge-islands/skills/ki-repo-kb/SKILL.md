@@ -1,10 +1,14 @@
 ---
 name: ki-repo-kb
 ki-kind: governance
+ki-applicability: detected
 ki-shared-dependencies: [ki-skills:rubric]
 ki-depends-on: [ki-repo-kb-activities, ki-repo-kb-live-artifacts, ki-repo-kb-streams]
+owns: ['-/_DIGESTS/README.md']
 description: >
-  Interact with a Knowledge Islands knowledge base: save AI outputs as notes, update existing notes, query the base, distil a conversation into notes, or write a session digest — and audit a base against the structure model, bring it into line, or scaffold a new one. Targets the Knowledge Islands structure (Calendar / Pillars / Resources / Streams, plus inbound `+` and outbound `-`), so it assumes the zone model rather than asking for it; only a few store-level bindings come from the host project. Triggers: "save to my notes", "save to the knowledge base", "add to the KB", "what do my notes say about", "search my notes", "update the note on", "capture this", "write a session digest", "audit my knowledge base", "is my base structured right", "set up a new knowledge base". For the `Streams` zone (proposals, the Enactment Process) use the `ki-repo-kb-streams` skill it delegates to; for general Markdown or TOML house style (not note content) use `ki-authoring`.
+  Create, query, update, distil, or audit a KI knowledge base using Calendar, Pillars, Resources, Streams, and
+  directional `+` and `-` areas. Use for notes, session digests, search, or zone conformance;
+  `ki-repo-kb-streams` owns forward-work containers and `ki-authoring` general document style.
 argument-hint: 'audit | conform | digest | extract | help | improve | educate | query <question> | refresh | save | update <note>'
 ---
 
@@ -18,7 +22,7 @@ A Knowledge Islands base is one markdown store with a fixed set of five zones, f
 
 | Folder       | Holds                                                                                           |
 | ------------ | ----------------------------------------------------------------------------------------------- |
-| `+/`         | Inbound staging - unfiled captures awaiting routing.† Exempt from most conventions. Not a zone. |
+| `+/`         | Inbound staging - inputs to further local work.† Exempt from most conventions. Not a zone. |
 | `Calendar/`  | Time-stamped records: daily, meeting, session, weekly, monthly notes.                           |
 | `Pillars/`   | Internal canonical knowledge - the base's primary subject matter. One folder per pillar.†       |
 | `Resources/` | External reference material that exists independently of this base.                             |
@@ -30,9 +34,9 @@ A Knowledge Islands base is one markdown store with a fixed set of five zones, f
 
 ※ Migrates to `Pillars/` once settled. Its internal structure and process are owned by the `ki-repo-kb-streams` skill.
 
-† `+/_TRADES/` receives cross-repository briefs; their shared repository lifecycle belongs to `ki-repo`.
+† `+/` holds inputs to further local work, including locally created records. `ki-trades` owns received cross-repository records under `+/_TRADES/`.
 
-‡ `-/_TRADES/` holds cross-repository briefs; their shared repository lifecycle belongs to `ki-repo`.
+‡ `ki-trades` owns outgoing cross-repository records under `-/_TRADES/<owner>/<repo>/TRD-<eight-hex>.md`, including their format and lifecycle.
 
 ### Admin/ subdivisions
 

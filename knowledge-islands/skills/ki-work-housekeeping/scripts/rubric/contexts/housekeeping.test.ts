@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createHousekeepingSession } from './housekeeping.ts'
@@ -92,6 +92,37 @@ test('reports an invalid schedule without mutating the template', () => {
   ])
 })
 
+test('optional commit fields are validated while an unevidenced anchor is a schedule diagnostic', () => {
+  const repository = temporaryDirectory()
+  const root = join(repository, 'docs', 'housekeeping')
+  mkdirSync(root, { recursive: true })
+  const path = join(root, 'KI-HARNESS-HK-001-monthly-maintenance.md')
+  const content = template().replace(
+    'last-run: null',
+    'last-run: 2026-09-01\ncommit-threshold: 100\nlast-run-ref: null'
+  )
+  writeFileSync(path, content)
+  expect(outcomes(repository)[0]?.status).toBe('PASS')
+  const session = createHousekeepingSession(options(repository))
+  expect(session.subjects[0]?.context().templates.schedules).toContainEqual({
+    status: 'VIOLATION',
+    subject: 'docs/housekeeping/KI-HARNESS-HK-001-monthly-maintenance.md',
+    message: expect.stringContaining('Change-volume evidence is unknown')
+  })
+  expect(session.proposal()).toEqual({ writes: [] })
+  expect(readFileSync(path, 'utf8')).toBe(content)
+  for (const fields of [
+    'commit-threshold: 0',
+    'commit-threshold: 1.5',
+    'commit-threshold: 9007199254740992',
+    'last-run-ref: HEAD',
+    `last-run-ref: ${'a'.repeat(40)}`
+  ]) {
+    writeFileSync(path, template().replace('last-run: null', `last-run: null\n${fields}`))
+    expect(outcomes(repository)[0]?.status).toBe('VIOLATION')
+  }
+})
+
 test('uses Streams Housekeeping for a KB configuration', () => {
   const repository = temporaryDirectory()
   const root = join(repository, 'Streams', 'Housekeeping')
@@ -108,6 +139,20 @@ test('uses Streams Housekeeping for a KB configuration', () => {
 
   expect(outcomes(repository)[0]?.subject).toBe('Streams/Housekeeping/Monthly Maintenance Housekeeping.md')
   expect(outcomes(repository)[0]?.status).toBe('PASS')
+})
+
+test('rejects future successful-run dates through the hosted template contract without writes', () => {
+  const repository = temporaryDirectory()
+  const root = join(repository, 'docs', 'housekeeping')
+  mkdirSync(root, { recursive: true })
+  const path = join(root, 'KI-HARNESS-HK-001-monthly-maintenance.md')
+  const content = template().replace('last-run: null', 'last-run: 9999-12-31')
+  writeFileSync(path, content)
+  expect(outcomes(repository)[0]).toMatchObject({
+    status: 'VIOLATION',
+    message: expect.stringContaining('after the evaluation date')
+  })
+  expect(readFileSync(path, 'utf8')).toBe(content)
 })
 
 test('rejects malformed template identity and missing required body sections', () => {

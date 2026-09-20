@@ -13,6 +13,8 @@ const source = (
   overrides: {
     path?: string
     kind?: 'governance' | 'process'
+    applicability?: 'baseline' | 'detected' | 'declaration-only' | 'invocation-only'
+    detects?: readonly string[]
     description?: string
     dependencies?: readonly string[]
     argumentHint?: string
@@ -24,7 +26,8 @@ const source = (
   content: `---
 name: ${name}
 ki-kind: ${overrides.kind ?? 'governance'}
-ki-depends-on: [${(overrides.dependencies ?? []).join(', ')}]
+ki-applicability: ${overrides.applicability ?? (overrides.kind === 'process' ? 'invocation-only' : 'declaration-only')}
+${overrides.detects === undefined ? '' : `ki-detects: [${overrides.detects.join(', ')}]\n`}ki-depends-on: [${(overrides.dependencies ?? []).join(', ')}]
 ${overrides.runtimeBinding === undefined ? '' : `ki-runtime-binding: ${overrides.runtimeBinding}\n`}${overrides.supportedRuntimes === undefined ? '' : `ki-supported-runtimes: [${overrides.supportedRuntimes.join(', ')}]\n`}description: >
   ${overrides.description ?? `Use ${name} for its governed outcome.`}
 ${overrides.argumentHint === undefined ? '' : `argument-hint: '${overrides.argumentHint}'\n`}---
@@ -33,8 +36,21 @@ ${overrides.argumentHint === undefined ? '' : `argument-hint: '${overrides.argum
 `
 })
 
+const estate = (sources: readonly CapabilitySource[]): readonly CapabilitySource[] => {
+  const detected = sources.flatMap((candidate) => {
+    const parsed = parseCapabilitySource(candidate)
+    return parsed.entry?.applicability === 'detected' ? [parsed.entry.name] : []
+  })
+  return [
+    source('ki-authoring', { applicability: 'baseline' }),
+    source('ki-repo', { applicability: 'baseline', detects: ['ki-detected', ...detected] }),
+    source('ki-detected', { applicability: 'detected' }),
+    ...sources
+  ]
+}
+
 const exactReadme = (sources: readonly CapabilitySource[], before = '# Skills\n', after = ''): string =>
-  `${before.trimEnd()}\n\n${prepareCapabilityPublication(undefined, sources).rendered}${after}`
+  `${before.trimEnd()}\n\n${prepareCapabilityPublication(undefined, estate(sources)).rendered}${after}`
 
 const entry = (capabilitySource: CapabilitySource) => {
   const parsed = parseCapabilitySource(capabilitySource)
@@ -61,6 +77,8 @@ test('parses folded frontmatter into normalized capability facts', () => {
       domain: 'agentic-systems',
       name: 'ki-example',
       kind: 'process',
+      applicability: 'invocation-only',
+      detects: [],
       description: 'Use ki-example for a folded outcome.',
       argumentHint: 'run <target>',
       dependencies: ['ki-base'],
@@ -94,6 +112,7 @@ test('renders exact counts and runtime-neutral source facts without a diagram', 
   ])
   expect(rendered).toContain('2 skills: 1 governance skill and 1 process skill')
   expect(rendered).toContain('- **Arguments:** `run <target>`')
+  expect(rendered).toContain('- **Applicability:** Invocation Only')
   expect(rendered).toContain('- **Dependencies:** `ki-base`')
   expect(rendered).toContain('Runtime-bound: `claude-code`')
   expect(rendered).not.toContain('/ki-run')
@@ -115,12 +134,12 @@ test('add, rename, remove, kind, domain, dependency, runtime, and argument chang
     [base, source('ki-example', { dependencies: ['ki-base'], runtimeBinding: true })],
     [base, source('ki-example', { dependencies: ['ki-base'], argumentHint: 'audit <repo>' })]
   ]
-  for (const variant of variants) expect(prepareCapabilityPublication(readme, variant).state).toBe('stale')
+  for (const variant of variants) expect(prepareCapabilityPublication(readme, estate(variant)).state).toBe('stale')
 })
 
 test('preserves authored content around one marker-bounded replacement', () => {
   const original = exactReadme([source('ki-example')], '# Skills\n\nAuthored before.', '\nAuthored after.\n')
-  const draft = prepareCapabilityPublication(original, [source('ki-example', { description: 'Changed.' })])
+  const draft = prepareCapabilityPublication(original, estate([source('ki-example', { description: 'Changed.' })]))
   expect(draft.state).toBe('stale')
   expect(draft.merged).toStartWith('# Skills\n\nAuthored before.\n\n')
   expect(draft.merged).toEndWith('\nAuthored after.\n')
@@ -128,14 +147,37 @@ test('preserves authored content around one marker-bounded replacement', () => {
   expect(draft.merged?.split(CAPABILITY_CATALOGUE_END)).toHaveLength(2)
 })
 
+test('fails closed when applicability collection invariants drift', () => {
+  const invalid = [
+    [source('ki-example')],
+    estate([source('ki-run', { kind: 'process', applicability: 'declaration-only' })]),
+    [
+      source('ki-authoring', { applicability: 'baseline' }),
+      source('ki-repo', { applicability: 'baseline', detects: ['ki-detected'] }),
+      source('ki-detected', { applicability: 'detected' }),
+      source('ki-example', { applicability: 'detected' })
+    ],
+    [
+      source('ki-authoring', { applicability: 'baseline' }),
+      source('ki-repo', { applicability: 'baseline', detects: ['ki-example'] }),
+      source('ki-example')
+    ],
+    estate([source('ki-example', { detects: ['ki-other'] })])
+  ]
+  for (const sources of invalid)
+    expect(prepareCapabilityPublication(undefined, sources)).toMatchObject({ state: 'unsafe' })
+})
+
 test('rejects unknown dependencies and ambiguous marker layouts', () => {
-  expect(prepareCapabilityPublication(undefined, [source('ki-example', { dependencies: ['ki-missing'] })])).toEqual(
+  expect(
+    prepareCapabilityPublication(undefined, estate([source('ki-example', { dependencies: ['ki-missing'] })]))
+  ).toEqual(
     expect.objectContaining({ state: 'unsafe', issues: [expect.stringContaining('unknown capability ki-missing')] })
   )
   expect(
     prepareCapabilityPublication(
       `${CAPABILITY_CATALOGUE_START}\n${CAPABILITY_CATALOGUE_START}\n${CAPABILITY_CATALOGUE_END}`,
-      [source('ki-example')]
+      estate([source('ki-example')])
     )
   ).toEqual(expect.objectContaining({ state: 'unsafe', issues: [expect.stringContaining('ambiguous')] }))
 })

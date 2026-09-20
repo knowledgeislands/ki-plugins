@@ -1,12 +1,15 @@
 ---
 name: ki-binding-claude
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: [ki-binding]
 ki-runtime-binding: true
 ki-supported-runtimes: [claude-code]
 ki-shared-dependencies: [ki-binding:binding, ki-skills:rubric]
 description: >
-  Codify, audit, and safely conform Claude-native MCP binding: Claude Code and Desktop JSON surfaces, Claude Cowork marketplace/plugin enablement, the claude.ai web convention, and the KI Cowork plugin projection. Use when Claude MCP surfaces disagree, Cowork lacks the KI plugin, or the Cowork plugin must be rebuilt. The portable source belongs to `ki-binding`; Codex belongs to `ki-binding-codex`.
+  Audit or safely conform Claude-native MCP configuration across Claude Code, Desktop, web conventions, and
+  the KI Cowork plugin projection. Use when Claude MCP surfaces drift or Cowork needs rebuilding; `ki-binding`
+  owns portable source and `ki-binding-codex` owns Codex.
 argument-hint: 'audit [project] | conform [project] | help | educate [project] | refresh'
 ---
 

@@ -23,10 +23,11 @@
  * The native rubric host owns execution, reporting, and exit status.
  */
 import { execFile } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { promisify } from 'node:util'
 import type { PackageScriptClaim, RubricEmitter } from '../../shared/rubric.ts'
+import { COMMITLINT_CONFIGURATION, hasCommitMessageBaseline, hasPreCommitBaseline } from './git-hooks.ts'
 
 // Unified severity ladder — shared by every KI checker (checker-contract).
 // area is the minted rubric code (references/rubric.md); ref is its
@@ -38,6 +39,81 @@ export type EngineeringEvidenceFinding = {
   message: string
   subject?: string
 }
+
+export type PackageScriptSource = {
+  packagePath: string
+  manifestPath: string
+  scripts: Readonly<Record<string, string>>
+}
+
+export type RelativeNodeModulesScriptUse = {
+  packagePath: string
+  manifestPath: string
+  scriptName: string
+  fragment: string
+}
+
+const stringScripts = (value: unknown): Readonly<Record<string, string>> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+  )
+}
+
+/** Collect only root and workspace package manifests whose real paths remain inside the repository. */
+export const collectPackageScriptSources = (
+  repository: string,
+  rootPackage: Readonly<Record<string, unknown>>,
+  workspaces: readonly string[]
+): readonly PackageScriptSource[] => {
+  let repositoryReal: string
+  try {
+    repositoryReal = realpathSync(repository)
+  } catch {
+    return []
+  }
+
+  const sources: PackageScriptSource[] = [
+    { packagePath: '.', manifestPath: 'package.json', scripts: stringScripts(rootPackage.scripts) }
+  ]
+
+  for (const workspace of [...new Set(workspaces)]) {
+    try {
+      const manifestReal = realpathSync(resolve(repository, workspace, 'package.json'))
+      const relation = relative(repositoryReal, manifestReal)
+      if (!relation || relation === '..' || relation.startsWith(`..${sep}`) || isAbsolute(relation)) {
+        continue
+      }
+      const parsed = JSON.parse(readFileSync(manifestReal, 'utf8')) as Record<string, unknown>
+      sources.push({
+        packagePath: relative(repositoryReal, dirname(manifestReal)) || '.',
+        manifestPath: relative(repositoryReal, manifestReal),
+        scripts: stringScripts(parsed.scripts)
+      })
+    } catch {
+      // Existing workspace validation owns missing, malformed, or unsafe manifests.
+    }
+  }
+
+  return sources
+}
+
+const relativeNodeModulesPath = /(?:^|[\s"'`=;|&(])((?:(?:\.\.?\/)+)node_modules\/[^\s"'`;&|)]*)/g
+
+/** Find install-layout-dependent paths without treating bare node_modules cleanup as execution. */
+export const findRelativeNodeModulesScriptUses = (
+  sources: readonly PackageScriptSource[]
+): readonly RelativeNodeModulesScriptUse[] =>
+  sources.flatMap((source) =>
+    Object.entries(source.scripts).flatMap(([scriptName, body]) =>
+      [...body.matchAll(relativeNodeModulesPath)].map((match) => ({
+        packagePath: source.packagePath,
+        manifestPath: source.manifestPath,
+        scriptName,
+        fragment: match[1] ?? ''
+      }))
+    )
+  )
 type Level = EngineeringEvidenceFinding['level']
 type Finding = { level: Level; area: string; msg: string; ref?: string; file?: string }
 
@@ -64,6 +140,9 @@ const mechanicalEngineeringCheckIds = new Set([
   'SCR-5',
   'SCR-6',
   'SCR-7',
+  'SCR-10',
+  'SCR-11',
+  'BUN-2',
   'TSC-1',
   'TSC-2',
   'BIO-1',
@@ -325,6 +404,20 @@ export const inspectGovernedScriptSurface = (
 /** Inspect the repository once and return the complete engineering evidence set. */
 const run = promisify(execFile)
 
+export const collectTrackedMjs = async (repository: string): Promise<readonly string[]> => {
+  try {
+    const result = await run('git', ['-C', repository, 'ls-files', '-z', '--', '*.mjs'], {
+      encoding: 'utf8'
+    })
+    return result.stdout
+      .split('\0')
+      .filter(Boolean)
+      .filter((path) => existsSync(join(repository, path)))
+  } catch {
+    return []
+  }
+}
+
 export const usesCanonicalCoverageReportsDirectory = (
   workspaces: readonly string[],
   reportsDirectory: string | undefined
@@ -376,6 +469,11 @@ export const collectAuditEvidence = async (
   }
   const has = (...p: string[]) => existsSync(at(...p))
   const isDir = (...p: string[]) => has(...p) && statSync(at(...p)).isDirectory()
+  const isSafeRegularFile = (...p: string[]): boolean => {
+    if (!has(...p)) return false
+    const metadata = lstatSync(at(...p))
+    return metadata.isFile() && !metadata.isSymbolicLink()
+  }
   const read = (...p: string[]): string => {
     try {
       return readFileSync(at(...p), 'utf8')
@@ -481,7 +579,17 @@ export const collectAuditEvidence = async (
   // toolchain is actually declared, rather than left implied. lint-staged is the husky
   // pre-commit fan-out — a governed key in the manifest, so it must be present and wired.
   const devDeps = (pkg.devDependencies ?? {}) as Record<string, string>
-  const REQUIRED_DEV = ['@biomejs/biome', 'knip', 'rumdl', 'husky', 'lint-staged', 'syncpack', 'typescript']
+  const REQUIRED_DEV = [
+    '@biomejs/biome',
+    '@commitlint/cli',
+    '@commitlint/config-conventional',
+    'knip',
+    'rumdl',
+    'husky',
+    'lint-staged',
+    'syncpack',
+    'typescript'
+  ]
   const missingDev = REQUIRED_DEV.filter((d) => !(d in devDeps))
   missingDev.length
     ? add(
@@ -494,7 +602,7 @@ export const collectAuditEvidence = async (
     : add(
         'PASS',
         'PKG-5',
-        'toolchain devDependencies present (biome, rumdl, husky, lint-staged, syncpack, typescript)',
+        'toolchain devDependencies present (biome, commitlint, rumdl, husky, lint-staged, syncpack, typescript)',
         STD,
         'package.json'
       )
@@ -743,7 +851,49 @@ export const collectAuditEvidence = async (
     ? add('PASS', 'SCR-5', 'prepare = "husky"', STD, 'package.json')
     : add('WARN', 'SCR-5', `prepare should be "husky", got ${JSON.stringify(scripts.prepare)}`, STD, 'package.json')
 
+  const preCommit = read('.husky', 'pre-commit')
+  const commitMessage = read('.husky', 'commit-msg')
+  const commitlint = read('commitlint.config.ts')
+  isSafeRegularFile('.husky', 'pre-commit') && hasPreCommitBaseline(preCommit)
+    ? add('PASS', 'SCR-11', 'pre-commit starts with lint-staged then check-only Syncpack', STD, '.husky/pre-commit')
+    : add(
+        'FAIL',
+        'SCR-11',
+        'pre-commit must start with lint-staged followed by `bunx syncpack format --check`',
+        STD,
+        '.husky/pre-commit'
+      )
+  isSafeRegularFile('.husky', 'commit-msg') && hasCommitMessageBaseline(commitMessage)
+    ? add('PASS', 'SCR-11', 'commit-msg invokes Commitlint for the proposed message', STD, '.husky/commit-msg')
+    : add('FAIL', 'SCR-11', 'commit-msg must invoke `bunx commitlint --edit "$1"`', STD, '.husky/commit-msg')
+  isSafeRegularFile('commitlint.config.ts') && commitlint === COMMITLINT_CONFIGURATION
+    ? add(
+        'PASS',
+        'SCR-11',
+        'Commitlint configuration matches the KI Conventional Commit policy',
+        STD,
+        'commitlint.config.ts'
+      )
+    : add(
+        'FAIL',
+        'SCR-11',
+        'commitlint.config.ts must carry the canonical KI Conventional Commit policy',
+        STD,
+        'commitlint.config.ts'
+      )
+
   // ── core: script ownership — bare lifecycle, ki: capability, or self: repository ──
+  const trackedMjs = await collectTrackedMjs(repo)
+  trackedMjs.length
+    ? add(
+        'FAIL',
+        'BUN-2',
+        `tracked .mjs files must migrate to TypeScript and run with Bun: ${trackedMjs.join(', ')}`,
+        STD,
+        trackedMjs[0]
+      )
+    : add('PASS', 'BUN-2', 'no tracked .mjs files', STD)
+
   // engineering-standard §2: ki:* scripts are claimed by resolved capabilities,
   // self:* scripts name repository ownership directly, and only the six universal
   // lifecycle idioms remain bare. Other bare names require an exact external exclusion.
@@ -861,6 +1011,27 @@ export const collectAuditEvidence = async (
         'package.json'
       )
     : add('PASS', 'SCR-6', 'no non-test script bypasses the governed test entrypoint', STD, 'package.json')
+
+  const relativeNodeModulesUses = findRelativeNodeModulesScriptUses(collectPackageScriptSources(repo, pkg, workspaces))
+  if (relativeNodeModulesUses.length) {
+    for (const use of relativeNodeModulesUses) {
+      add(
+        'FAIL',
+        'SCR-10',
+        `package ${use.packagePath} script ${JSON.stringify(use.scriptName)} invokes dependency through ${JSON.stringify(use.fragment)}; use \`bunx --bun <package-or-bin>\` or \`createRequire(import.meta.url).resolve(...)\``,
+        STD,
+        use.manifestPath
+      )
+    }
+  } else {
+    add(
+      'PASS',
+      'SCR-10',
+      'root and safely resolved workspace package scripts contain no relative node_modules dependency paths',
+      STD,
+      'package.json'
+    )
+  }
 
   // ── core: tsconfig.json (universal invariants only; richer base is profiled) ──
   // tsconfig may carry // comments (the website's does), so check by regex on text,

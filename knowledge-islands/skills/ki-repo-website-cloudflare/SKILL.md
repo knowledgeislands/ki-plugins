@@ -1,15 +1,20 @@
 ---
 name: ki-repo-website-cloudflare
 ki-kind: governance
-ki-shared-dependencies: [ki-skills:rubric]
+ki-applicability: detected
+ki-shared-dependencies: [ki-repo-website:site-selection, ki-skills:rubric]
 ki-depends-on: [ki-repo-website]
 contributes: ['.gitignore']
 description: >
-  Governs Cloudflare hosting for either Knowledge Islands website implementation using Workers Static Assets, never Pages as the deployment target. Audits `wrangler.jsonc`, rejects the legacy `pages_build_output_dir` marker and any `main` server entry, matches `assets.directory` to `dist/`, and covers Workers Builds, workers.dev, custom domains, and deploy scripts. Use when publishing a content site or interactive app on Cloudflare or diagnosing a static deployment failure. Depends only on the neutral `ki-repo-website` seam.
+  Govern Cloudflare Workers Static Assets hosting—not Pages—for either KI website implementation. Use for
+  `wrangler.jsonc`, `dist/`, Workers Builds, workers.dev, domains, deploy scripts, or static-deployment
+  diagnosis; site-generator choice remains independent.
 argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
 ---
 
 # Knowledge Islands Cloudflare hosting standard
+
+The keyless hosting table covers every core-selected site. A named multi-site repository may use only `sites = ["name"]` to select a non-empty subset; each selected site is audited independently.
 
 Apply the house convention for serving a built static site on **Cloudflare Workers Static Assets**: one site Worker points at the build's `dist/`, may expose custom domains, enables observability, and is reached through the `ki:site:*` script family.
 

@@ -7,7 +7,7 @@ import { BOUNDARY } from '../items/boundary.ts'
 import { LIFECYCLE } from '../items/lifecycle.ts'
 import { RECORD } from '../items/records.ts'
 import { STRUCTURE } from '../items/structure.ts'
-import { type CheckpointsRubricContext, createCheckpointsSession } from './checkpoints.ts'
+import { type CheckpointsRubricContext, checkpointReadme, createCheckpointsSession } from './checkpoints.ts'
 
 const temporaryDirectories: string[] = []
 
@@ -20,18 +20,17 @@ const fixture = (): { repository: string; checkpointDirectory: string } => {
   temporaryDirectories.push(repository)
   const checkpointDirectory = join(repository, '+', '_CHECKPOINTS')
   mkdirSync(checkpointDirectory, { recursive: true })
+  writeFileSync(join(repository, checkpointReadme.path), checkpointReadme.content)
   return { repository, checkpointDirectory }
 }
 
 const record = ({
   thread = 'release-audit',
   state = 'active',
-  retiredAt,
   body = ''
 }: {
   thread?: string
-  state?: 'active' | 'retired'
-  retiredAt?: string
+  state?: string
   body?: string
 } = {}) =>
   [
@@ -41,7 +40,6 @@ const record = ({
     `state: ${state}`,
     'created_at: 2026-08-12T10:00:00Z',
     'updated_at: 2026-08-12T11:00:00Z',
-    ...(retiredAt ? [`retired_at: ${retiredAt}`] : []),
     '---',
     '',
     `# ${thread}`,
@@ -97,7 +95,28 @@ test('absence is not applicable and audit never proposes authored writes', () =>
   expect(session.proposal()).toEqual({ writes: [] })
 })
 
-test('rejects unsafe structure, lifecycle collisions, and session locators', () => {
+test('a declared capability requires and can restore the retained scaffold', () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-checkpoint-declared-'))
+  temporaryDirectories.push(repository)
+  mkdirSync(join(repository, '+'), { recursive: true })
+  const session = createCheckpointsSession({
+    mode: 'conform',
+    repository,
+    userHome: tmpdir(),
+    configuration: { skills: { 'ki-checkpoint': {} } }
+  })
+  const value = session.subjects[0]?.context()
+  if (!value) throw new Error('ki-checkpoint session did not expose repository subject')
+  const item = mechanical(STRUCTURE, 'STRUCTURE-1')
+
+  expect(item.audit.run(STRUCTURE.selectContext(value))[0]?.status).toBe('VIOLATION')
+  item.conform?.run(STRUCTURE.selectContext(value))
+  expect(session.proposal()).toEqual({
+    writes: [{ path: checkpointReadme.path, content: checkpointReadme.content, create: true }]
+  })
+})
+
+test('rejects retired storage, lifecycle collisions, and session locators', () => {
   const { repository, checkpointDirectory } = fixture()
   const retiredDirectory = join(checkpointDirectory, '_RETIRED')
   mkdirSync(retiredDirectory)
@@ -105,10 +124,8 @@ test('rejects unsafe structure, lifecycle collisions, and session locators', () 
     join(checkpointDirectory, 'release-audit.md'),
     record({ body: 'Resume https://example.test/conversation/abc.' })
   )
-  writeFileSync(
-    join(retiredDirectory, 'release-audit.md'),
-    record({ state: 'retired', retiredAt: '2026-08-12T12:00:00Z' })
-  )
+  writeFileSync(join(retiredDirectory, 'release-audit.md'), record({ state: 'retired' }))
+  writeFileSync(join(checkpointDirectory, 'alternate.md'), record())
   const outside = join(repository, 'outside.md')
   writeFileSync(outside, record())
   symlinkSync(outside, join(checkpointDirectory, 'linked.md'))
@@ -117,7 +134,7 @@ test('rejects unsafe structure, lifecycle collisions, and session locators', () 
   expect(mechanical(STRUCTURE, 'STRUCTURE-1').audit.run(STRUCTURE.selectContext(value))[0]?.status).toBe('VIOLATION')
   expect(mechanical(LIFECYCLE, 'LIFECYCLE-1').audit.run(LIFECYCLE.selectContext(value))).toEqual(
     expect.arrayContaining([
-      expect.objectContaining({ message: expect.stringContaining('simultaneously active and retired') })
+      expect.objectContaining({ message: expect.stringContaining('more than one active record') })
     ])
   )
   expect(mechanical(BOUNDARY, 'BOUNDARY-1').audit.run(BOUNDARY.selectContext(value))).toEqual(

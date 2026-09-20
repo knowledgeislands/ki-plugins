@@ -2,7 +2,8 @@ import type { AuditOutcome, RubricFamily, RubricItem, RubricOutcomes } from '../
 import { AUTOMATIC_REMEDIATION, judgment } from '../../shared/rubric.ts'
 import { type KiShapeRubricContext, type KiSkillsRubricContext, selectKiSkillsContext } from '../contexts/contexts.ts'
 
-const UNIVERSAL_VERBS = ['AUDIT', 'CONFORM', 'EDUCATE', 'REFRESH', 'HELP'] as const
+const UNIVERSAL_MODES = ['AUDIT', 'CONFORM', 'EDUCATE', 'REFRESH'] as const
+const REQUIRED_GOVERNANCE_VERBS = [...UNIVERSAL_MODES, 'HELP'] as const
 
 const KI_SHAPE_1: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-1',
@@ -51,7 +52,7 @@ const KI_SHAPE_3: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-3',
   title: 'the skill declares its kind',
   description:
-    'Every KI skill declares its **kind** in exact frontmatter as `ki-kind: governance` or `ki-kind: process`; a directory and prose never establish kind (ADR-KI-HARNESS-SKILLS-006). A **governance skill** holds a house standard and exposes the universal modes (KI-SHAPE-5). A **process skill** drives an action or lifecycle rather than holding a standard: it is lightweight, may bundle a helper `scripts/` and a `references/` procedure, and is exempt from universal governance modes — its mode count follows its own lifecycle and it exposes HELP only optionally. Both kinds use the closed Knowledge Islands reference vocabulary (KI-SHAPE-6) and are dual-invocable (`/<name>` and model-triggered).',
+    'Every KI skill declares its **kind** in exact frontmatter as `ki-kind: governance` or `ki-kind: process`; a directory and prose never establish kind (ADR-KI-HARNESS-SKILLS-006). A **governance skill** holds a house standard and exposes the four universal acting modes plus the required HELP entry point (KI-SHAPE-5, KI-SHAPE-11). A **process skill** drives an action or lifecycle rather than holding a standard: it is lightweight, may bundle a helper `scripts/` and a `references/` procedure, and is exempt from universal governance modes — its mode count follows its own lifecycle and it exposes HELP only optionally. Both kinds use the closed Knowledge Islands reference vocabulary (KI-SHAPE-6) and are dual-invocable (`/<name>` and model-triggered).',
   sources: ['ki-agentic-harness README', 'ADR-KI-HARNESS-SKILLS-006'],
   mechanical: {
     level: 'FAIL',
@@ -116,7 +117,7 @@ const KI_SHAPE_6: RubricItem<KiShapeRubricContext> = {
           return [{ status: 'NOT_APPLICABLE', message: 'the target is not a Knowledge Islands skill' }]
         const allowed = /^(?:exemplars|rubric|sources|standards-[a-z0-9]+(?:-[a-z0-9]+)*|mode-[a-z0-9]+)\.md$/
         const violations = skill.referencePaths
-          .filter((path) => !allowed.test(path))
+          .filter((path) => path.endsWith('.md') && !allowed.test(path))
           .map((path) => ({
             status: 'VIOLATION' as const,
             message: 'reference is outside the closed Knowledge Islands filename vocabulary',
@@ -216,9 +217,9 @@ const KI_SHAPE_10: RubricItem<KiShapeRubricContext> = {
 
 const KI_SHAPE_11: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-11',
-  title: 'governance skills expose HELP',
+  title: 'governance skills expose the HELP entry point',
   description:
-    "_Exposes the universal HELP mode._ Every governance skill's `argument-hint` lists a `help` verb, so the no-mode default and the `help` / `-h` / `?` pure-explain form are discoverable (ADR-KI-HARNESS-SKILLS-001). A skill derives its help from its own frontmatter and operating-mode prose; it carries no generated wrapper or separate HELP payload. The linter verifies the `help` token; the prose HELP semantics are KI-INVOKE-1 **[J]**.",
+    "_Exposes the required non-acting HELP entry point._ Every governance skill's `argument-hint` lists a `help` verb, so the no-mode default and the `help` / `-h` / `?` pure-explain form are discoverable (ADR-KI-HARNESS-SKILLS-001). A skill derives its help from its own frontmatter and operating-mode prose; it carries no generated wrapper or separate HELP payload. The linter verifies the `help` token; the prose HELP semantics are KI-INVOKE-1 **[J]**.",
   sources: ['ADR-KI-HARNESS-SKILLS-001'],
   mechanical: {
     level: 'FAIL',
@@ -227,13 +228,15 @@ const KI_SHAPE_11: RubricItem<KiShapeRubricContext> = {
       phase: 'INSPECT',
       run: ({ skill }) => {
         if (!skill || skill.argumentHint === undefined)
-          return [{ status: 'NOT_APPLICABLE', message: '`argument-hint` is unavailable for HELP-mode inspection' }]
+          return [
+            { status: 'NOT_APPLICABLE', message: '`argument-hint` is unavailable for HELP-entry-point inspection' }
+          ]
         return skill.hintVerbs.includes('HELP')
-          ? [{ status: 'PASS', message: 'governance skills expose HELP' }]
+          ? [{ status: 'PASS', message: 'governance skills expose the HELP entry point' }]
           : [
               {
                 status: 'VIOLATION',
-                message: '`argument-hint` does not expose the universal `help` mode (ADR-KI-HARNESS-SKILLS-001)'
+                message: '`argument-hint` does not expose the required `help` entry point (ADR-KI-HARNESS-SKILLS-001)'
               }
             ]
       }
@@ -251,11 +254,11 @@ const KI_SHAPE_11: RubricItem<KiShapeRubricContext> = {
 const auditKiShape12 = ({ skill }: KiShapeRubricContext): RubricOutcomes<AuditOutcome> => {
   if (!skill?.governanceSkill) return [{ status: 'NOT_APPLICABLE', message: 'the target is not a governance skill' }]
   const violations: AuditOutcome[] = []
-  const missing = UNIVERSAL_VERBS.filter((verb) => !skill.hintVerbs.includes(verb))
+  const missing = REQUIRED_GOVERNANCE_VERBS.filter((verb) => !skill.hintVerbs.includes(verb))
   if (missing.length > 0)
     violations.push({
       status: 'VIOLATION',
-      message: `\`argument-hint\` is missing the universal verb(s) ${missing.map((verb) => verb.toLowerCase()).join(', ')} — a governance skill exposes AUDIT, CONFORM, EDUCATE, REFRESH and HELP (ADR-KI-HARNESS-SKILLS-001)`
+      message: `\`argument-hint\` is missing the required verb(s) ${missing.map((verb) => verb.toLowerCase()).join(', ')} — a governance skill exposes the four acting modes AUDIT, CONFORM, EDUCATE, and REFRESH plus the HELP entry point (ADR-KI-HARNESS-SKILLS-001)`
     })
   const [first, ...rest] = violations
   return first
@@ -267,7 +270,7 @@ const KI_SHAPE_12: RubricItem<KiShapeRubricContext> = {
   code: 'KI-SHAPE-12',
   title: 'governance mode vocabulary is canonical and complete',
   description:
-    '_Mode vocabulary is canonical and complete._ A governance skill exposes **AUDIT**, **CONFORM**, **EDUCATE**, **REFRESH** and **HELP** spelled exactly so — a governance skill missing any universal verb from its `argument-hint` (EDUCATE is the common gap) **WARNs**; `NEW`, `OPTIMISE`, and operational verbs are additive, never substitutes for a universal mode (a collection skill exposes both EDUCATE and NEW). The current source-entrypoint migration invariant is validated by KI-SHAPE-15; direct delivery resolves registered operations from the verified collection. Process skills are exempt throughout.',
+    '_Mode vocabulary is canonical and complete._ A governance skill exposes the four acting modes **AUDIT**, **CONFORM**, **EDUCATE**, and **REFRESH**, plus the non-acting **HELP** entry point, all spelled exactly so — a governance skill missing any required verb from its `argument-hint` (EDUCATE is the common gap) **WARNs**; `NEW`, `OPTIMISE`, and operational verbs are additive, never substitutes for a universal mode (a collection skill exposes both EDUCATE and NEW). The current source-entrypoint migration invariant is validated by KI-SHAPE-15; direct delivery resolves registered operations from the verified collection. Process skills are exempt throughout.',
   sources: ['ADR-KI-HARNESS-SKILLS-001', 'ADR-KI-HARNESS-SKILLS-006', 'ADR-KI-HARNESS-007'],
   mechanical: {
     level: 'WARN',
@@ -277,7 +280,7 @@ const KI_SHAPE_12: RubricItem<KiShapeRubricContext> = {
       phase: 'PRIMARY',
       run: ({ skill, addArgumentHintVerbs }) => {
         if (!skill?.governanceSkill || !skill.argumentHint || !addArgumentHintVerbs) return
-        const missing = UNIVERSAL_VERBS.filter((verb) => !skill.hintVerbs.includes(verb))
+        const missing = REQUIRED_GOVERNANCE_VERBS.filter((verb) => !skill.hintVerbs.includes(verb))
         if (missing.length > 0) addArgumentHintVerbs(missing.map((verb) => verb.toLowerCase()))
       }
     }
@@ -571,6 +574,97 @@ const KI_SHAPE_18: RubricItem<KiShapeRubricContext> = {
   }
 }
 
+const APPLICABILITY = new Set(['baseline', 'detected', 'declaration-only', 'invocation-only'])
+const BASELINE_SKILLS = new Set(['ki-repo', 'ki-authoring'])
+
+const flowList = (value: string): string[] | null => {
+  if (!/^\[[^\]]*]$/.test(value)) return null
+  const entries = value
+    .slice(1, -1)
+    .split(',')
+    .map((entry) => entry.trim().replace(/^(?:"([\s\S]*)"|'([\s\S]*)')$/, '$1$2'))
+    .filter(Boolean)
+  return entries
+}
+
+const KI_SHAPE_19: RubricItem<KiShapeRubricContext> = {
+  code: 'KI-SHAPE-19',
+  title: 'repository applicability is explicit',
+  description:
+    'Every canonical Knowledge Islands skill declares one orthogonal `ki-applicability: baseline | detected | declaration-only | invocation-only`. Only `ki-repo` and `ki-authoring` are baseline; every process skill is invocation-only; governance skills are detected or declaration-only. `ki-repo` alone declares a non-empty, duplicate-free `ki-detects:` flow list.',
+  sources: ['ADR-KI-HARNESS-SKILLS-014', 'standards-knowledge-islands.md §2'],
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Classify the skill against the approved applicability vocabulary; keep detector ownership solely on ki-repo and reconcile its registry through ki-repo-harness.'
+    },
+    audit: {
+      phase: 'INSPECT',
+      run: ({ skill }) => {
+        if (!skill?.knowledgeIslandsSkill)
+          return [{ status: 'NOT_APPLICABLE', message: 'the target is not a Knowledge Islands skill' }]
+
+        const violations: AuditOutcome[] = []
+        if (!skill.applicabilityPresent)
+          violations.push({ status: 'VIOLATION', message: 'missing required `ki-applicability:` metadata' })
+        else if (!APPLICABILITY.has(skill.applicability))
+          violations.push({
+            status: 'VIOLATION',
+            message: '`ki-applicability:` must be exactly baseline, detected, declaration-only, or invocation-only'
+          })
+
+        const baseline = BASELINE_SKILLS.has(skill.name)
+        if (baseline && skill.applicability !== 'baseline')
+          violations.push({
+            status: 'VIOLATION',
+            message: `${skill.name} must declare \`ki-applicability: baseline\``
+          })
+        if (!baseline && skill.applicability === 'baseline')
+          violations.push({
+            status: 'VIOLATION',
+            message: 'baseline applicability is reserved for ki-repo and ki-authoring'
+          })
+        if (skill.kiKind === 'process' && skill.applicability !== 'invocation-only')
+          violations.push({
+            status: 'VIOLATION',
+            message: 'every process skill must declare `ki-applicability: invocation-only`'
+          })
+        if (skill.kiKind === 'governance' && skill.applicability === 'invocation-only')
+          violations.push({
+            status: 'VIOLATION',
+            message: 'a governance skill cannot declare invocation-only applicability'
+          })
+
+        if (skill.name === 'ki-repo') {
+          if (!skill.detectsPresent)
+            violations.push({ status: 'VIOLATION', message: 'ki-repo must declare `ki-detects:`' })
+          else {
+            const detects = flowList(skill.detects)
+            if (!detects || detects.length === 0)
+              violations.push({
+                status: 'VIOLATION',
+                message: '`ki-detects:` must be a non-empty single-line flow list'
+              })
+            else if (new Set(detects).size !== detects.length)
+              violations.push({ status: 'VIOLATION', message: '`ki-detects:` must not repeat a skill' })
+          }
+        } else if (skill.detectsPresent)
+          violations.push({
+            status: 'VIOLATION',
+            message: '`ki-detects:` is reserved for the sole detector owner ki-repo'
+          })
+
+        const [first, ...rest] = violations
+        return first
+          ? [first, ...rest]
+          : [{ status: 'PASS', message: 'repository applicability is explicit and locally consistent' }]
+      }
+    }
+  }
+}
+
 export const KI_SHAPE: RubricFamily<KiSkillsRubricContext, KiShapeRubricContext> = {
   code: 'KI-SHAPE',
   title: 'Knowledge Islands skill shape',
@@ -594,6 +688,7 @@ export const KI_SHAPE: RubricFamily<KiSkillsRubricContext, KiShapeRubricContext>
     KI_SHAPE_15,
     KI_SHAPE_16,
     KI_SHAPE_17,
-    KI_SHAPE_18
+    KI_SHAPE_18,
+    KI_SHAPE_19
   ]
 }

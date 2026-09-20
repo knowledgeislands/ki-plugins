@@ -421,6 +421,16 @@ const expectedRootAlias = (context: WebsiteCloudflareContext, localScript: strin
     ? `bun run ${localScript}`
     : `bun run --cwd ${context.configuration.siteRoot} ${localScript}`
 
+const publicAliasValid = (context: WebsiteCloudflareContext, localScript: string): boolean => {
+  const publicKey = `ki:site:${localScript}`
+  const alias = context.rootPackage.scripts[publicKey]
+  const terminal = expectedRootAlias(context, localScript)
+  if (alias === terminal) return true
+  if (context.selectionMode !== 'multi' || !context.siteName) return false
+  const selfKey = `self:site:${context.siteName}:${localScript}`
+  return alias === `bun run ${selfKey}` && context.rootPackage.scripts[selfKey] === terminal
+}
+
 const WCF_13: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-13',
   title: 'deploy script',
@@ -448,7 +458,6 @@ const WCF_13: RubricItem<WebsiteCloudflareContext> = {
             }
           ]
         const local = context.package.scripts.deploy
-        const alias = context.rootPackage.scripts['ki:site:deploy']
         const expectedAlias = expectedRootAlias(context, 'deploy')
         return [
           local && /\bwrangler\s+deploy\b/.test(local)
@@ -462,17 +471,21 @@ const WCF_13: RubricItem<WebsiteCloudflareContext> = {
                 message: 'The selected site package must expose a local deploy script that runs wrangler deploy.',
                 subject: context.package.path
               },
-          alias === expectedAlias
-            ? {
-                status: 'PASS',
-                message: 'The public ki:site:deploy alias delegates to the selected site package.',
-                subject: context.rootPackage.path
-              }
-            : {
-                status: 'VIOLATION',
-                message: `ki:site:deploy must be exactly "${expectedAlias}".`,
-                subject: context.rootPackage.path
-              }
+          ...(context.primary
+            ? [
+                publicAliasValid(context, 'deploy')
+                  ? {
+                      status: 'PASS' as const,
+                      message: 'The public ki:site:deploy alias resolves to the primary site package.',
+                      subject: context.rootPackage.path
+                    }
+                  : {
+                      status: 'VIOLATION' as const,
+                      message: `ki:site:deploy must be exactly "${expectedAlias}" or one exact primary self alias hop.`,
+                      subject: context.rootPackage.path
+                    }
+              ]
+            : [])
         ]
       }
     }
@@ -509,7 +522,6 @@ const WCF_14: RubricItem<WebsiteCloudflareContext> = {
             }
           ]
         const local = context.package.scripts.preview
-        const alias = context.rootPackage.scripts['ki:site:preview']
         const expectedAlias = expectedRootAlias(context, 'preview')
         return [
           local && /\bwrangler\s+dev\b/.test(local)
@@ -519,17 +531,21 @@ const WCF_14: RubricItem<WebsiteCloudflareContext> = {
                 message: 'The selected site package must expose a local preview script that runs wrangler dev.',
                 subject: context.package.path
               },
-          alias === expectedAlias
-            ? {
-                status: 'PASS',
-                message: 'The public ki:site:preview alias delegates to the selected site package.',
-                subject: context.rootPackage.path
-              }
-            : {
-                status: 'VIOLATION',
-                message: `ki:site:preview must be exactly "${expectedAlias}".`,
-                subject: context.rootPackage.path
-              }
+          ...(context.primary
+            ? [
+                publicAliasValid(context, 'preview')
+                  ? {
+                      status: 'PASS' as const,
+                      message: 'The public ki:site:preview alias resolves to the primary site package.',
+                      subject: context.rootPackage.path
+                    }
+                  : {
+                      status: 'VIOLATION' as const,
+                      message: `ki:site:preview must be exactly "${expectedAlias}" or one exact primary self alias hop.`,
+                      subject: context.rootPackage.path
+                    }
+              ]
+            : [])
         ]
       }
     }
@@ -568,7 +584,7 @@ const WCF_25: RubricItem<WebsiteCloudflareContext> = {
           ]
         const upload = context.package.scripts.upload
         const alias = context.rootPackage.scripts['ki:site:upload']
-        if (!upload && !alias)
+        if (!upload && (!context.primary || !alias))
           return [
             {
               status: 'NOT_APPLICABLE',
@@ -591,17 +607,21 @@ const WCF_25: RubricItem<WebsiteCloudflareContext> = {
                 message: `The local upload script must be exactly "${expectedUpload}".`,
                 subject: context.package.path
               },
-          alias === expectedAlias
-            ? {
-                status: 'PASS',
-                message: 'The public ki:site:upload alias delegates to the selected site package.',
-                subject: context.rootPackage.path
-              }
-            : {
-                status: 'VIOLATION',
-                message: `ki:site:upload must be exactly "${expectedAlias}".`,
-                subject: context.rootPackage.path
-              }
+          ...(context.primary
+            ? [
+                publicAliasValid(context, 'upload')
+                  ? {
+                      status: 'PASS' as const,
+                      message: 'The public ki:site:upload alias resolves to the primary site package.',
+                      subject: context.rootPackage.path
+                    }
+                  : {
+                      status: 'VIOLATION' as const,
+                      message: `ki:site:upload must be exactly "${expectedAlias}" or one exact primary self alias hop.`,
+                      subject: context.rootPackage.path
+                    }
+              ]
+            : [])
         ]
       }
     }
@@ -682,7 +702,7 @@ const WCF_20: RubricItem<WebsiteCloudflareContext> = {
 const WCF_21: RubricItem<WebsiteCloudflareContext> = {
   code: 'WCF-21',
   title: 'opt-in validation',
-  description: 'The hosting table is keyless and consumes the valid website-core site root.',
+  description: 'The hosting table is keyless or selects a valid non-empty subset of named website sites.',
   sources: [`${SOURCE}#1-model--workers-static-assets-not-pages`],
   mechanical: {
     level: 'WARN',
@@ -692,9 +712,9 @@ const WCF_21: RubricItem<WebsiteCloudflareContext> = {
       run: (context) => {
         const skip = skipped(context)
         if (skip || context.configuration.state !== 'present') return skip ?? []
-        const outcomes: AuditOutcome[] = context.configuration.keys.map((key) => ({
+        const outcomes: AuditOutcome[] = context.overlayViolations.map((message) => ({
           status: 'VIOLATION',
-          message: `Unknown opt-in key: ${key}.`,
+          message,
           subject: '.ki.toml'
         }))
         if (!context.configuration.siteRootValid)

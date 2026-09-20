@@ -1,12 +1,15 @@
 ---
 name: ki-housekeeping-claude
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: []
 ki-runtime-binding: true
 ki-supported-runtimes: [claude-code]
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Governs accumulated Claude state from Desktop, Cowork, Claude Code (`~/.claude/`), and VSCode chat: sessions, artifacts, backups, plugins, project cache, and selected native auto-memory. It guides repository-scoped Claude Code session acquisition and later housekeeping: discover, list, faithful read, checkpoint, staging, harvest, and safe cleanup. Triggers: "acquire Claude Code sessions", "import Claude sessions", "audit Claude memory", "Claude memory hygiene", "clean up Claude storage", "obsolete Cowork sessions", "Claude housekeeping audit", "check ~/.claude". It is not a Knowledge Islands base memory cascade (`ki-repo-kb`) or context cost (`ki-tokenomics`).
+  Acquire, audit, and safely clean accumulated Claude Desktop, Cowork, Claude Code, and VSCode chat state. Use
+  for Claude session import, memory or storage hygiene, plugins, caches, and backups; KB structure belongs to
+  `ki-repo-kb` and context budgets to `ki-tokenomics`.
 argument-hint: 'audit | conform | help | educate | refresh'
 ---
 
@@ -27,7 +30,7 @@ The **mechanical arm** is split by area:
 
 Use the provider-neutral lifecycle: **acquire → stage → harvest → durable knowledge → archive/delete source**. For one exact physical repository, `mcp-housekeeping-claude` exposes read-only `claude_code_sessions_discover`, `claude_code_sessions_list`, `claude_code_session_read`, and `claude_code_sessions_checkpoint` operations. `list` and `checkpoint` are content-minimised provenance; the repository/session form of `session_read` is the faithful source payload. Its legacy project/session form remains a bounded preview.
 
-The MCP does not write Knowledge Islands state. `ki space acquire claude import` will own inbound staging and incremental checkpoint persistence. Do not archive or delete a Claude session until acquisition, review, and harvesting have passed their later safety checkpoint.
+The MCP does not write Knowledge Islands state. `ki acquire import --adapter claude` will own inbound staging and incremental checkpoint persistence. Do not archive or delete a Claude session until acquisition, review, and harvesting have passed their later safety checkpoint.
 
 ## Operating modes
 

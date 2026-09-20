@@ -1,10 +1,12 @@
 ---
 name: ki-plan
 ki-kind: process
+ki-applicability: invocation-only
 ki-depends-on: []
 ki-optional-depends-on: [ki-delegation]
 description: >
-  Shapes selected Now or Next draft work through readiness in the selected local roadmap or KB Streams adapter. It enriches the canonical record in place, including an item under `Streams/Roadmap/` in a Knowledge Base, then stops at ready. Use when asked "plan this", "make this ready", or "prepare this work for implementation". It refuses unavailable remote execution and does not capture work, implement it, or close it.
+  Shape selected Now or Next draft work in the local roadmap or KB Streams adapter until it is Ready. Use to
+  plan or prepare implementation; it does not capture, select, implement, close, or prune work.
 argument-hint: 'plan <work>... | help'
 ---
 
@@ -18,7 +20,7 @@ The class-level standard—horizons, identity, and file shape—is owned by `ki-
 
 ## What this skill does
 
-`ki-plan` resolves the selected record through the repository adapter and enriches it in place. `ki-next` captures and promotes drafts; this skill never creates a duplicate plan record.
+`ki-plan` resolves the selected record through the repository adapter and enriches it in place. `ki-next` captures unadopted drafts into Triage and separately adopts or promotes them; this skill accepts only selected Now or Next drafts and never creates a duplicate plan record.
 
 For the selected `roadmap` adapter it adds the work-item execution sections; for selected `kb-streams` it applies the same record model inside the Streams container. Readiness is explicit and all-or-nothing: validate every named record before publishing any `ready` transition. Commit the resulting state with its coherent planning unit; the transition does not require a standalone commit, and an item may first land as `ready` when capture, shaping, and approval occur together. GitHub Issues and Linear selections stop without writes until their remote process execution exists.
 
@@ -53,7 +55,7 @@ When referring to a specific work item in prose, link its canonical document usi
 
 ## Invocation
 
-`help` / `-h` / `?` explains this skill and stops, taking no action. `plan <work>...` resolves one or more explicit selected records; with no target, identify that `ki-next` must first select or capture a Now or Next draft and stop.
+`help` / `-h` / `?` explains this skill and stops, taking no action. `plan <work>...` resolves one or more explicit selected records; with no target, identify that `ki-next` must first adopt and select a Now or Next draft and stop.
 
 ## Preflight
 

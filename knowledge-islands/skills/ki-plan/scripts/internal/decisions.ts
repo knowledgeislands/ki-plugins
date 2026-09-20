@@ -47,7 +47,7 @@ export type ReadinessInput = {
   readonly id: string
   readonly path: string
   readonly root: string
-  readonly horizon: 'now' | 'next' | 'soon' | 'future' | 'waiting-for' | 'parked'
+  readonly horizon: 'now' | 'next' | 'soon' | 'future' | 'waiting-for' | 'parked' | 'triage'
   readonly status: 'draft' | 'ready' | 'in-progress' | 'awaiting-review' | 'done'
   readonly dependenciesReady: boolean
   readonly verificationDefined: boolean

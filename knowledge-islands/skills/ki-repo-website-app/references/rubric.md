@@ -38,7 +38,7 @@ React/Vite client application implementation.
   - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.
 - **APP-6 [M] — App build command** — The selected site package build script runs vite build. (standards-app-site.md)
   - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.
-- **APP-7 [M] — App development command** — The selected site package dev script runs Vite. (standards-app-site.md)
+- **APP-7 [M] — App development command** — The selected site package ki:site:dev script runs Vite. (standards-app-site.md)
   - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.
 - **APP-8 [M] — Dist output** — Vite emits the shared dist seam. (standards-app-site.md)
   - _Remediation:_ diagnostic — Align the interactive app with the React/Vite implementation or select the content implementation instead.

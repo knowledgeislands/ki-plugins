@@ -3,7 +3,7 @@ const RULE = '# ----------------------------------------------------------------
 export const CONFIGURATION_NEIGHBOURHOODS = [
   'Foundation',
   'Repository shape',
-  'Governance runtime',
+  'Governance and runtime',
   'Change management',
   'Relationships'
 ] as const

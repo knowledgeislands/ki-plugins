@@ -121,6 +121,7 @@ export type RuntimesRubricContext = {
   runtimes1: readonly RepoEvidenceFinding[]
   runtimes2: readonly RepoEvidenceFinding[]
   runtimes3: readonly RepoEvidenceFinding[]
+  runtimes4: readonly RepoEvidenceFinding[]
   requestRuntimeSkills?: () => void
 }
 
@@ -129,10 +130,10 @@ export type KindRubricContext = {
   kind2: readonly RepoEvidenceFinding[]
 }
 
-const WORKING_AREA_READMES = [
-  {
-    path: '+/README.md',
-    content: `# Incoming working area
+const PREVIOUS_WORKING_AREA_READMES = new Map([
+  [
+    '+/README.md',
+    `# Incoming working area
 
 \`+\` is this repository's top-level working area for temporary material received from another repository or external source that needs local triage.
 
@@ -140,16 +141,41 @@ For material prepared here to send elsewhere, use [the matching outbound working
 
 It is not a canonical roadmap, plan, decision record, or knowledge-base destination. Triage each item into its durable home, or remove it when it has no value to retain.
 `
-  },
-  {
-    path: '-/README.md',
-    content: `# Outgoing working area
+  ],
+  [
+    '-/README.md',
+    `# Outgoing working area
 
 \`-\` is this repository's top-level working area for temporary material prepared here for another repository or external recipient.
 
 For material received here to triage, use [the matching inbound working area](../+/README.md).
 
 It is not a canonical roadmap, plan, decision record, or knowledge-base destination. Remove each item after delivery or when it no longer has value to retain.
+`
+  ]
+] as const)
+
+const WORKING_AREA_READMES = [
+  {
+    path: '+/README.md',
+    content: `# Incoming working area
+
+\`+\` is this repository's top-level working area for temporary inputs to further repository work, whether received from elsewhere or created locally.
+
+For produced outputs awaiting use or delivery, use [the matching outbound working area](../-/README.md).
+
+Canonical work, decisions, and knowledge belong in their owning collections. Keep working material only while useful; route durable outcomes to their owners and follow each specialist subarea's retention rule before cleanup.
+`
+  },
+  {
+    path: '-/README.md',
+    content: `# Outgoing working area
+
+\`-\` is this repository's top-level working area for temporary produced outputs awaiting use or delivery.
+
+For inputs to further repository work, use [the matching inbound working area](../+/README.md).
+
+Canonical work, decisions, and knowledge belong in their owning collections. Keep outputs only while useful; preserve durable outcomes and follow each specialist subarea's delivery and retention rules before cleanup.
 `
   }
 ] as const
@@ -248,7 +274,9 @@ const workingAreaOutcomes = (target: string): readonly AuditOutcome[] => {
         message: `required working-area README ${readme.path} is absent or unsafe`,
         subject: readme.path
       })
-    } else if (readFileSync(path, 'utf8') !== readme.content) {
+    } else {
+      const contents = readFileSync(path, 'utf8')
+      if (contents === readme.content || contents === PREVIOUS_WORKING_AREA_READMES.get(readme.path)) continue
       outcomes.push({
         status: 'VIOLATION',
         message: `working-area README ${readme.path} differs from the canonical ki-repo orientation`,
@@ -493,6 +521,7 @@ export const createRepoSession = async (
       runtimes1: evidence('RUNTIMES-1'),
       runtimes2: [...evidence('RUNTIMES-2'), ...runtimeActivation.findings],
       runtimes3: evidence('RUNTIMES-3'),
+      runtimes4: evidence('RUNTIMES-4'),
       ...(mutable && repositorySkills && runtimeActivation.requestable
         ? {
             requestRuntimeSkills: () => repositorySkills.propose(runtimeActivation.missing)
@@ -574,7 +603,7 @@ export const createRepoSession = async (
       if (legacyKiCleanupRequested) {
         commands.push({
           program: 'node',
-          arguments: [fileURLToPath(new URL('../../remove-legacy-ki.mjs', import.meta.url)), target]
+          arguments: [fileURLToPath(new URL('../../internal/remove-legacy-ki.ts', import.meta.url)), target]
         })
       }
       if (workingAreaScaffoldRequested) {

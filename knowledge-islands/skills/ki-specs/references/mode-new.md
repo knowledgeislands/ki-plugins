@@ -1,24 +1,25 @@
-# Mode NEW — draft a new requirement or area
+# Mode NEW — draft a requirement area
 
-Read the [Specifications standard](standards-specs.md) first; the [exemplars](exemplars.md) show shapes to adapt.
+Read the [Specifications standard](standards-specs.md) and [exemplars](exemplars.md) first.
 
-## Adding a requirement to an existing area
+## Adding a requirement
 
-1. **Pick the area file** by prefix from the `index.md` areas table. The requirement lives in the file its prefix belongs to.
-2. **Allocate the next serial** — the highest existing `NNN` for that prefix **+ 1**, zero-padded to ≥ 3 digits. This is independent of any other prefix in the same file. Never reuse a retired number or introduce a gap in the prefix sequence.
-3. **Write the heading** — `### <PREFIX>-NNN — <short title>` under the appropriate `## <sub-area>` H2.
-4. **Write one normative statement** — behaviour only, an uppercase RFC-2119 keyword (`MUST` / `SHOULD` / `MAY`), no rationale. If the behaviour follows from a decision, cite the DR inline.
-5. **Write the `_Verify:_` line** — a concrete, checkable hook: a built-output assertion, a named test, or a linked source symbol. If you cannot state a truthful verification, the behaviour is probably not as-built yet — put it in `## Gaps` instead.
-6. **Run the checker** — `ki repo audit --skill ki-specs` and confirm clean.
+1. Find the registered prefix in `index.md` and allocate the next unused serial, zero-padded to at least three digits.
+2. Place the requirement in the feature area's user-observable behaviour or quality-property section.
+3. Write `### <PREFIX>-NNN — <short title>` and one normative BCP-14 statement without rationale.
+4. If a recorded decision governs it, cite the Decision Record inline.
+5. Add `_Conformance:_ conforming | pending | divergent` truthfully.
+6. Add a concrete `_Verify:_` plan. When conforming, add `_Evidence:_` naming current proof.
+7. Run `ki repo audit --skill ki-specs`.
 
 ## Adding a new area
 
-1. **Choose a prefix** — one or more uppercase alpha-leading segments, unique across the corpus (not already in the areas table).
-2. **Create the area file** `docs/specs/<area>.md` with an H1 `# <Title> — <PREFIX>`, a one-paragraph scope blurb linking back to `index.md`, then the requirements.
-3. **Register it** — add a row to the appropriate areas table in `index.md` (`File`, `Prefix`, and any `Covers` column). A file may host several prefixes; list each.
-4. **Seed the first requirements** as above, and add a `## Gaps` section for the backlog.
-5. **Run the checker** and confirm clean.
+1. Choose a unique uppercase prefix.
+2. Create `docs/specs/<feature-area>.md` with `# <Title> — <PREFIX>`, a scope paragraph linking to `index.md`, classification sections, and optional Gaps.
+3. Register its file, prefix, and coverage in the index areas table.
+4. Seed only accepted requirements; keep unaccepted candidates in Gaps.
+5. Run the checker.
 
-## Promoting a gap
+## Promoting a Gap
 
-A `## Gaps` bullet becomes a numbered requirement **only once the behaviour is built and true**. Move it out of Gaps, give it the next serial for its prefix, write the normative statement and `_Verify:_` hook, and delete the bullet.
+Promote a Gap when it becomes accepted, not only when implementation lands. Allocate the next ID, write the contract, declare current conformance, add its verification plan, and remove the bullet.

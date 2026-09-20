@@ -18,10 +18,20 @@ The standard pins versions in `packageManager`, `engines`, `biome.json`'s `$sche
 | TS | [TypeScript releases][ts] | `tsconfig` / `tsconfig.build` compiler options | declared range and resolved `7.0.2` | 2026-09-04 |
 | VITEST | [Vitest guide][vitest] | config-gated test profile + 100% coverage (`vitest run`, v8) | capability-selected at `5.0.0` | 2026-09-04 |
 | SYNCPACK | [syncpack releases][syncpack] | package ordering inside engineering audit/conform | declared range and resolved `15.3.3` | 2026-09-04 |
+| COMMITLINT | [Commitlint releases][commitlint] | deterministic Conventional Commit validation in the Husky `commit-msg` binding | declared range and resolved `21.2.2` | 2026-09-19 |
 | MDLINT | [rumdl releases][rumdl] | Markdown audit/conform inside `ki-authoring` ❡ | declared `^0.2.64`, resolved `0.2.64` | 2026-09-04 |
 | KNIP | [knip releases][knip] | dependency + dead-code checks inside engineering audit/conform | declared range and resolved `6.34.0` | 2026-09-04 |
 
 ❡ The Markdown mechanical pass.
+
+## Supported generated-artifact locations
+
+These upstream locations determine whether the shared ignore contract needs an additional rule. A tool output already nested beneath an existing managed rule must not create a duplicate pattern.
+
+| Tool | Source | Generated location | Managed coverage | Last reviewed |
+| --- | --- | --- | --- | --- |
+| Turborepo | [Caching][turbo-cache] | `.turbo/cache` | `.turbo/` from `ki-engineering` | 2026-09-16 |
+| Vite | [Shared options][vite-cache] | `node_modules/.vite` | `node_modules/` from `ki-engineering` | 2026-09-16 |
 
 ## In-house (the workspace convention)
 
@@ -54,5 +64,9 @@ REFRESH last run **2026-09-04**. Cadence: monthly, alongside the other governanc
 [ts]: https://github.com/microsoft/typescript-go/releases
 [vitest]: https://vitest.dev/
 [syncpack]: https://github.com/JamieMason/syncpack/releases
+
+[commitlint]: https://github.com/conventional-changelog/commitlint/releases
 [rumdl]: https://github.com/rvben/rumdl/releases
 [knip]: https://github.com/webpro-nl/knip/releases
+[turbo-cache]: https://turborepo.com/docs/crafting-your-repository/caching
+[vite-cache]: https://vite.dev/config/shared-options#cachedir

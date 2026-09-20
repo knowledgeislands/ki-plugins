@@ -1,10 +1,12 @@
 ---
 name: ki-tokenomics
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Codify and audit portable agent-context tokenomics: repository-selected standing-surface attribution, budget guide-rails, portable model-purpose taxonomy, and the `[skills.ki-tokenomics]` configuration table. Use when a repository needs a runtime-neutral context-cost policy, model-purpose choice, or token budget. Triggers: "set a context budget", "audit our tokenomics policy", "which model type should this work use", "configure tokenomics". Runtime evidence belongs to `ki-tokenomics-claude` or `ki-tokenomics-codex`; MCP server design belongs to `ki-repo-mcp`; skill-description quality belongs to `ki-skills`.
+  Govern portable agent-context budgets, standing-surface attribution, and model-purpose policy. Use runtime
+  adapters for observed Claude or Codex evidence and `ki-skills` for description quality.
 argument-hint: 'audit | conform | help | educate | refresh'
 ---
 

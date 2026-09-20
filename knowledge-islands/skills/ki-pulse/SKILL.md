@@ -1,9 +1,12 @@
 ---
 name: ki-pulse
 ki-kind: process
+ki-applicability: invocation-only
 ki-depends-on: []
 description: >
-  Captures an explicitly submitted link, scans a bounded public-source brief, and triages current signals into read or learn, watch, act, or discard without keeping an inbox. Use for "capture this link", "scan these interests", "what changed in these public sources", or "triage these signals". It does not select backlog work, persist subscriptions, or implement recommendations.
+  Capture a submitted link or scan bounded public sources, then triage current signals into read or learn,
+  watch, act, or discard. Use for link intake or what changed; `ki-agentic-radar` and `ki-model-radar` own
+  durable landscape posture, while `ki-next` owns follow-on work.
 argument-hint: 'capture <url-or-source> [reason] | help | scan <interest-or-query> [sources] | triage [current-signals]'
 ---
 

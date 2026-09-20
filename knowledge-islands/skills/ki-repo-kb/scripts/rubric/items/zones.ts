@@ -69,16 +69,30 @@ const ZONE_4 = mechanical(
 const ZONE_5 = mechanical(
   'ZONE-5',
   'produced outputs use outbound staging',
-  'Notes with note_type session-digest or handoff reside under the resolved -/ staging area.',
+  'Notes with note_type session-digest reside under the resolved -/ staging area; cross-repository handoffs belong to ki-trades.',
   'FAIL',
   (context) => context.outboundPlacement
 )
 
+const ZONE_6: RubricItem<KbZoneContext> = {
+  code: 'ZONE-6',
+  title: 'session-digest scaffold is canonical',
+  description:
+    'A declared ki-repo-kb capability retains the exact -/_DIGESTS/README.md scaffold after digest records are removed.',
+  sources: [SOURCE],
+  mechanical: {
+    level: 'FAIL',
+    remediation: { class: 'automatic' },
+    audit: { phase: 'INSPECT', run: (context) => context.digestScaffold },
+    conform: { phase: 'PRIMARY', run: (context) => context.scaffoldDigestArea?.() }
+  }
+}
+
 export const ZONE: RubricFamily<KbRubricContext, KbZoneContext> = {
   code: 'ZONE',
   title: 'zone layout',
-  description: 'Required zones, indexes, staging, and output placement.',
+  description: 'Required zones, indexes, staging, output placement, and retained digest scaffold.',
   standard: SOURCE,
   selectContext: (context) => context.zones,
-  items: [ZONE_1, ZONE_2, ZONE_3, ZONE_4, ZONE_5]
+  items: [ZONE_1, ZONE_2, ZONE_3, ZONE_4, ZONE_5, ZONE_6]
 }

@@ -1,9 +1,13 @@
 ---
 name: ki-subagents
 ki-kind: governance
+ki-applicability: detected
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
-description: Define or assess a portable subagent role before choosing a runtime projection. Use for identity, delegation purpose, core instructions, lane, grounding, hand-offs, orchestration intent, and outcome evidence. Use ki-subagents-claude for Claude Markdown/YAML or ki-subagents-codex for Codex TOML. This skill does not prescribe a native file format or prove installation, activation, effective settings, or execution.
+description: >
+  Define or assess runtime-neutral KI subagent roles: identity, delegation purpose, instructions, lane,
+  grounding, hand-offs, orchestration, and evidence. Use before a native projection; use `ki-subagents-claude`
+  or `ki-subagents-codex` for runtime files.
 argument-hint: 'audit | conform | educate | refresh | help'
 ---
 

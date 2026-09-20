@@ -9,7 +9,7 @@ const expectedFamilies = [
   'REQ',
   'VERIFY',
   'BEHAVIOUR',
-  'AS-BUILT',
+  'CONFORMANCE',
   'SPLIT',
   'DR-LINK',
   'AREA-FIT'
@@ -27,7 +27,8 @@ const expectedItems = [
   'VERIFY-1',
   'VERIFY-2',
   'BEHAVIOUR-1',
-  'AS-BUILT-1',
+  'CONFORMANCE-1',
+  'CONFORMANCE-2',
   'SPLIT-1',
   'DR-LINK-1',
   'AREA-FIT-1'
@@ -50,7 +51,7 @@ test('the catalogue and family modules keep their public surfaces narrow', async
   for (const file of [
     'area-fit',
     'area',
-    'as-built',
+    'conformance',
     'behaviour',
     'decision-link',
     'identity',
@@ -61,7 +62,10 @@ test('the catalogue and family modules keep their public surfaces narrow', async
   ]) {
     const module = (await import(`./${file}.ts`)) as Record<string, unknown>
     expect(Object.keys(module)).toHaveLength(1)
-    const family = Object.values(module)[0] as { code?: unknown; items?: unknown }
+    const family = Object.values(module)[0] as {
+      code?: unknown
+      items?: unknown
+    }
     expect(typeof family.code).toBe('string')
     expect(Array.isArray(family.items)).toBe(true)
   }

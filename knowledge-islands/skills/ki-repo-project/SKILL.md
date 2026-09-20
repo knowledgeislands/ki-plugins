@@ -1,10 +1,13 @@
 ---
 name: ki-repo-project
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Explains the Project repository baseline for a non-Knowledge-Base Knowledge Islands repository and its composable ki-repo-* structures. Primary-kind declaration and mutual exclusion belong to ki-repo; forward-work adapter selection belongs to ki-work. Use when orienting a Project migration or its relationship to a specialised repository structure. For KBs use ki-repo-kb; for tracker choice use ki-work.
+  Explain the baseline and composable structures for a non-Knowledge-Base KI Project repository. Use when
+  orienting or migrating a Project and choosing specialised `ki-repo-*` overlays; `ki-repo` owns primary-kind
+  declarations, `ki-work` tracker selection, and `ki-repo-kb` Knowledge Bases.
 argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
 ---
 

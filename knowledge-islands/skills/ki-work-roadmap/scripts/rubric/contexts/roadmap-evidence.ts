@@ -14,11 +14,14 @@ export type WorkItem = {
   readonly theme: string
   readonly horizon: Horizon
   readonly status: string
-  readonly candidate: boolean
   readonly blocks: readonly string[]
   readonly blockedBy: readonly string[]
   readonly waitingOnTrades: readonly string[]
   readonly baselineRef: string | null
+  readonly intakeDisposition: string | undefined
+  readonly intakeDispositionTarget: string | undefined
+  readonly createdAt: string | undefined
+  readonly updatedAt: string | undefined
   readonly file: string
   readonly body: string
 }
@@ -28,27 +31,18 @@ type RoadmapConfiguration = {
   readonly areas: ReadonlyMap<string, string>
 }
 
-export const HORIZONS = ['now', 'next', 'soon', 'waiting-for', 'parked', 'future'] as const
-export const HORIZON_BLURBS: Record<Horizon, string> = {
-  now: 'Receiving current delivery attention. An urgent breakage may be Now, but dependency links—not the horizon—record what it blocks.',
-  next: 'The next bounded work to prepare or begin once current Now work permits it.',
-  soon: 'Understood and roughly scoped but not yet started — worth doing once the **Next** queue clears, ahead of anything still speculative.',
-  'waiting-for':
-    'Worth doing, but presently blocked on an external dependency or decision. Revisit when its named condition changes; do not use this horizon for intentionally paused work.',
-  parked:
-    'Intentionally paused work with no current attention. Revisit only when its priority or named return trigger changes.',
-  future:
-    'Speculative or not yet scoped — candidate items need a scoping pass (or a decision to drop them) before they are actionable.'
-}
+export const HORIZONS = ['now', 'next', 'soon', 'waiting-for', 'parked', 'future', 'triage'] as const
 
 const ID_RE = /^[A-Z][A-Z0-9-]{1,23}-\d{3,}$/
 const FILE_RE = /^([A-Z][A-Z0-9-]{1,23}-\d{3,})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/
 const THEME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const AREA_RE = /^[A-Z][A-Z0-9]*$/
 const COMMIT_RE = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/
+const TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
 const TRADE_RE = /^TRD-[0-9a-f]{8}$/
 const MAX_TITLE_WORDS = 4
 const STATUS = new Set(['draft', 'ready', 'in-progress', 'awaiting-review', 'done'])
+const INTAKE_DISPOSITIONS = new Set(['rejected', 'duplicate', 'merged'])
 const IMMEDIATE = new Set<Horizon>(['now', 'next'])
 const STANDARD = 'references/standards-repository-roadmaps.md'
 const FORMAT = 'references/standards-work-item-format.md'
@@ -70,6 +64,12 @@ const parseScalar = (value: string): string | boolean | null | undefined => {
   if (trimmed === 'null') return null
   const quoted = trimmed.match(/^(['"])(.*)\1$/)
   return quoted ? quoted[2] : trimmed || undefined
+}
+
+const canonicalTimestamp = (value: string): boolean => {
+  if (!TIMESTAMP_RE.test(value)) return false
+  const milliseconds = Date.parse(value)
+  return Number.isFinite(milliseconds) && new Date(milliseconds).toISOString().replace('.000Z', 'Z') === value
 }
 
 const parseFrontmatter = (
@@ -225,6 +225,10 @@ const REVIEW_SECTIONS = [
 
 const requiredSections = (item: WorkItem): readonly string[] => {
   const sections: string[] = ['Goal', 'Context', 'Boundary']
+  if (item.horizon === 'triage' && item.status === 'done') {
+    sections.push('Intake disposition', 'Done', 'Discussion')
+    return sections
+  }
   if (item.status === 'draft' && item.horizon === 'soon') sections.push('Shaping')
   if (item.status !== 'draft' || IMMEDIATE.has(item.horizon)) sections.push(...EXECUTION_SECTIONS)
   if (item.status === 'awaiting-review' || item.status === 'done') sections.push('Review')
@@ -303,10 +307,25 @@ const validateDocumentationImpact = (item: WorkItem): void => {
 const validateBody = (item: WorkItem): void => {
   const present = headings(item.body)
   const required = requiredSections(item)
+  if (item.horizon === 'triage' && item.status === 'done') {
+    const deliveryHeadings = present.filter((heading) =>
+      [...EXECUTION_SECTIONS, 'Delegation', 'Review'].includes(heading)
+    )
+    if (deliveryHeadings.length)
+      add(
+        'FAIL',
+        'ITEM-3',
+        `terminal Triage must not contain delivery sections: ${deliveryHeadings.join(', ')}`,
+        FORMAT,
+        item.file
+      )
+  }
   const sequence = present.filter((heading) => required.includes(heading))
   if (JSON.stringify(sequence) !== JSON.stringify(required))
     add('FAIL', 'ITEM-3', `body must contain ${required.join(' → ')} in order`, FORMAT, item.file)
   if (!sectionContent(item.body, 'Goal')) add('FAIL', 'ITEM-3', '## Goal must be non-empty', FORMAT, item.file)
+  if (item.horizon === 'triage' && item.status === 'done' && !sectionContent(item.body, 'Intake disposition'))
+    add('FAIL', 'ITEM-3', 'terminal Triage item requires a non-empty ## Intake disposition', FORMAT, item.file)
   if (present.at(-1) !== 'Discussion')
     add('FAIL', 'ITEM-3', '## Discussion must be the final top-level section', FORMAT, item.file)
   if (required.includes('Steps')) validateSteps(item)
@@ -347,8 +366,22 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
     ? (parsed.values.waiting_on_trades as string[])
     : undefined
   const baselineRef = parsed.values.baseline_ref
-  const candidate = parsed.values.candidate === true
-  for (const key of ['id', 'title', 'theme', 'horizon', 'status', 'blocks', 'blocked_by', 'baseline_ref']) {
+  const intakeDisposition = value('intake_disposition')
+  const intakeDispositionTarget = value('intake_disposition_target')
+  const createdAt = value('created_at')
+  const updatedAt = value('updated_at')
+  for (const key of [
+    'id',
+    'title',
+    'theme',
+    'horizon',
+    'status',
+    'blocks',
+    'blocked_by',
+    'baseline_ref',
+    'created_at',
+    'updated_at'
+  ]) {
     if (!(key in parsed.values)) add('FAIL', 'ITEM-1', `frontmatter is missing '${key}'`, FORMAT, display)
   }
   const unexpected = Object.keys(parsed.values).filter(
@@ -360,11 +393,14 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
         'theme',
         'horizon',
         'status',
-        'candidate',
         'blocks',
         'blocked_by',
         'waiting_on_trades',
         'baseline_ref',
+        'intake_disposition',
+        'intake_disposition_target',
+        'created_at',
+        'updated_at',
         'transferred_from',
         'housekeeping_template',
         'scheduled_for'
@@ -423,15 +459,63 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
   }
   if (baselineRef !== null && (typeof baselineRef !== 'string' || !COMMIT_RE.test(baselineRef)))
     add('FAIL', 'ITEM-2', 'baseline_ref must be null or a full lowercase commit ID', FORMAT, display)
-  if (horizon === 'future' ? !candidate : 'candidate' in parsed.values)
-    add('FAIL', 'ITEM-2', 'candidate: true is required only for Future items', FORMAT, display)
-  if (status && status !== 'draft' && horizon && !IMMEDIATE.has(horizon))
+  if ((createdAt === undefined) !== (updatedAt === undefined))
+    add('FAIL', 'ITEM-2', 'created_at and updated_at must be present together', FORMAT, display)
+  if (createdAt !== undefined && updatedAt !== undefined) {
+    if (!canonicalTimestamp(createdAt) || !canonicalTimestamp(updatedAt))
+      add('FAIL', 'ITEM-2', 'timestamps must use canonical RFC 3339 UTC second precision', FORMAT, display)
+    else if (Date.parse(createdAt) > Date.parse(updatedAt))
+      add('FAIL', 'ITEM-2', 'created_at must not be later than updated_at', FORMAT, display)
+  }
+  const terminalTriage = horizon === 'triage' && status === 'done'
+  const hasIntakeDisposition = 'intake_disposition' in parsed.values
+  const hasIntakeDispositionTarget = 'intake_disposition_target' in parsed.values
+  if ((hasIntakeDisposition || hasIntakeDispositionTarget) && !terminalTriage)
+    add('FAIL', 'ITEM-2', 'intake disposition fields are valid only for terminal Triage items', FORMAT, display)
+  if (terminalTriage) {
+    if (!intakeDisposition || !INTAKE_DISPOSITIONS.has(intakeDisposition))
+      add(
+        'FAIL',
+        'ITEM-2',
+        'terminal Triage intake_disposition must be rejected, duplicate, or merged',
+        FORMAT,
+        display
+      )
+    if (intakeDisposition === 'rejected' && hasIntakeDispositionTarget)
+      add('FAIL', 'ITEM-2', 'rejected Triage disposition must not name intake_disposition_target', FORMAT, display)
+    if (
+      (intakeDisposition === 'duplicate' || intakeDisposition === 'merged') &&
+      (!hasIntakeDispositionTarget || !intakeDispositionTarget?.trim())
+    )
+      add(
+        'FAIL',
+        'ITEM-2',
+        `${intakeDisposition} Triage disposition requires intake_disposition_target`,
+        FORMAT,
+        display
+      )
+    else if (
+      (intakeDisposition === 'duplicate' || intakeDisposition === 'merged') &&
+      intakeDispositionTarget &&
+      !ID_RE.test(intakeDispositionTarget)
+    )
+      add('FAIL', 'ITEM-2', 'intake_disposition_target must be a canonical work-item ID', FORMAT, display)
+    else if ((intakeDisposition === 'duplicate' || intakeDisposition === 'merged') && intakeDispositionTarget === id)
+      add('FAIL', 'ITEM-2', 'intake_disposition_target must differ from the disposed item', FORMAT, display)
+  }
+  if (horizon === 'triage') {
+    if (status && status !== 'draft' && status !== 'done')
+      add('FAIL', 'ITEM-2', 'open Triage item must remain draft until adopted', FORMAT, display)
+  } else if (status && status !== 'draft' && horizon && !IMMEDIATE.has(horizon))
     add('FAIL', 'ITEM-2', 'non-draft item must be in now or next', FORMAT, display)
+  if (terminalTriage && baselineRef !== null)
+    add('FAIL', 'ITEM-2', 'terminal Triage item baseline_ref must remain null', FORMAT, display)
   if (status === 'draft' && baselineRef !== null)
     add('FAIL', 'ITEM-2', 'draft item baseline_ref must be null', FORMAT, display)
   if (
     status &&
     ['in-progress', 'awaiting-review', 'done'].includes(status) &&
+    !terminalTriage &&
     (typeof baselineRef !== 'string' || !COMMIT_RE.test(baselineRef))
   )
     add('FAIL', 'ITEM-2', 'executing or completed item needs an immutable baseline_ref', FORMAT, display)
@@ -446,11 +530,14 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
     theme,
     horizon,
     status,
-    candidate,
     blocks,
     blockedBy,
     waitingOnTrades: waitingOnTrades ?? [],
     baselineRef: baselineRef as string | null,
+    intakeDisposition,
+    intakeDispositionTarget,
+    createdAt,
+    updatedAt,
     file: display,
     body: parsed.body
   }
@@ -471,6 +558,20 @@ export const workItemsFor = (repository: string, configuration?: RoadmapConfigur
 const validateDependencies = (items: readonly WorkItem[]): void => {
   const byId = new Map(items.map((item) => [item.id, item]))
   for (const item of items) {
+    if (
+      (item.intakeDisposition === 'duplicate' || item.intakeDisposition === 'merged') &&
+      item.intakeDispositionTarget &&
+      ID_RE.test(item.intakeDispositionTarget) &&
+      item.intakeDispositionTarget !== item.id &&
+      !byId.has(item.intakeDispositionTarget)
+    )
+      add(
+        'FAIL',
+        'ITEM-2',
+        `intake_disposition_target '${item.intakeDispositionTarget}' must resolve to a retained work item`,
+        FORMAT,
+        item.file
+      )
     for (const id of [...item.blocks, ...item.blockedBy])
       if (!byId.has(id)) add('FAIL', 'ITEM-5', `dependency '${id}' does not exist`, FORMAT, item.file)
     for (const id of item.blocks)

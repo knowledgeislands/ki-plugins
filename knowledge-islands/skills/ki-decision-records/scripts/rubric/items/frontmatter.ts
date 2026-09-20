@@ -174,11 +174,43 @@ const FM_6: RubricItem<RecordsRubricContext> = {
   }
 }
 
+const FM_7: RubricItem<RecordsRubricContext> = {
+  code: 'FM-7',
+  title: 'Shared decision projection eligibility',
+  description:
+    'A shared record has only decision-owned frontmatter or an explicitly excluded container field and can produce a deterministic identity projection.',
+  sources: [SOURCE],
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Remove or explicitly govern unknown frontmatter before comparing shared records; do not infer repository-local exclusions.'
+    },
+    audit: {
+      phase: 'INSPECT',
+      run: (context: RecordsRubricContext) =>
+        outcomes(
+          context.records
+            .filter((record) => record.sharedRecord && record.sharedProjectionIssue)
+            .map(
+              (record): AuditOutcome => ({
+                status: 'VIOLATION',
+                message: record.sharedProjectionIssue ?? 'Shared decision projection failed.',
+                subject: record.file
+              })
+            ),
+          'Every shared decision record can produce its canonical identity projection.'
+        )
+    }
+  }
+}
+
 export const FM: RubricFamily<DecisionRecordsRubricContext, RecordsRubricContext> = {
   code: 'FM',
   title: 'frontmatter checks',
   description: 'Required universal decision metadata.',
   standard: SOURCE,
   selectContext: (context) => context.frontmatter,
-  items: [FM_0, FM_3, FM_4, FM_5, FM_6]
+  items: [FM_0, FM_3, FM_4, FM_5, FM_6, FM_7]
 }

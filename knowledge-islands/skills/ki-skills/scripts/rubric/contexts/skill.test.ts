@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { KI_SHAPE } from '../items/ki-shape.ts'
@@ -274,6 +274,51 @@ describe('explicit skill kind metadata', () => {
     expect(result.outcomes).toEqual([
       { status: 'VIOLATION', message: 'missing required `ki-kind: governance | process` frontmatter metadata' }
     ])
+  })
+})
+
+describe('repository applicability metadata', () => {
+  const outcomes = (frontmatter: string, kind = 'governance', name = 'ki-self') => {
+    const directory = createSkill('.agents/skills/ki-self', frontmatter)
+    const skillFile = join(directory, 'SKILL.md')
+    writeFileSync(
+      skillFile,
+      readFileSync(skillFile, 'utf8')
+        .replace('name: ki-self', `name: ${name}`)
+        .replace('ki-kind: governance', `ki-kind: ${kind}`)
+    )
+    const shape = evidence(directory).shape
+    const item = KI_SHAPE.items.find(({ code }) => code === 'KI-SHAPE-19')
+    if (!item?.mechanical || !('audit' in item.mechanical)) throw new Error('KI-SHAPE-19 mechanical audit unavailable')
+    return item.mechanical.audit.run(shape)
+  }
+
+  test('accepts the two baseline skills and sole detector registry owner', () => {
+    expect(
+      outcomes('ki-applicability: baseline\nki-detects: [ki-decision-records, ki-specs]', 'governance', 'ki-repo')
+    ).toEqual([{ status: 'PASS', message: 'repository applicability is explicit and locally consistent' }])
+  })
+
+  test('accepts invocation-only process skills', () => {
+    expect(outcomes('ki-applicability: invocation-only', 'process')).toEqual([
+      { status: 'PASS', message: 'repository applicability is explicit and locally consistent' }
+    ])
+  })
+
+  test.each([
+    { frontmatter: '', kind: 'governance' },
+    { frontmatter: 'ki-applicability: unknown', kind: 'governance' },
+    { frontmatter: 'ki-applicability: declaration-only', kind: 'process' },
+    { frontmatter: 'ki-applicability: invocation-only', kind: 'governance' },
+    { frontmatter: 'ki-applicability: baseline', kind: 'process' },
+    { frontmatter: 'ki-applicability: baseline', kind: 'governance' },
+    { frontmatter: 'ki-applicability: baseline\nki-detects: []', kind: 'governance' },
+    {
+      frontmatter: 'ki-applicability: baseline\nki-detects: [ki-specs, ki-specs]',
+      kind: 'governance'
+    }
+  ])('rejects inconsistent applicability %#', ({ frontmatter, kind }) => {
+    expect(outcomes(frontmatter, kind)[0]?.status).toBe('VIOLATION')
   })
 })
 

@@ -1,40 +1,24 @@
 # Exemplars
 
-Shapes to adapt when authoring a Specifications corpus. They illustrate the [Specifications standard](standards-specs.md) but do not add requirements.
+These shapes illustrate the [Specifications standard](standards-specs.md) but do not add requirements.
 
 ## An `index.md` skeleton
 
 ```markdown
 # Specifications
 
-The behaviour-level contract for what this system does — the **what** (decisions are the why, guides are the how). Each requirement is as-built and testable; a test suite checks the system against it.
+The accepted behaviour and quality contract for the system — **what** it promises, distinct from decisions (why), guides (how), and work records (when).
 
-## How to read a requirement
+## Reading a requirement
 
-Each requirement is a level-3 heading `### <PREFIX>-NNN — <title>`, one RFC-2119 statement, and a `_Verify:_` hook. For example:
-
-    ### AUTH-004 — Session cookie is HttpOnly
-
-    The session cookie MUST be set with `HttpOnly` and `Secure` attributes.
-
-    _Verify:_ a login response sets `Set-Cookie: session=…; HttpOnly; Secure`.
-
-RFC-2119 keywords (`MUST` / `MUST NOT` / `SHOULD` / `SHOULD NOT` / `MAY`) are normative and uppercase. `_Verify:_` names the concrete check.
-
-## ID scheme
-
-`<PREFIX>-<NNN>` — a registered prefix plus a zero-padded three-digit serial, sequential within that prefix. A file may host independent prefix sequences, but each complete ID is unique across the corpus. IDs are **append-only and never reused**: a retired requirement keeps its number, struck through with a `(deprecated)` note. Never renumber to tidy up.
-
-## Gaps
-
-Each area file ends with a `## Gaps` section of **unnumbered** bullets — known divergences or desirable-but-unbuilt behaviours, deliberately outside the as-built contract. Promote a gap to a numbered requirement only once it is built and true.
+Each requirement uses `### <PREFIX>-NNN — <title>`, one BCP-14 statement, a current conformance state, a verification plan, and evidence when conforming.
 
 ## Areas
 
 | File              | Prefix | Covers                    |
 | ----------------- | ------ | ------------------------- |
-| authentication.md | AUTH   | Login, sessions, tokens   |
-| billing.md        | BILL   | Plans, invoices, webhooks |
+| authentication.md | `AUTH` | Login, sessions, tokens   |
+| billing.md        | `BILL` | Plans, invoices, webhooks |
 ```
 
 ## An area file skeleton
@@ -42,29 +26,45 @@ Each area file ends with a `## Gaps` section of **unnumbered** bullets — known
 ```markdown
 # Authentication — AUTH
 
-Login, session, and token behaviour. Part of the Specifications corpus; see [index.md](index.md).
+Accepted authentication behaviour and quality properties. Part of the [Specifications corpus](index.md).
 
-> **Status:** as-built baseline, behaviour-level.
-
-## Sessions
+## User-observable behaviours
 
 ### AUTH-001 — Session lifetime
 
-A session MUST expire 14 days after issue, and MUST be renewed on any authenticated request.
+A session MUST expire 14 days after issue and MUST be renewed by an authenticated request.
 
-_Verify:_ `auth/session.test.ts` asserts a token minted at T is rejected at T + 14d and refreshed on use.
+_Conformance:_ conforming
+
+_Verify:_ exercise a token at issue, renewal, and expiry boundaries.
+
+_Evidence:_ `auth/session.test.ts` covers issue, renewal, and 14-day rejection.
+
+## Quality properties
+
+### AUTH-002 — Secure session cookie
+
+The session cookie MUST use `HttpOnly` and `Secure` attributes.
+
+_Conformance:_ pending
+
+_Verify:_ inspect the login response `Set-Cookie` header.
 
 ## Gaps
 
-- No requirement yet covers multi-device session revocation; only whole-account logout exists.
+- Decide whether multi-device session revocation belongs in the accepted contract.
 ```
 
-## A requirement governed by a decision
+## A divergent accepted requirement
 
 ```markdown
 ### BILL-007 — Proration on plan change
 
 When a customer changes plan mid-cycle, the system MUST prorate the invoice to the day, per [ADR-BILLING-002](../decisions/ADR-BILLING-002-proration.md).
 
-_Verify:_ `billing/proration.test.ts` covers an upgrade on day 10 of a 30-day cycle.
+_Conformance:_ divergent
+
+_Verify:_ run the billing scenarios for upgrades and downgrades on day 10 of a 30-day cycle.
+
+_Evidence:_ upgrades prorate today; downgrades still apply at the next renewal.
 ```

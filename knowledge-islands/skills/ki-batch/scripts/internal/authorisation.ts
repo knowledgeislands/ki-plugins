@@ -2,8 +2,21 @@ import { createHash } from 'node:crypto'
 import { lstatSync, readFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 
-const AUTHORISATION_DIRECTORY = '+/_AUTHORISATIONS'
-const AUTHORISATION_FIELDS = new Set([
+const AUTHORISATION_DIRECTORY = '+/_BATCHES'
+const CURRENT_AUTHORISATION_FIELDS = new Set([
+  'id',
+  'repository',
+  'approved',
+  'approved_at',
+  'authority_mode',
+  'authority_evidence',
+  'approved_payload_sha256',
+  'expires_at',
+  'item_ids',
+  'completion_target',
+  'policy'
+])
+const RETAINED_AUTHORISATION_FIELDS = new Set([
   'id',
   'repository',
   'approved',
@@ -31,11 +44,10 @@ export type BatchAuthorisation = {
   approvedPayloadSha256: string
   runId: string
   runBinding: BatchRunBinding | null
-  timeboxEndsAt: string
+  expiresAt: string
   itemIds: readonly string[]
   completionTarget: 'awaiting-review' | 'done'
-  mandatoryStops: readonly string[]
-  closureItemIds: readonly string[]
+  policy: 'safe-local-v1' | 'retained-legacy'
 }
 
 export type BatchAuthorisationResolution =
@@ -83,9 +95,14 @@ const strings = (value: unknown): readonly string[] | undefined =>
     ? (value as readonly string[])
     : undefined
 
+const RUN_LEDGER_HEADING = /^## Run ledger[ \t]*$/m
+
 const payloadBody = (body: string): string | undefined => {
-  const sections = body.split(/^## Run ledger\s*$/m)
-  return sections.length <= 2 ? sections[0] : undefined
+  const sections = body.split(RUN_LEDGER_HEADING)
+  if (sections.length > 2) return undefined
+  const protectedBody = sections[0]
+  if (sections.length === 1 || !protectedBody.endsWith('\n\n')) return protectedBody
+  return protectedBody.slice(0, -1)
 }
 
 const canonicalPayload = (fields: Record<string, unknown>, body: string): string | undefined => {
@@ -107,7 +124,7 @@ export const approvedPayloadSha256 = (contents: string): string | undefined => {
 }
 
 const runBinding = (body: string): BatchRunBinding | undefined | null => {
-  const sections = body.split(/^## Run ledger\s*$/m)
+  const sections = body.split(RUN_LEDGER_HEADING)
   if (sections.length === 1) return null
   if (sections.length !== 2) return undefined
   const marker = /^<!-- ki-batch-run: ([A-Z][A-Z0-9-]*-RUN-\d{3}) ([0-9a-f]{64}) -->$/m.exec(sections[1])
@@ -141,10 +158,30 @@ export const resolveBatchAuthorisation = ({
     return stop('batch authorisation does not exist')
   }
 
+  const resolution = parseBatchAuthorisation({ contents, filename: pathWithinDirectory, repositoryIdentity })
+  if (resolution.kind === 'resolved' && resolution.authorisation.policy === 'retained-legacy')
+    return stop('retained pre-change batch authorisation is not executable')
+  if (resolution.kind === 'resolved' && Date.parse(resolution.authorisation.expiresAt) <= now.getTime())
+    return stop('batch authorisation timebox has expired')
+  return resolution
+}
+
+/** Validates immutable approval and ledger binding without interpreting execution or retention time. */
+export const parseBatchAuthorisation = ({
+  contents,
+  filename,
+  repositoryIdentity
+}: {
+  contents: string
+  filename: string
+  repositoryIdentity: string
+}): BatchAuthorisationResolution => {
   const parsed = frontmatter(contents)
   if (!parsed) return stop('batch authorisation has invalid frontmatter')
   const { fields, body } = parsed
-  if (Object.keys(fields).some((field) => !AUTHORISATION_FIELDS.has(field)))
+  const currentShape = fields.policy !== undefined || fields.expires_at !== undefined
+  const allowedFields = currentShape ? CURRENT_AUTHORISATION_FIELDS : RETAINED_AUTHORISATION_FIELDS
+  if (Object.keys(fields).some((field) => !allowedFields.has(field)))
     return stop('batch authorisation has unsupported fields')
 
   const id = fields.id
@@ -154,17 +191,25 @@ export const resolveBatchAuthorisation = ({
   const authorityMode = fields.authority_mode === undefined ? 'reviewed-items' : fields.authority_mode
   const authorityEvidence = fields.authority_evidence
   const payloadHash = fields.approved_payload_sha256
-  const runId = fields.run_id
-  const timeboxEndsAt = timestamp(fields.timebox_ends_at)
+  const runId = currentShape && typeof id === 'string' ? `${id}-RUN-001` : fields.run_id
+  const expiresAt = timestamp(currentShape ? fields.expires_at : fields.timebox_ends_at)
   const itemIds = identifiers(fields.item_ids)
-  const mandatoryStops = strings(fields.mandatory_stops)
-  const closureItemIds = fields.closure_item_ids === undefined ? [] : identifiers(fields.closure_item_ids)
+  const policy = currentShape ? fields.policy : 'retained-legacy'
+  const mandatoryStops = currentShape ? undefined : strings(fields.mandatory_stops)
+  const closureItemIds = currentShape
+    ? undefined
+    : fields.closure_item_ids === undefined
+      ? []
+      : identifiers(fields.closure_item_ids)
   const actualPayloadHash = approvedPayloadSha256(contents)
   const binding = runBinding(body)
 
-  if (typeof id !== 'string' || !/^[A-Z][A-Z0-9-]*-BATCH-\d{3}$/.test(id) || pathWithinDirectory !== `${id}.md`)
+  if (typeof id !== 'string' || !/^[A-Z][A-Z0-9-]*-BATCH-\d{3}$/.test(id) || filename !== `${id}.md`)
     return stop('batch authorisation has an invalid identity or filename')
+  if (currentShape && payloadBody(body)?.trim() !== `# ${id}`)
+    return stop('batch authorisation body must contain only its matching identity heading before the run ledger')
   if (typeof repository !== 'string' || !repository) return stop('batch authorisation must name one repository')
+  if (currentShape && policy !== 'safe-local-v1') return stop('batch authorisation has an invalid policy')
   if (typeof approved !== 'boolean') return stop('batch authorisation must declare approval')
   if (authorityMode !== 'reviewed-items' && authorityMode !== 'outcome')
     return stop('batch authorisation has an invalid authority mode')
@@ -181,21 +226,21 @@ export const resolveBatchAuthorisation = ({
   if (binding === undefined) return stop('batch run ledger lacks an approval binding')
   if (binding && (binding.id !== runId || binding.approvedPayloadSha256 !== payloadHash))
     return stop('batch run ledger binds another approval payload or run')
-  if (!timeboxEndsAt || !itemIds || !mandatoryStops || !closureItemIds)
+  if (!expiresAt || !itemIds || (!currentShape && (!mandatoryStops || !closureItemIds)))
     return stop('batch authorisation has invalid required fields')
   if (new Set(itemIds).size !== itemIds.length) return stop('batch authorisation repeats an item identifier')
   if (fields.completion_target !== 'awaiting-review' && fields.completion_target !== 'done')
     return stop('batch authorisation has an invalid completion target')
-  if (closureItemIds.some((item) => !itemIds.includes(item)))
+  if (closureItemIds?.some((item) => !itemIds.includes(item)))
     return stop('batch authorisation grants closure outside its named items')
   if (
+    !currentShape &&
     fields.completion_target === 'done' &&
-    (closureItemIds.length !== itemIds.length || itemIds.some((item) => !closureItemIds.includes(item)))
+    (closureItemIds?.length !== itemIds.length || itemIds.some((item) => !closureItemIds?.includes(item)))
   )
     return stop('done completion target must grant closure for every named item')
   if (repository !== repositoryIdentity) return stop('batch authorisation names another repository')
   if (!approved) return stop('batch authorisation is not approved')
-  if (Date.parse(timeboxEndsAt) <= now.getTime()) return stop('batch authorisation timebox has expired')
 
   return {
     kind: 'resolved',
@@ -210,11 +255,10 @@ export const resolveBatchAuthorisation = ({
       approvedPayloadSha256: payloadHash,
       runId,
       runBinding: binding,
-      timeboxEndsAt,
+      expiresAt,
       itemIds,
       completionTarget: fields.completion_target,
-      mandatoryStops,
-      closureItemIds
+      policy: policy as 'safe-local-v1' | 'retained-legacy'
     },
     writes: false
   }

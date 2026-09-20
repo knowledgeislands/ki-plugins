@@ -44,6 +44,7 @@ test('the structured catalogue preserves every decision-record criterion', () =>
     'FM-4',
     'FM-5',
     'FM-6',
+    'FM-7',
     'TYPE-FIT-1',
     'BODY-1',
     'BODY-3',

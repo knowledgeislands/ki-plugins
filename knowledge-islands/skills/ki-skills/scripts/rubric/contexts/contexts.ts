@@ -123,9 +123,14 @@ type OwnershipCollision = {
 }
 
 export type KiShapeSkillContext = {
+  name: string
   knowledgeIslandsSkill: boolean
   kiKindPresent: boolean
   kiKind: string
+  applicabilityPresent: boolean
+  applicability: string
+  detectsPresent: boolean
+  detects: string
   governanceSkill: boolean
   localGovernanceSource: boolean
   sourceHarnessName?: string
@@ -174,9 +179,14 @@ export const createKiShapeFrontmatterEvidence = ({
   localGovernanceSource?: boolean
 }): Pick<
   KiShapeSkillContext,
+  | 'name'
   | 'knowledgeIslandsSkill'
   | 'kiKindPresent'
   | 'kiKind'
+  | 'applicabilityPresent'
+  | 'applicability'
+  | 'detectsPresent'
+  | 'detects'
   | 'governanceSkill'
   | 'localGovernanceSource'
   | 'argumentHint'
@@ -186,9 +196,14 @@ export const createKiShapeFrontmatterEvidence = ({
   const argumentHint = frontmatter.keys.get('argument-hint')
   const kiKind = (frontmatter.keys.get('ki-kind') ?? '').trim()
   return {
+    name: frontmatter.keys.get('name') ?? '',
     knowledgeIslandsSkill: (frontmatter.keys.get('name') ?? '').startsWith('ki-'),
     kiKindPresent: frontmatter.present.has('ki-kind'),
     kiKind,
+    applicabilityPresent: frontmatter.present.has('ki-applicability'),
+    applicability: (frontmatter.keys.get('ki-applicability') ?? '').trim(),
+    detectsPresent: frontmatter.present.has('ki-detects'),
+    detects: (frontmatter.keys.get('ki-detects') ?? '').trim(),
     governanceSkill: !isProcessSkill(kiKind) && kiKind === 'governance',
     localGovernanceSource,
     argumentHint,
@@ -198,9 +213,14 @@ export const createKiShapeFrontmatterEvidence = ({
 }
 
 const emptyKiShapeSkill: KiShapeSkillContext = {
+  name: '',
   knowledgeIslandsSkill: false,
   kiKindPresent: false,
   kiKind: '',
+  applicabilityPresent: false,
+  applicability: '',
+  detectsPresent: false,
+  detects: '',
   governanceSkill: false,
   localGovernanceSource: false,
   sourceHarnessName: undefined,

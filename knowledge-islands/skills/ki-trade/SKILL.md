@@ -1,9 +1,12 @@
 ---
 name: ki-trade
 ki-kind: process
+ki-applicability: invocation-only
 ki-depends-on: [ki-trades]
 description: >
-  Operates one repository's side of declared cross-repository trades: prepare an observable proposal, inspect preparation changes, submit or receive an immutable record, manage local routes, and release or prune eligible copies. Use when asked to "prepare a trade", "submit this trade", "receive this trade", "observe a preparation", "check trade routes", or "clean up released trades". Receiver disposition belongs to ki-next; trade shape and authority belong to ki-trades.
+  Operate one repository's side of a declared cross-repository trade: prepare, inspect, submit, receive,
+  release, or prune a work or knowledge record. Use for one concrete trade action; `ki-trades` owns record and
+  route governance, while `ki-next` owns receiver disposition.
 argument-hint: 'prepare <receiver> | observe <TRD> | submit <TRD> | abandon <TRD> | receive <TRD> | release <TRD> | prune <TRD> | routes <add|remove|list|check> | list | show <TRD> | help'
 ---
 

@@ -1,10 +1,13 @@
 ---
 name: ki-repo-kb-streams
 ki-kind: governance
+ki-applicability: detected
 ki-shared-dependencies: [ki-skills:rubric]
 ki-depends-on: []
 description: >
-  Governs the Streams operational container of a Knowledge Islands base: Streams/Roadmap for flat forward work and Streams/Housekeeping for recurring-work templates. It is the KB placement adapter for the shared change-management lifecycle, not a second Focus-based queue. Use to establish or audit KB Streams structure, route roadmap or housekeeping work, or migrate legacy Active/Background/Dormant stream trees. For common selection, planning, delivery, review, and closure use ki-next, ki-plan, ki-implement, and ki-accept; for the five-zone model and note CRUD use ki-repo-kb.
+  Govern the KI knowledge-base Streams container: flat Roadmap records and Housekeeping templates. Use for KB
+  forward-work structure or migration; lifecycle actions belong to `ki-next`, `ki-plan`, `ki-implement`, and
+  `ki-accept`, while `ki-repo-kb` owns zones.
 argument-hint: 'audit | conform | help | educate | iterate | propose | ready | refresh | rollout'
 ---
 
@@ -27,7 +30,7 @@ Streams/
   Trades/        # reserved for a future KB trade placement, if adopted
 ```
 
-`Roadmap/` and `Housekeeping/` are named operational areas, not horizons. Roadmap work keeps its horizon and lifecycle in frontmatter, exactly as a project roadmap does; it is not moved between `Now`, `Next`, `Soon`, or other folders. `Housekeeping/` contains templates, not a backlog of live delivery work. A base may add topical metadata to a record when its owning adapter supports it, but the shared Streams container does not prescribe topical folders or a group vocabulary.
+`Roadmap/` and `Housekeeping/` are named operational areas, not horizons. Roadmap work keeps its horizon and lifecycle in frontmatter, exactly as a project roadmap does; it is not moved between `Triage`, `Now`, `Next`, `Soon`, or other folders. `horizon: triage` is metadata on a flat `Streams/Roadmap/` record and never a `Streams/Triage/` directory. `Housekeeping/` contains templates, not a backlog of live delivery work. A base may add topical metadata to a record when its owning adapter supports it, but the shared Streams container does not prescribe topical folders or a group vocabulary.
 
 Legacy `Active`, `Background`, `Dormant`, and Focus-style folders are migration inputs, not parts of the target structure. The receiving Knowledge Base chooses how to reconcile each retained record into the appropriate operational area and its owning adapter's format.
 
@@ -85,7 +88,8 @@ The Working rules apply on every fire, before any mode procedure loads — ROLLO
 
 These apply to every change (the discipline that keeps the workspace trustworthy):
 
-- **Name and identity-confirmation gate.** Before creating or renaming a roadmap record, propose the name, resulting path, and explicitly allocated ID and **wait for confirmation** — renames ripple through links, while IDs do not.
+- **Capture before adoption.** Deduplicate substantive prospective work, then capture it automatically as a flat `status: draft`, `horizon: triage` roadmap record using the canonical issue ledger. Report the new title, path, and ID; creation does not adopt or prioritise the work.
+- **Approval at disposition.** Require explicit human approval before a record leaves triage or is renamed, rejected, or merged. Apply adoption through `ki-next`; route rejected, duplicate, or merged intake to `ki-accept` for retained `done` closure before any later prune. Never infer adoption or disposal from silence or surrounding discussion, and never delete open intake directly.
 - **Keep the owned record current.** Update immediately on a decision or status change; the canonical state must never lag.
 - **Load before editing.** Reload the work item or template and its ledger before resuming work.
 - **No `ready` while a prerequisite is below `done`.** No rollout without explicit authorisation.

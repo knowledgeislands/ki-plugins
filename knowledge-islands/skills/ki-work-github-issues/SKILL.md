@@ -1,11 +1,14 @@
 ---
 name: ki-work-github-issues
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 contributes: ['.ki.toml']
 description: >
-  Defines the configuration and safety guidance for GitHub Issues as a Knowledge Islands change-management adapter: mutable issue locators, lifecycle metadata, review, closure, hierarchy, dependencies, and remote-write authority. Use when a repository configures GitHub Issues as its tracker or needs guidance for a future authorised remote operation. Remote process execution fails closed pending KI-HARNESS-FND-014. For local files use ki-work-roadmap; for Linear use ki-work-linear.
+  Define GitHub Issues configuration, lifecycle mapping, hierarchy, dependencies, review, closure, and
+  remote-write safety as a KI work adapter. Use when GitHub Issues is selected; remote execution is
+  unavailable, while local files use `ki-work-roadmap` and Linear uses `ki-work-linear`.
 argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
 ---
 

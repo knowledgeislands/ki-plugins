@@ -86,6 +86,21 @@ describe('ki-repo-kb-streams session', () => {
     ])
   })
 
+  test('rejects a Triage directory because triage is roadmap metadata', () => {
+    const root = targetFixture()
+    mkdirSync(join(root, 'Streams', 'Triage'), { recursive: true })
+    const session = createStreamsSession(options(root, 'audit'))
+    const context = STREAM.selectContext(rootContext(session))
+
+    expect(context.operationalAreas).toEqual([
+      {
+        level: 'FAIL',
+        message: 'Triage is roadmap metadata; Streams/Triage/ must not exist.',
+        subject: 'Streams'
+      }
+    ])
+  })
+
   test('reports a legacy Focus folder without deriving a replacement record', () => {
     const root = targetFixture()
     mkdirSync(join(root, 'Streams', 'Now'), { recursive: true })

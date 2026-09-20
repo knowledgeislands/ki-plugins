@@ -235,6 +235,8 @@ Declared agent-runtime support and orientation.
   - _Remediation:_ automatic
 - **RUNTIMES-3 [M] — Repository-local ki-self projection** — An optional repository-local ki-self has one canonical .agents source and a relative Claude projection exactly when Claude Code is supported. (standards-repository.md)
   - _Remediation:_ diagnostic — Restore the canonical ki-self source and applicable runtime projection, then rerun the audit.
+- **RUNTIMES-4 [M] — Root runtime orientation** — A multi-runtime repository exposes shared root orientation through a physical AGENTS.md and a thin Claude import. (standards-repository.md)
+  - _Remediation:_ diagnostic — Move shared root orientation into AGENTS.md, import it from CLAUDE.md with a bare @AGENTS.md line, and rerun the audit.
 - **RUNTIMES-J1 [J] — Runtime orientation split** — Multi-runtime repositories use a shared AGENTS.md orientation with a thin Claude import unless a justified exception applies. (standards-repository.md)
   - _Evidence scope:_ The shared AGENTS.md and runtime-specific orientation files for every declared runtime.
   - _Review prompt:_ Review whether orientation is shared cleanly across the declared runtimes without duplicated or Claude-only instructions.

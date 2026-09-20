@@ -1,12 +1,15 @@
 ---
 name: ki-tokenomics-claude
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: [ki-tokenomics]
 ki-runtime-binding: true
 ki-supported-runtimes: [claude-code]
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Audit direct, non-secret Claude Code filesystem observations in the selected repository: project instructions, contained imports, rules, settings, and MCP declarations. Use when a Claude Code repository needs bounded runtime evidence for portable `ki-tokenomics` policy. Effective model, loaded context, active tools, trust, memory use, transcripts, and compaction remain unavailable without authorised session evidence. For portable budgets use `ki-tokenomics`; for Codex use `ki-tokenomics-codex`.
+  Audit non-secret Claude Code repository evidence—instructions, rules, settings, imports, and MCP
+  declarations—for portable tokenomics. Use `ki-tokenomics` for policy and `ki-tokenomics-codex` for Codex
+  evidence; effective session state is outside this filesystem audit.
 argument-hint: 'audit | conform | educate | refresh | help'
 ---
 

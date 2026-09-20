@@ -252,6 +252,33 @@ const TOOL_CHANGELOG = mechanical(
   }
 )
 
+const TOOL_DEVELOPER_GUIDES = mechanical(
+  'TOOL-DEVELOPER-GUIDES',
+  'Developer delivery guides',
+  '`docs/guides/developer/definition-of-done.md` and `docs/guides/developer/releasing.md` are physical regular files; their content remains repository-defined.',
+  'FAIL',
+  (context) => {
+    const skipped = notApplicable(context)
+    if (skipped) return skipped
+
+    return [
+      ['docs/guides/developer/definition-of-done.md', context.developerDefinitionOfDoneGuide],
+      ['docs/guides/developer/releasing.md', context.developerReleasingGuide]
+    ].map(([path, state]) =>
+      state === 'physical'
+        ? { status: 'PASS' as const, message: 'Required developer guide is present.', subject: path }
+        : {
+            status: 'VIOLATION' as const,
+            message:
+              state === 'missing'
+                ? 'Required developer guide is absent.'
+                : 'Required developer guide is not a physical regular file.',
+            subject: path
+          }
+    )
+  }
+)
+
 const TOOL_CHANGELOG_FORMAT = judgment(
   'TOOL-CHANGELOG-FORMAT',
   'Changelog format',
@@ -352,6 +379,7 @@ export const TOOL: RubricFamily<ToolsRubricContext, ToolRepositoryContext> = {
     TOOL_VERSION_SOURCE,
     TOOL_RELEASE_MARKERS,
     TOOL_CHANGELOG,
+    TOOL_DEVELOPER_GUIDES,
     TOOL_CHANGELOG_FORMAT,
     TOOL_CLI,
     TOOL_CI,

@@ -1,63 +1,72 @@
 ---
 name: ki-specs
 ki-kind: governance
+ki-applicability: detected
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Codify, audit, and maintain Specifications — the behaviour-level contract of what a system does — in any Knowledge Islands repo. Specifications live in `docs/specs/`, flat one-file-per-area, with an `index.md` that defines the ID scheme and areas table. Each requirement is a `### <PREFIX>-NNN — title` heading carrying one RFC-2119 (MUST / SHOULD / MAY) statement and a `_Verify:_` test hook; IDs are append-only and never reused; an unnumbered `## Gaps` section holds the backlog. Decisions capture the why (`ki-decision-records`), specifications the what, guides the how (`ki-guides`), and roadmap items the when (`ki-work-roadmap`). Use when writing or auditing a specification. Triggers: "write a specification", "spec this behaviour", "audit specifications", "add a requirement", "what does the system do". Off-ramps: ki-decision-records (the governing decisions a requirement cites), ki-guides (practical procedure), ki-work-roadmap (planned work), ki-authoring (Markdown/TOML style).
+  Create or audit repository Specifications: accepted behaviour and quality requirements with conformance
+  state, verification plans, and evidence. Use `ki-decision-records` for why, `ki-guides` for procedures, and
+  `ki-work-roadmap` for future delivery.
 argument-hint: 'audit [dir] | conform [dir] | help | educate [dir] | new <area> "<title>" | refresh'
 ---
 
 # Knowledge Islands Specifications standard
 
-You are applying the **Knowledge Islands Specifications standard** — how a system's behaviour is written down as a testable, append-only contract. A specification is the **what**: the behaviour a built system exhibits, stated normatively and paired with a verification hook, so a test suite or reader can check the system against it. It sits between the **why** (Decision Records, `ki-decision-records`) and the **how** (guides). Read the [Specifications standard](references/standards-specs.md) before authoring, auditing, or conforming a corpus; the [rubric](references/rubric.md) publishes its checkable criteria, [exemplars](references/exemplars.md) illustrate representative shapes, and [sources](references/sources.md) records provenance.
+You are applying the **Knowledge Islands Specifications standard** — how accepted behaviour and quality properties are written as a testable, append-only contract. A specification is the **what**. Its conformance state says whether the built system currently meets it; its verification plan and evidence make that claim reviewable. It sits between the **why** (Decision Records, `ki-decision-records`) and the **how** (guides).
+
+Read [Specifications standard](references/standards-specs.md) completely before authoring, auditing, or conforming a corpus. The [rubric](references/rubric.md) publishes its checkable criteria, [exemplars](references/exemplars.md) illustrate representative shapes, and [sources](references/sources.md) records provenance.
 
 ## What this skill owns
 
-`ki-repo` owns applying the non-Knowledge-Base documentation topology. This skill owns the `docs/specs/` behaviour concern within that topology.
+`ki-repo` owns the repository-wide documentation topology. This skill owns the `docs/specs/` concern within it.
 
-1. **The layout** — Specifications live in `docs/specs/`, **flat, one file per area** (e.g. `authentication.md`, `site-seo.md`). An `index.md` is the overview: purpose, how-to-read, the ID scheme, the Gaps convention, and the **areas table**.
-2. **The areas table** — in `index.md`, a table whose rows map an **area file** to its **prefix** (and a short "covers" blurb). A file may host more than one prefix; a prefix belongs to exactly one file. This table is the registry the checker validates IDs against.
-3. **The ID scheme** — every requirement is a level-3 heading `### <PREFIX>-NNN — <title>`: `PREFIX` is one or more uppercase alpha-leading segments (e.g. `AUTH`, `SITE-SEO`); `NNN` is zero-padded (≥ 3 digits), append-only and sequential **within that prefix**. A file may host independent prefix sequences; every complete ID remains unique across the corpus. A retired requirement keeps its number, struck through with a `(deprecated)` note; never renumber to tidy up.
-4. **The requirement shape** — under each heading, one **RFC-2119** normative statement (`MUST` / `MUST NOT` / `SHOULD` / `SHOULD NOT` / `MAY`, uppercase) describing the behaviour, then a `_Verify:_` line naming the built-output assertion, test, or source symbol that confirms it.
-5. **The Gaps backlog** — each area file may end with a `## Gaps` section (heading may extend, e.g. `## Gaps & candidate behaviours`) of **unnumbered** bullets: known divergences or desirable-but-unbuilt behaviours, deliberately ID-less so they sit outside the as-built contract. Promote a gap to a numbered requirement only once it is built and true.
-6. **The decision link** — Decision Records capture the why; the spec follows. A requirement governed by a recorded decision **cites its DR** (a link into `../decisions/`). This is judgment, not mechanical — the checker does not force it.
-7. **The mechanical checker** — `ki repo audit --skill ki-specs` validates the index and areas table, requirement heading IDs, registered prefixes, per-prefix serial continuity and corpus-wide identity uniqueness, normative keywords, and `_Verify:_` lines while exempting Gaps and deprecated entries. Applicability is declaration-led: an undeclared incidental `docs/specs/` is N/A; once `ki-specs` is declared, missing, malformed, or unsafe corpus evidence fails closed.
+1. **The layout** — Specifications live flat in `docs/specs/`, one file per comprehensible feature area. `index.md` explains the purpose, ID scheme, conformance states, Gaps convention, and areas table.
+2. **The table** — rows map each area file to one or more prefixes and a short scope. A prefix belongs to exactly one file.
+3. **The ID scheme** — each requirement heading is `### <PREFIX>-NNN — <title>`. Serials are zero-padded, append-only, and sequential within their prefix; complete IDs are unique. Retired IDs remain claimed and are never reused.
+4. **The requirement shape** — one BCP-14 normative statement describing a user-observable behaviour or quality property, followed by `_Conformance:_ conforming | pending | divergent`, `_Verify:_` naming the planned check, and `_Evidence:_` naming current proof when conforming.
+5. **The Gaps backlog** — optional unnumbered bullets hold candidate requirements not yet accepted into the contract. A Gap may be promoted before implementation when its truthful conformance state is pending or divergent.
+6. **The decision link** — a requirement governed by a recorded decision cites its Decision Record. This remains judgment rather than a mandatory link count.
+7. **The mechanical checker** — `ki repo audit --skill ki-specs` validates registry shape, IDs, prefixes, serial continuity, normative keywords, conformance states, verification plans, and evidence for conforming requirements. Gaps and deprecated entries are exempt.
+
+Applicability is declaration-led. Once a repository declares `ki-specs`, missing, malformed, or unsafe corpus evidence fails closed.
 
 ## Audience-aware judgment
 
-- **Consumer-facing specifications** name observable public behaviour in language a product user can understand and verify at the public surface.
-- **Architectural specifications** name the relevant internal boundary or invariant and the evidence that verifies it.
-- Both forms use the same corpus, IDs, requirement grammar, and checker; audience changes judgment and wording, not document type or mechanical coverage.
+- **User-observable behaviours** name outcomes a person or integrating system can verify through the supported product surface.
+- **Quality properties** name measurable or reviewable characteristics such as accessibility, compatibility, determinism, performance, reliability, security, and visual fidelity.
+- Both use the same corpus, IDs, lifecycle fields, and checker. Classification changes authoring and review, not identity mechanics.
 
 ## Operating modes
 
-Carries the universal **AUDIT · CONFORM · EDUCATE · REFRESH**, plus **NEW** (draft a new requirement or area). Invoked as `help` / `-h` / `?`, it explains itself and stops — the generated HELP block (name, purpose, invocation, modes, off-ramps), taking no action. With no mode it does the same, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows.
+The skill carries universal **AUDIT · CONFORM · EDUCATE · REFRESH**, plus **NEW** for drafting a requirement area.
+
+When invoked as `help`, `-h`, or `?`, explain the skill and stop. With no mode, do the same and then, only in an interactive session, offer the mode choice with `AskUserQuestion`.
 
 ### Mode EDUCATE
 
-→ Activate this skill with `ki repo skill add ki-specs`; the hosted EDUCATE mode renders its concern and rubric. Use [NEW](references/mode-new.md) to author the first area and index from the exemplars.
+Activate with `ki repo skill add ki-specs`; hosted EDUCATE renders the concern rubric. Use [NEW](references/mode-new.md) to author the first area and index from the exemplars.
 
 ### Mode AUDIT
 
-→ Read [references/mode-audit.md](references/mode-audit.md)
+Read [references/mode-audit.md](references/mode-audit.md).
 
 ### Mode CONFORM
 
-→ Read [references/mode-conform.md](references/mode-conform.md)
+Read [references/mode-conform.md](references/mode-conform.md).
 
 ### Mode NEW
 
-→ Read [references/mode-new.md](references/mode-new.md)
+Read [references/mode-new.md](references/mode-new.md).
 
 ### Mode REFRESH
 
-→ Read [references/mode-refresh.md](references/mode-refresh.md)
+Read [references/mode-refresh.md](references/mode-refresh.md).
 
 ## Notes
 
-- **What vs why vs how** — a requirement states behaviour, not rationale (that is a DR) and not procedure (that is a guide). If a statement explains _why_, move the reasoning to a DR and cite it.
-- **As-built, not aspirational** — the numbered contract describes what the system **does** today; anything not yet true belongs in `## Gaps` until it is built. This keeps the spec a baseline a test suite can hold the system to.
-- **One normative clause per requirement, ideally** — a requirement may carry a `MUST` and a paired `MUST NOT`, but a heading that bundles several unrelated behaviours should split into separate IDs so each verifies independently.
-- **Serials are per prefix** — `AUTH-001` and `SITE-001` are both valid; a serial is unique within its prefix. Never reuse a retired number.
-- The `ki` host owns findings, dry-run publication, rollback, reporting, and post-conform verification; judgment aspects are counted as unevaluated rather than emitted as synthetic findings.
+- Requirements state what is accepted. Decision Records explain why; guides explain how; work records plan when.
+- A numbered requirement stays in the contract when pending or divergent. Gaps are unaccepted candidates, not a hiding place for unfinished accepted behaviour.
+- Prefer one independently verifiable normative clause per requirement.
+- Serials are per prefix and never reused.
+- The `ki` host owns findings, dry-run publication, rollback, reporting, and post-conform verification.

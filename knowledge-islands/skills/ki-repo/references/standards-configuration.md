@@ -103,7 +103,7 @@ A `[skills.<name>]` table plays one or both of two roles:
 - **Marker (opt-in)** — its _presence_ declares "this skill governs this repo." The bare header is enough; it needs no keys.
 - **Config** — it carries per-repo declarations the skill reads (data the standard fits to, or `[…checks]` divergences).
 
-The two are separable: a base on the canonical zone names declares a bare `[skills.ki-repo-kb]` (marker only, no keys); a base that renames a zone adds a `[skills.ki-repo-kb.zones]` alias (config). The marker/opt-in skills are `ki-engineering`, `-kb`, `-streams`, `-website`, `-website-cloudflare`, `-mcp`, `-skills`, and `-subagents`. `ki-repo` is the **bedrock marker** — the file's very presence is what makes the repo a ki-repo. `ki-authoring` governs every markdown repo, but it is **declared, not assumed**: every repo carries a bare `[skills.ki-authoring]` table like any other coverage (a missing one is a FAIL — `authoring-baseline`, [ADR-KI-HARNESS-005](../../../../docs/decisions/ADR-KI-HARNESS-005-validate-down-ki-toml-contract.md)). There is no injected/cascade-exempt baseline: coverage is purely what the config declares (ADR-KI-HARNESS-007).
+The two are separable: a base on the canonical zone names declares a bare `[skills.ki-repo-kb]` (marker only, no keys); a base that renames a zone adds a `[skills.ki-repo-kb.zones]` alias (config). The marker/opt-in skills include `ki-engineering`, `ki-decision-records`, `ki-specs`, `ki-guides`, `ki-repo-kb`, `ki-repo-kb-streams`, the website family, MCP, skills, and subagents. `ki-repo` is the **bedrock marker** — the file's very presence is what makes the repo a ki-repo. `ki-authoring` governs every markdown repo, but it is **declared, not assumed**: every repo carries a bare `[skills.ki-authoring]` table like any other coverage (a missing one is a FAIL — `authoring-baseline`, [ADR-KI-HARNESS-005](../../../../docs/decisions/ADR-KI-HARNESS-005-validate-down-ki-toml-contract.md)). There is no injected/cascade-exempt baseline: coverage is purely what the config declares (ADR-KI-HARNESS-007).
 
 So **what an absent table means is per-skill**, and that is exactly what _Coverage enforcement_ (below) checks:
 
@@ -140,7 +140,7 @@ So the option set is **authored, not implicit**: each skill with declarable keys
 
 ## Coverage enforcement
 
-The file's presence is the **gate of an audit cascade**. Once a repo is confirmed a ki-repo (it carries `.ki.toml`), `ki-repo`'s auditor checks that the repo **declares an opt-in table for every governance skill whose applicability is detectable in it**. A detected-but-undeclared signal WARNs ("looks governed by `ki-<skill>` but declares no `[skills.ki-<skill>]`"); a declared-but-undetected table WARNs as a possibly stale opt-in.
+The file's presence is the **gate of an audit cascade**. Once a repo is confirmed a ki-repo (it carries `.ki.toml`), `ki-repo`'s auditor checks that the repo **declares an opt-in table for every governance skill whose applicability is detectable in it**. A detected-but-undeclared signal FAILs ("looks governed by `ki-<skill>` but declares no `[skills.ki-<skill>]`"); a declared-but-undetected table WARNs as a possibly stale opt-in. Documentation is mechanically owned: content under `docs/decisions/` (or a Knowledge Base's `Admin/Governance/Decisions/`) requires `ki-decision-records`, content under `docs/specs/` requires `ki-specs`, and content under `docs/guides/` requires `ki-guides`.
 
 The gate is what prevents a **false positive**: a plain git repo that has, say, an `eleventy.config` but **no `.ki.toml`** is not a ki-repo, so it is never told to declare a website table. It simply takes the `ki-config` required-file FAIL. Coverage is only ever considered _after_ the marker confirms a ki-repo.
 
@@ -148,6 +148,9 @@ The detection signals `ki-repo` uses (one recursive tree read + `package.json`):
 
 | Skill | Detection signal | Opt-in table |
 | --- | --- | --- |
+| `ki-decision-records` | `docs/decisions/**` or `Admin/Governance/Decisions/**` | `[skills.ki-decision-records]` |
+| `ki-specs` | `docs/specs/**` | `[skills.ki-specs]` |
+| `ki-guides` | `docs/guides/**` | `[skills.ki-guides]` |
 | `ki-engineering` | `package.json` present | `[skills.ki-engineering]` |
 | `ki-repo-kb` | canonical zones (`Pillars/` + `Resources/`) | `[skills.ki-repo-kb]` |
 | `ki-repo-kb-streams` | `Streams/` zone | `[skills.ki-repo-kb-streams]` |
@@ -155,7 +158,7 @@ The detection signals `ki-repo` uses (one recursive tree read + `package.json`):
 | `ki-repo-website-content` | `eleventy.config.*` | `[skills.ki-repo-website-content]` |
 | `ki-repo-website-app` | Vite config plus React and Vite dependencies at the core-selected site root | `[skills.ki-repo-website-app]` |
 | `ki-repo-website-cloudflare` | a `wrangler.*` config | `[skills.ki-repo-website-cloudflare]` |
-| `ki-repo-mcp` | `@modelcontextprotocol/sdk` dependency | `[skills.ki-repo-mcp]` |
+| `ki-repo-mcp` | `@modelcontextprotocol/sdk` or `@modelcontextprotocol/server` dependency | `[skills.ki-repo-mcp]` |
 | `ki-repo-plugins` | `.claude-plugin/marketplace.json` | `[skills.ki-repo-plugins]` |
 | `ki-repo-specifications` | `proposals/` + `specifications/` + `schemas/` | `[skills.ki-repo-specifications]` |
 | `ki-repo-tools` | `install.sh` + a `bin/<exe>` | `[skills.ki-repo-tools]` |
@@ -166,7 +169,7 @@ The detection signals `ki-repo` uses (one recursive tree read + `package.json`):
 | `ki-subagents-codex` | `.codex/agents/**/*.toml` | `[skills.ki-subagents-codex]` |
 | `ki-checkpoint` | `+/_CHECKPOINTS/` subarea | `[skills.ki-checkpoint]` |
 
-This is the **one place** `ki-repo` reads across skill tables. It normally reads only table **presence**; app discovery also consumes the core-owned `site-root` solely to locate the selected Vite config and package manifest. The website core still owns and validates that value, preserving _validate down, ignore across_ for its contents. It is an **audit-time enforcement** run by `repo`'s auditor, not behaviour baked into the regular use of each skill. A repo opts out of a single signal with a `coverage-<skill> = false` entry under `[skills.ki-repo.checks]`. Website keys are independent: `coverage-website`, `coverage-website-content`, `coverage-website-app`, and `coverage-website-cloudflare` do not disable one another.
+This is the **one place** `ki-repo` reads across skill tables. It normally reads only table **presence**; app discovery also consumes the core-owned `site-root` solely to locate the selected Vite config and package manifest. The website core still owns and validates that value, preserving _validate down, ignore across_ for its contents. It is an **audit-time enforcement** run by `repo`'s auditor, not behaviour baked into the regular use of each skill. A repo opts out of a single signal with a `coverage-<skill> = false` entry under `[skills.ki-repo.checks]`; the auditor emits an informational note so that deliberate non-activation remains explicit. Website keys are independent: `coverage-website`, `coverage-website-content`, `coverage-website-app`, and `coverage-website-cloudflare` do not disable one another.
 
 No marker table is decorative — each is read by code. Most are read by their **owning** skill's auditor too (`-engineering`/`-kb`/`-streams`/`-website`/`-website-cloudflare`/`-mcp`/`-plugins` each read their own table when run). `ki-skills`, `ki-subagents`, and its runtime adapters are the documented exception: their checkers lint artifact sets (`SKILL.md` files or native agent projections), not a repo's config, so their opt-in tables are read only by `ki-repo`'s coverage check.
 

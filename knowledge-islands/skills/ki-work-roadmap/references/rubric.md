@@ -43,9 +43,9 @@ Canonical generated-index structure, placement, and readiness.
 
 - **ROAD-1 [M] — roadmap structure and root orientation** — The canonical docs/roadmap structure contains only regular work-item files, and root ROADMAP.md is a concise orientation rather than a duplicate queue. (standards-repository-roadmaps.md)
   - _Remediation:_ diagnostic — Restore the concise root orientation and canonical roadmap structure without reconstructing or prioritizing the work queue.
-- **ROAD-2 [J] — honest horizon placement** — Items sit in honest horizons; Waiting-for items name their external condition; speculative Future work carries `candidate: true`. (standards-repository-roadmaps.md)
-  - _Evidence scope:_ Every horizon, Waiting-for condition, and Future candidate declaration.
-  - _Review prompt:_ Review horizon placement, waiting conditions, and Future candidate marking.
+- **ROAD-2 [J] — honest horizon placement** — Open Triage contains captured, unadopted draft work; terminal Triage records an evidence-backed done disposition; adopted items sit in honest delivery horizons, and Waiting-for items name their external condition. (standards-repository-roadmaps.md)
+  - _Evidence scope:_ Every horizon, Triage adoption boundary, and Waiting-for condition.
+  - _Review prompt:_ Review whether open Triage items remain unadopted drafts, terminal Triage items carry evidence-backed done dispositions, moves into delivery horizons have explicit human adoption, and Waiting-for items name their external condition.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Confirm placement with the owning authority, record a gap, or record an explicit exclusion; do not move work automatically.
 - **ROAD-3 [J] — open finite work** — Work-item indexes are open-only and contain finite work rather than continuous practice. (standards-repository-roadmaps.md)
@@ -55,9 +55,9 @@ Canonical generated-index structure, placement, and readiness.
   - _Conforming guidance:_ Split, retain, close, or exclude work only after an owner confirms the intended record; otherwise record a gap.
 - **ROAD-4 [M] — horizon vocabulary** — Every work item uses the canonical horizon vocabulary; the root orientation carries no parallel horizon list. (standards-repository-roadmaps.md)
   - _Remediation:_ diagnostic — Use the canonical horizon vocabulary and remove duplicate root-horizon lists without changing any item placement.
-- **ROAD-5 [J] — horizon transitions and readiness** — Horizon promotion and deferral meet the readiness contract; execution state remains honest and CONFORM never chooses a move. (standards-repository-roadmaps.md)
-  - _Evidence scope:_ Every proposed promotion, deferral, and its readiness evidence.
-  - _Review prompt:_ Review each promotion or deferral against its readiness contract and plan state.
+- **ROAD-5 [J] — horizon transitions and readiness** — Capture into Triage needs no adoption decision; leaving Triage requires explicit human adoption, and later horizon promotion and deferral meet the readiness contract. (standards-repository-roadmaps.md)
+  - _Evidence scope:_ Every proposed Triage adoption, promotion, deferral, and its readiness evidence.
+  - _Review prompt:_ Review Triage exits for explicit human adoption and each later promotion or deferral against the readiness contract and plan state.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Confirm the lifecycle move with its owner, record a gap, or record an explicit exclusion; never choose the move automatically.
 - **ROAD-6 [M] — repository work-item code** — The ki-repo table declares a valid stable repository code; roadmap configuration declares either repository-wide themes or fixed area-to-theme namespaces. (standards-repository-roadmaps.md)
@@ -78,7 +78,7 @@ Flat work-item identity, grouping, lifecycle, and dependencies.
 
 - **ITEM-1 [M] — flat work-item identity** — Each canonical item lives directly under docs/roadmap with a unique stable identifier, matching filename, and title of at most four words. (standards-repository-roadmaps.md, standards-work-item-format.md)
   - _Remediation:_ diagnostic — Correct the item filename, frontmatter identity, or title to match the canonical flat work-item contract.
-- **ITEM-2 [M] — item state and theme grouping** — Each item has valid theme, horizon, candidate, status, baseline, and dependency fields. (standards-repository-roadmaps.md)
+- **ITEM-2 [M] — item state and theme grouping** — Each item has valid theme, horizon, adoption boundary, status, baseline, dependency, and mandatory timestamp-pair fields. (standards-repository-roadmaps.md)
   - _Remediation:_ diagnostic — Correct the item state fields or dependency declarations; do not choose a priority or lifecycle transition automatically.
 - **ITEM-3 [M] — item body shape** — Every item has a non-empty Goal, ends with Discussion, carries the deterministic sections required by its horizon and lifecycle state, and uses task-list Steps. (standards-work-item-format.md)
   - _Remediation:_ diagnostic — Restore the lifecycle-appropriate canonical sections and task-list shape from the work-item format standard.
@@ -109,14 +109,14 @@ The exact concise root orientation for flat work items.
 
 In-place execution shape and lifecycle integrity.
 
-- **EXEC-1 [M] — in-place execution record** — A work item entering execution retains its concise issue context and adds the required execution sections in the same file; awaiting-review and done records carry the ordered review packet. (standards-work-item-format.md)
+- **EXEC-1 [M] — in-place execution record** — A work item entering execution retains its concise issue context and adds the required execution sections in the same file; awaiting-review and delivery-done records carry the ordered review packet, while terminal Triage carries intake-disposition evidence. (standards-work-item-format.md)
   - _Remediation:_ diagnostic — Restore the required in-place execution sections without changing the item priority, acceptance, or lifecycle decision.
-- **EXEC-2 [J] — stage-appropriate work-item detail** — Future items preserve the issue and its discussion; Soon adds useful shaping; immediate and active items have concrete Steps, checkable Verify, honest Current state, and minimal Files touched. (standards-work-item-format.md)
+- **EXEC-2 [J] — stage-appropriate work-item detail** — Triage and Future items preserve the issue and its discussion; terminal Triage adds disposition evidence; Soon adds useful shaping; immediate and active items have concrete Steps, checkable Verify, honest Current state, and minimal Files touched. (standards-work-item-format.md)
   - _Evidence scope:_ The stage-appropriate detail in every canonical work item.
   - _Review prompt:_ Review whether each work item has useful detail for its stage, including topic-oriented Discussion and concrete, checkable execution detail when immediate.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Add or refine only the detail supported by the work; record a gap or explicit exclusion where evidence is insufficient.
-- **EXEC-3 [J] — honest execution status** — Draft awaits readiness approval; ready awaits execution; in-progress reflects live work; awaiting-review carries the required review packet; done is a retained closure record. Every non-draft item is Now or Next. (standards-work-item-format.md)
+- **EXEC-3 [J] — honest execution status** — Draft awaits readiness approval; ready awaits execution; in-progress reflects live work; awaiting-review carries the required review packet; done is a retained closure record. Delivery states beyond draft are Now or Next; evidence-backed terminal intake remains in Triage. (standards-work-item-format.md)
   - _Evidence scope:_ The declared lifecycle status and retained evidence of every work item.
   - _Review prompt:_ Review whether work-item status honestly reflects its lifecycle gate or retained completion record.
   - _Outcomes:_ conforming; gap; exclusion

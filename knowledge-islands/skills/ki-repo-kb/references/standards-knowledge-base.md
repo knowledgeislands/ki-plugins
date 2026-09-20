@@ -13,7 +13,7 @@ This normative standard defines the structure, linking, configuration, routing, 
 
 ## The Knowledge Islands model
 
-A Knowledge Islands base is a single markdown store organised into five fixed zones - `Calendar/`, `Pillars/`, `Resources/`, `Streams/`, and `Admin/` - flanked by an inbound staging area (`+/`) and an outbound one (`-/`). The `+/` and `-/` folders are staging, not zones: material lands or leaves through them but is not canonical there. The zone set is part of the standard, so the skill does not ask a base to define it; it only needs a few store-level bindings.
+A Knowledge Islands base is a single markdown store organised into five fixed zones — `Calendar/`, `Pillars/`, `Resources/`, `Streams/`, and `Admin/` — flanked by working areas. `+/` holds inputs to further local repository work, whether received or created locally; `-/` holds produced outputs awaiting use or delivery. They are working areas, not canonical knowledge zones. Specialist skills own their records: `ki-batch` owns `_BATCHES`, `ki-checkpoint` owns `_CHECKPOINTS`, and `ki-trades` owns peer-qualified `_TRADES` records and their lifecycle.
 
 The standard applies when a base either declares `[skills.ki-repo-kb]` / `[skills.ki-repo-kb.zones]` in `.ki.toml` or carries at least one canonical zone directory. With neither, the checker reports one `NA` and stops. Either signal activates the complete audit: a declared but structurally incomplete base still fails its missing zones, and a zone-bearing base without a declaration is audited with canonical zone names.
 
@@ -63,7 +63,9 @@ Rules, following the `.ki.toml` contract:
 
 ## Session digest structure
 
-Destination `-/_DIGESTS/<UTC timestamp> <Short Topic>.md` (timestamp `YYYY-MM-DDTHHMMSSZ`; topic in Title Case). Frontmatter `note_type: session-digest` and `retain_until: YYYY-MM-DD` (default 30 days from the write date). Body sections:
+Declaring `[skills.ki-repo-kb]` requires the exact retained `-/_DIGESTS/README.md` scaffold. It remains as the visible capability boundary after the last digest is deleted; digest records themselves remain temporary outputs.
+
+Destination `-/_DIGESTS/<UTC timestamp> <Short Topic>.md` (timestamp `YYYY-MM-DDTHHMMSSZ`; topic in Title Case), beside the retained `README.md` scaffold. Frontmatter is `note_type: session-digest` and `retain_until: YYYY-MM-DD` (default 30 days from the write date). Body sections are:
 
 - **Context** - what the session was about.
 - **Decisions** - choices made and their rationale.

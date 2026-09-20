@@ -12,6 +12,7 @@ import {
   type CapabilitySource,
   prepareCapabilityPublication
 } from './capability-publication.ts'
+import { prepareRootCapabilitySummary, type RootCapabilitySummaryDraft } from './root-capability-summary.ts'
 
 export const HARNESS_PARTS = ['skills', 'subagents', 'mcp', 'evals', 'hooks'] as const
 export type HarnessPart = (typeof HARNESS_PARTS)[number]
@@ -62,6 +63,15 @@ export type HarnessCapabilityPublicationContext = {
   requestUpdate?: () => void
 }
 
+export type HarnessRootCapabilitySummaryContext = {
+  repository: string
+  state: RootCapabilitySummaryDraft['state']
+  issues: readonly string[]
+  observed?: RootCapabilitySummaryDraft['observed']
+  expected?: CapabilityPublicationDraft['counts']
+  requestUpdate?: () => void
+}
+
 export type HarnessReviewContext = {
   repository: string
 }
@@ -74,6 +84,7 @@ export type HarnessProvenanceContext = {
 export type HarnessRubricContext = {
   rubric: RubricPublicationContext
   capabilityPublication: HarnessCapabilityPublicationContext
+  rootCapabilitySummary: HarnessRootCapabilitySummaryContext
   layout: HarnessLayoutContext
   config: HarnessConfigContext
   skills: HarnessSkillsContext
@@ -220,6 +231,21 @@ export const createHarnessSession = ({
   const capabilityDraft = prepareCapabilityPublication(skillsReadme, capabilitySources)
   const capabilityIssues = [...capabilitySourceIssues, ...capabilityDraft.issues].sort()
   let capabilityPublicationRequested = false
+  const rootReadmePath = join(root, 'README.md')
+  const rootReadmeState = state === 'physical' ? pathState(rootReadmePath) : 'missing'
+  let rootReadme: string | undefined
+  let rootReadmeIssue: string | undefined
+  if (rootReadmeState === 'file') {
+    try {
+      rootReadme = readFileSync(rootReadmePath, 'utf8')
+    } catch {
+      rootReadmeIssue = 'README.md could not be read.'
+    }
+  } else if (rootReadmeState !== 'missing') rootReadmeIssue = 'README.md is not a physical regular file.'
+  const rootCapabilitySummaryDraft: RootCapabilitySummaryDraft = rootReadmeIssue
+    ? { state: 'unsafe', issues: [rootReadmeIssue] }
+    : prepareRootCapabilitySummary(rootReadme, capabilityDraft.counts, capabilityIssues)
+  let rootCapabilitySummaryRequested = false
   const parts = HARNESS_PARTS.map((name) => {
     const partState = state === 'physical' ? pathState(join(root, name)) : 'missing'
     return {
@@ -238,6 +264,22 @@ export const createHarnessSession = ({
         ? {
             requestUpdate: () => {
               capabilityPublicationRequested = true
+            }
+          }
+        : {})
+    },
+    rootCapabilitySummary: {
+      repository: root,
+      state: rootCapabilitySummaryDraft.state,
+      issues: rootCapabilitySummaryDraft.issues,
+      ...(rootCapabilitySummaryDraft.observed === undefined ? {} : { observed: rootCapabilitySummaryDraft.observed }),
+      ...(capabilityDraft.counts === undefined ? {} : { expected: capabilityDraft.counts }),
+      ...(mode === 'conform' &&
+      rootCapabilitySummaryDraft.state === 'stale' &&
+      rootCapabilitySummaryDraft.merged !== undefined
+        ? {
+            requestUpdate: () => {
+              rootCapabilitySummaryRequested = true
             }
           }
         : {})
@@ -304,6 +346,8 @@ export const createHarnessSession = ({
         })
       if (capabilityPublicationRequested && capabilityDraft.merged !== undefined)
         writes.push({ path: 'skills/README.md', content: capabilityDraft.merged })
+      if (rootCapabilitySummaryRequested && rootCapabilitySummaryDraft.merged !== undefined)
+        writes.push({ path: 'README.md', content: rootCapabilitySummaryDraft.merged })
       return { writes }
     }
   }

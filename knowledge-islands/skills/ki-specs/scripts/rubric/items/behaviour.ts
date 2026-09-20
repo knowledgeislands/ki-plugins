@@ -5,16 +5,17 @@ const SOURCE = 'standards-specs.md'
 
 const BEHAVIOUR_1: RubricItem<SpecJudgmentContext> = {
   code: 'BEHAVIOUR-1',
-  title: 'requirements describe behaviour',
-  description: 'A requirement describes behaviour rather than rationale or procedure.',
+  title: 'requirements describe observable behaviour or quality',
+  description:
+    'A requirement describes a user-observable behaviour or a quality property rather than rationale or procedure.',
   sources: [SOURCE],
   judgment: {
-    scope: 'Every numbered requirement and its linked Decision Records or guides.',
+    scope: 'Every numbered requirement, its section, and its linked Decision Records or guides.',
     prompt:
-      'Assess whether each requirement describes behaviour rather than rationale or procedure; move reasoning to a Decision Record and operational instruction to a guide.',
+      'Assess whether each requirement is classified and phrased as user-observable behaviour or a quality property; move reasoning to a Decision Record and operational instruction to a guide.',
     outcomes: ['conforming', 'gap', 'exclusion'],
     guidance:
-      'Rewrite a non-behavioural requirement, move its reasoning or procedure to the appropriate artifact, or record an explicit area-level exclusion.'
+      'Rewrite or reclassify a requirement, move its reasoning or procedure to the appropriate artifact, or record an explicit area-level exclusion.'
   }
 }
 

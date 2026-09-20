@@ -134,6 +134,26 @@ export const SCRIPTS: RubricFamily<EngineeringRubricContext, ScriptsRubricContex
       'Every current or recently completed repository-footprint replacement.',
       'Did the cutover reach and verify the correct clean end state without retaining transitional compatibility code?',
       'Complete the clean cutover, record a named Gap with its owner, or record an explicit exclusion.'
-    )
+    ),
+    mechanical(
+      'SCR-10',
+      'Dependency execution is independent of node_modules layout',
+      'Root and safely resolved workspace package scripts contain no hand-written relative path into `node_modules/`; invoke package binaries through `bunx --bun` or resolve module files from the owning module.',
+      'FAIL',
+      (context) => context.scr10
+    ),
+    {
+      code: 'SCR-11',
+      title: 'Common Git hooks are bound',
+      description:
+        'Husky runs lint-staged then check-only Syncpack before commits, and Commitlint validates proposed messages against the `ki-git` Conventional Commit policy.',
+      sources: ['standards-engineering.md'],
+      mechanical: {
+        level: 'FAIL',
+        audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.scr11, 'FAIL') },
+        remediation: { class: 'automatic' },
+        conform: { phase: 'PRIMARY', run: (context) => context.synchroniseHooks?.() }
+      }
+    }
   ]
 }

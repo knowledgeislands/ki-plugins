@@ -27,11 +27,12 @@ const ROAD_2: RubricItem<RoadmapAuditContext> = {
   code: 'ROAD-2',
   title: 'honest horizon placement',
   description:
-    'Items sit in honest horizons; Waiting-for items name their external condition; speculative Future work carries `candidate: true`.',
+    'Open Triage contains captured, unadopted draft work; terminal Triage records an evidence-backed done disposition; adopted items sit in honest delivery horizons, and Waiting-for items name their external condition.',
   sources: [SOURCE],
   judgment: {
-    scope: 'Every horizon, Waiting-for condition, and Future candidate declaration.',
-    prompt: 'Review horizon placement, waiting conditions, and Future candidate marking.',
+    scope: 'Every horizon, Triage adoption boundary, and Waiting-for condition.',
+    prompt:
+      'Review whether open Triage items remain unadopted drafts, terminal Triage items carry evidence-backed done dispositions, moves into delivery horizons have explicit human adoption, and Waiting-for items name their external condition.',
     outcomes: ['conforming', 'gap', 'exclusion'],
     guidance:
       'Confirm placement with the owning authority, record a gap, or record an explicit exclusion; do not move work automatically.'
@@ -76,11 +77,12 @@ const ROAD_5: RubricItem<RoadmapAuditContext> = {
   code: 'ROAD-5',
   title: 'horizon transitions and readiness',
   description:
-    'Horizon promotion and deferral meet the readiness contract; execution state remains honest and CONFORM never chooses a move.',
+    'Capture into Triage needs no adoption decision; leaving Triage requires explicit human adoption, and later horizon promotion and deferral meet the readiness contract.',
   sources: [SOURCE],
   judgment: {
-    scope: 'Every proposed promotion, deferral, and its readiness evidence.',
-    prompt: 'Review each promotion or deferral against its readiness contract and plan state.',
+    scope: 'Every proposed Triage adoption, promotion, deferral, and its readiness evidence.',
+    prompt:
+      'Review Triage exits for explicit human adoption and each later promotion or deferral against the readiness contract and plan state.',
     outcomes: ['conforming', 'gap', 'exclusion'],
     guidance:
       'Confirm the lifecycle move with its owner, record a gap, or record an explicit exclusion; never choose the move automatically.'

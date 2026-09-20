@@ -6,15 +6,24 @@ import type {
   RubricPublicationContext,
   RubricSession
 } from '../../shared/rubric.ts'
+import {
+  inspectWebsiteOverlay,
+  inspectWebsiteSelection,
+  type WebsiteOverlaySelection,
+  type WebsiteSite
+} from '../../shared/site-selection.ts'
 
 const CONFIG_NAMES = ['eleventy.config.ts', 'eleventy.config.js', 'eleventy.config.mjs', 'eleventy.config.cjs'] as const
 const KI_SECTION = 'ki-repo-website-content'
-const KI_WEBSITE_SECTION = 'ki-repo-website'
-const DEFAULT_SITE_ROOT = 'apps/site'
 
 type Draft = {
   path: string
   original: string | null
+  content: string
+}
+
+export type WebsiteConfigSource = {
+  path: string
   content: string
 }
 
@@ -23,10 +32,16 @@ export type WebsiteContext = {
   target: string
   available: boolean
   applicable: boolean
+  siteName: string | null
+  primary: boolean
+  overlayViolations: readonly string[]
   siteRoot: string
+  rootPackageOk: boolean
+  workspaceCoversSiteRoot: boolean
   packagePath: string
   cfgName: string
   config: string
+  configSources: readonly WebsiteConfigSource[]
   packageOk: boolean
   deps: Record<string, string>
   scripts: Record<string, string>
@@ -51,14 +66,13 @@ const parseToml = (text: string): { document: Record<string, unknown> | null; ma
 const asTable = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
 
-const safeSiteRoot = (value: unknown): value is string =>
-  typeof value === 'string' &&
-  (value === '.' ||
-    (value.length > 0 &&
-      !isAbsolute(value) &&
-      !/^[A-Za-z]:[\\/]/.test(value) &&
-      !value.includes('\\') &&
-      value.split('/').every((part) => part.length > 0 && part !== '.' && part !== '..')))
+const workspaceEntryCovers = (entry: string, siteRoot: string): boolean => {
+  if (entry === siteRoot) return true
+  if (!entry.endsWith('/*')) return false
+  const prefix = entry.slice(0, -2)
+  const remainder = siteRoot.slice(prefix.length + 1)
+  return siteRoot.startsWith(`${prefix}/`) && remainder.length > 0 && !remainder.includes('/')
+}
 
 const physicalDirectory = (path: string): boolean => {
   if (!existsSync(path)) return false
@@ -78,11 +92,32 @@ const containedPhysical = (root: string, path: string, kind: 'file' | 'directory
   return kind === 'file' ? state.isFile() : state.isDirectory()
 }
 
-export const createWebsiteSession = ({
-  mode,
-  repository,
-  publication
-}: RubricContextOptions): RubricSession<WebsiteContext> => {
+const sourceEntry = (value: unknown): string | null => {
+  if (typeof value === 'string') return value
+  const table = asTable(value)
+  if (!table) return null
+  for (const key of ['source', 'bun', 'import', 'default', 'node']) {
+    const candidate = sourceEntry(table[key])
+    if (candidate) return candidate
+  }
+  return null
+}
+
+const importedSpecifiers = (source: string): readonly string[] =>
+  [...source.matchAll(/\bimport\s+(?!type\b)(?:[^'";]*?\s+from\s*)?["']([^"']+)["']/g)].flatMap((match) =>
+    match[1] ? [match[1]] : []
+  )
+
+const sourceCandidates = (path: string): readonly string[] => {
+  if (/\.(?:[cm]?[jt]s)$/.test(path)) return [path]
+  return [path, ...['ts', 'js', 'mts', 'mjs', 'cts', 'cjs'].map((extension) => `${path}.${extension}`)]
+}
+
+const createWebsiteSiteSession = (
+  { mode, repository, publication }: RubricContextOptions,
+  site: WebsiteSite,
+  overlay: WebsiteOverlaySelection
+): RubricSession<WebsiteContext> => {
   const root = resolve(repository)
   const available = physicalDirectory(root)
   const at = (...parts: string[]) => join(root, ...parts)
@@ -99,13 +134,95 @@ export const createWebsiteSession = ({
   const ki = configSafe ? parseToml(configRaw) : { document: null, malformed: true }
   const skillTables = asTable(ki.document?.skills)
   const kiWebsiteTable = asTable(skillTables?.[KI_SECTION])
-  const kiWebsiteCoreTable = asTable(skillTables?.[KI_WEBSITE_SECTION])
-  const configuredSiteRoot = kiWebsiteCoreTable?.['site-root']
-  const siteRoot =
-    configuredSiteRoot === undefined || !safeSiteRoot(configuredSiteRoot) ? DEFAULT_SITE_ROOT : configuredSiteRoot
+  const siteRoot = site.root
   const siteAt = (...parts: string[]) => (siteRoot ? join(siteRoot, ...parts) : join(...parts))
   const cfgName = CONFIG_NAMES.find((name) => containedPhysical(root, at(siteAt(name)), 'file')) ?? ''
-  const applicable = available && kiWebsiteTable !== null
+  const applicable = available && overlay.applicable
+
+  const rootPackageSource = read('package.json')
+  let rootPackageOk = true
+  let rootPackageDocument: Record<string, unknown> = {}
+  try {
+    if (!rootPackageSource) throw new Error('package.json unavailable')
+    rootPackageDocument = JSON.parse(rootPackageSource) as Record<string, unknown>
+  } catch {
+    rootPackageOk = false
+  }
+  const rootWorkspaces = Array.isArray(rootPackageDocument.workspaces)
+    ? rootPackageDocument.workspaces.filter((entry): entry is string => typeof entry === 'string')
+    : []
+  const workspaceCoversSiteRoot =
+    siteRoot !== '.' && rootWorkspaces.some((entry) => workspaceEntryCovers(entry, siteRoot))
+
+  const workspacePackageDirectories = rootWorkspaces.flatMap((entry): string[] => {
+    if (!entry.endsWith('/*')) return containedPhysical(root, at(entry), 'directory') ? [entry] : []
+    const parent = entry.slice(0, -2)
+    if (!containedPhysical(root, at(parent), 'directory')) return []
+    return readdirSync(at(parent), { withFileTypes: true })
+      .filter((candidate) => candidate.isDirectory() && !candidate.isSymbolicLink())
+      .map((candidate) => join(parent, candidate.name))
+  })
+
+  const workspacePackages = workspacePackageDirectories.flatMap((directory) => {
+    const manifestPath = join(directory, 'package.json')
+    const manifestSource = read(manifestPath)
+    if (!manifestSource) return []
+    try {
+      const manifest = JSON.parse(manifestSource) as Record<string, unknown>
+      return typeof manifest.name === 'string' ? [{ directory, manifest, name: manifest.name }] : []
+    } catch {
+      return []
+    }
+  })
+
+  const resolveSource = (path: string): string | null =>
+    sourceCandidates(path).find((candidate) => {
+      const repositoryPath = relative(root, candidate)
+      return !repositoryPath.split(sep).includes('node_modules') && containedPhysical(root, candidate, 'file')
+    }) ?? null
+
+  const resolveWorkspaceImport = (specifier: string): string | null => {
+    const workspacePackage = workspacePackages
+      .filter(({ name }) => specifier === name || specifier.startsWith(`${name}/`))
+      .sort((left, right) => right.name.length - left.name.length)[0]
+    if (!workspacePackage) return null
+
+    const subpath = specifier === workspacePackage.name ? '.' : `.${specifier.slice(workspacePackage.name.length)}`
+    const exports = workspacePackage.manifest.exports
+    const exportsTable = asTable(exports)
+    const exported =
+      subpath === '.' && (!exportsTable || !Object.keys(exportsTable).some((key) => key.startsWith('.')))
+        ? sourceEntry(exports)
+        : sourceEntry(exportsTable?.[subpath])
+    const entry =
+      exported ??
+      (subpath === '.'
+        ? (sourceEntry(workspacePackage.manifest.source) ??
+          sourceEntry(workspacePackage.manifest.module) ??
+          sourceEntry(workspacePackage.manifest.main))
+        : null)
+    if (!entry || isAbsolute(entry) || /^[A-Za-z]:[\\/]/.test(entry) || entry.includes('\\')) return null
+    return resolveSource(resolve(root, workspacePackage.directory, entry))
+  }
+
+  const configPathRelative = cfgName ? siteAt(cfgName) : ''
+  const configSource = configPathRelative ? read(configPathRelative) : ''
+  const importedSources = configSource
+    ? importedSpecifiers(configSource).flatMap((specifier): WebsiteConfigSource[] => {
+        const resolved = specifier.startsWith('.')
+          ? resolveSource(resolve(root, siteRoot, specifier))
+          : resolveWorkspaceImport(specifier)
+        return resolved ? [{ path: relative(root, resolved), content: read(relative(root, resolved)) }] : []
+      })
+    : []
+  const configSources: readonly WebsiteConfigSource[] = configPathRelative
+    ? [
+        { path: configPathRelative, content: configSource },
+        ...importedSources.filter(
+          (candidate, index) => importedSources.findIndex((source) => source.path === candidate.path) === index
+        )
+      ]
+    : []
 
   const packagePath = siteAt('package.json')
   const packageSource = read(packagePath)
@@ -170,10 +287,16 @@ export const createWebsiteSession = ({
     target: root,
     available,
     applicable,
+    siteName: site.name,
+    primary: site.primary,
+    overlayViolations: overlay.violations,
     siteRoot,
+    rootPackageOk,
+    workspaceCoversSiteRoot,
     packagePath,
     cfgName,
-    config: cfgName ? read(siteAt(cfgName)) : '',
+    config: configSource,
+    configSources,
     packageOk,
     deps,
     scripts,
@@ -199,5 +322,38 @@ export const createWebsiteSession = ({
           : [{ path: draft.path, content: draft.content, ...(draft.original === null ? { create: true } : {}) }]
       )
     })
+  }
+}
+
+export const createWebsiteSession = (options: RubricContextOptions): RubricSession<WebsiteContext> => {
+  const selection = inspectWebsiteSelection(options.repository)
+  const overlay = inspectWebsiteOverlay(options.repository, KI_SECTION, selection)
+  const selectedSites = overlay.sites.length > 0 ? overlay.sites : selection.sites.slice(0, 1)
+  const sessions = selectedSites.map((site) => createWebsiteSiteSession(options, site, overlay))
+  const contexts = sessions.flatMap((session) =>
+    session.subjects.filter((subject) => subject.families.includes('WEB')).map((subject) => subject.context())
+  )
+  const primary = contexts.find((context) => context.primary) ?? contexts[0]
+  if (!primary) throw new Error('website-content selection produced no site context')
+  return {
+    subjects: [
+      { families: ['RUBRIC'], context: () => primary },
+      ...contexts.map((context) => ({
+        families: ['WEB'],
+        subject: context.siteName ?? context.siteRoot,
+        context: () => context
+      }))
+    ],
+    proposal: () => {
+      const writes = sessions.flatMap((session) => session.proposal().writes)
+      const byPath = new Map<string, ConformWrite>()
+      const conflicts = new Set<string>()
+      for (const write of writes) {
+        const previous = byPath.get(write.path)
+        if (previous && previous.content !== write.content) conflicts.add(write.path)
+        else byPath.set(write.path, write)
+      }
+      return { writes: [...byPath.values()].filter((write) => !conflicts.has(write.path)) }
+    }
   }
 }

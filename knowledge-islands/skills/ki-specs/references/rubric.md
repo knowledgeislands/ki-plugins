@@ -15,7 +15,7 @@ Line-by-line criteria for auditing ki-specs. Classifications are derived from it
 - [REQ — normative requirement shape](#req--normative-requirement-shape)
 - [VERIFY — verification hooks](#verify--verification-hooks)
 - [BEHAVIOUR — behavioural altitude](#behaviour--behavioural-altitude)
-- [AS-BUILT — as-built truth](#as-built--as-built-truth)
+- [CONFORMANCE — accepted-contract conformance](#conformance--accepted-contract-conformance)
 - [SPLIT — requirement focus](#split--requirement-focus)
 - [DR-LINK — decision traceability](#dr-link--decision-traceability)
 - [AREA-FIT — area fit](#area-fit--area-fit)
@@ -95,23 +95,22 @@ Active requirements carry a verification hook whose quality is reviewed.
 
 Requirements specify behaviour rather than rationale or procedure.
 
-- **BEHAVIOUR-1 [J] — requirements describe behaviour** — A requirement describes behaviour rather than rationale or procedure. (standards-specs.md)
-  - _Evidence scope:_ Every numbered requirement and its linked Decision Records or guides.
-  - _Review prompt:_ Assess whether each requirement describes behaviour rather than rationale or procedure; move reasoning to a Decision Record and operational instruction to a guide.
+- **BEHAVIOUR-1 [J] — requirements describe observable behaviour or quality** — A requirement describes a user-observable behaviour or a quality property rather than rationale or procedure. (standards-specs.md)
+  - _Evidence scope:_ Every numbered requirement, its section, and its linked Decision Records or guides.
+  - _Review prompt:_ Assess whether each requirement is classified and phrased as user-observable behaviour or a quality property; move reasoning to a Decision Record and operational instruction to a guide.
   - _Outcomes:_ conforming; gap; exclusion
-  - _Conforming guidance:_ Rewrite a non-behavioural requirement, move its reasoning or procedure to the appropriate artifact, or record an explicit area-level exclusion.
+  - _Conforming guidance:_ Rewrite or reclassify a requirement, move its reasoning or procedure to the appropriate artifact, or record an explicit area-level exclusion.
 
-## AS-BUILT — as-built truth
+## CONFORMANCE — accepted-contract conformance
 
 → [standard](standards-specs.md)
 
-The numbered contract describes current system behaviour.
+Active requirements declare implementation conformance and conforming claims carry evidence.
 
-- **AS-BUILT-1 [J] — numbered requirements describe the system today** — Numbered requirements are true of the system today; aspirational behaviour belongs in `## Gaps`. (standards-specs.md)
-  - _Evidence scope:_ Every numbered requirement and the current system behaviour it claims.
-  - _Review prompt:_ Assess whether each numbered requirement is true of the system today and move aspirational or not-yet-built behaviour to `## Gaps`.
-  - _Outcomes:_ conforming; gap; exclusion
-  - _Conforming guidance:_ Move unbuilt behaviour to a named Gap or record why the area is explicitly excluded from the review.
+- **CONFORMANCE-1 [M] — accepted requirements declare conformance** — Each active requirement declares exactly one `_Conformance:_ conforming | pending | divergent` state. (standards-specs.md)
+  - _Remediation:_ diagnostic — Add the truthful conformance state. Do not move an accepted requirement to Gaps merely because implementation is pending or divergent.
+- **CONFORMANCE-2 [M] — conforming requirements carry evidence** — A requirement declared conforming carries an `_Evidence:_` line naming current proof. (standards-specs.md)
+  - _Remediation:_ diagnostic — Add current evidence for a conforming requirement, or declare the requirement pending or divergent when proof does not exist.
 
 ## SPLIT — requirement focus
 

@@ -1,6 +1,13 @@
 import { lstatSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, isAbsolute, join, normalize, relative, resolve } from 'node:path'
 import type { RubricContextOptions, RubricPublicationContext, RubricSession } from '../../shared/rubric.ts'
+import {
+  inspectWebsiteOverlay,
+  inspectWebsiteSelection,
+  type WebsiteOverlaySelection,
+  type WebsiteSelection,
+  type WebsiteSite
+} from '../../shared/site-selection.ts'
 
 const CONFIG_FILE = '.ki.toml'
 const CONFIG_SECTION = 'ki-repo-website-cloudflare'
@@ -33,6 +40,10 @@ export type WranglerConfigEvidence = {
 export type WebsiteCloudflareContext = {
   readonly targetExists: boolean
   readonly applicable: boolean
+  readonly siteName: string | null
+  readonly primary: boolean
+  readonly selectionMode: WebsiteSelection['mode']
+  readonly overlayViolations: readonly string[]
   readonly configs: readonly WranglerConfigEvidence[]
   readonly siteConfigs: readonly WranglerConfigEvidence[]
   readonly companionConfigs: readonly WranglerConfigEvidence[]
@@ -274,13 +285,15 @@ const inspectText = (path: string): { readonly state: TextState; readonly text: 
   return text === null ? { state: 'unsafe', text: '' } : { state: 'present', text }
 }
 
-export const createWebsiteCloudflareSession = ({
-  repository,
-  publication
-}: RubricContextOptions): RubricSession<WebsiteCloudflareRubricContext> => {
+const createWebsiteCloudflareSiteSession = (
+  { repository, publication }: RubricContextOptions,
+  site: WebsiteSite,
+  selection: WebsiteSelection,
+  overlay: WebsiteOverlaySelection
+): RubricSession<WebsiteCloudflareRubricContext> => {
   const target = resolve(repository)
   const targetExists = nodeKind(target) === 'directory'
-  const configuration = targetExists
+  const inspectedConfiguration = targetExists
     ? inspectConfiguration(join(target, CONFIG_FILE))
     : {
         state: 'missing' as const,
@@ -290,6 +303,13 @@ export const createWebsiteCloudflareSession = ({
         siteRootConfigured: false,
         appDeclared: false
       }
+  const configuration = {
+    ...inspectedConfiguration,
+    keys: overlay.keys,
+    siteRoot: site.root,
+    siteRootValid: selection.violations.length === 0 && site.physical,
+    siteRootConfigured: selection.siteRootConfigured
+  }
   const configs = targetExists
     ? collectWranglerConfigs(target, configuration.siteRoot, configuration.siteRootValid)
     : []
@@ -305,7 +325,11 @@ export const createWebsiteCloudflareSession = ({
   const packagePath = configuration.siteRoot === '.' ? 'package.json' : join(configuration.siteRoot, 'package.json')
   const hosting: WebsiteCloudflareContext = {
     targetExists,
-    applicable: configuration.state === 'present' || configs.length > 0,
+    applicable: overlay.applicable || configs.length > 0,
+    siteName: site.name,
+    primary: site.primary,
+    selectionMode: selection.mode,
+    overlayViolations: overlay.violations,
     configs,
     siteConfigs,
     companionConfigs,
@@ -330,6 +354,33 @@ export const createWebsiteCloudflareSession = ({
     subjects: [
       { families: ['RUBRIC'], context: () => context },
       { families: ['WCF'], context: () => context }
+    ],
+    proposal: () => ({ writes: [] })
+  }
+}
+
+export const createWebsiteCloudflareSession = (
+  options: RubricContextOptions
+): RubricSession<WebsiteCloudflareRubricContext> => {
+  const selection = inspectWebsiteSelection(options.repository)
+  const overlay = inspectWebsiteOverlay(options.repository, CONFIG_SECTION, selection)
+  const selectedSites = overlay.sites.length > 0 ? overlay.sites : selection.sites.slice(0, 1)
+  const contexts = selectedSites.map((site) => {
+    const session = createWebsiteCloudflareSiteSession(options, site, selection, overlay)
+    const subject = session.subjects.find((candidate) => candidate.families.includes('WCF'))
+    if (!subject) throw new Error('website-cloudflare site session produced no hosting context')
+    return subject.context()
+  })
+  const primary = contexts.find((context) => context.hosting.primary) ?? contexts[0]
+  if (!primary) throw new Error('website-cloudflare selection produced no site context')
+  return {
+    subjects: [
+      { families: ['RUBRIC'], context: () => primary },
+      ...contexts.map((context) => ({
+        families: ['WCF'],
+        subject: context.hosting.siteName ?? context.hosting.configuration.siteRoot,
+        context: () => context
+      }))
     ],
     proposal: () => ({ writes: [] })
   }

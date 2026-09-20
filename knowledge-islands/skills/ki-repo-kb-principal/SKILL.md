@@ -1,10 +1,13 @@
 ---
 name: ki-repo-kb-principal
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: [ki-repo-kb, ki-decision-records]
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Governs the structural overlay for a locally designated principal Knowledge Islands base: its governance home, Enactment gate, charter, memory root, canonical zones, and handoff entry points. It does not establish canonical-island identity, authority, or cross-island roles. Use when auditing, establishing, or conforming the local overlay. A governance skill: it composes ki-repo-kb and ki-decision-records, while identity and integrations remain declared by their owning contracts.
+  Audit or conform the local structural overlay for a designated principal KI knowledge base: governance home,
+  Enactment gate, charter, memory root, canonical zones, and handoff entry points. Use for the overlay only;
+  it does not establish canonical identity, authority, or cross-island roles.
 argument-hint: 'audit | conform | educate | help | refresh'
 ---
 

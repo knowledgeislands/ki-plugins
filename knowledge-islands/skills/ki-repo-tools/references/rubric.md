@@ -68,6 +68,8 @@ Layout, executable, distribution, versioning, and judgment criteria.
   - _Remediation:_ diagnostic — Correct the evidenced tool-repository issue through the responsible maintainer; hosted conform does not infer tool, release, or documentation semantics.
 - **TOOL-CHANGELOG [M] — Changelog presence** — `CHANGELOG.md` is a physical regular file. (standards-tool-repositories.md)
   - _Remediation:_ diagnostic — Correct the evidenced tool-repository issue through the responsible maintainer; hosted conform does not infer tool, release, or documentation semantics.
+- **TOOL-DEVELOPER-GUIDES [M] — Developer delivery guides** — `docs/guides/developer/definition-of-done.md` and `docs/guides/developer/releasing.md` are physical regular files; their content remains repository-defined. (standards-tool-repositories.md)
+  - _Remediation:_ diagnostic — Correct the evidenced tool-repository issue through the responsible maintainer; hosted conform does not infer tool, release, or documentation semantics.
 - **TOOL-CHANGELOG-FORMAT [J] — Changelog format** — The changelog identifies the current semantic-versioned release through either Keep a Changelog entries or a declared current-release baseline. (standards-tool-repositories.md)
   - _Evidence scope:_ The target command-line tool repository and the evidence named by this criterion.
   - _Review prompt:_ The changelog identifies the current semantic-versioned release through either Keep a Changelog entries or a declared current-release baseline.

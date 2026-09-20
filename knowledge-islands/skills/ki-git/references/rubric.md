@@ -46,6 +46,11 @@ Working-copy topology and review flow follow local protection, review, and concu
   - _Review prompt:_ After checking branch, worktree, protection, concurrency, and review evidence, assess whether `single-working-copy-on-main`, `single-working-copy-on-branch-with-pr`, or `worktrees-with-pr` is the appropriate approach.
   - _Outcomes:_ conforming; use single-working-copy-on-main; use single-working-copy-on-branch-with-pr; use worktrees-with-pr
   - _Conforming guidance:_ Use the least ceremonial approach that preserves the selected protection, review, and concurrency boundary; use separate worktrees when concurrent deliveries need isolated working files.
+- **BRANCH-2 [J] — finished worktrees are integrated or disposed** — Finished linked worktrees are inspected, deliberately integrated or disposed, removed, and pruned without losing unmerged work. (standards-git.md)
+  - _Evidence scope:_ Every linked worktree in `git worktree list --porcelain`, its branch, `git status --short`, commits not reachable from the intended integration branch, branch diff, and delivery authority.
+  - _Review prompt:_ For each finished linked worktree, is its work deliberately integrated or explicitly disposed before the worktree and any proven-redundant local branch are removed?
+  - _Outcomes:_ conforming; integrate worktree; dispose worktree; ownership decision required
+  - _Conforming guidance:_ Inspect before removal. Integrate coherent authorised work; dispose only confirmed unwanted work. Delete a branch only after proving reachability or no remaining diff, prune stale metadata, and retain only intentionally active worktrees.
 
 ## HYGIENE — Git working hygiene
 

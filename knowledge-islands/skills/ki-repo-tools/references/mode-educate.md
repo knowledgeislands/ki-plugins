@@ -1,5 +1,7 @@
 # Mode EDUCATE — scaffold a new tool repo
 
+Create physical regular files at `docs/guides/developer/definition-of-done.md` and `docs/guides/developer/releasing.md`. Supply procedures appropriate to the repository's own delivery and release lifecycle; there is no universal content template.
+
 _On-demand procedure for tools' EDUCATE mode. The canonical shape, the container-not-contents split, and the capability-conditional rule live in [`SKILL.md`](../SKILL.md) and are already loaded; this file is the procedure only._
 
 1. **Name the repo `tools-<name>`** and confirm the tool's language (bash is the reference; a TS/Bun/Python/Go tool is fine but turns on a different capability path).

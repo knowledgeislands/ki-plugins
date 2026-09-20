@@ -1,12 +1,15 @@
 ---
 name: ki-trades
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 contributes: [".ki.toml"]
 owns: ["+/_TRADES/README.md", "-/_TRADES/README.md"]
 description: >
-  Governs typed, directional cross-repository trades between locally registered Knowledge Islands repositories: mutable committed preparations, work and knowledge routes, TRD eight-hexadecimal identities, immutable submitted sender projections, receipt, receiver-only decisions, sender observation policies, release, and pruning. Use when preparing or submitting work or knowledge to another repository, observing a preparation, receiving or reviewing an inbound trade, auditing routes or records, or resolving direct application, adoption, retention, parking, clarification, decline, or supersession. A route grants visibility only; ki-work-roadmap and the receiving repository retain priority and acceptance authority.
+  Govern directional work and knowledge trades between KI repositories: routes, records, authority, receipt,
+  decisions, release, and pruning. Use to design or audit the system; `ki-trade` performs one side and
+  `ki-next` owns receiver disposition.
 argument-hint: "audit <repo> | conform <repo> | educate <repo> | help | refresh"
 ---
 

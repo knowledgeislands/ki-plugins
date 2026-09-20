@@ -41,6 +41,8 @@ Review and integrate every result before the next dependent unit.
 
 Stop rather than infer authority when scope must expand, a decision is escalated, verification fails, external coordination is needed, or an irreversible action is proposed.
 
+For each local lifecycle or semantic record mutation, preserve `created_at` and advance `updated_at` to the later of the current UTC second or one second after its observed value. Compare the observed source revision immediately before publication and stop on source drift, a absent or malformed timestamps. Verification-only reads do not advance timestamps; remote adapters project provider-native values.
+
 ## 4. Verify and prepare review
 
 Run the item's stated verification after integration and inspect its actual results.

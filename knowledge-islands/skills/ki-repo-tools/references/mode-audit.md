@@ -1,5 +1,7 @@
 # Mode AUDIT — check a repository against the standard
 
+The mechanical audit treats missing or non-regular `docs/guides/developer/definition-of-done.md` and `docs/guides/developer/releasing.md` as FAIL findings. It verifies only their exact paths and safe file type; the judgment pass does not assess their repository-defined contents.
+
 _On-demand procedure for `ki-repo-tools` AUDIT. The canonical shape, the container-not-contents split, and the capability-conditional rule live in [`SKILL.md`](../SKILL.md) and are already loaded; this file owns only the audit sequence._
 
 1. **Identify the target.** Confirm the repo path (default: the cwd repo). Note the tool name (`<name>` from `tools-<name>`) and the primary bin file's language (its shebang).

@@ -45,7 +45,7 @@ export const resolveSelectedAdapter = (configuration: unknown): AdapterDecision 
 
 export type Candidate = {
   readonly id: string
-  readonly horizon: 'now' | 'next' | 'soon' | 'future' | 'waiting-for' | 'parked'
+  readonly horizon: 'now' | 'next' | 'soon' | 'future' | 'waiting-for' | 'parked' | 'triage'
   readonly status: 'draft' | 'ready' | 'in-progress' | 'awaiting-review' | 'done'
   readonly dependenciesReady: boolean
 }
@@ -67,6 +67,27 @@ export const promotionDecision = (
   return 'refuse'
 }
 
+export const captureDecision = (input: {
+  readonly substantive: boolean
+  readonly existingOwner: boolean
+  readonly resolvedOrRhetorical: boolean
+}): 'capture-triage' | 'refuse' =>
+  input.substantive && !input.existingOwner && !input.resolvedOrRhetorical ? 'capture-triage' : 'refuse'
+
+export const adoptionDecision = (
+  candidate: Candidate,
+  destination: Candidate['horizon'],
+  confirmed: boolean,
+  destinationReady: boolean
+): 'adopt' | 'refuse' =>
+  confirmed &&
+  destinationReady &&
+  candidate.horizon === 'triage' &&
+  candidate.status === 'draft' &&
+  destination !== 'triage'
+    ? 'adopt'
+    : 'refuse'
+
 export const deferralDecision = (
   candidate: Candidate,
   destination: Candidate['horizon'],
@@ -75,6 +96,8 @@ export const deferralDecision = (
 ): 'defer' | 'refuse' =>
   confirmed &&
   candidate.status !== 'done' &&
+  candidate.horizon !== 'triage' &&
+  destination !== 'triage' &&
   ((destination !== 'waiting-for' && destination !== 'parked') || hasRequiredCondition)
     ? 'defer'
     : 'refuse'

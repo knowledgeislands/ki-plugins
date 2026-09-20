@@ -1,11 +1,14 @@
 ---
 name: ki-agora
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 contributes: [".ki.toml"]
 description: >
-  Governs portable reciprocal Agora membership between Knowledge Islands repositories. An Agora home declares its purpose and approved canonical repository members with their roles; a member independently consents by naming the same home and role. Use when defining, auditing, or conforming an Agora declaration, deciding whether a repository belongs to an Agora, or preparing local resolution and editor or client projections. ki-agora defines declarations only; ki owns local registry resolution and target-specific opening, while a user-environment owner renders per-repository state.
+  Govern reciprocal Agora membership: a KI home declares purpose, canonical members, and roles, while each
+  member independently consents. Use to define or audit declarations; the `ki` CLI owns local resolution and
+  environment tooling owns client projections.
 argument-hint: "audit <repo> | conform <repo> | educate <repo> | help | refresh"
 ---
 

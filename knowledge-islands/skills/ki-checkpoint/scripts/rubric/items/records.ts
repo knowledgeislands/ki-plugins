@@ -30,7 +30,7 @@ const RECORD_2: RubricItem<RecordContext> = {
   code: 'RECORD-2',
   title: 'frontmatter and headings use the closed schema',
   description:
-    'Active records declare exactly type, thread, state, created_at, and updated_at; retired records additionally declare retired_at. Every record uses the exact H1 and ordered Objective, Current state, Decisions made, Files touched, Open questions, and Next step H2 sections, each with substantive content.',
+    'Active records declare exactly type, thread, state, created_at, and updated_at. Every record uses the exact H1 and ordered Objective, Current state, Decisions made, Files touched, Open questions, and Next step H2 sections, each with substantive content.',
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',

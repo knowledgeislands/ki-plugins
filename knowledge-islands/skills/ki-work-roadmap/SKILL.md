@@ -1,11 +1,14 @@
 ---
 name: ki-work-roadmap
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 owns: ['ROADMAP.md']
 description: >
-  Governs flat repository work items and their concise root orientation in project repositories. Use for "audit the roadmap", "audit plans", roadmap horizons, theme grouping, work-item identity, lifecycle detail, lifecycle and pruning commit boundaries, plan dependencies, or root-orientation drift. Project work items live directly under docs/roadmap; Knowledge Bases apply the same record model under Streams/Roadmap through ki-repo-kb-streams. Records gain detail in place as they move from draft through readiness, delivery, required review, and retained completion. Process skills apply the shared lifecycle; ki-decision-records owns durable decisions.
+  Govern flat local work items, roadmap horizons, lifecycle detail, dependencies, root orientation, and
+  done-before-prune commit boundaries. Use to audit or shape roadmap records; `ki-next`, `ki-plan`,
+  `ki-implement`, and `ki-accept` apply the lifecycle, while Decision Records own durable rationale.
 argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 ---
 
@@ -15,9 +18,11 @@ This governance skill owns the shared flat forward-work model. A project reposit
 
 Read [the repository-roadmap standard](references/standards-repository-roadmaps.md) before changing a roadmap shape or lifecycle. Read [the generated rubric](references/rubric.md) for the mechanical and judgment criteria. Work-item details live in [the work-item-format standard](references/standards-work-item-format.md). Tracked methodology sources and the REFRESH cadence live in [the source list](references/sources.md).
 
+Triage captures substantive prospective work without adopting it. The `ki-next` process skill owns capture, human-approved adoption, and later selection transitions.
+
 ## Shared model
 
-`ROADMAP.md` is a project-repository orientation: it points to `docs/roadmap/` and deliberately repeats no queue information. Each canonical item is a single file at `docs/roadmap/<REPO>-<NNN>-<slug>.md` or `Streams/Roadmap/<REPO>-<NNN>-<slug>.md`; where fixed issuing areas are declared, the identifier includes its immutable area code. The matching `_ISSUES.md` ledger remains in the same directory, so an issued number is never reused after pruning. The item’s `theme` field groups related work for CLI reporting; the `horizon` field establishes queue position; and `status` records the common `draft` → `ready` → `in-progress` → `awaiting-review` → `done` lifecycle. A concise item becomes an execution plan by gaining task-list plan sections in the same file: new work starts `- [ ]`, and completed work becomes `- [x]`. The `ki-repo` table declares the stable uppercase `repo_code`; the roadmap table optionally declares fixed area-to-theme mappings. The globally unique identifier is also used by dependencies.
+`ROADMAP.md` is a project-repository orientation: it points to `docs/roadmap/` and deliberately repeats no queue information. Each canonical item is a single file at `docs/roadmap/<REPO>-<NNN>-<slug>.md` or `Streams/Roadmap/<REPO>-<NNN>-<slug>.md`; where fixed issuing areas are declared, the identifier includes its immutable area code. The matching `_ISSUES.md` ledger remains in the same directory, so an issued number is never reused after pruning. The item’s `theme` field groups related work for CLI reporting; the `horizon` field establishes queue position; and `status` records the common `draft` → `ready` → `in-progress` → `awaiting-review` → `done` delivery lifecycle. Triage is captured but unadopted: open intake is draft, while a human-approved rejected, duplicate, or merged disposition may close directly as retained Triage / done without fabricated delivery evidence. A concise adopted item becomes an execution plan by gaining task-list plan sections in the same file: new work starts `- [ ]`, and completed work becomes `- [x]`. The `ki-repo` table declares the stable uppercase `repo_code`; the roadmap table optionally declares fixed area-to-theme mappings. The globally unique identifier is also used by dependencies.
 
 ## Operating modes
 

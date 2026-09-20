@@ -24,6 +24,12 @@ Choose the narrowest type that describes the committed unit rather than combinin
 
 Historic messages are not rewritten merely to conform to this current convention.
 
+### Package-backed commit-message binding
+
+A repository governed by `ki-engineering` binds the deterministic portion of this policy through Husky's `commit-msg` lifecycle and Commitlint. The canonical configuration permits exactly the six types above, requires a lowercase kebab-case scope when present, requires a non-empty subject, and rejects a terminal full stop. Commitlint retains its conventional default treatment of Git-generated merge and revert messages.
+
+The binding does not attempt to decide whether a summary is genuinely imperative, whether the selected type is the narrowest truthful type, or whether the commit contains one coherent unit; those remain `ki-git` judgment. Husky can be deliberately bypassed with `--no-verify`, so the installed hook gives immediate feedback rather than replacing repository audit, CI, or review. `ki-engineering` owns the dependencies, hook files, deterministic audit, and bounded conformance; `ki-git` remains the sole owner of message semantics.
+
 Other skills MAY define a narrowly-scoped trailer block as durable evidence for their own concern. For example, `ki-engineering` owns the `KI-Consistency-Review-*` block for an advisory code-consistency review. That block is portable commit metadata, not a new Git-hygiene policy: `ki-git` neither interprets its engineering outcome nor requires it on ordinary commits.
 
 ## Working-copy and review approaches
@@ -37,6 +43,15 @@ Select one of three approaches from repository policy, the requested review boun
 - **`worktrees-with-pr`** — use when concurrent or independently isolated deliveries need separate branches, indexes, and working files. Give each branch its own worktree and PR, then integrate through the repository's review and merge policy.
 
 Do not invent a branch, pull-request, or worktree requirement merely because several actors may modify one working copy. Use worktrees when concurrent deliveries require separate branches or isolated working files; do not keep independent branch work in one working copy merely because separate indexes are possible.
+
+### Finished worktree retirement
+
+A linked worktree is temporary delivery state, not a durable archive. When its delivery finishes, inspect its branch, working-tree status, commits not reachable from the intended integration branch, and any diff against that branch. Then choose one explicit outcome:
+
+- **Integrate** coherent, authorised work: finish and verify the delivery, commit only its uncontested touched paths, integrate it through the repository's selected merge policy, and remove the linked worktree.
+- **Dispose** work confirmed to have no retained value or explicitly abandoned by its owner: preserve anything still required elsewhere, then remove the linked worktree without integrating it.
+
+Do not delete a linked worktree merely because it is old, dirty, or unexpected; those are inspection signals, not evidence that its changes are disposable. Do not leave a finished worktree parked indefinitely after its delivery has integrated or been abandoned. Delete its local branch only after proving the branch tip is reachable from the intended integration branch or that the branches have no remaining diff. An upstream branch lagging behind the local integration branch is not evidence the local delivery remains unmerged. After physical removal, run the repository-safe worktree prune operation and confirm `git worktree list --porcelain` contains only intentionally active worktrees.
 
 ## Safe Git hygiene
 
@@ -80,6 +95,4 @@ The harness publishes hook payload sources; `ki-repo-dotfiles-chezmoi` may regis
 
 The native rubric exposes these four policy families as **judgment-only** review prompts. A rendered audit therefore leaves them unassessed until a reviewer records an outcome; it must never be interpreted as a Git-state pass. Gather the criterion's focused read-only evidence first: current and pre-edit status, expected `HEAD`, the thread's touched-path set, touched and staged diffs, and any contested paths for hygiene; current branch, worktree, protection, concurrency, and review evidence for the working approach; proposed diff and message for commit shape; and physical-worktree/process/file-type evidence for a lock candidate. The rubric does not execute Git commands or a private wrapper on the reviewer's behalf.
 
-No compatible mechanical enforcement, `.ki.toml` activation, user-skill activation, or commit-message enforcement exists yet.
-
-Any future enforcement must be limited to deterministic rules explicitly added to this standard after its host execution contract is designed.
+Package-backed repositories have deterministic local commit-message enforcement through `ki-engineering`; non-package repositories retain the judgment-only contract. Any broader enforcement must remain limited to deterministic rules explicitly added to this standard rather than moving message judgment into a private Git executor.

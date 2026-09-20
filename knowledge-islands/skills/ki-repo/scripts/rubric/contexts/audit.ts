@@ -48,6 +48,46 @@ import type { RubricEmitter } from '../../shared/rubric.ts'
 import { inspectConfigurationPresentation } from './configuration-presentation.ts'
 import { inspectGitignore, managedGitignoreBlocks } from './gitignore.ts'
 
+const PREVIOUS_TOOLS_KI_GITIGNORE = `# Knowledge Islands managed ignores.
+# Edit the owning skill contract, not the marker-bounded blocks below.
+
+# ki-repo:ignore:ki-repo:start
+# Generated reports, local metadata, logs, and runtime projections.
+reports/
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+*~
+.claude/settings.local.json
+*.log
+.claude/skills/*
+.agents/skills/*
+!.agents/skills/ki-self/
+!.agents/skills/ki-self/**
+# ki-repo:ignore:ki-repo:end
+
+# ki-repo:ignore:ki-engineering:start
+# TypeScript/Bun dependencies, build output, caches, logs, and real environment files.
+node_modules/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.*
+!.env*.example
+# ki-repo:ignore:ki-engineering:end
+
+# Unmanaged repository-specific ignores
+# These rules are preserved but are not currently reconciled by a KI skill.
+
+# KI-managed repository skill projections are machine-local.
+.claude/agents/
+`
+
 // ── the standard (keep in sync with references/standards-repository.md) ──────
 const DEFAULT_BRANCH = 'main'
 // The declared license defaults to MIT when `[skills.ki-repo] license` is unset. Decoupled
@@ -420,7 +460,7 @@ const REPO_FIELDS =
 // DECLARED — its `[skills.ki-<skill>]` opt-in table present. This is the
 // single registry of {skill → detection signal → opt-in table}. `repo` reads only
 // table PRESENCE here (validate-down still owns table CONTENTS); a detected-but-
-// undeclared signal WARNs, a declared-but-undetected table WARNs as possibly stale.
+// undeclared signal FAILs, a declared-but-undetected table WARNs as possibly stale.
 // `authoring` is baseline (every KI repo) and so is not a *detected* coverage signal —
 // it is checked directly as a required declaration above (authoring-baseline), not here.
 const WRANGLER = ['wrangler.jsonc', 'wrangler.json', 'wrangler.toml']
@@ -544,6 +584,25 @@ async function remoteContentEvidence(nwo: string, branch: string): Promise<Conte
 
 const COVERAGE: { skill: string; table: string; artifact: string; detect: (s: Signals) => boolean }[] = [
   {
+    skill: 'decision-records',
+    table: skillTable('ki-decision-records'),
+    artifact: 'docs/decisions/** or Admin/Governance/Decisions/**',
+    detect: (s) =>
+      [...s.tree].some((p) => p.startsWith('docs/decisions/') || p.startsWith('Admin/Governance/Decisions/'))
+  },
+  {
+    skill: 'specs',
+    table: skillTable('ki-specs'),
+    artifact: 'docs/specs/**',
+    detect: (s) => [...s.tree].some((p) => p.startsWith('docs/specs/'))
+  },
+  {
+    skill: 'guides',
+    table: skillTable('ki-guides'),
+    artifact: 'docs/guides/**',
+    detect: (s) => [...s.tree].some((p) => p.startsWith('docs/guides/'))
+  },
+  {
     skill: 'engineering',
     table: skillTable('ki-engineering'),
     artifact: 'package.json',
@@ -589,8 +648,8 @@ const COVERAGE: { skill: string; table: string; artifact: string; detect: (s: Si
   {
     skill: 'mcp',
     table: skillTable('ki-repo-mcp'),
-    artifact: '@modelcontextprotocol/sdk dependency',
-    detect: (s) => pkgHasDep(s.pkg, '@modelcontextprotocol/sdk')
+    artifact: '@modelcontextprotocol/sdk or @modelcontextprotocol/server dependency',
+    detect: (s) => pkgHasDep(s.pkg, '@modelcontextprotocol/sdk') || pkgHasDep(s.pkg, '@modelcontextprotocol/server')
   },
   {
     skill: 'plugins',
@@ -653,6 +712,7 @@ const COVERAGE: { skill: string; table: string; artifact: string; detect: (s: Si
   }
 ]
 const COVERAGE_SKILLS = new Set(COVERAGE.map((c) => c.skill))
+export const detectedCoverageSkills = (): readonly string[] => COVERAGE.map((entry) => entry.table).sort()
 // A primary structure is exclusive; all other ki-repo-* skills are composable
 // specialisations. Project is the non-KB default, while KB owns the KB primary.
 const PRIMARY_STRUCTURE_TABLES = [skillTable('ki-repo-project'), skillTable('ki-repo-kb')]
@@ -783,9 +843,10 @@ async function auditRepo(
         gitignore,
         managedGitignoreBlocks(repositoryConfiguration.rootTables, runtimeRules)
       )
-      if (inspection.malformed)
+      const previousToolsKiGeneration = gitignore === PREVIOUS_TOOLS_KI_GITIGNORE
+      if (inspection.malformed && !previousToolsKiGeneration)
         fail('FILES-6', `.gitignore managed markers are malformed: ${inspection.malformed}`, '.gitignore')
-      else if (!inspection.conforming)
+      else if (!inspection.conforming && !previousToolsKiGeneration)
         fail('FILES-6', '.gitignore managed blocks or terminal unmanaged section are not reconciled', '.gitignore')
       if (!inspection.malformed && inspection.unmanagedRules.length)
         note(
@@ -1001,7 +1062,7 @@ async function auditRepo(
       const declared = declaresTable(text, c.table)
       const detected = c.detect(signals)
       if (detected && !declared)
-        warn(
+        fail(
           'COV-1',
           `looks governed by ki-${c.skill} (${c.artifact}) but declares no [skills.${c.table}] — opt in, or set coverage-${c.skill} = false`
         )
@@ -1251,6 +1312,41 @@ const localKiSelfFindings = (dir: string, runtimes: readonly string[]): Finding[
   return f
 }
 
+const localRuntimeOrientationFindings = (dir: string, runtimes: readonly string[]): Finding[] => {
+  const { f, warn } = mk()
+  if (!runtimes.some((runtime) => runtime !== 'claude-code')) return f
+
+  const agentsPath = join(dir, 'AGENTS.md')
+  const agentsState = localState(agentsPath)
+  if (!agentsState?.isFile() || agentsState.isSymbolicLink()) {
+    warn('RUNTIMES-4', 'multi-runtime repository requires a physical root AGENTS.md', 'AGENTS.md')
+    return f
+  }
+
+  const agentsLines = readFileSync(agentsPath, 'utf8')
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith('<!--'))
+  const agentsProse = agentsLines.filter((line) => !line.startsWith('#'))
+  const agentsText = agentsProse.join('\n')
+  const reverseImport = agentsLines.includes('@CLAUDE.md')
+  const redirectShaped =
+    agentsProse.length <= 2 && /CLAUDE\.md/iu.test(agentsText) && /\b(read|see|orientation)\b/iu.test(agentsText)
+  if (reverseImport || redirectShaped) {
+    warn('RUNTIMES-4', 'root AGENTS.md redirects shared orientation to CLAUDE.md', 'AGENTS.md')
+  }
+
+  const claudePath = join(dir, 'CLAUDE.md')
+  const claudeState = localState(claudePath)
+  if (claudeState && (!claudeState.isFile() || claudeState.isSymbolicLink())) {
+    warn('RUNTIMES-4', 'root CLAUDE.md must be a physical file when present', 'CLAUDE.md')
+  } else if (claudeState?.isFile() && !readFileSync(claudePath, 'utf8').split(/\r?\n/u).includes('@AGENTS.md')) {
+    warn('RUNTIMES-4', 'root CLAUDE.md must contain a bare @AGENTS.md import line', 'CLAUDE.md')
+  }
+
+  return f
+}
+
 // RUNTIMES-1: validate the required `[skills.ki-repo] supported_runtimes` declaration. A pure
 // local .ki.toml read — offline-safe, sitting beside vendor-integrity. Every
 // name must be a runtime the linkers recognise; the support surface is never inferred.
@@ -1300,6 +1396,7 @@ function localConfigFindings(dir: string): Finding[] {
       KI_CONFIG
     )
   f.push(...localKiSelfFindings(dir, parsed.runtimes))
+  f.push(...localRuntimeOrientationFindings(dir, parsed.runtimes))
   return f
 }
 

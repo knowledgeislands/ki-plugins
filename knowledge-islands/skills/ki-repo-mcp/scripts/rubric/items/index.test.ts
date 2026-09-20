@@ -23,9 +23,13 @@ test('the catalogue exposes every ordered MCP family and criterion', () => {
   expect(definition.name).toBe('ki-repo-mcp')
   expect(definition.packageScripts).toEqual([
     'ki:generate:client',
+    'ki:server:auth:dev',
+    'ki:server:auth:start',
     'ki:server:mcp:dev',
     'ki:server:mcp:inspect',
     'ki:server:mcp:start',
+    'ki:test:record',
+    'ki:test:replay',
     'ki:test:smoke'
   ])
   expect(definition.createSession).toBeFunction()

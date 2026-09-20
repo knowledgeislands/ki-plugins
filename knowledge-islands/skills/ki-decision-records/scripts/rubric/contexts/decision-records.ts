@@ -6,6 +6,7 @@ import type {
   RubricPublicationContext,
   RubricSession
 } from '../../shared/rubric.ts'
+import { projectSharedDecisionRecord } from './shared-projection.ts'
 
 const CODE_DIR = 'docs/decisions'
 const KB_DIR = 'Admin/Governance/Decisions'
@@ -76,6 +77,8 @@ export type DecisionRecord = {
   decisionTypeUrl?: string
   decisionType?: string
   sharedRecord: boolean
+  sharedProjection?: string
+  sharedProjectionIssue?: string
   headingId?: string
   headingTitle?: string
   missingSections: readonly string[]
@@ -208,6 +211,8 @@ const readRecords = (directory: string, entries: readonly string[], indexFile: s
     const id = `${prefix}-${scope}-${serial}`
     const headingTitle = heading[2].trim()
     const expected = PREFIX_TO_TYPE[prefix] as { decisionType: string; decisionTypeUrl: string }
+    const sharedRecord = frontmatterValue(frontmatter, 'shared_record') === 'true'
+    const sharedProjection = sharedRecord ? projectSharedDecisionRecord(content) : undefined
     records.push({
       file,
       id,
@@ -230,7 +235,9 @@ const readRecords = (directory: string, entries: readonly string[], indexFile: s
       ...(frontmatterValue(frontmatter, 'decision_type')
         ? { decisionType: frontmatterValue(frontmatter, 'decision_type') }
         : {}),
-      sharedRecord: frontmatterValue(frontmatter, 'shared_record') === 'true',
+      sharedRecord,
+      ...(sharedProjection?.projection ? { sharedProjection: sharedProjection.projection } : {}),
+      ...(sharedProjection?.issue ? { sharedProjectionIssue: sharedProjection.issue } : {}),
       headingId: id,
       headingTitle,
       missingSections: ['## Context', '## Decision', '## Consequences'].filter((section) => !body.includes(section)),

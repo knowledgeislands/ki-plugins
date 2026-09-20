@@ -84,20 +84,18 @@ const configRule = (
   passMessage: string,
   failMessage: string
 ): RubricItem<WebsiteContext> =>
-  mechanical(
-    code,
-    title,
-    description,
-    level,
-    (context) =>
+  mechanical(code, title, description, level, (context) => {
+    const matched = context.configSources.find((source) => pass.test(source.content))
+    return (
       inactive(context) ??
       one(
-        pass.test(context.config),
+        Boolean(matched),
         passMessage,
         failMessage,
-        context.cfgName ? context.siteAt(context.cfgName) : undefined
+        matched?.path ?? (context.cfgName ? context.siteAt(context.cfgName) : undefined)
       )
-  )
+    )
+  })
 
 const script = (context: WebsiteContext, name: string): string | undefined => context.scripts[name]
 
@@ -219,11 +217,31 @@ const WEB_7 = mechanical(
   (context) => inactive(context) ?? one(context.has('ROADMAP.md'), 'ROADMAP.md present', 'no ROADMAP.md', 'ROADMAP.md')
 )
 
-const WEB_8 = judgment(
+const WEB_8 = mechanical(
   'WEB-8',
   'Workspace declaration',
   'The root package manifest declares a workspace covering the selected site root.',
-  'Does the root workspace declaration cover `[skills.ki-repo-website].site-root` (conventionally `apps/site` via `apps/*`)?'
+  'FAIL',
+  (context) => {
+    const stop = inactive(context)
+    if (stop) return stop
+    if (!context.rootPackageOk)
+      return [{ status: 'VIOLATION', message: 'root package.json unavailable or malformed', subject: 'package.json' }]
+    if (context.siteRoot === '.')
+      return [
+        {
+          status: 'VIOLATION',
+          message: 'content website must use a selected application workspace rather than the repository root',
+          subject: '.ki.toml'
+        }
+      ]
+    return one(
+      context.workspaceCoversSiteRoot,
+      `root workspace declaration covers ${context.siteRoot}`,
+      `root workspace declaration does not cover ${context.siteRoot}`,
+      'package.json'
+    )
+  }
 )
 
 const WEB_9 = mechanical(
@@ -245,8 +263,8 @@ const WEB_9 = mechanical(
 const WEB_10 = judgment(
   'WEB-10',
   'Local script ownership',
-  'The selected site package uses ordinary local script names while the repository root owns public `ki:site:*` aliases.',
-  'Does the selected site package avoid duplicating the root-owned public `ki:site:*` aliases?'
+  'The selected site workspace uses the content skill local script names without root `script_exclusions`, while the repository root owns public `ki:site:*` aliases.',
+  'Does the selected site package keep the exact local script contract while the root exposes only the public `ki:site:*` seam?'
 )
 
 const WEB_11 = judgment(
@@ -259,7 +277,7 @@ const WEB_11 = judgment(
 const WEB_12 = configRule(
   'WEB-12',
   'Portable URL transform',
-  'A transform rewrites absolute internal URLs to relative URLs.',
+  'Selected configuration sources include a transform that rewrites absolute internal URLs to relative URLs.',
   'FAIL',
   /toRelativeOutputUrl|explicit-index-links|addTransform[\s\S]*\brelative\(/,
   'portable dist URL transform present',
@@ -269,7 +287,7 @@ const WEB_12 = configRule(
 const WEB_13 = configRule(
   'WEB-13',
   'TypeScript data extension',
-  "`addDataExtension('ts', …)` is registered.",
+  "Selected configuration sources register `addDataExtension('ts', …)`.",
   'WARN',
   /addDataExtension\(\s*["']ts["']/,
   "addDataExtension('ts') registered",
@@ -279,7 +297,7 @@ const WEB_13 = configRule(
 const WEB_14 = configRule(
   'WEB-14',
   'JSON5 data extension',
-  "`addDataExtension('json5', …)` is registered.",
+  "Selected configuration sources register `addDataExtension('json5', …)`.",
   'WARN',
   /addDataExtension\(\s*["']json5["']/,
   "addDataExtension('json5') registered",
@@ -289,7 +307,7 @@ const WEB_14 = configRule(
 const WEB_15 = configRule(
   'WEB-15',
   'Tailwind lifecycle hook',
-  '`eleventy.before` compiles Tailwind in build mode.',
+  'Selected configuration sources use `eleventy.before` to compile Tailwind in build mode.',
   'WARN',
   /on\(\s*["']eleventy\.before["'][\s\S]*tailwindcss/,
   'Tailwind compiled through eleventy.before',
@@ -299,7 +317,7 @@ const WEB_15 = configRule(
 const WEB_16 = configRule(
   'WEB-16',
   'CSS watch target',
-  '`addWatchTarget` observes the compiled CSS.',
+  'Selected configuration sources use `addWatchTarget` to observe the compiled CSS.',
   'WARN',
   /addWatchTarget/,
   'addWatchTarget present',
@@ -446,13 +464,13 @@ const WEB_29 = judgment(
 const WEB_30 = mechanical(
   'WEB-30',
   'Local build and development scripts',
-  'The selected site package has a local `build` script invoking Eleventy and a local `dev` script using `concurrently`.',
+  'The selected site package has a local `build` script invoking Eleventy and a local `ki:site:dev` script using `concurrently`.',
   'WARN',
   (context) => {
     const stop = inactive(context)
     if (stop) return stop
     const build = script(context, 'build')
-    const development = script(context, 'dev')
+    const development = script(context, 'ki:site:dev')
     return [
       build && /eleventy/.test(build)
         ? { status: 'PASS', message: 'build script invokes Eleventy', subject: context.packagePath }
@@ -473,18 +491,25 @@ const WEB_30 = mechanical(
 const WEB_31 = mechanical(
   'WEB-31',
   'Local development script fan-out',
-  'The local `dev` script fans out to local `dev:css` and `dev:serve` scripts.',
+  'The local `ki:site:dev` script fans out to local `ki:site:dev:css` and `ki:site:dev:serve` scripts.',
   'WARN',
   (context) => {
     const stop = inactive(context)
     if (stop) return stop
-    const development = script(context, 'dev')
+    const development = script(context, 'ki:site:dev')
     return development && /concurrently/.test(development)
-      ? ['dev:css', 'dev:serve'].map((part) => ({
-          status: script(context, part) ? ('PASS' as const) : ('VIOLATION' as const),
-          message: script(context, part) ? `${part} present` : `${part} missing`,
-          subject: context.packagePath
-        }))
+      ? ['ki:site:dev:css', 'ki:site:dev:serve'].map((part) => {
+          const present = Boolean(script(context, part))
+          const referenced = development.includes(part)
+          return {
+            status: present && referenced ? ('PASS' as const) : ('VIOLATION' as const),
+            message:
+              present && referenced
+                ? `${part} present and referenced`
+                : `${part} ${present ? 'is not referenced by ki:site:dev' : 'missing'}`,
+            subject: context.packagePath
+          }
+        })
       : [{ status: 'NOT_APPLICABLE', message: 'development script has no concurrently fan-out' }]
   }
 )
@@ -608,11 +633,10 @@ const WEB_42 = mechanical(
     if (stop) return stop
     if (!context.kiWebsiteTable)
       return [{ status: 'NOT_APPLICABLE', message: '[skills.ki-repo-website-content] table is absent' }]
-    const keys = Object.keys(context.kiWebsiteTable)
-    return keys.length
-      ? keys.map((key) => ({
+    return context.overlayViolations.length
+      ? context.overlayViolations.map((message) => ({
           status: 'VIOLATION' as const,
-          message: `unknown key under [skills.ki-repo-website-content]: ${key}`,
+          message,
           subject: '.ki.toml'
         }))
       : [

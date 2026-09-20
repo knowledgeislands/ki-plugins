@@ -19,9 +19,13 @@ export default {
   concern: 'Knowledge Islands MCP servers',
   packageScripts: [
     'ki:generate:client',
+    'ki:server:auth:dev',
+    'ki:server:auth:start',
     'ki:server:mcp:dev',
     'ki:server:mcp:inspect',
     'ki:server:mcp:start',
+    'ki:test:record',
+    'ki:test:replay',
     'ki:test:smoke'
   ],
   createSession: createMcpSession,

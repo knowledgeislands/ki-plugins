@@ -10,7 +10,7 @@ Its responsibility ends at selecting, promoting, deferring, or spawning due work
 
 - [1. Ground](#1-ground)
 - [2. Triage inbound handoffs](#2-triage-inbound-handoffs)
-- [3. Review relevance](#3-review-relevance)
+- [3. Review relevance and capture](#3-review-relevance-and-capture)
 - [4. Select candidates](#4-select-candidates)
 - [5. Defer](#5-defer)
 - [6. Compare, rank, and confirm](#6-compare-rank-and-confirm)
@@ -49,13 +49,19 @@ After a terminal decision, report the next condition required by the sender's ob
 
 Receiver-local standing knowledge intake is not an inbound trade disposition. When `ki-trades` validates a marked `STI-*` capture against an exact active subtype grant, route the knowledge proportionately: augment an existing record only inside its established goal and boundary; create a local draft for a distinct insight, decision, dependency, or scope; or retain directly as canonical knowledge when knowledge itself is the outcome. A public contract or implementation consequence still becomes receiver-local work. Never infer selection, priority, implementation, acceptance, completion, or publication authority from the standing route, source repository, or Agora membership.
 
-## 3. Review relevance
+## 3. Review relevance and capture
 
 Run this pass for `--review`, or briefly when grounded evidence shows a material concern.
 
 Identify only evidence-backed proposals: stale or obsolete work, duplicates, changed Waiting conditions, changed dependencies, or an item at the wrong horizon.
 
-Do not change content until the user confirms exact wording and placement.
+Do not change adopted content until the user confirms exact wording and placement. Bounded Triage capture follows the exception below.
+
+### Capture substantive prospective work
+
+During the current interaction, capture a distinct prospective outcome, concern, dependency, or decision once it is substantive enough to state a plain-language Goal, Context, Boundary, and decision-useful Discussion. Do not require prior approval. Allocate the next canonical identity, create one `horizon: triage`, `status: draft` record with matching timestamps, and report the capture after writing it. Capture creates durable intake only; it does not adopt, prioritise, plan, implement, batch, accept, or prune work.
+
+Before creating a record, search the selected adapter for an existing owner. Do not capture rhetorical examples, already-resolved observations, or duplicates. If an existing Triage record owns the same Goal and Boundary, new decision-useful detail within that boundary may enrich it automatically and must advance its timestamp. If an adopted record owns the concern, report that owner and require confirmation before changing it. Adoption into another horizon requires explicit human approval and remains here. Rejection, duplicate, or merge disposition requires exact human approval and routes to `ki-accept`, which records Triage as `done` before any later prune; it is never a direct deletion. Approval alone never bypasses the lifecycle or done-before-prune rules.
 
 ## 4. Select candidates
 
@@ -63,8 +69,9 @@ Do not change content until the user confirms exact wording and placement.
 
 1. Gather dependency-ready `now` and `next` records. Reuse their canonical record; if several are independently ready, recommend a small ranked set only when each retains its own lifecycle and the user confirms the set and order.
 2. Only when none is eligible, assess `soon` records against the Next entry rule. After confirmation, change horizon to `next`, run the adapter audit, then re-evaluate it at the destination.
-3. Only when Soon has no viable record, assess Future candidates. Move directly to Next only when the full Next rule is met and Soon adds no value; otherwise move to Soon once the intended outcome and boundary are known. Re-evaluate after every confirmed move.
-4. Reconsider Waiting-for or Parked items only when their named external condition or return trigger changed.
+3. Only when Soon has no viable record, assess adopted Future work. Move directly to Next only when the full Next rule is met and Soon adds no value; otherwise move to Soon once the intended outcome and boundary are known. Re-evaluate after every confirmed move.
+4. Review Triage separately from candidate selection. Present the exact destination and why it satisfies that horizon; adopt only after explicit human confirmation, then re-evaluate at the destination.
+5. Reconsider Waiting-for or Parked items only when their named external condition or return trigger changed.
 
 ### Knowledge Bases
 
@@ -93,7 +100,7 @@ If no group meets every condition, say so briefly and use the ordinary single-it
 
 Resolve the exact record and identify linked dependencies before proposing it.
 
-Use Soon only for understood but non-immediate work; Waiting for only with a named external condition; Parked only with an intentional pause and named return trigger; Future only when re-scoping is needed, adding `candidate: true`.
+Use Soon only for understood but non-immediate work; Waiting for only with a named external condition; Parked only with an intentional pause and named return trigger; Future only for adopted long-term work needing re-scoping. Triage is not a deferral destination: moving adopted work back into intake requires an explicit human disposition.
 
 When the named external condition is observation of one or more trades, add the flat `waiting_on_trades: [TRD-…]` field and state in prose whether the item awaits receipt, a terminal receiver decision, or completion of linked receiver-local work. Do not add trade identities to `blocks` or `blocked_by`: those arrays remain local work-item dependencies. Remove `waiting_on_trades` when moving the item out of Waiting for.
 
@@ -125,7 +132,7 @@ Two ready candidates can both be worthwhile: a narrow local repair may have low 
 
 Present those facts directly, choose only after the human confirms the order, and record neither candidate as objectively "higher value" once the unavailable dependency or chosen sequencing changes the decision.
 
-Before a write, show selected items, any proposed batch set and order, exact frontmatter or wording changes, and dependency effects.
+Before a selection, adoption, promotion, or deferral write, show selected items, any proposed batch set and order, exact frontmatter or wording changes, and dependency effects. The bounded Triage capture rule above is the sole no-prior-confirmation exception.
 
 Require explicit confirmation, then run the applicable adapter audit.
 
@@ -139,13 +146,19 @@ That handoff does not permit `ki-next` to infer batch, selection, or implementat
 
 ## 7. Spawn due housekeeping work
 
-After grounding and before ordinary candidate selection, evaluate each active housekeeping template under the adapter's template horizon. A template is due only when its cadence, last-run evidence, grace period, and spawn policy say so, and it has no active run.
+After grounding and before ordinary candidate selection, evaluate each active housekeeping template under the adapter's template horizon. Use `ki-work-housekeeping`'s read-only `evaluateHousekeepingSchedule({ repository, schedule, today })` capability with freshly read template fields and an explicit UTC date. Its owner standard defines calendar-or-commit eligibility, first-parent evidence, missing-history diagnostics, initial runs, and grace. Do not reimplement that calculation or treat unknown volume as zero; preserve manual confirmation, paused, and active-run guards.
 
-For each due template, present the exact proposed work record, destination (normally Now or Next), template link, and policy effect. Spawn automatically only when the template expressly permits automatic spawning; otherwise require confirmation. The spawned record enters as `draft` and follows the ordinary shared lifecycle. In the same coherent change, set only `active-run` to the linked record identity; never change `last-run` at spawn. `ki-accept` records successful completion by updating `last-run` and clearing `active-run` only after the linked run is accepted as `done`.
+For each due template, present the exact proposed work record, destination (normally Now or Next), template link, and policy effect. Spawn automatically only when the template expressly permits automatic spawning; otherwise require confirmation. The spawned record enters as `draft` and follows the ordinary shared lifecycle. In the same coherent change, set only `active-run` to the linked record identity; never change `last-run` or `last-run-ref` at spawn. `ki-accept` records successful completion by recording the actual successful completion date in `last-run`, the evidenced reviewed revision in `last-run-ref`, and clearing `active-run` only after the linked run is accepted as `done`.
 
 Never implement a template directly, spawn a duplicate active run, or leave a due run in `Streams/Housekeeping`.
 
+### Timestamp ownership
+
+For a newly captured local record, write one canonical UTC-second instant to both `created_at` and `updated_at`. For any confirmed promotion, deferral, spawned-run linkage, or other semantic work-item mutation, preserve `created_at` and advance `updated_at` to the later of the current UTC second or one second after its observed value. Stop before publication when either timestamp is absent or malformed, or when the source revision changed after inspection. Read-only inventory never advances a timestamp. Remote adapters project provider-native timestamps and do not duplicate them into remote bodies.
+
 ## 8. Finish
+
+During a normal next-work cycle, apply the `ki-batch` “Batch retention” rule to `+/_BATCHES/`. Remove inactive records as soon as useful outcomes and follow-up are dispositioned. Treat an incompletely dispositioned inactive record at or after seven days as overdue: route useful follow-up, record when none remains, then prune it. Report the exact removals. This routine maintenance is authorised without another confirmation; it does not select, accept, or prune roadmap work. No other working-area cleanup is implied.
 
 Report each confirmed handoff disposition, synergy decision (including excluded near-matches), files changed, selected work, and audit result.
 

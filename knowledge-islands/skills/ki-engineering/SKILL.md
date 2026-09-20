@@ -1,12 +1,15 @@
 ---
 name: ki-engineering
 ki-kind: governance
+ki-applicability: detected
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
-owns: [mise.toml, tsconfig.json, biome.json, knip.json]
-contributes: ['.ki.toml', '.gitignore', package.json]
+owns: [mise.toml, tsconfig.json, biome.json, knip.json, commitlint.config.ts]
+contributes: ['.ki.toml', '.gitignore', package.json, '.husky/pre-commit', '.husky/commit-msg']
 description: >
-  Use to audit or conform the shared Knowledge Islands TypeScript/Bun engineering standard: comprehension-first modularity and reuse; architectural-boundary testing; package scripts, tsconfig, Biome, and toolchain consistency. Triggers: "audit our engineering standards", "is this code too DRY", "are tests at the API boundary". For repository configuration use `ki-repo`; Markdown/TOML style use `ki-authoring`; MCP specifics use `ki-repo-mcp`.
+  Audit or conform KI TypeScript/Bun engineering: modularity, reuse, boundary testing, package scripts,
+  tsconfig, Biome, and toolchain consistency. Use `ki-repo` for repository configuration, `ki-authoring` for
+  documents, and `ki-repo-mcp` for MCP specifics.
 argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 ---
 
@@ -25,10 +28,11 @@ This is a **standard, base-agnostic governance skill**. It hard-codes no single 
 
 ## The common standard at a glance
 
-- **package.json** — `type: module`, `packageManager: bun@1.3.x`, `engines.node >= 22`; no aggregate or derived governance aliases; plus `clean` and `prepare`. `ki repo` invokes the declared native rubrics directly. Code tools run inside `ki-engineering`; Markdown tools run inside `ki-authoring`. Repository-owned scripts use the `self:` prefix; exact externally constrained bare exceptions use `script_exclusions`.
+- **package.json and Git hooks** — `type: module`, `packageManager: bun@1.3.x`, `engines.node >= 22`; no aggregate or derived governance aliases; plus `clean` and Husky `prepare`. The common `pre-commit` prefix runs lint-staged then check-only Syncpack, while `commit-msg` runs Commitlint against `ki-git`'s message policy. `ki repo` invokes the declared native rubrics directly. Code tools run inside `ki-engineering`; Markdown tools run inside `ki-authoring`. The root manifest uses claimed `ki:` scripts, repository-owned `self:` scripts, and exact externally constrained bare `script_exclusions`; selected workspace packages follow their artifact skill's local command contract.
 - **Bun vs Node** — install/dev under Bun, `dist/` runs under Node ≥ 22. The bare `test` script may select Bun's runner, but **no other package script may contain `bun test`**: outside the governed entrypoint it bypasses that policy, so use `bun run test`. `NODE_ENV=development` only in dev/inspect scripts; the config loader calls `process.loadEnvFile()` in a try/catch for parity.
 - **Code design** — modules remain cohesive, code privileges comprehension over clever abstraction, and reuse is extracted only when it represents a stable shared concept. A change-aware consistency review is advisory: Git trailer evidence scopes a human or model review but never triggers one automatically.
 - **tsconfig / biome** — the universal `tsconfig.json` invariants (strict, nodenext, noEmit, …) for every repo; the fuller shared base for compiled-TS repos. `biome.json` matching the shared formatter/linter fields.
+- **Turborepo owns the monorepo task graph** — Bun workspaces give no task graph and no input hashing, so any repo with a `workspaces` array runs its stages through Turborepo, not a hand-rolled runner or a fixed `bun run --cwd` chain. Its cache unit is a task in a package, so every workspace declares its own `build`, `typecheck`, and `test`; `dependsOn: ["^task"]` is correctness once suites read siblings' source, not ordering. `inputs` are load-bearing — a task whose `inputs` miss a file it reads reports a green it never earned — so declare them with the change that needs them and prove the miss with a random edit. Hash a deployable's whole workspace rather than a glob list, and keep workspace packages out of the root manifest or the graph flattens.
 - **Capability conditionals** — tests ⇒ a bare `test` entrypoint using the repo's chosen runner; `vitest.config.*` ⇒ the canonical Vitest scripts + 100% coverage under `reports/coverage`, justified through supported observable contracts rather than implementation-only seams; compiled build ⇒ `build`/`tsconfig.build.json`/`files` + the **cli-chmod rule** (`build` chmods `dist/cli/cli.js` iff `src/cli/`, and never a server bin); env ⇒ `.env*.example` + `NODE_ENV`-in-dev.
 
 ## Layering — how a repo gets fully audited

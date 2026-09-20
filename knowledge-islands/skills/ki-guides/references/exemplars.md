@@ -41,3 +41,13 @@ The relevant check exits successfully and the working tree contains only the int
 
 If a generated output differs, inspect its source-of-truth and rerun the owned generator; do not edit generated content by hand.
 ```
+
+## Optional developer delivery split
+
+```text
+docs/guides/developer/
+├── definition-of-done.md
+└── releasing.md
+```
+
+Use this split when a repository benefits from distinct local routes for completion readiness and release publication. The repository defines both procedures; a specialised repository-kind overlay may require their presence without prescribing their contents.

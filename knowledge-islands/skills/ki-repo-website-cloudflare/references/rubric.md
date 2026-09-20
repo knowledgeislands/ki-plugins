@@ -82,7 +82,7 @@ Workers Static Assets hosting standard.
   - _Conforming guidance:_ Revise the hosting design through the responsible site owner, record a named gap, or record an explicit justified exclusion.
 - **WCF-20 [M] — hosting opt-in** — The Cloudflare opt-in table is present. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
-- **WCF-21 [M] — opt-in validation** — The hosting table is keyless and consumes the valid website-core site root. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
+- **WCF-21 [M] — opt-in validation** — The hosting table is keyless or selects a valid non-empty subset of named website sites. (standards-cloudflare-hosting.md#1-model--workers-static-assets-not-pages)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
 - **WCF-22 [M + J] — hosting delta** — This remains the hosting delta only. (standards-cloudflare-hosting.md#7-boundaries--what-is-not-in-scope)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.

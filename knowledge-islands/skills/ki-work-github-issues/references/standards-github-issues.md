@@ -31,6 +31,10 @@ An Issue is the remote record. Its body and comments are the intended locations 
 
 A transfer is an authority-gated migration stop, not a normal lifecycle transition. Before any future authorised operation, `KI-HARNESS-FND-014` must re-resolve the current repository and locator, verify the Issue is not a pull request, inspect the current lifecycle fields and retained aliases, identify transferred labels/milestones that did not survive, and obtain fresh authority for the new write set. This skill performs none of those reads or writes.
 
+## Timestamp projection
+
+The adapter projects GitHub's provider-native Issue creation and update timestamps as portable `created_at` and `updated_at` values. It does not duplicate them into the Issue body or treat a KI read as a provider update. The executor must return the post-write provider timestamp with its opaque snapshot evidence rather than manufacture a local timestamp.
+
 ## Execution boundary
 
 Remote discovery, authentication, filtering, stale-read checks, conflict handling, and every mutation fail closed pending `KI-HARNESS-FND-014`. A future executor must re-read each Issue immediately before an approved write and stop on changed lifecycle metadata, conflicting human updates, missing permissions, an uncertain current locator, or an Issue response that represents a pull request.

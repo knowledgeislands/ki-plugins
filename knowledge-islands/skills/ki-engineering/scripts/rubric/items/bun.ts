@@ -1,5 +1,5 @@
 import type { RubricFamily } from '../../shared/rubric.ts'
-import type { BunRubricContext, EngineeringRubricContext } from '../contexts/engineering.ts'
+import { auditEvidence, type BunRubricContext, type EngineeringRubricContext } from '../contexts/engineering.ts'
 
 export const BUN: RubricFamily<EngineeringRubricContext, BunRubricContext> = {
   code: 'BUN',
@@ -19,6 +19,25 @@ export const BUN: RubricFamily<EngineeringRubricContext, BunRubricContext> = {
         prompt: 'Where `.env` is loaded, does the loader call `process.loadEnvFile()` safely?',
         outcomes: ['conforming', 'gap', 'exclusion'],
         guidance: 'Add the guarded Node parity call, record a named Gap, or record an explicit capability exclusion.'
+      }
+    },
+    {
+      code: 'BUN-2',
+      title: 'Authored scripts and configuration are TypeScript-first',
+      description:
+        'Tracked repository scripts and tool configuration avoid `.mjs`; Bun executes authored TypeScript directly while Node remains the compiled consumer runtime.',
+      sources: ['standards-engineering.md'],
+      mechanical: {
+        level: 'FAIL',
+        audit: {
+          phase: 'INSPECT',
+          run: (context) => auditEvidence(context.bun2, 'FAIL')
+        },
+        remediation: {
+          class: 'diagnostic',
+          guidance:
+            'Rename each tracked `.mjs` source or configuration file to `.ts`, update its callers to use Bun, and verify the consuming tool supports TypeScript.'
+        }
       }
     }
   ]

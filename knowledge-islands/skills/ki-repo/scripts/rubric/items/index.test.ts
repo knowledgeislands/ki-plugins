@@ -46,4 +46,12 @@ describe('ki-repo rubric catalogue', () => {
     expect(item?.mechanical?.remediation.class).toBe('automatic')
     expect(item?.mechanical?.conform).toBeDefined()
   })
+
+  test('coverage declares the warning level emitted for stale opt-ins', () => {
+    const families = definition.families as readonly {
+      items: readonly { code: string; mechanical?: { overrideLevels?: readonly string[] } }[]
+    }[]
+    const item = families.flatMap(({ items }) => items).find(({ code }) => code === 'COV-1')
+    expect(item?.mechanical?.overrideLevels).toEqual(['WARN'])
+  })
 })

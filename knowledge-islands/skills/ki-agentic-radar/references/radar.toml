@@ -1,0 +1,452 @@
+schema = 1
+reviewed_on = "2026-09-17"
+
+[evidence]
+
+[evidence.mcp-spec-2026-07-28]
+id = "mcp-spec-2026-07-28"
+title = "Model Context Protocol specification, 2026-07-28"
+url = "https://modelcontextprotocol.io/specification/2026-07-28/basic"
+evidence_class = "normative-text"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "The current versioned MCP specification defines the protocol's base lifecycle and capabilities."
+
+[evidence.mcp-aaif-governance]
+id = "mcp-aaif-governance"
+title = "MCP joins the Agentic AI Foundation"
+url = "https://blog.modelcontextprotocol.io/posts/2025-12-09-mcp-joins-agentic-ai-foundation/"
+evidence_class = "governance-release"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "The MCP project records its transfer to the Linux Foundation's Agentic AI Foundation."
+
+[evidence.mcp-sdk-conformance]
+id = "mcp-sdk-conformance"
+title = "MCP SDK tier system"
+url = "https://modelcontextprotocol.io/community/sdk-tiers"
+evidence_class = "conformance-demonstration"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "Tier 1 requires all applicable SDK conformance scenarios to pass; this is SDK-scoped, not ecosystem-wide certification."
+
+[evidence.mcp-openai-implementation]
+id = "mcp-openai-implementation"
+title = "OpenAI Agents SDK MCP integration"
+url = "https://openai.github.io/openai-agents-js/guides/mcp/"
+evidence_class = "independent-implementation"
+source_role = "corroborating"
+reviewed_on = "2026-09-14"
+notes = "OpenAI documents independent MCP client support in its Agents SDK."
+
+[evidence.mcp-cloudflare-implementation]
+id = "mcp-cloudflare-implementation"
+title = "Cloudflare Agents MCP implementation"
+url = "https://developers.cloudflare.com/agents/model-context-protocol/"
+evidence_class = "independent-implementation"
+source_role = "corroborating"
+reviewed_on = "2026-09-14"
+notes = "Cloudflare documents independent MCP client and server support in its Agents platform."
+
+[evidence.mcp-ki-local]
+id = "mcp-ki-local"
+title = "Knowledge Islands MCP binding"
+url = "https://github.com/knowledgeislands/ki-agentic-harness/tree/main/skills/governance/ki-binding"
+evidence_class = "local-evaluation"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "Knowledge Islands has an accepted portable MCP inventory and binding capability."
+
+[evidence.acp-v1-spec]
+id = "acp-v1-spec"
+title = "Agent Client Protocol version 1 overview"
+url = "https://agentclientprotocol.com/protocol/v1/overview"
+evidence_class = "normative-text"
+source_role = "primary"
+reviewed_on = "2026-09-17"
+notes = "The stable wire protocol identifies protocolVersion 1 independently of schema package releases."
+
+[evidence.acp-schema-v1-22-0]
+id = "acp-schema-v1-22-0"
+title = "Agent Client Protocol schema v1.22.0"
+url = "https://github.com/agentclientprotocol/agent-client-protocol/releases/tag/schema-v1.22.0"
+evidence_class = "governance-release"
+source_role = "primary"
+reviewed_on = "2026-09-17"
+notes = "The official project published stable schema release v1.22.0 on 2026-09-17 while retaining wire protocolVersion 1."
+
+[evidence.acp-schema-v2-alpha-4]
+
+id = "acp-schema-v2-alpha-4"
+title = "Agent Client Protocol schema v2.0.0 alpha 4"
+url = "https://github.com/agentclientprotocol/agent-client-protocol/releases/tag/schema-v2.0.0-alpha.4"
+evidence_class = "governance-release"
+source_role = "counter-evidence"
+reviewed_on = "2026-09-17"
+notes = "The official project published a v2 alpha on 2026-09-17; it is not a stable wire-protocol replacement."
+
+[evidence.acp-governance]
+id = "acp-governance"
+title = "Agent Client Protocol governance"
+url = "https://agentclientprotocol.com/community/governance"
+evidence_class = "governance-release"
+source_role = "primary"
+reviewed_on = "2026-09-17"
+notes = "Zed and JetBrains describe interim joint governance and an intention to move to an independent foundation."
+
+[evidence.acp-gemini-implementation]
+id = "acp-gemini-implementation"
+title = "Gemini CLI Agent Client Protocol adapter"
+url = "https://github.com/google-gemini/gemini-cli/blob/main/packages/cli/src/acp/README.md"
+evidence_class = "independent-implementation"
+source_role = "corroborating"
+reviewed_on = "2026-09-17"
+notes = "Google's Gemini CLI repository documents an ACP adapter implementation."
+
+[evidence.acp-codecompanion-implementation]
+id = "acp-codecompanion-implementation"
+title = "CodeCompanion Agent Client Protocol client"
+url = "https://github.com/olimorris/codecompanion.nvim/blob/main/doc/codecompanion.txt"
+evidence_class = "independent-implementation"
+source_role = "corroborating"
+reviewed_on = "2026-09-17"
+notes = "CodeCompanion documents an ACP client that can connect to compatible agents."
+
+[evidence.acp-gemini-codecompanion-demo]
+id = "acp-gemini-codecompanion-demo"
+title = "CodeCompanion and Gemini CLI ACP integration"
+url = "https://github.com/olimorris/codecompanion.nvim/discussions/2030"
+evidence_class = "interoperability-demonstration"
+source_role = "corroborating"
+reviewed_on = "2026-09-17"
+notes = "The CodeCompanion project records a working cross-project ACP integration with Gemini CLI."
+
+[evidence.acp-remote-limit]
+id = "acp-remote-limit"
+title = "Agent Client Protocol remote-agent limitation"
+url = "https://agentclientprotocol.com/get-started/introduction"
+evidence_class = "normative-text"
+source_role = "counter-evidence"
+reviewed_on = "2026-09-17"
+notes = "The official introduction marks full remote-agent support as work in progress."
+
+[evidence.ahp-spec-0-9-0]
+id = "ahp-spec-0-9-0"
+title = "Agent Host Protocol specification overview"
+url = "https://microsoft.github.io/agent-host-protocol/specification/overview.html"
+evidence_class = "normative-text"
+source_role = "primary"
+reviewed_on = "2026-09-17"
+notes = "The Microsoft specification defines the host-agent protocol and points to specification version 0.9.0 as the current published version."
+
+[evidence.ahp-release-0-9-0]
+id = "ahp-release-0-9-0"
+title = "Agent Host Protocol specification v0.9.0 release"
+url = "https://github.com/microsoft/agent-host-protocol/releases/tag/spec%2Fv0.9.0"
+evidence_class = "governance-release"
+source_role = "primary"
+reviewed_on = "2026-09-17"
+notes = "The official project released specification v0.9.0 on 2026-08-28."
+
+[evidence.ahp-reference-implementations]
+id = "ahp-reference-implementations"
+title = "Agent Host Protocol implementation catalogue"
+url = "https://microsoft.github.io/agent-host-protocol/guide/implementations.html"
+evidence_class = "reference-implementation"
+source_role = "primary"
+reviewed_on = "2026-09-17"
+notes = "The official catalogue lists Microsoft project clients, AHPX, a VS Code client, and a VS Code reference server."
+
+[evidence.ahp-wyrd-server]
+
+id = "ahp-wyrd-server"
+title = "Wyrd Company Agent Host Protocol server"
+url = "https://github.com/wyrd-company/ahp-server"
+evidence_class = "independent-implementation"
+source_role = "corroborating"
+reviewed_on = "2026-09-17"
+notes = "The independent TypeScript server implements a bounded AHP surface and publishes compatibility tests against Microsoft's TypeScript client; this is implementation evidence, not an independently witnessed interoperability result."
+
+[evidence.ahp-mixed-stability]
+id = "ahp-mixed-stability"
+title = "Agent Host Protocol versioning and stability policy"
+url = "https://microsoft.github.io/agent-host-protocol/specification/versioning"
+evidence_class = "normative-text"
+source_role = "counter-evidence"
+reviewed_on = "2026-09-17"
+notes = "The pre-1.0 policy permits unstable channels and breaking changes, so release publication is not evidence of ecosystem stability."
+
+[evidence.a2a-spec-1-0]
+id = "a2a-spec-1-0"
+title = "Agent2Agent Protocol specification v1.0"
+url = "https://a2a-protocol.org/latest/specification/"
+evidence_class = "normative-text"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "The Linux Foundation project publishes a stable version 1 protocol specification."
+
+[evidence.a2a-release-1-0-1]
+id = "a2a-release-1-0-1"
+title = "Agent2Agent Protocol v1.0.1 release"
+url = "https://github.com/a2aproject/A2A/releases/tag/v1.0.1"
+evidence_class = "governance-release"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "The official project released v1.0.1 on 2026-05-28."
+
+[evidence.a2a-google-adk-implementation]
+id = "a2a-google-adk-implementation"
+title = "Google Agent Development Kit A2A support"
+url = "https://github.com/google/adk-docs/blob/main/docs/a2a/index.md"
+evidence_class = "independent-implementation"
+source_role = "corroborating"
+reviewed_on = "2026-09-14"
+notes = "Google documents A2A agent exposure and consumption in its Agent Development Kit."
+
+[evidence.a2a-beeai-implementation]
+id = "a2a-beeai-implementation"
+title = "BeeAI Framework A2A support"
+url = "https://github.com/i-am-bee/beeai-framework"
+evidence_class = "independent-implementation"
+source_role = "corroborating"
+reviewed_on = "2026-09-14"
+notes = "The independent BeeAI Framework repository advertises A2A support."
+
+[evidence.a2a-tck]
+id = "a2a-tck"
+title = "Agent2Agent technology compatibility kit"
+url = "https://github.com/a2aproject/a2a-tck"
+evidence_class = "reference-implementation"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "The official kit tests gRPC, JSON-RPC, and HTTP plus JSON bindings; no reviewed public result matrix was found."
+
+[evidence.agents-format]
+id = "agents-format"
+title = "AGENTS.md format"
+url = "https://agents.md/"
+evidence_class = "normative-text"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "The format site defines repository and nested instruction discovery but does not publish a numbered specification version."
+
+[evidence.agents-aaif-governance]
+id = "agents-aaif-governance"
+title = "AGENTS.md joins the Agentic AI Foundation"
+url = "https://openai.com/index/agentic-ai-foundation/"
+evidence_class = "governance-release"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "OpenAI records contributing AGENTS.md to the Linux Foundation's Agentic AI Foundation."
+
+[evidence.agents-codex-implementation]
+id = "agents-codex-implementation"
+title = "OpenAI Codex AGENTS.md implementation"
+url = "https://openai.com/index/introducing-codex/"
+evidence_class = "independent-implementation"
+source_role = "corroborating"
+reviewed_on = "2026-09-14"
+notes = "OpenAI documents Codex support for repository AGENTS.md instructions."
+
+[evidence.agents-vscode-implementation]
+id = "agents-vscode-implementation"
+title = "Visual Studio Code AGENTS.md implementation"
+url = "https://code.visualstudio.com/docs/agent-customization/custom-instructions"
+evidence_class = "independent-implementation"
+source_role = "corroborating"
+reviewed_on = "2026-09-14"
+notes = "Visual Studio Code independently discovers AGENTS.md as agent instructions."
+
+[evidence.agents-adoption]
+id = "agents-adoption"
+title = "AGENTS.md reported ecosystem adoption"
+url = "https://agents.md/"
+evidence_class = "operational-adoption"
+source_role = "corroborating"
+reviewed_on = "2026-09-14"
+notes = "The project reports use across more than 60,000 open-source repositories and lists multiple compatible tools."
+
+[evidence.agents-ki-local]
+id = "agents-ki-local"
+title = "Knowledge Islands AGENTS.md"
+url = "https://github.com/knowledgeislands/ki-agentic-harness/blob/main/AGENTS.md"
+evidence_class = "local-evaluation"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "This repository uses AGENTS.md as its runtime-neutral agent orientation."
+
+[evidence.agents-vscode-nesting-limit]
+id = "agents-vscode-nesting-limit"
+title = "Visual Studio Code experimental nested AGENTS.md support"
+url = "https://code.visualstudio.com/docs/agent-customization/custom-instructions"
+evidence_class = "independent-implementation"
+source_role = "counter-evidence"
+reviewed_on = "2026-09-14"
+notes = "VS Code marks nested AGENTS.md discovery as experimental, limiting claims of uniform semantics."
+
+[evidence.w3c-agent-group]
+id = "w3c-agent-group"
+title = "W3C AI Agent Protocol Community Group"
+url = "https://www.w3.org/community/agentprotocol/"
+evidence_class = "governance-release"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "The W3C Community Group page records the group's scope, participants, and draft report."
+
+[evidence.w3c-agent-draft]
+id = "w3c-agent-draft"
+title = "AI Agent Protocol Community Group draft"
+url = "https://w3c-cg.github.io/ai-agent-protocol/protocol.html"
+evidence_class = "normative-text"
+source_role = "primary"
+reviewed_on = "2026-09-14"
+notes = "The living Community Group draft dated 2025-08-19 proposes an exploratory agent protocol."
+
+[evidence.w3c-cg-nonendorsement]
+id = "w3c-cg-nonendorsement"
+title = "W3C Community Group non-endorsement notice"
+url = "https://www.w3.org/community/agentprotocol/"
+evidence_class = "governance-release"
+source_role = "counter-evidence"
+reviewed_on = "2026-09-14"
+notes = "W3C states that Community Group hosting does not imply W3C endorsement."
+
+[evidence.w3c-agent-draft-gaps]
+id = "w3c-agent-draft-gaps"
+title = "AI Agent Protocol draft open sections"
+url = "https://w3c-cg.github.io/ai-agent-protocol/protocol.html"
+evidence_class = "normative-text"
+source_role = "counter-evidence"
+reviewed_on = "2026-09-14"
+notes = "The draft contains TODO and continuous-refinement sections and is not a completed formal standard."
+
+[subjects]
+
+[subjects.mcp]
+id = "mcp"
+display_name = "Model Context Protocol"
+subject_kind = "protocol"
+stewardship = "foundation"
+specification_maturity = "stable"
+implementation_state = "multiple-independent"
+interoperability_state = "conformance-tested"
+ki_stance = "adopt"
+movement = "unchanged"
+owner = "ki-binding"
+uncertainty = "SDK tier conformance does not certify every registry server or separately versioned extension."
+return_trigger = "A new specification release, SDK tier change, extension lifecycle change, or local binding failure."
+reviewed_on = "2026-09-17"
+evidence = [
+  "mcp-spec-2026-07-28",
+  "mcp-aaif-governance",
+  "mcp-sdk-conformance",
+  "mcp-openai-implementation",
+  "mcp-cloudflare-implementation",
+  "mcp-ki-local",
+]
+counter_evidence = []
+
+[subjects.agent-client-protocol]
+id = "agent-client-protocol"
+display_name = "Agent Client Protocol"
+subject_kind = "protocol"
+stewardship = "consortium"
+specification_maturity = "stable"
+implementation_state = "multiple-independent"
+interoperability_state = "demonstrated"
+ki_stance = "assess"
+movement = "unchanged"
+owner = "ki-agentic-radar"
+uncertainty = "Wire protocolVersion 1 and stable schema release v1.22.0 are separately versioned; a v2 alpha exists and full remote-agent support remains unfinished."
+return_trigger = "Independent-foundation transfer, protocol v2 stabilisation, remote-agent completion, or a local client-agent integration need."
+reviewed_on = "2026-09-17"
+evidence = [
+  "acp-v1-spec",
+  "acp-schema-v1-22-0",
+  "acp-governance",
+  "acp-gemini-implementation",
+  "acp-codecompanion-implementation",
+  "acp-gemini-codecompanion-demo",
+]
+counter_evidence = ["acp-schema-v2-alpha-4", "acp-remote-limit"]
+
+[subjects.ahp]
+id = "ahp"
+display_name = "Agent Host Protocol"
+subject_kind = "protocol"
+stewardship = "vendor"
+specification_maturity = "versioned"
+implementation_state = "single-implementation"
+interoperability_state = "untested"
+ki_stance = "assess"
+movement = "inward"
+owner = "ki-agentic-radar"
+uncertainty = "One independent server publishes compatibility tests against the Microsoft client, but no independently witnessed result establishes cross-implementation interoperability."
+return_trigger = "A 1.0 stability declaration, second independent implementation, published interoperability result, or relevant command-centre use case."
+reviewed_on = "2026-09-17"
+evidence = ["ahp-spec-0-9-0", "ahp-release-0-9-0", "ahp-reference-implementations", "ahp-wyrd-server"]
+counter_evidence = ["ahp-mixed-stability"]
+
+[subjects.a2a]
+id = "a2a"
+display_name = "Agent2Agent Protocol"
+subject_kind = "protocol"
+stewardship = "foundation"
+specification_maturity = "stable"
+implementation_state = "multiple-independent"
+interoperability_state = "claimed"
+ki_stance = "assess"
+movement = "unchanged"
+owner = "ki-agentic-radar"
+uncertainty = "An official TCK exists, but the reviewed sources do not publish a pass or certification matrix demonstrating cross-implementation conformance."
+return_trigger = "A public TCK result, certification programme, independent interoperability report, or local agent-to-agent requirement."
+reviewed_on = "2026-09-17"
+evidence = [
+  "a2a-spec-1-0",
+  "a2a-release-1-0-1",
+  "a2a-google-adk-implementation",
+  "a2a-beeai-implementation",
+  "a2a-tck",
+]
+counter_evidence = []
+
+[subjects.agents-md]
+id = "agents-md"
+display_name = "AGENTS.md"
+subject_kind = "interface-format"
+stewardship = "foundation"
+specification_maturity = "incubating"
+implementation_state = "multiple-independent"
+interoperability_state = "claimed"
+ki_stance = "adopt"
+movement = "unchanged"
+owner = "ki-repo"
+uncertainty = "The unversioned format has broad tool adoption but no formal conformance suite, and nested-file semantics are not uniformly stable."
+return_trigger = "A numbered format release, conformance suite, incompatible client behaviour, or foundation governance change."
+reviewed_on = "2026-09-17"
+evidence = [
+  "agents-format",
+  "agents-aaif-governance",
+  "agents-codex-implementation",
+  "agents-vscode-implementation",
+  "agents-adoption",
+  "agents-ki-local",
+]
+counter_evidence = ["agents-vscode-nesting-limit"]
+
+[subjects.w3c-ai-agent-protocol]
+id = "w3c-ai-agent-protocol"
+display_name = "W3C AI Agent Protocol Community Group"
+subject_kind = "incubation"
+stewardship = "community"
+specification_maturity = "draft"
+implementation_state = "none"
+interoperability_state = "untested"
+ki_stance = "hold"
+movement = "unchanged"
+owner = "ki-agentic-radar"
+uncertainty = "This is Community Group incubation with an incomplete living draft, not a W3C Recommendation or demonstrated implementation ecosystem."
+return_trigger = "A formal standards-track transition, complete versioned draft, implementation, or interoperability evidence."
+reviewed_on = "2026-09-17"
+evidence = ["w3c-agent-group", "w3c-agent-draft"]
+counter_evidence = ["w3c-cg-nonendorsement", "w3c-agent-draft-gaps"]

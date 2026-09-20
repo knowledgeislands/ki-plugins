@@ -55,13 +55,14 @@ const NOTE_1C: RubricItem<KbNoteContext> = {
   code: 'NOTE-1c',
   title: 'explicit note type metadata',
   description:
-    'Every KB-owned note frontmatter uses note_type and never the legacy generic type field; adapter and protocol records remain with their owning skills.',
+    'Every KB-owned note frontmatter uses note_type and never the legacy generic type field or retired handoff classification; adapter and protocol records remain with their owning skills.',
   sources: [FRONTMATTER],
   mechanical: {
     level: 'FAIL',
     remediation: {
       class: 'diagnostic',
-      guidance: 'Replace the generic type field with note_type, preserving its value, then rerun the audit.'
+      guidance:
+        'Use note_type for KB notes. Route retired handoff records through ki-trades rather than relabelling them; preserve adapter and protocol metadata.'
     },
     audit: { phase: 'INSPECT', run: (context) => context.noteType }
   }

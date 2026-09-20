@@ -1,11 +1,14 @@
 ---
 name: ki-binding
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: []
 ki-shared-modules: [binding]
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Codify and audit the portable Knowledge Islands MCP binding: the canonical XDG `mcp-servers.yaml` source, its server schema and `clients:` targeting, and drift at the vendor-neutral mcporter target. Use when defining a shared MCP inventory, validating client targeting, or finding mcporter drift. Runtime-native surfaces belong to `ki-binding-claude` and `ki-binding-codex`; chezmoi rendering belongs to `ki-binding-chezmoi`.
+  Govern the portable KI MCP inventory in XDG `mcp-servers.yaml`: schema, client targeting, and mcporter
+  drift. Use runtime binding skills for Claude or Codex surfaces and `ki-binding-chezmoi` for chezmoi
+  rendering.
 argument-hint: 'audit [project] | conform [project] | help | educate [project] | refresh'
 ---
 

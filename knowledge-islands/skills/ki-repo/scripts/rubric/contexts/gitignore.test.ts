@@ -20,6 +20,8 @@ describe('compositional .gitignore', () => {
     expect(inspection.content).toContain('reports/')
     expect(inspection.content).toContain('# ki-repo:ignore:ki-engineering:start')
     expect(inspection.content).toContain('# ki-repo:ignore:ki-repo-website:start')
+    expect(blocks.find(({ owner }) => owner === 'ki-engineering')?.rules).toContain('.turbo/')
+    expect(inspection.content.match(/^\.turbo\/$/gm)).toHaveLength(1)
     expect(inspection.content.match(/^dist\/$/gm)).toHaveLength(1)
     expect(inspection.content).toContain('.wrangler/')
     expect(inspection.content).toContain('.dev.vars')
@@ -34,6 +36,7 @@ describe('compositional .gitignore', () => {
 .agents/skills/
 .vscode/
 coverage/
+/.turbo
 custom-output/
 `
     const inspection = inspectGitignore(source, managedGitignoreBlocks(['ki-repo', 'ki-engineering'], runtimeRules))
@@ -44,6 +47,7 @@ custom-output/
     expect(inspection.content).not.toContain('.ki/conform/')
     expect(inspection.content).not.toContain('.claude/skills/\n')
     expect(inspection.content).not.toContain('\ncoverage/\n')
+    expect(inspection.content).not.toContain('\n/.turbo\n')
     expect(inspection.content).toEndWith(`${gitignoreUnmanagedHeader}\n\n.vscode/\ncustom-output/\n`)
   })
 

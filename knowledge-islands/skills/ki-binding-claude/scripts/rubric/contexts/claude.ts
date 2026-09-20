@@ -46,25 +46,39 @@ const target = (path: string): ClaudeTarget => {
   }
 }
 const sameEnvironment = (expected: Readonly<Record<string, string | { op: string }>>, actual: unknown): boolean => {
-  if (!actual || typeof actual !== 'object' || Array.isArray(actual)) return false
-  const received = actual as Record<string, unknown>
+  if (actual !== undefined && (!actual || typeof actual !== 'object' || Array.isArray(actual))) return false
+  const received = (actual ?? {}) as Record<string, unknown>
   if (JSON.stringify(Object.keys(received).sort()) !== JSON.stringify(Object.keys(expected).sort())) return false
   return Object.entries(expected).every(([key, value]) =>
-    typeof value === 'string' ? received[key] === value : typeof received[key] === 'string' && received[key]
+    typeof value === 'string' ? received[key] === value : typeof received[key] === 'string' && received[key].length > 0
   )
 }
-const renderedCommand = (command: string): string =>
-  command.startsWith('/') ? command : (Bun.which(command) ?? command)
+const sameCommand = (expected: string, actual: unknown, home: string): boolean => {
+  if (typeof actual !== 'string') return false
+  if (expected.includes('/')) return actual === expected
+  return (
+    actual === expected ||
+    actual === Bun.which(expected) ||
+    (expected === 'node' && actual === join(home, '.local', 'share', 'mise', 'shims', 'node'))
+  )
+}
 const renderedArgument = (argument: string, home: string): string =>
   argument === '~' ? home : argument.startsWith('~/') ? join(home, argument.slice(2)) : argument
+const sameArguments = (expected: readonly string[], actual: unknown, home: string): boolean =>
+  Array.isArray(actual) &&
+  actual.length === expected.length &&
+  expected.every(
+    (argument, index) =>
+      typeof actual[index] === 'string' &&
+      (actual[index] === argument || actual[index] === renderedArgument(argument, home))
+  )
 const same = (entry: ServerEntry, actual: Record<string, unknown> | undefined, home: string): boolean => {
   if (!actual) return false
   if ('url' in entry) return actual.type === 'url' && actual.url === entry.url
   return (
     (actual.type === undefined || actual.type === 'stdio') &&
-    actual.command === renderedCommand(entry.command) &&
-    JSON.stringify(actual.args ?? []) ===
-      JSON.stringify(entry.args.map((argument) => renderedArgument(argument, home))) &&
+    sameCommand(entry.command, actual.command, home) &&
+    sameArguments(entry.args, actual.args ?? [], home) &&
     sameEnvironment(entry.env, actual.env)
   )
 }

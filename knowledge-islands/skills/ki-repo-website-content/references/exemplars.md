@@ -137,14 +137,14 @@ No `tailwind.config.*` file anywhere — Tailwind 4 is configured entirely in CS
 
 ### `package.json` — the site script family
 
-These ordinary scripts live in the site package at the conventional `apps/site/` value selected by `[skills.ki-repo-website].site-root`. `dev` uses `concurrently` to run the Tailwind `--watch` process (`dev:css`) and the Eleventy dev server (`dev:serve`) in parallel, named `css`,`11ty`. `build` invokes the Eleventy CLI directly through Bun — the `eleventy.before` hook handles Tailwind minification inside the same process. The repository root owns the public `ki:site:*` aliases; hosting scripts belong to the selected hosting adapter.
+These scripts live in the site package at the conventional `apps/site/` value selected by `[skills.ki-repo-website].site-root`. `ki:site:dev` uses `concurrently` to run the Tailwind `--watch` process (`ki:site:dev:css`) and the Eleventy dev server (`ki:site:dev:serve`) in parallel, named `css`,`11ty`. `build` invokes the Eleventy CLI directly through Bun — the `eleventy.before` hook handles Tailwind minification inside the same process. The repository root owns the public `ki:site:*` aliases; hosting scripts belong to the selected hosting adapter.
 
 ```json
 {
   "scripts": {
-    "dev": "concurrently --names css,11ty --prefix-colors cyan,yellow \"bun run dev:css\" \"bun run dev:serve\"",
-    "dev:css": "bunx tailwindcss -i src/assets/css/main.css -o ./dist/assets/css/main.css --watch",
-    "dev:serve": "bun ../../node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve --port 3000",
+    "ki:site:dev": "concurrently --names css,11ty --prefix-colors cyan,yellow \"bun run ki:site:dev:css\" \"bun run ki:site:dev:serve\"",
+    "ki:site:dev:css": "bunx tailwindcss -i src/assets/css/main.css -o ./dist/assets/css/main.css --watch",
+    "ki:site:dev:serve": "bun ../../node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve --port 3000",
     "build": "bun ../../node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts",
     "clean": "rm -rf dist .wrangler"
   }

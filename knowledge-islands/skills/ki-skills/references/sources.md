@@ -60,7 +60,7 @@ The Claude blog is a discovery source, not a normative standard. On each REFRESH
 
 | Tag | Source | Scope | Last reviewed |
 | --- | --- | --- | --- |
-| OA | [OpenAI Build skills][openai-skills] | ChatGPT/Codex runtime overlay | 2026-08-12 |
+| OA | [OpenAI Build skills][openai-skills] | ChatGPT/Codex runtime overlay | 2026-09-15 |
 
 `OA` documents OpenAI runtime discovery, listing, path metadata, implicit invocation, and `agents/openai.yaml`. It qualifies runtime claims but never changes the portable Agent Skills contract.
 
@@ -110,7 +110,7 @@ REFRESH last run **2026-08-22**. It fetched [the documentation index][agentskill
 - **Agent Skills home:** accessible; three-stage progressive disclosure (metadata ~100 tok / instructions < 5000 tok / resources on demand). Spec unchanged.
 - **Description voice:** the current Agent Skills description guide prefers direct imperative phrasing, while Anthropic and community guidance retains third person. The portable rule now accepts either activation-oriented form and continues to reject first-/second-person explanation.
 - **CC:** `disallowed-tools` and `background` remain Claude Code extensions; the former accepts a string or YAML list, while `background` applies only with `context: fork`.
-- **OA:** OpenAI documents `.agents/skills` discovery, initial name/description/path listings, `agents/openai.yaml`, and `allow_implicit_invocation`. Description remains the primary signal for implicit matching, not the only listed metadata.
+- **OA:** Targeted evidence was rechecked on 2026-09-15. OpenAI documents `.agents/skills` discovery, initial name/description/path listings, a two-per-cent or 8,000-character initial-list budget, description shortening before possible omission warnings, `agents/openai.yaml`, and `allow_implicit_invocation`. Description remains the primary signal for implicit matching, not the only listed metadata.
 - **ENG:** published 2025-10-16 and updated 2025-12-18; it remains rationale, not a normative source.
 - **BLOG (Claude blog):** added as a discovery source. Future REFRESH runs scan it for articles materially relevant to agent skills, agentic practice, or authoring workflows; an article is supporting evidence, not a normative rule by itself.
 - **OPENAI (OpenAI News):** added as a discovery source. Future REFRESH runs scan it for articles materially relevant to agent skills, agentic practice, or authoring workflows; an article is supporting evidence, not a normative rule by itself.

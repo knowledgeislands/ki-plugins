@@ -8,7 +8,7 @@ Use this implementation for a single interactive browser application such as a d
 
 The application uses React, React DOM, Vite, and the official React Vite plugin. An `index.html` application entry loads a `src/main.tsx` or `src/main.jsx` module. `vite build` emits `dist/`; Vite's default `build.outDir` is already `dist`.
 
-The selected site's package scripts expose `build` using `vite build` and `dev` using `vite`. `ki-repo-website` alone selects the root: `apps/site` by default, `.` explicitly for a flat repository, or another safe relative override. `[skills.ki-repo-website-app]` remains keyless. The repository root package exposes the public `ki:site:*` aliases and delegates them to these local scripts.
+The selected site's package scripts expose `build` using `vite build` and `ki:site:dev` using `vite`. `ki-repo-website` alone selects the root: `apps/site` by default, `.` explicitly for a flat repository, or another safe relative override. `[skills.ki-repo-website-app]` remains keyless. The repository root package exposes the public `ki:site:*` aliases and delegates development to the local `ki:site:dev` key.
 
 Dependencies, Vite configuration, `index.html`, `src/main.*`, scripts, and `dist/` all resolve from that one root. Root-level or sibling manifests and configurations do not satisfy the app contract when another root is selected.
 

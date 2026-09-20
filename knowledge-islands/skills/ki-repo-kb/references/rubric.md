@@ -30,7 +30,7 @@ The tracked readable rubric is the exact publication of the structured catalogue
 
 → [standard](standards-knowledge-base.md)
 
-Required zones, indexes, staging, and output placement.
+Required zones, indexes, staging, output placement, and retained digest scaffold.
 
 - **ZONE-1 [M] — required zone layout** — Calendar/, Pillars/, Resources/, Streams/, and Admin/ resolve through any declared zone alias to readable directories, including directory symlinks. (standards-knowledge-base.md)
   - _Remediation:_ diagnostic — Correct the required zone layout or placement, then rerun the audit.
@@ -40,8 +40,10 @@ Required zones, indexes, staging, and output placement.
   - _Remediation:_ automatic
 - **ZONE-4 [M] — staging areas are not zones** — +/ and -/ are reported as staging only and are exempt from the zone-index rule. (standards-knowledge-base.md)
   - _Remediation:_ diagnostic — Correct the required zone layout or placement, then rerun the audit.
-- **ZONE-5 [M] — produced outputs use outbound staging** — Notes with note_type session-digest or handoff reside under the resolved -/ staging area. (standards-knowledge-base.md)
+- **ZONE-5 [M] — produced outputs use outbound staging** — Notes with note_type session-digest reside under the resolved -/ staging area; cross-repository handoffs belong to ki-trades. (standards-knowledge-base.md)
   - _Remediation:_ diagnostic — Correct the required zone layout or placement, then rerun the audit.
+- **ZONE-6 [M] — session-digest scaffold is canonical** — A declared ki-repo-kb capability retains the exact -/_DIGESTS/README.md scaffold after digest records are removed. (standards-knowledge-base.md)
+  - _Remediation:_ automatic
 
 ## CONFIG — KB configuration
 
@@ -103,8 +105,8 @@ Frontmatter mechanics and note-authoring judgment.
   - _Remediation:_ diagnostic — Close the affected frontmatter fence, then rerun the audit.
 - **NOTE-1b [M] — snake_case frontmatter keys** — Top-level frontmatter keys use snake_case. (standards-frontmatter.md)
   - _Remediation:_ diagnostic — Rename affected top-level frontmatter keys to snake_case, then rerun the audit.
-- **NOTE-1c [M] — explicit note type metadata** — Every KB-owned note frontmatter uses note_type and never the legacy generic type field; adapter and protocol records remain with their owning skills. (standards-frontmatter.md)
-  - _Remediation:_ diagnostic — Replace the generic type field with note_type, preserving its value, then rerun the audit.
+- **NOTE-1c [M] — explicit note type metadata** — Every KB-owned note frontmatter uses note_type and never the legacy generic type field or retired handoff classification; adapter and protocol records remain with their owning skills. (standards-frontmatter.md)
+  - _Remediation:_ diagnostic — Use note_type for KB notes. Route retired handoff records through ki-trades rather than relabelling them; preserve adapter and protocol metadata.
 - **NOTE-2 [J] — note naming convention** — Calendar notes are dated and other note names follow the base convention. (standards-knowledge-base.md)
   - _Evidence scope:_ Sampled notes and the base naming convention.
   - _Review prompt:_ Do note names follow the base-specific naming convention?

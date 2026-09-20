@@ -12,7 +12,7 @@ import {
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
-import { collectKbAuditEvidence, type KbRubricContext, ZONES } from '../contexts/kb.ts'
+import { collectKbAuditEvidence, digestReadme, type KbRubricContext, ZONES } from '../contexts/kb.ts'
 import catalogue from './index.ts'
 
 const temporaryDirectories: string[] = []
@@ -35,6 +35,8 @@ const createBase = (): string => {
   writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-kb]\n')
   writeFileSync(join(repository, 'AGENTS.md'), '# Base guidance\n\nLoad Admin/MEMORY.md before work.\n')
   for (const zone of ZONES) mkdirSync(join(repository, zone), { recursive: true })
+  mkdirSync(join(repository, '-', '_DIGESTS'), { recursive: true })
+  writeFileSync(join(repository, digestReadme.path), digestReadme.content)
   return repository
 }
 
@@ -58,6 +60,7 @@ test('the structured catalogue preserves every KB criterion', () => {
     'ZONE-3',
     'ZONE-4',
     'ZONE-5',
+    'ZONE-6',
     'CONFIG-0',
     'CONFIG-1',
     'CONFIG-2',
@@ -146,6 +149,24 @@ test('a symlinked output is never proposed or followed', () => {
 
   expect(session.proposal().writes.some((write) => write.path === 'Admin/Admin.md')).toBe(false)
   expect(readFileSync(outside, 'utf8')).toBe('outside\n')
+})
+
+test('a declared KB can restore the retained session-digest scaffold', () => {
+  const repository = createBase()
+  rmSync(join(repository, '-', '_DIGESTS'), { recursive: true })
+  const session = catalogue.createSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
+  const context = session.subjects[1]?.context() as KbRubricContext
+  const zone = families.find((family) => family.code === 'ZONE')
+  const zoneContext = zone?.selectContext(context)
+  const item = zone?.items.find((candidate) => candidate.code === 'ZONE-6')
+
+  expect(item?.mechanical?.audit.run(zoneContext)[0]?.status).toBe('VIOLATION')
+  item?.mechanical?.conform?.run(zoneContext)
+  expect(session.proposal().writes).toContainEqual({
+    path: digestReadme.path,
+    content: digestReadme.content,
+    create: true
+  })
 })
 
 test('a zone alias through an intermediate symlink produces no unsafe proposal', () => {
@@ -240,14 +261,16 @@ test('adapter and protocol records delegate note-type metadata to their owning s
   const records = [
     'Streams/Roadmap/ITEM.md',
     'Streams/Housekeeping/TEMPLATE.md',
-    '+/_AUTHORISATIONS/KI-EXAMPLE-BATCH-001.md',
+    '+/_BATCHES/KI-EXAMPLE-BATCH-001.md',
+    '+/_CHECKPOINTS/active-thread.md',
     '+/_TRADES/sender/repository/TRD-01234567.md',
     '-/_TRADES/receiver/repository/TRD-89abcdef.md'
   ]
   for (const relativePath of records) {
     const path = join(repository, relativePath)
     mkdirSync(dirname(path), { recursive: true })
-    writeFileSync(path, '---\nstatus: active\n---\n\n# Delegated record\n')
+    const classification = relativePath.includes('/_CHECKPOINTS/') ? 'type: ki-checkpoint\n' : ''
+    writeFileSync(path, `---\n${classification}status: active\n---\n\n# Delegated record\n`)
   }
 
   expect(collectKbAuditEvidence(repository).filter((finding) => finding.code === 'NOTE-1c')).toEqual([
@@ -259,7 +282,7 @@ test('adapter and protocol records delegate note-type metadata to their owning s
   ])
 })
 
-test('direct KB digest and handoff notes remain governed by note_type', () => {
+test('direct KB digests and undelegated trade files require note_type', () => {
   const repository = createBase()
   const digest = join(repository, '-', '_DIGESTS', 'Digest.md')
   const handoff = join(repository, '-', '_TRADES', 'Handoff.md')
@@ -274,4 +297,64 @@ test('direct KB digest and handoff notes remain governed by note_type', () => {
   expect(finding?.message).toContain('-/_DIGESTS/Digest.md')
   expect(finding?.message).toContain('-/_TRADES/Handoff.md')
   expect(finding?.message).toContain('legacy type: -/_DIGESTS/Digest.md')
+})
+
+test('retired handoff classification fails even in a valid trade path while local digests remain valid', () => {
+  const repository = createBase()
+  const digest = join(repository, '-', '_DIGESTS', 'Digest.md')
+  mkdirSync(dirname(digest), { recursive: true })
+  writeFileSync(digest, '---\nnote_type: session-digest\nretain_until: 2026-10-14\n---\n\n# Digest\n')
+  expect(collectKbAuditEvidence(repository).find((finding) => finding.code === 'NOTE-1c')?.level).toBe('PASS')
+  expect(collectKbAuditEvidence(repository).find((finding) => finding.code === 'ZONE-5')?.level).toBe('PASS')
+  const records = [
+    '-/_TRADES/2026-09-14T143000Z Recipient.md',
+    '-/_TRADES/receiver/repository/TRD-89abcdef.md',
+    'Pillars/Legacy.md'
+  ]
+  for (const relativePath of records) {
+    const path = join(repository, relativePath)
+    mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(
+      path,
+      '---\nnote_type: handoff\nintended_for: recipient\nretain_until: 2026-10-14\n---\n\n# Handoff\n'
+    )
+  }
+  const finding = collectKbAuditEvidence(repository).find((candidate) => candidate.code === 'NOTE-1c')
+  expect(finding?.level).toBe('FAIL')
+  expect(finding?.message).toContain('retired handoff note_type (use ki-trades)')
+  for (const relativePath of records) expect(finding?.message).toContain(relativePath)
+})
+
+test('active checkpoint delegation preserves YAML and configured field validation', () => {
+  const repository = createBase()
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-kb]\nrequired_frontmatter = ["author"]\n')
+  const active = join(repository, '+', '_CHECKPOINTS', 'Active.md')
+  mkdirSync(dirname(active), { recursive: true })
+  writeFileSync(active, '---\ntype: ki-checkpoint\ninvalidKey: value\n---\n\n# Active\n')
+  writeFileSync(join(dirname(active), 'Malformed.md'), '---\ntype: [\n---\n\n# Malformed\n')
+  const findings = collectKbAuditEvidence(repository)
+  expect(findings.find((finding) => finding.code === 'NOTE-1c')?.level).toBe('PASS')
+  expect(findings.find((finding) => finding.code === 'NOTE-1a')?.level).toBe('FAIL')
+  expect(findings.find((finding) => finding.code === 'NOTE-1')?.level).toBe('FAIL')
+  expect(findings.find((finding) => finding.code === 'NOTE-1b')?.level).toBe('WARN')
+})
+
+test('delegation does not cover obsolete batch paths or noncanonical checkpoint nesting', () => {
+  const repository = createBase()
+  const records = [
+    '+/_AUTHORISATIONS/KI-EXAMPLE-BATCH-001.md',
+    '+/_BATCHES/nested/KI-EXAMPLE-BATCH-002.md',
+    '+/_CHECKPOINTS/nested/Thread.md',
+    '+/_CHECKPOINTS/_RETIRED/Thread.md',
+    '+/_CHECKPOINTS/_RETIRED/nested/Thread.md',
+    '-/_CHECKPOINTS/Thread.md'
+  ]
+  for (const relativePath of records) {
+    const path = join(repository, relativePath)
+    mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(path, '---\ntype: ki-checkpoint\n---\n\n# Record\n')
+  }
+  const finding = collectKbAuditEvidence(repository).find((candidate) => candidate.code === 'NOTE-1c')
+  expect(finding?.level).toBe('FAIL')
+  for (const relativePath of records) expect(finding?.message).toContain(relativePath)
 })

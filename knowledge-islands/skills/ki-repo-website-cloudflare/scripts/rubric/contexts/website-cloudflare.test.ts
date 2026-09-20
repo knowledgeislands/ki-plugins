@@ -134,7 +134,7 @@ describe('ki-repo-website-cloudflare session', () => {
     expect(misplaced.configuration.siteRoot).toBe('apps/site')
     expect(misplacedValidation?.[0]).toMatchObject({
       status: 'VIOLATION',
-      message: 'Unknown opt-in key: site-root.'
+      message: 'Unknown key under [skills.ki-repo-website-cloudflare]: site-root.'
     })
   })
 
@@ -355,6 +355,62 @@ describe('ki-repo-website-cloudflare session', () => {
 
     writeFileSync(join(repository, 'docs', 'guides', 'cloudflare.md'), '\n')
     expect(guideItem?.run(contextFor())?.[0]?.status).toBe('VIOLATION')
+  })
+
+  test('audits every selected named Cloudflare site and honours a subset', () => {
+    const repository = makeRoot()
+    mkdirSync(join(repository, 'docs', 'guides'), { recursive: true })
+    writeFileSync(
+      join(repository, 'docs', 'guides', 'cloudflare.md'),
+      '# Cloudflare\n\nBuild command: `bun run ki:site:build`.\n'
+    )
+    for (const site of ['site-apex', 'site-tower']) {
+      mkdirSync(join(repository, 'apps', site), { recursive: true })
+      writeFileSync(
+        join(repository, 'apps', site, 'wrangler.jsonc'),
+        `{"name":"${site}","compatibility_date":"2026-09-17","assets":{"directory":"dist"},"observability":{"enabled":true}}\n`
+      )
+      writeFileSync(
+        join(repository, 'apps', site, 'package.json'),
+        JSON.stringify({ scripts: { deploy: 'bunx wrangler deploy', preview: 'bunx wrangler dev' } })
+      )
+    }
+    writeFileSync(
+      join(repository, 'package.json'),
+      JSON.stringify({
+        scripts: {
+          'ki:site:deploy': 'bun run self:site:apex:deploy',
+          'ki:site:preview': 'bun run self:site:apex:preview',
+          'self:site:apex:deploy': 'bun run --cwd apps/site-apex deploy',
+          'self:site:apex:preview': 'bun run --cwd apps/site-apex preview'
+        }
+      })
+    )
+    writeFileSync(join(repository, '.gitignore'), 'apps/site-apex/dist/\napps/site-tower/dist/\n.wrangler/\n')
+    writeFileSync(
+      join(repository, '.ki.toml'),
+      '[skills.ki-repo-website]\nprimary-site = "apex"\n\n[skills.ki-repo-website.sites]\napex = "apps/site-apex"\ntower = "apps/site-tower"\n\n[skills.ki-repo-website-cloudflare]\n'
+    )
+
+    const all = createWebsiteCloudflareSession(options(repository)).subjects.filter((subject) =>
+      subject.families.includes('WCF')
+    )
+    expect(all.map((subject) => subject.context().hosting.siteName)).toEqual(['apex', 'tower'])
+    expect(
+      all.every((subject) => {
+        const result = WCF.items.find((item) => item.code === 'WCF-1')?.mechanical?.audit.run(subject.context().hosting)
+        return result?.[0]?.status === 'PASS'
+      })
+    ).toBe(true)
+
+    writeFileSync(
+      join(repository, '.ki.toml'),
+      '[skills.ki-repo-website]\nprimary-site = "apex"\n\n[skills.ki-repo-website.sites]\napex = "apps/site-apex"\ntower = "apps/site-tower"\n\n[skills.ki-repo-website-cloudflare]\nsites = ["tower"]\n'
+    )
+    const subset = createWebsiteCloudflareSession(options(repository)).subjects.filter((subject) =>
+      subject.families.includes('WCF')
+    )
+    expect(subset.map((subject) => subject.context().hosting.siteName)).toEqual(['tower'])
   })
 
   test('routes an unrelated repository through one not-applicable outcome', () => {

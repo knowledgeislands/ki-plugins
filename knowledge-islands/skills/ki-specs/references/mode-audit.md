@@ -1,7 +1,7 @@
 # Mode AUDIT — check Specifications
 
-Read the [Specifications standard](standards-specs.md) and [rubric](rubric.md) first.
+Read [Specifications standard](standards-specs.md) and [rubric](rubric.md) first.
 
-1. **Run the hosted audit.** Run `ki repo audit --skill ki-specs`. It checks the index and areas table, file registration, requirement IDs, normative statements, and `_Verify:_` hooks.
-2. **Apply judgment.** Review behaviour versus rationale or procedure, as-built truth, verification quality, requirement focus, Decision Record links, and area fit.
-3. **Report.** Group findings by location, then criterion and fix; lead with FAILs, then WARNs. Judgment work remains explicit rather than appearing as synthetic mechanical findings.
+1. **Run hosted audit.** Run `ki repo audit --skill ki-specs`. It checks the index, area registration, IDs, normative statements, conformance states, `_Verify:_` plans, and evidence for conforming requirements.
+2. **Apply judgment.** Review feature-area cohesion, user-observable behaviour versus quality-property classification, verification and evidence quality, requirement focus, Decision Record links, and area fit.
+3. **Report.** Group findings by location and criterion; lead with failures, then warnings. Keep judgment explicit rather than presenting it as a synthetic mechanical finding.

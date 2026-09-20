@@ -1,16 +1,24 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { RubricContextOptions } from '../../shared/rubric.ts'
 import { FILES } from '../items/files.ts'
 import { RUNTIMES } from '../items/runtimes.ts'
 import { WORK } from '../items/working-areas.ts'
-import { collectAuditFindings, KI_CONFIGURATION_HEADER, localTreePaths } from './audit.ts'
+import { collectAuditFindings, detectedCoverageSkills, KI_CONFIGURATION_HEADER, localTreePaths } from './audit.ts'
 import { createRepoSession, type FilesRubricContext, type WorkingAreasRubricContext } from './repository.ts'
 
 const roots: string[] = []
+
+test('ki-detects registry exactly matches executable coverage targets', () => {
+  const text = readFileSync(join(import.meta.dir, '../../../SKILL.md'), 'utf8')
+  const document = text.match(/^---\n([\s\S]*?)\n---/)?.[1]
+  if (!document) throw new Error('ki-repo SKILL.md has no frontmatter')
+  const frontmatter = Bun.YAML.parse(document) as Record<string, unknown>
+  expect(frontmatter['ki-detects']).toEqual(detectedCoverageSkills())
+})
 
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
@@ -141,6 +149,60 @@ describe('ki-repo session', () => {
     expect(gitignore?.content).not.toContain('.agents/skills/\n')
   })
 
+  test('accepts only the exact predecessor tools-ki ignore generation during the v0.4.0 bridge', async () => {
+    const root = repository()
+    writeFileSync(
+      join(root, '.ki.toml'),
+      '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n\n[skills.ki-engineering]\n'
+    )
+    const previous = `# Knowledge Islands managed ignores.
+# Edit the owning skill contract, not the marker-bounded blocks below.
+
+# ki-repo:ignore:ki-repo:start
+# Generated reports, local metadata, logs, and runtime projections.
+reports/
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+*~
+.claude/settings.local.json
+*.log
+.claude/skills/*
+.agents/skills/*
+!.agents/skills/ki-self/
+!.agents/skills/ki-self/**
+# ki-repo:ignore:ki-repo:end
+
+# ki-repo:ignore:ki-engineering:start
+# TypeScript/Bun dependencies, build output, caches, logs, and real environment files.
+node_modules/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.*
+!.env*.example
+# ki-repo:ignore:ki-engineering:end
+
+# Unmanaged repository-specific ignores
+# These rules are preserved but are not currently reconciled by a KI skill.
+
+# KI-managed repository skill projections are machine-local.
+.claude/agents/
+`
+    writeFileSync(join(root, '.gitignore'), previous)
+    expect((await collectAuditFindings([root])).findings).not.toContainEqual(
+      expect.objectContaining({ code: 'FILES-6' })
+    )
+
+    writeFileSync(join(root, '.gitignore'), previous.replace('node_modules/', 'node-modules/'))
+    expect((await collectAuditFindings([root])).findings).toContainEqual(expect.objectContaining({ code: 'FILES-6' }))
+  })
+
   test('derives runtime-skill ignores from supported runtimes while reserving ki-self', async () => {
     const root = repository()
     writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code"]\n')
@@ -261,6 +323,42 @@ describe('ki-repo session', () => {
     ])
   })
 
+  test('accepts the exact predecessor working-area README transition', async () => {
+    const root = repository()
+    const initial = await createRepoSession(options(root, 'conform'), inspect)
+    runWorkingAreasConform(workingAreasContext(initial))
+    applyWrites(root, initial.proposal().writes)
+
+    writeFileSync(
+      join(root, '+', 'README.md'),
+      `# Incoming working area
+
+\`+\` is this repository's top-level working area for temporary material received from another repository or external source that needs local triage.
+
+For material prepared here to send elsewhere, use [the matching outbound working area](../-/README.md).
+
+It is not a canonical roadmap, plan, decision record, or knowledge-base destination. Triage each item into its durable home, or remove it when it has no value to retain.
+`
+    )
+    writeFileSync(
+      join(root, '-', 'README.md'),
+      `# Outgoing working area
+
+\`-\` is this repository's top-level working area for temporary material prepared here for another repository or external recipient.
+
+For material received here to triage, use [the matching inbound working area](../+/README.md).
+
+It is not a canonical roadmap, plan, decision record, or knowledge-base destination. Remove each item after delivery or when it no longer has value to retain.
+`
+    )
+
+    const audit = await createRepoSession(options(root, 'audit'), inspect)
+    const [item] = WORK.items
+    expect(item?.mechanical?.audit.run(workingAreasContext(audit))).toEqual([
+      { status: 'PASS', message: 'working-area scaffold is present and conformed' }
+    ])
+  })
+
   test('repairs a drifted working-area README without recreating it', async () => {
     const root = repository()
     const initial = await createRepoSession(options(root, 'conform'), inspect)
@@ -276,6 +374,8 @@ describe('ki-repo session', () => {
     expect(write?.path).toBe('+/README.md')
     expect(write?.create).toBeUndefined()
     expect(write?.content).toContain('[the matching outbound working area](../-/README.md)')
+    expect(write?.content).toContain('inputs to further repository work')
+    expect(write?.content).toContain('whether received from elsewhere or created locally')
     expect(write?.content).not.toContain('_TRADES')
   })
 
@@ -482,6 +582,63 @@ supported_runtimes = ["claude-code", "claude-desktop", "chatgpt-codex"]
   })
 })
 
+describe('root runtime orientation', () => {
+  const findings = async (
+    runtimes: string,
+    agents?: string,
+    claude?: string
+  ): Promise<readonly { code: string; level: string; message: string; subject?: string }[]> => {
+    const root = repository()
+    writeFileSync(join(root, '.ki.toml'), `[skills.ki-repo]\nsupported_runtimes = ${runtimes}\n`)
+    if (agents !== undefined) writeFileSync(join(root, 'AGENTS.md'), agents)
+    if (claude !== undefined) writeFileSync(join(root, 'CLAUDE.md'), claude)
+    return (await collectAuditFindings([root])).findings.filter(({ code }) => code === 'RUNTIMES-4')
+  }
+
+  test('requires a physical root AGENTS.md only for multi-runtime repositories', async () => {
+    expect(await findings('["claude-code", "chatgpt-codex"]')).toEqual([
+      expect.objectContaining({
+        code: 'RUNTIMES-4',
+        level: 'WARN',
+        message: expect.stringContaining('requires a physical root AGENTS.md'),
+        subject: expect.stringContaining('AGENTS.md')
+      })
+    ])
+    expect(await findings('["claude-code"]')).toEqual([])
+  })
+
+  test('requires a bare Claude import and rejects reverse orientation', async () => {
+    expect(await findings('["claude-code", "chatgpt-codex"]', '# Shared\n\nUseful guidance.\n', '# Claude\n')).toEqual([
+      expect.objectContaining({
+        code: 'RUNTIMES-4',
+        message: expect.stringContaining('bare @AGENTS.md import line')
+      })
+    ])
+    expect(
+      await findings(
+        '["claude-code", "chatgpt-codex"]',
+        '# Orientation\n\nRead `CLAUDE.md` for repository orientation.\n',
+        '@AGENTS.md\n'
+      )
+    ).toEqual([
+      expect.objectContaining({
+        code: 'RUNTIMES-4',
+        message: expect.stringContaining('redirects shared orientation')
+      })
+    ])
+  })
+
+  test('accepts substantive shared orientation and a thin Claude import', async () => {
+    expect(
+      await findings(
+        '["claude-code", "chatgpt-codex"]',
+        '# Orientation\n\nShared repository guidance.\n\n`CLAUDE.md` may add Claude-only notes.\n',
+        '@AGENTS.md\n\n# Claude-only notes\n'
+      )
+    ).toEqual([])
+  })
+})
+
 describe('repository kind and Knowledge Base stores', () => {
   const kindFindings = async (configuration: string) => {
     const root = repository()
@@ -587,6 +744,99 @@ describe('local repository evidence', () => {
     writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n\n[skills.ki-checkpoint]\n')
     expect((await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')).toEqual([])
   })
+
+  test('requires documentation skills for their governed roots or explicit coverage opt-outs', async () => {
+    const root = repository()
+    for (const path of [
+      ['docs', 'decisions', 'README.md'],
+      ['docs', 'specs', 'index.md'],
+      ['docs', 'guides', 'README.md']
+    ]) {
+      mkdirSync(join(root, ...path.slice(0, -1)), { recursive: true })
+      writeFileSync(join(root, ...path), '# Collection\n')
+    }
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n')
+
+    const missing = (await collectAuditFindings([root])).findings.filter(
+      (finding) => finding.code === 'COV-1' && finding.level === 'FAIL'
+    )
+    for (const skill of ['ki-decision-records', 'ki-specs', 'ki-guides']) {
+      expect(missing).toContainEqual(expect.objectContaining({ message: expect.stringContaining(skill) }))
+    }
+
+    writeFileSync(
+      join(root, '.ki.toml'),
+      `[skills.ki-repo]
+
+[skills.ki-repo.checks]
+coverage-decision-records = false
+coverage-specs = false
+coverage-guides = false
+`
+    )
+    const optedOut = (await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')
+    expect(optedOut).toHaveLength(3)
+    expect(optedOut.every((finding) => finding.level === 'INFO')).toBe(true)
+  })
+
+  test('detects the Knowledge Base decision collection path', async () => {
+    const root = repository()
+    mkdirSync(join(root, 'Admin', 'Governance', 'Decisions'), { recursive: true })
+    writeFileSync(join(root, 'Admin', 'Governance', 'Decisions', 'Decisions.md'), '# Decisions\n')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n')
+
+    const coverage = (await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')
+    expect(coverage).toContainEqual(
+      expect.objectContaining({
+        level: 'FAIL',
+        message: expect.stringContaining('ki-decision-records')
+      })
+    )
+  })
+
+  for (const fixture of [
+    {
+      name: 'legacy-only',
+      dependencies: { '@modelcontextprotocol/sdk': '^1.0.0' },
+      detected: true
+    },
+    {
+      name: 'modern-only',
+      dependencies: { '@modelcontextprotocol/server': '^2.0.0' },
+      detected: true
+    },
+    { name: 'neither-package', dependencies: { hono: '^4.0.0' }, detected: false },
+    {
+      name: 'both-package',
+      dependencies: {
+        '@modelcontextprotocol/sdk': '^1.0.0',
+        '@modelcontextprotocol/server': '^2.0.0'
+      },
+      detected: true
+    }
+  ]) {
+    test(`detects MCP coverage for the ${fixture.name} fixture`, async () => {
+      const root = repository()
+      writeFileSync(join(root, 'package.json'), JSON.stringify({ dependencies: fixture.dependencies }))
+      writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n\n[skills.ki-engineering]\n')
+
+      const findings = (await collectAuditFindings([root])).findings.filter(
+        (finding) => finding.code === 'COV-1' && finding.message.includes('[skills.ki-repo-mcp]')
+      )
+
+      if (!fixture.detected) {
+        expect(findings).toEqual([])
+        return
+      }
+
+      expect(findings).toEqual([
+        expect.objectContaining({
+          level: 'FAIL',
+          message: expect.stringContaining('@modelcontextprotocol/sdk or @modelcontextprotocol/server dependency')
+        })
+      ])
+    })
+  }
 
   test('separates website coverage and enforces one purpose-specific implementation', async () => {
     const root = repository()

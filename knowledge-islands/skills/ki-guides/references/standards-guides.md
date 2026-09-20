@@ -20,6 +20,7 @@ Each source has one job. A guide may link to a Decision Record, Specification, o
 - Guides live in **`docs/guides/`**.
 - **`docs/guides/README.md`** is the collection entry point. It gives the reader a concise scope statement and links to each guide or guide area with enough description to choose one.
 - A guide may live directly under the root in a small collection or below a meaningful concern or audience directory such as `developer/`, `operations/`, or `release/`. Category names are local information architecture, not a KI-wide taxonomy.
+- Developer guide roles such as `developer/definition-of-done.md` and `developer/releasing.md` are optional under this general standard. A specialised repository-kind overlay may require their presence, while `ki-guides` continues to govern ordinary guide placement and form rather than imposing a universal completion checklist or release policy.
 - Each guide Markdown file other than the root `README.md` has exactly one H1. It identifies the task, outcome, or operating context; its body gives the conditions, ordered work, verification, and recovery information appropriate to the topic.
 
 ## Boundary and migration rules

@@ -1,10 +1,13 @@
 ---
 name: ki-guides
 ki-kind: governance
+ki-applicability: detected
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Codify, audit, and maintain repository-local guides — the practical how of using, operating, contributing to, or maintaining a system — in any Knowledge Islands repository. Guides live under `docs/guides/`, whose `README.md` gives readers a concise map. Decisions record why (`ki-decision-records`), Specifications record what (`ki-specs`), guides record how, and roadmap items record when (`ki-work-roadmap`). Use when writing a procedure or contributor guide, bringing a documentation tree into shape, or deciding whether material belongs in a guide, specification, Decision Record, or roadmap item. Triggers: "write a guide", "document how", "guide structure", "audit docs/guides", "move developer docs". Off-ramps: ki-decision-records (durable rationale), ki-specs (observable behaviour), ki-work-roadmap (future work), ki-authoring (Markdown style).
+  Create or audit repository-local guides for the practical how of using, operating, contributing to, or
+  maintaining a system. Use `ki-decision-records` for why, `ki-specs` for accepted behaviour,
+  `ki-work-roadmap` for future work, and `ki-authoring` for style.
 argument-hint: 'audit [dir] | conform [dir] | help | educate [dir] | refresh'
 ---
 
@@ -44,4 +47,5 @@ Carries the universal **AUDIT · CONFORM · EDUCATE · REFRESH**. Invoked as `he
 - **Guide, not a second specification** — explain the sequence, conditions, and recovery needed to do work. Link to the applicable existing Specification when a guide needs to name a stable system behaviour; do not restate its normative contract. If the durable behaviour lacks a contract, route the gap to `ki-specs`; do not create a speculative Specification corpus merely to make a guide look complete.
 - **No generic log archive** — a durable result belongs in its owning record, guide, specification, or roadmap item. Ephemeral command output and runtime logs remain untracked operational evidence unless a specialised system owns them.
 - **Developer documentation is a guide** — put contributor mechanics in `docs/guides/developer/`, not a sibling `docs/developer/` tree.
+- **Repository-kind overlays may require guide roles** — a specialised structure skill may require exact developer-guide paths. `ki-guides` still treats them as ordinary guides and does not standardise their substantive procedures.
 - The `ki` host owns findings, dry-run publication, reporting, and post-conform verification; judgment aspects are counted as unevaluated rather than emitted as synthetic mechanical findings.

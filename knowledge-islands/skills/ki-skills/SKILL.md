@@ -1,10 +1,13 @@
 ---
 name: ki-skills
 ki-kind: governance
+ki-applicability: detected
 ki-depends-on: []
 ki-shared-modules: [rubric]
 description: >
-  Audit, review, extract, and write Agent Skills against current best practice. Use when creating a new skill, auditing or critiquing a SKILL.md, examining an existing skill for automation opportunities, analysing a project for reusable skills or scripts, or refreshing the house rubric. Carries a checkable rubric (mechanical checks plus judgment), a read-only candidate contract, the Knowledge Islands skill conventions, and a tracked source list. Triggers: "audit this skill", "review my skill architecture", "analyse my project for skills", "find steps to turn into scripts", "is this SKILL.md good", "write a new skill", "scaffold a skill", "lint the skills", "check skills against best practice", "refresh the skills rubric". Judges a `SKILL.md` itself (frontmatter + body prose), not a repo's code or config. Off-ramps: `ki-subagents` (subagent defs), `ki-repo-mcp` (server code), `ki-authoring` (Markdown/TOML style), `ki-repo-harness` (bundle layout).
+  Create, audit, review, extract, or optimise Agent Skills. Use for SKILL.md scope, descriptions, progressive
+  disclosure, scripts, references, rubrics, or reusable capability analysis; use `ki-subagents` for agent
+  roles and `ki-repo-harness` for bundle layout.
 argument-hint: 'audit <skill-or-repo> | conform <skill> | educate <description> | extract <repo> [--history <path>...] | help | optimise <skill> | refresh | review <skill-or-repo>'
 ---
 
@@ -29,7 +32,7 @@ The portable and general conventions a good skill follows live in [the Agent Ski
 
 ## Operating modes
 
-Like every governance skill it carries the universal four **AUDIT · CONFORM · EDUCATE · REFRESH** — EDUCATE here writes a new skill; **EXTRACT** identifies candidate reusable capabilities from an explicitly scoped repository and history; **OPTIMISE** pushes a compliant skill from the floor toward excellent; **REVIEW** assesses an existing skill's architecture and automation opportunities. Modes are named and alphabetical. Invoked as `help` / `-h` / `?`, it explains itself and stops — the generated HELP block (name, purpose, invocation, modes, off-ramps), taking no action. With no mode it does the same, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows.
+Like every governance skill it carries the four universal acting modes **AUDIT · CONFORM · EDUCATE · REFRESH** — EDUCATE here writes a new skill; **EXTRACT** identifies candidate reusable capabilities from an explicitly scoped repository and history; **OPTIMISE** pushes a compliant skill from the floor toward excellent; **REVIEW** assesses an existing skill's architecture and automation opportunities. Modes are named and alphabetical. Its required non-acting HELP entry point explains the skill and stops when invoked as `help` / `-h` / `?` — the generated HELP block names its purpose, invocation, modes, and off-ramps. With no mode it gives the same explanation, then, in an interactive session only, offers the mode choice via `AskUserQuestion`, prompting for any `argument-hint` target the chosen mode shows.
 
 ### Mode AUDIT — review an existing skill
 

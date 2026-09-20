@@ -74,18 +74,20 @@ The array or area-map values are the complete allowed theme vocabulary. Every it
 
 ## Horizons
 
-Every work item carries one of these six `horizon` values:
+Every work item carries one of seven `horizon` values. Six are adopted delivery horizons, in selection order:
 
 1. `Now` — receiving current delivery attention; plans permitted.
 2. `Next` — the next bounded work to prepare or begin; plans permitted.
 3. `Soon` — understood but not yet started.
 4. `Waiting for` — blocked by a named external condition.
 5. `Parked` — intentionally paused with a named return trigger.
-6. `Future` — speculative or unscoped; `candidate: true` marks uncommitted work.
+6. `Future` — adopted long-term work that still needs re-scoping before it becomes actionable.
+
+`Triage` is the separate unadopted intake horizon. A substantive prospective outcome, concern, dependency, or decision may be captured there without prior approval after checking for an existing owner. Open Triage records remain `status: draft`; creating one does not adopt, prioritise, plan, implement, or accept the work. A human must explicitly approve every exit from Triage or terminal disposition. Rejected, duplicate, and merged intake closes in Triage as `done` through `ki-accept`, with the approved disposition evidence and retained target where applicable. Approval does not bypass the done-before-prune rule, and Triage introduces no direct discard path.
 
 The root orientation holds no horizon headings or item list.
 
-Work items are draft-only until they enter the common delivery lifecycle.
+Open work items are draft-only until they enter the common delivery lifecycle; terminal Triage disposition is the explicit exception.
 
 Completed work is removed only through the lifecycle and pruning commit boundary below.
 
@@ -97,6 +99,7 @@ Horizon moves are authored, judgment-led decisions.
 
 CONFORM never chooses a move; it only repairs the concise root orientation.
 
+- **Triage → another horizon** is an adoption decision and requires explicit human approval. The destination must satisfy its own entry rule.
 - **Future → Soon** requires enough scope to state the intended outcome and boundary.
 - **Future → Next** is permitted when one review establishes the Future minimum plus actionable scope, understood dependencies, and readiness to start; state why Soon adds no useful shaping stage and re-evaluate at Next.
 - **Soon → Next** requires actionable scope, understood dependencies, and readiness to start.
@@ -112,7 +115,7 @@ An immediate item may remain `status: draft` while `ki-plan` shapes it.
 
 It becomes `status: ready` only after its execution detail and verification are reviewable, its dependencies are satisfied, and the user approves it for implementation.
 
-When no immediate work is eligible, `ki-next` evaluates Now and Next first, then Soon, then Future.
+When no immediate work is eligible, `ki-next` evaluates Now and Next first, then Soon, then Future. Triage review is a separate intake activity and never makes a record selection-eligible without explicit adoption.
 
 Every confirmed move is re-evaluated at its destination.
 
@@ -134,23 +137,25 @@ This adapter owns the concrete local record lifecycle independently of `horizon`
 
 `draft` covers captured and actively shaped work.
 
-`ready`, `in-progress`, `awaiting-review`, and `done` must remain in Now or Next.
+`ready`, `in-progress`, and `awaiting-review` must remain in Now or Next. Delivery `done` remains in Now or Next; a terminal intake disposition remains in Triage.
 
 `ki-implement` owns `ready` → `in-progress` → `awaiting-review`.
 
 Its start transition records the immutable full `HEAD` commit in `baseline_ref`; its completion writes the required review packet.
 
-`ki-accept` owns explicit `awaiting-review` → `done` and pruning selected by an explicit work-record path or glob.
+`ki-accept` owns explicit `awaiting-review` → `done`, human-approved Triage `draft` → `done` for rejected, duplicate, or merged intake, and pruning selected by an explicit work-record path or glob. Terminal Triage closure does not adopt or implement the work and cannot use batch closure authority.
 
 `ki-recap` and `ki-next` may identify or recommend eligible pruning, but they never delete a work-item record.
 
-`blocks` and `blocked_by` use work-item identifiers, must be reverse-consistent and acyclic, and cannot permit execution while a blocker is not done.
+`blocks` and `blocked_by` use work-item identifiers, must be reverse-consistent and acyclic, and cannot permit execution while a blocker is not done. Because that check gates execution on the blocker's lifecycle, only genuine build order belongs in the field: declare it when the work cannot be built without something that does not exist yet, and withdraw it once that thing exists. A declaration standing on a related record's approval state, rather than on missing work, makes the audit fail for a reason that is not true and holds executable work behind a review queue.
 
 An optional flat `waiting_on_trades: [TRD-…]` field identifies the exact trade records whose observable progress forms a Waiting-for condition. It is valid only at `horizon: waiting-for`, contains unique canonical trade identities, and never replaces or extends `blocks` or `blocked_by`. The item body states the exact condition being observed: receipt, a terminal receiver decision, or completion of receiver-local work linked from an adopted trade.
 
 An explicit later prune path or glob removes only the resolved `done` items; the selection itself is the deletion authority and does not need a second confirmation. `ki-work-housekeeping` templates may spawn linked ordinary work records; their cadence does not create a second delivery lifecycle.
 
 A done work item linked from an adopted completion-observation trade remains retained until sender release is observable. Roadmap review and pruning report that external reference as a guard and refuse to remove the linked work record while it is unresolved.
+
+Every process-owned lifecycle or semantic work-item mutation preserves `created_at`, advances `updated_at` monotonically, and refuses to replace a changed source revision. Remote adapters project provider-native timestamps rather than duplicating them into remote bodies. The work-item format owns the precise timestamp contract.
 
 ## Lifecycle commit boundaries
 

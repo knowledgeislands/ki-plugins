@@ -40,7 +40,7 @@ describe('interactive website context', () => {
       JSON.stringify({
         dependencies: { react: '^19', 'react-dom': '^19' },
         devDependencies: { vite: '^7', '@vitejs/plugin-react': '^5' },
-        scripts: { build: 'vite build', dev: 'vite' }
+        scripts: { build: 'vite build', 'ki:site:dev': 'vite' }
       })
     )
     writeFileSync(join(repository, 'apps', 'site', 'vite.config.ts'), "export default { build: { outDir: 'dist' } }\n")
@@ -79,7 +79,7 @@ describe('interactive website context', () => {
       JSON.stringify({
         dependencies: { react: '^19', 'react-dom': '^19' },
         devDependencies: { vite: '^7', '@vitejs/plugin-react': '^5' },
-        scripts: { build: 'vite build', dev: 'vite' }
+        scripts: { build: 'vite build', 'ki:site:dev': 'vite' }
       })
     )
     writeFileSync(join(repository, 'web', 'vite.config.ts'), 'export default {}\n')
@@ -101,6 +101,26 @@ describe('interactive website context', () => {
 
     expect(violations(repository)).toContainEqual(
       expect.objectContaining({ message: expect.stringContaining('Unknown key under [skills.ki-repo-website-app]') })
+    )
+  })
+  test('rejects a bare package-local development key', () => {
+    const repository = root()
+    mkdirSync(join(repository, 'apps', 'site', 'src'), { recursive: true })
+    writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-website]\n[skills.ki-repo-website-app]\n')
+    writeFileSync(
+      join(repository, 'apps', 'site', 'package.json'),
+      JSON.stringify({
+        dependencies: { react: '^19', 'react-dom': '^19' },
+        devDependencies: { vite: '^7', '@vitejs/plugin-react': '^5' },
+        scripts: { build: 'vite build', dev: 'vite' }
+      })
+    )
+    writeFileSync(join(repository, 'apps', 'site', 'vite.config.ts'), 'export default {}\n')
+    writeFileSync(join(repository, 'apps', 'site', 'index.html'), '<div id="root"></div>\n')
+    writeFileSync(join(repository, 'apps', 'site', 'src', 'main.tsx'), 'export {}\n')
+
+    expect(violations(repository)).toContainEqual(
+      expect.objectContaining({ message: 'ki:site:dev does not run Vite.' })
     )
   })
 })

@@ -26,6 +26,9 @@ export type SpecRequirement = {
   readonly deprecated: boolean
   readonly hasNormativeKeyword: boolean
   readonly hasVerify: boolean
+  readonly conformance?: 'conforming' | 'pending' | 'divergent'
+  readonly hasConformanceLabel: boolean
+  readonly hasEvidence: boolean
 }
 
 export type DuplicatePrefixRegistration = {
@@ -59,7 +62,10 @@ export type SpecIndexContext = {
 
 export type SpecAreaContext = {
   readonly applicable: boolean
-  readonly registeredMissingFiles: readonly { readonly prefix: string; readonly file: string }[]
+  readonly registeredMissingFiles: readonly {
+    readonly prefix: string
+    readonly file: string
+  }[]
   readonly unregisteredFiles: readonly string[]
 }
 
@@ -106,11 +112,19 @@ const declaredInConfiguration = (root: string): { declared: boolean; malformed: 
   if (!existsSync(path) || !isFile(path)) return { declared: false, malformed: existsSync(path) }
   const source = readFileSync(path, 'utf8')
   try {
-    const document = Bun.TOML.parse(source) as { skills?: Record<string, unknown> }
-    return { declared: Object.hasOwn(document.skills ?? {}, 'ki-specs'), malformed: false }
+    const document = Bun.TOML.parse(source) as {
+      skills?: Record<string, unknown>
+    }
+    return {
+      declared: Object.hasOwn(document.skills ?? {}, 'ki-specs'),
+      malformed: false
+    }
   } catch {
     // A declaration-shaped malformed configuration must not make an intended corpus disappear.
-    return { declared: /^\[skills\.ki-specs\]\s*$/m.test(source), malformed: true }
+    return {
+      declared: /^\[skills\.ki-specs\]\s*$/m.test(source),
+      malformed: true
+    }
   }
 }
 
@@ -141,7 +155,10 @@ const splitRow = (line: string): string[] | null => {
 
 const parseAreasTables = (
   indexContent: string
-): { prefixToFile: Map<string, string>; duplicatePrefixRegistrations: DuplicatePrefixRegistration[] } => {
+): {
+  prefixToFile: Map<string, string>
+  duplicatePrefixRegistrations: DuplicatePrefixRegistration[]
+} => {
   const prefixToFile = new Map<string, string>()
   const duplicatePrefixRegistrations: DuplicatePrefixRegistration[] = []
   let prefixColumn = -1
@@ -175,7 +192,11 @@ const parseAreasTables = (
       .filter(Boolean)) {
       const owner = prefixToFile.get(prefix)
       if (owner && owner !== fileCell)
-        duplicatePrefixRegistrations.push({ prefix, firstFile: owner, duplicateFile: fileCell })
+        duplicatePrefixRegistrations.push({
+          prefix,
+          firstFile: owner,
+          duplicateFile: fileCell
+        })
       else prefixToFile.set(prefix, fileCell)
     }
   }
@@ -264,7 +285,13 @@ export const createSpecsSession = ({
         const claim = (bullet[1] ?? '').split('—')[0] ?? ''
         for (const match of claim.matchAll(RETIRED_ID)) {
           const [, prefix, serial] = match
-          if (prefix && serial) retired.push({ file, id: `${prefix}-${serial}`, prefix, serial: Number(serial) })
+          if (prefix && serial)
+            retired.push({
+              file,
+              id: `${prefix}-${serial}`,
+              prefix,
+              serial: Number(serial)
+            })
         }
         continue
       }
@@ -301,6 +328,15 @@ export const createSpecsSession = ({
         (line, index) => index > requirement.index && index < nextRequirement && /^##\s+/.test(line)
       )
       const block = lines.slice(requirement.index + 1, nextH2 >= 0 ? nextH2 : nextRequirement).join('\n')
+      const conformanceLabels = block.match(/^_Conformance:_.*$/gm) ?? []
+      const conformance =
+        conformanceLabels.length === 1
+          ? (conformanceLabels[0]?.match(/^_Conformance:_\s*(conforming|pending|divergent)\s*$/)?.[1] as
+              | 'conforming'
+              | 'pending'
+              | 'divergent'
+              | undefined)
+          : undefined
       requirements.push({
         file,
         id: requirement.id,
@@ -310,7 +346,10 @@ export const createSpecsSession = ({
         ...(requirement.duplicateOf ? { duplicateOf: requirement.duplicateOf } : {}),
         deprecated: /deprecated/i.test(requirement.title) || /^~~/.test(requirement.title.trim()),
         hasNormativeKeyword: RFC2119.test(block),
-        hasVerify: /_Verify:_/.test(block)
+        hasVerify: /_Verify:_/.test(block),
+        ...(conformance ? { conformance } : {}),
+        hasConformanceLabel: conformanceLabels.length > 0,
+        hasEvidence: /^_Evidence:_\s+\S/m.test(block)
       })
     }
   }
@@ -325,7 +364,11 @@ export const createSpecsSession = ({
       prefixToFile,
       duplicatePrefixRegistrations
     },
-    area: { applicable: inspectable, registeredMissingFiles, unregisteredFiles },
+    area: {
+      applicable: inspectable,
+      registeredMissingFiles,
+      unregisteredFiles
+    },
     identity: {
       applicable: inspectable,
       headingIssues,
@@ -365,7 +408,7 @@ export const createSpecsSession = ({
     subjects: [
       { families: ['RUBRIC'], context: () => context },
       {
-        families: ['INDEX', 'AREA', 'ID', 'REQ', 'VERIFY', 'BEHAVIOUR', 'AS-BUILT', 'SPLIT', 'DR-LINK', 'AREA-FIT'],
+        families: ['INDEX', 'AREA', 'ID', 'REQ', 'VERIFY', 'BEHAVIOUR', 'CONFORMANCE', 'SPLIT', 'DR-LINK', 'AREA-FIT'],
         context: () => context
       }
     ],

@@ -1,6 +1,7 @@
 import { lstatSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, join, relative, resolve } from 'node:path'
 import type { AuditOutcome, RubricContextOptions, RubricPublicationContext, RubricSession } from '../types.ts'
+import { evaluateHousekeepingSchedule, FULL_COMMIT_REF, type HousekeepingSchedule } from './schedule.ts'
 
 const TEMPLATE_ID = /^[A-Z][A-Z0-9-]{1,23}-HK-\d{3,}$/
 const RUN_ID = /^[A-Z][A-Z0-9-]{1,31}-\d{3,}$/
@@ -13,11 +14,17 @@ const TOML = (globalThis as unknown as { Bun: { TOML: { parse(text: string): unk
 
 export type HousekeepingRubricContext = {
   rubric: RubricPublicationContext
-  templates: { outcomes: readonly AuditOutcome[] }
+  templates: { outcomes: readonly AuditOutcome[]; schedules: readonly AuditOutcome[] }
 }
 
 type Frontmatter = { values: Readonly<Record<string, string>>; body: string; errors: readonly string[] }
-type Template = { id: string; activeRun: string | null; subject: string; errors: string[] }
+type Template = {
+  id: string
+  activeRun: string | null
+  subject: string
+  errors: string[]
+  values: Readonly<Record<string, string>>
+}
 type Run = { id: string; status: string; housekeepingTemplate: string; scheduledFor: string }
 
 const file = (path: string): boolean => {
@@ -106,7 +113,17 @@ const runIndex = (root: string, kb: boolean): ReadonlyMap<string, Run[]> => {
   return runs
 }
 
-const templateErrors = ({ path, kb, parsed }: { path: string; kb: boolean; parsed: Frontmatter }): string[] => {
+const templateErrors = ({
+  path,
+  kb,
+  parsed,
+  today
+}: {
+  path: string
+  kb: boolean
+  parsed: Frontmatter
+  today: string
+}): string[] => {
   const errors = [...parsed.errors]
   const expected = new Set([
     'id',
@@ -121,7 +138,8 @@ const templateErrors = ({ path, kb, parsed }: { path: string; kb: boolean; parse
     'active-run'
   ])
   for (const key of expected) if (!(key in parsed.values)) errors.push(`is missing frontmatter field '${key}'`)
-  const unexpected = Object.keys(parsed.values).filter((key) => !expected.has(key))
+  const allowed = new Set([...expected, 'commit-threshold', 'last-run-ref'])
+  const unexpected = Object.keys(parsed.values).filter((key) => !allowed.has(key))
   if (unexpected.length) errors.push(`has unexpected frontmatter field(s): ${unexpected.join(', ')}`)
 
   const id = parsed.values.id
@@ -137,6 +155,16 @@ const templateErrors = ({ path, kb, parsed }: { path: string; kb: boolean; parse
   if (!CADENCE.test(parsed.values.grace ?? '')) errors.push('grace must be a positive one-unit ISO-8601 duration')
   if (parsed.values['last-run'] !== 'null' && !validDate(parsed.values['last-run'] ?? ''))
     errors.push("last-run must be 'null' or a valid ISO date")
+  if (validDate(parsed.values['last-run'] ?? '') && (parsed.values['last-run'] as string) > today)
+    errors.push('last-run cannot claim a successful review after the evaluation date')
+  const threshold = parsed.values['commit-threshold']
+  if (threshold !== undefined && (!/^[1-9]\d*$/.test(threshold) || !Number.isSafeInteger(Number(threshold))))
+    errors.push('commit-threshold must be a positive safe integer')
+  const anchor = parsed.values['last-run-ref']
+  if (anchor !== undefined && anchor !== 'null' && !FULL_COMMIT_REF.test(anchor))
+    errors.push("last-run-ref must be 'null' or a full lowercase commit identity")
+  if (anchor !== undefined && anchor !== 'null' && parsed.values['last-run'] === 'null')
+    errors.push('last-run-ref requires successful last-run date evidence')
   if (!['manual', 'when-due', 'when-overdue'].includes(parsed.values['spawn-policy'] ?? ''))
     errors.push('has an invalid spawn-policy')
   if (!HORIZONS.has(parsed.values['spawn-horizon'] ?? '')) errors.push('has an invalid spawn-horizon')
@@ -152,10 +180,12 @@ export const createHousekeepingSession = ({
   publication
 }: RubricContextOptions): RubricSession<HousekeepingRubricContext> => {
   const root = resolve(repository)
+  const today = new Date().toISOString().slice(0, 10)
   const kb = isKb(root)
   const templateRoot = kb ? join(root, 'Streams', 'Housekeeping') : join(root, 'docs', 'housekeeping')
   const relativeRoot = relative(root, templateRoot)
   const outcomes: AuditOutcome[] = []
+  const schedules: AuditOutcome[] = []
   if (!directory(templateRoot)) {
     outcomes.push({
       status: 'NOT_APPLICABLE',
@@ -181,7 +211,8 @@ export const createHousekeepingSession = ({
         id: parsed.values.id ?? '',
         activeRun: parsed.values['active-run'] === 'null' ? null : (parsed.values['active-run'] ?? null),
         subject,
-        errors: templateErrors({ path, kb, parsed })
+        values: parsed.values,
+        errors: templateErrors({ path, kb, parsed, today })
       })
     }
     if (!templates.length && !outcomes.length)
@@ -211,7 +242,7 @@ export const createHousekeepingSession = ({
       if ((activeOwners.get(template.activeRun)?.length ?? 0) > 1)
         template.errors.push('active-run cannot be linked by more than one housekeeping template')
     }
-    for (const template of templates)
+    for (const template of templates) {
       outcomes.push({
         status: template.errors.length ? 'VIOLATION' : 'PASS',
         message: template.errors.length
@@ -219,7 +250,37 @@ export const createHousekeepingSession = ({
           : 'Housekeeping template has a complete lifecycle, identity, schedule, body, and linkage contract.',
         subject: template.subject
       })
+      if (template.errors.length) continue
+      const values = template.values
+      const evaluation = evaluateHousekeepingSchedule({
+        repository: root,
+        today,
+        schedule: {
+          status: values.status as HousekeepingSchedule['status'],
+          cadence: values.cadence as string,
+          grace: values.grace as string,
+          lastRun: values['last-run'] === 'null' ? null : (values['last-run'] as string),
+          activeRun: template.activeRun,
+          spawnPolicy: values['spawn-policy'] as HousekeepingSchedule['spawnPolicy'],
+          ...(values['commit-threshold'] === undefined ? {} : { commitThreshold: Number(values['commit-threshold']) }),
+          ...(values['last-run-ref'] === undefined
+            ? {}
+            : { lastRunRef: values['last-run-ref'] === 'null' ? null : values['last-run-ref'] })
+        }
+      })
+      schedules.push({
+        status: 'INFO',
+        subject: template.subject,
+        message: `Schedule action: ${evaluation.action}; ${evaluation.reason} Calendar due: ${evaluation.calendarDue ?? 'unknown'}; commits: ${evaluation.commits.kind === 'known' ? evaluation.commits.count : evaluation.commits.kind}. No run was created.`
+      })
+      if (evaluation.commits.kind === 'unknown')
+        schedules.push({
+          status: 'VIOLATION',
+          subject: template.subject,
+          message: `Change-volume evidence is unknown: ${evaluation.commits.reason} Do not infer zero commits or backfill a reviewed revision.`
+        })
+    }
   }
-  const context: HousekeepingRubricContext = { rubric: { publication }, templates: { outcomes } }
+  const context: HousekeepingRubricContext = { rubric: { publication }, templates: { outcomes, schedules } }
   return { subjects: [{ families: ['HOUSE'], context: () => context }], proposal: () => ({ writes: [] }) }
 }

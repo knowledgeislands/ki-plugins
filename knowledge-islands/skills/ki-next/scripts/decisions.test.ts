@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test'
 import {
+  adoptionDecision,
+  captureDecision,
   deferralDecision,
   housekeepingSpawnDecision,
   promotionDecision,
@@ -51,6 +53,19 @@ test('ranks only dependency-ready immediate records and preserves confirmation g
       false
     )
   ).toBe('refuse')
+})
+
+test('captures only substantive unowned work and gates triage adoption', () => {
+  expect(captureDecision({ substantive: true, existingOwner: false, resolvedOrRhetorical: false })).toBe(
+    'capture-triage'
+  )
+  expect(captureDecision({ substantive: true, existingOwner: true, resolvedOrRhetorical: false })).toBe('refuse')
+  const triage = { id: 'TRIAGE-1', horizon: 'triage' as const, status: 'draft' as const, dependenciesReady: true }
+  expect(adoptionDecision(triage, 'future', false, true)).toBe('refuse')
+  expect(adoptionDecision(triage, 'future', true, true)).toBe('adopt')
+  expect(adoptionDecision(triage, 'next', true, false)).toBe('refuse')
+  expect(deferralDecision(triage, 'future', true, true)).toBe('refuse')
+  expect(deferralDecision({ ...triage, horizon: 'future' }, 'triage', true, true)).toBe('refuse')
 })
 
 test('spawns only one active housekeeping run and separates direct trade application', () => {

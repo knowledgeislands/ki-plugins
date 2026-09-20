@@ -11,6 +11,7 @@ import type {
   ViolationLevel
 } from '../../shared/rubric.ts'
 import { collectAuditEvidence, type EngineeringEvidenceFinding } from './audit-evidence.ts'
+import { COMMITLINT_CONFIGURATION, normaliseCommitMessage, normalisePreCommit } from './git-hooks.ts'
 import { inspectConsistencyReviewEvidence } from './review-evidence.ts'
 
 const ENGINEERING_TABLE = 'ki-engineering'
@@ -43,9 +44,14 @@ export type ScriptsRubricContext = {
   scr5: EngineeringEvidence
   scr6: EngineeringEvidence
   scr7: EngineeringEvidence
+  scr10: EngineeringEvidence
+  scr11: EngineeringEvidence
   synchronisePackage?: () => void
+  synchroniseHooks?: () => void
 }
-export type BunRubricContext = Record<string, never>
+export type BunRubricContext = {
+  bun2: EngineeringEvidence
+}
 export type TypescriptRubricContext = {
   tsc1: EngineeringEvidence
   tsc2: EngineeringEvidence
@@ -144,9 +150,21 @@ export const auditEvidence = (
     : [{ status: 'NOT_APPLICABLE', message: 'This criterion did not apply to the target.' }]
 }
 
-const requiredDev = ['@biomejs/biome', 'knip', 'rumdl', 'husky', 'lint-staged', 'syncpack', 'typescript']
+const requiredDev = [
+  '@biomejs/biome',
+  '@commitlint/cli',
+  '@commitlint/config-conventional',
+  'knip',
+  'rumdl',
+  'husky',
+  'lint-staged',
+  'syncpack',
+  'typescript'
+]
 const versions: Record<string, string> = {
   '@biomejs/biome': '^2.5.12',
+  '@commitlint/cli': '^21.2.2',
+  '@commitlint/config-conventional': '^21.2.2',
   knip: '^6.34.0',
   rumdl: '^0.2.64',
   husky: '^9.1.7',
@@ -312,6 +330,7 @@ export const createEngineeringSession = async (
   const packagePath = join(target, 'package.json')
   const packageSource = isSafeRegularFile(packagePath) ? readFileSync(packagePath, 'utf8') : undefined
   let synchronisePackage = false
+  let synchroniseHooks = false
   const scaffold = new Set<keyof typeof defaults>()
   let declareEngineering = false
   const requestedCommands = new Map<string, ConformCommand>()
@@ -370,9 +389,14 @@ export const createEngineeringSession = async (
       scr5: evidence('SCR-5'),
       scr6: evidence('SCR-6'),
       scr7: evidence('SCR-7'),
+      scr10: evidence('SCR-10'),
+      scr11: evidence('SCR-11'),
+      ...(mutable ? { synchroniseHooks: () => (synchroniseHooks = true) } : {}),
       ...synchronisePackageCapability
     },
-    bun: {},
+    bun: {
+      bun2: evidence('BUN-2')
+    },
     typescript: {
       tsc1: evidence('TSC-1'),
       tsc2: evidence('TSC-2'),
@@ -458,6 +482,29 @@ export const createEngineeringSession = async (
       if (synchronisePackage && packageSource !== undefined) {
         const content = packageContent(packageSource)
         if (content !== undefined && content !== packageSource) writes.push({ path: 'package.json', content })
+      }
+      if (synchroniseHooks) {
+        const hookWrites = [
+          { path: '.husky/pre-commit', normalise: normalisePreCommit },
+          { path: '.husky/commit-msg', normalise: normaliseCommitMessage }
+        ] as const
+        for (const hook of hookWrites) {
+          const path = join(target, hook.path)
+          if (!existsSync(path)) writes.push({ path: hook.path, content: hook.normalise(''), create: true })
+          else if (isSafeRegularFile(path)) {
+            const source = readFileSync(path, 'utf8')
+            const content = hook.normalise(source)
+            if (content !== source) writes.push({ path: hook.path, content })
+          }
+        }
+        const configPath = join(target, 'commitlint.config.ts')
+        if (!existsSync(configPath))
+          writes.push({ path: 'commitlint.config.ts', content: COMMITLINT_CONFIGURATION, create: true })
+        else if (isSafeRegularFile(configPath)) {
+          const source = readFileSync(configPath, 'utf8')
+          if (source !== COMMITLINT_CONFIGURATION)
+            writes.push({ path: 'commitlint.config.ts', content: COMMITLINT_CONFIGURATION })
+        }
       }
       for (const name of scaffold) writes.push({ path: name, content: defaults[name], create: true })
       if (declareEngineering) {

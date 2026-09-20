@@ -1,5 +1,7 @@
 # The Cloudflare hosting standard
 
+The hosting overlay applies to the single core-selected site or, with a named multi-site registry, every registered site by default. `[skills.ki-repo-website-cloudflare]` may use only `sites = ["name"]` to select a non-empty subset of known names; it never declares paths. Every selected site receives a separate hosting audit subject. The existing keyless form remains the complete single-site contract.
+
 The normative, quotable reference for serving a built static site on Cloudflare — what good hosting looks like, and why. The audit rubric ([rubric.md](rubric.md)) turns each section into checkable items; the procedure is in the [SKILL.md](../SKILL.md). See [the source list](sources.md) for provenance.
 
 This skill owns the **deploy/serve delta for the site Worker**. The `dist/` it serves is `ki-repo-website`'s output (the seam); the toolchain is `ki-engineering`'s. Both are referenced here, not restated. **Companion Workers are out of scope.**

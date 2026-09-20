@@ -119,15 +119,15 @@ const APP_6 = item(
 const APP_7 = item(
   'APP-7',
   'App development command',
-  'The selected site package dev script runs Vite.',
+  'The selected site package ki:site:dev script runs Vite.',
   'WARN',
   (context) =>
     inactive(context) ??
     unavailableSiteRoot(context) ??
     check(
-      /\bvite(?:\s|$)/.test(context.scripts.dev ?? ''),
-      'dev runs Vite.',
-      'dev does not run Vite.',
+      /\bvite(?:\s|$)/.test(context.scripts['ki:site:dev'] ?? ''),
+      'ki:site:dev runs Vite.',
+      'ki:site:dev does not run Vite.',
       context.packagePath
     )
 )

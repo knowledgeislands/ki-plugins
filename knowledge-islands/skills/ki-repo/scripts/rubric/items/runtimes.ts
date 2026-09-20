@@ -48,6 +48,23 @@ const RUNTIMES_3: RubricItem<RuntimesRubricContext> = {
   }
 }
 
+const RUNTIMES_4: RubricItem<RuntimesRubricContext> = {
+  code: 'RUNTIMES-4',
+  title: 'Root runtime orientation',
+  description:
+    'A multi-runtime repository exposes shared root orientation through a physical AGENTS.md and a thin Claude import.',
+  sources: [SOURCE],
+  mechanical: {
+    level: 'WARN',
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Move shared root orientation into AGENTS.md, import it from CLAUDE.md with a bare @AGENTS.md line, and rerun the audit.'
+    },
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.runtimes4, 'WARN') }
+  }
+}
+
 const RUNTIMES_J1: RubricItem<RuntimesRubricContext> = {
   code: 'RUNTIMES-J1',
   title: 'Runtime orientation split',
@@ -69,5 +86,5 @@ export const RUNTIMES: RubricFamily<RepoRubricContext, RuntimesRubricContext> = 
   description: 'Declared agent-runtime support and orientation.',
   standard: SOURCE,
   selectContext: (context) => context.runtimes,
-  items: [RUNTIMES_1, RUNTIMES_2, RUNTIMES_3, RUNTIMES_J1]
+  items: [RUNTIMES_1, RUNTIMES_2, RUNTIMES_3, RUNTIMES_4, RUNTIMES_J1]
 }

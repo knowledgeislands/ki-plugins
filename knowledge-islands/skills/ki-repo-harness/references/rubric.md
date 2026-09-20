@@ -31,6 +31,8 @@ Typed compatible-harness capability inventory and kind-specific boundaries.
   - _Conforming guidance:_ Revise the inventory or route the concern to its owning standard; do not alter a capability’s runtime semantics from this container-level review.
 - **CAP-2 [M] — Generated capability catalogue is exact** — A populated skills shelf publishes one marker-bounded catalogue in `skills/README.md`, derived exactly from canonical skill frontmatter and safely replaceable without changing authored surrounding guidance. (standards-compatible-harness.md#capability-publication)
   - _Remediation:_ automatic
+- **CAP-3 [M] — Authored capability counts are exact** — When root `README.md` carries the recognised numeric Agent Skills summary, its total, governance, and process counts match canonical skill frontmatter; a single complete stale claim is safely repairable without changing surrounding prose. (standards-compatible-harness.md#capability-publication)
+  - _Remediation:_ automatic
 
 ## PAYLOAD — Payload and runtime evidence boundary
 

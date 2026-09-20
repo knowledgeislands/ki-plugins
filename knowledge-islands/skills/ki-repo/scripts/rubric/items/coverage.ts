@@ -8,13 +8,14 @@ const COV_1: RubricItem<EvidenceRubricContext> = {
     'Detected governance applicability and declared opt-in tables agree, subject to explicit coverage overrides.',
   sources: ['standards-configuration.md'],
   mechanical: {
-    level: 'WARN',
+    level: 'FAIL',
+    overrideLevels: ['WARN'],
     remediation: {
       class: 'diagnostic',
       guidance:
         'Align the declared coverage table with detected applicability or record an explicit override, then rerun the audit.'
     },
-    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'WARN') }
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL', ['WARN']) }
   }
 }
 

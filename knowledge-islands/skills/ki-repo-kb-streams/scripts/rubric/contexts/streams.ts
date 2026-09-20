@@ -193,12 +193,14 @@ export const createStreamsSession = ({
   const unexpectedAreas = present.filter(
     (name) => !OPERATIONAL_AREAS.includes(name as (typeof OPERATIONAL_AREAS)[number])
   )
+  const hasTriageDirectory = present.includes('Triage')
   const legacy = present.filter((name) => LEGACY_FOLDERS.includes(name as (typeof LEGACY_FOLDERS)[number]))
   const operationalAreas: StreamsEvidence[] = [
     {
-      level: missingAreas.length || unexpectedAreas.length ? 'WARN' : 'PASS',
-      message:
-        missingAreas.length || unexpectedAreas.length
+      level: hasTriageDirectory ? 'FAIL' : missingAreas.length || unexpectedAreas.length ? 'WARN' : 'PASS',
+      message: hasTriageDirectory
+        ? 'Triage is roadmap metadata; Streams/Triage/ must not exist.'
+        : missingAreas.length || unexpectedAreas.length
           ? `Streams operational areas need review: missing ${missingAreas.join(', ') || 'none'}; unexpected ${unexpectedAreas.join(', ') || 'none'}.`
           : 'Streams contains the configured Roadmap and Housekeeping operational areas.',
       subject: configuration.streams

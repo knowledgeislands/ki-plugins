@@ -35,6 +35,9 @@ const LEGACY_EQUIVALENTS = new Map([
   ['/playwright-report', 'reports/'],
   ['/node_modules', 'node_modules/'],
   ['node_modules', 'node_modules/'],
+  ['.turbo', '.turbo/'],
+  ['/.turbo', '.turbo/'],
+  ['/.turbo/', '.turbo/'],
   ['/dist', 'dist/'],
   ['/dist/', 'dist/'],
   ['site/dist/', 'dist/'],
@@ -79,6 +82,7 @@ export const managedGitignoreBlocks = (
     blocks.push(
       block('ki-engineering', 'TypeScript/Bun dependencies, build output, caches, logs, and real environment files.', [
         'node_modules/',
+        '.turbo/',
         ...(declared.has('ki-repo-website') ? [] : ['dist/']),
         '*.tsbuildinfo',
         'npm-debug.log*',

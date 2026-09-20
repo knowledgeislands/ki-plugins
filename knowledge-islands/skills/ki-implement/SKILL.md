@@ -1,10 +1,13 @@
 ---
 name: ki-implement
 ki-kind: process
+ki-applicability: invocation-only
 ki-depends-on: []
 ki-optional-depends-on: [ki-delegation]
 description: >
-  Implements one explicitly approved ready work record through the selected locally executable adapter: preflight, immutable baseline, in-progress transition, bounded execution, appropriate delegation, verification, and the canonical six-heading review packet. It stops at awaiting-review and never selects work, reshapes a plan, self-accepts, prunes, pushes, releases, or expands authority. Remote execution fails closed pending KI-HARNESS-FND-014.
+  Deliver one approved Ready local work record from immutable baseline through verification and Awaiting
+  review. Use to implement planned work; it never selects, replans, self-accepts, prunes, pushes, releases, or
+  expands authority.
 argument-hint: 'implement <work-item> | help'
 ---
 

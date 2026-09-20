@@ -1,12 +1,15 @@
 ---
 name: ki-subagents-claude
 ki-kind: governance
+ki-applicability: detected
 ki-depends-on: [ki-subagents]
 ki-runtime-binding: true
 ki-supported-runtimes: [claude-code]
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Audit and write the Claude Code Markdown/YAML projection of a portable KI subagent. Use after `ki-subagents` establishes the runtime-neutral role, selection, instructions, lane, grounding, hand-offs, and orchestration intent. Carries source-shape checks for YAML, required Claude fields, and Claude-specific configuration. It does not prove installed, selected, activated, or executed Claude agents. For Codex TOML use `ki-subagents-codex`; for portable semantics use `ki-subagents`.
+  Audit or write Claude Code Markdown/YAML projections of approved portable KI subagent roles. Use for
+  Claude-native agent source shape and fields; use `ki-subagents` for runtime-neutral role design and
+  `ki-subagents-codex` for Codex TOML.
 argument-hint: 'audit <agent-or-dir> | conform <agent> | help | educate <description> | refresh'
 ---
 

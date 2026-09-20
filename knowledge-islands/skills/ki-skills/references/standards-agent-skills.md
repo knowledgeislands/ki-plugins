@@ -109,6 +109,10 @@ These check the skill against **time** — they matter most once it ships into a
 - **※4 Commands → skills.** In Claude Code, `.claude/commands/*.md` and `.claude/skills/<name>/SKILL.md` both yield `/<name>`; skills are the recommended form. Suggest migrating old command files.
 - **※5 Budgets are soft.** "< 500 lines" and "< 5,000 tokens" are performance recommendations, not enforced — the linter reports them as WARN, never FAIL. The reference validator (`skills-ref validate`) checks frontmatter/naming only.
 
+### Codex skill-list budget
+
+Codex initially lists each skill's name, description, and file path within at most two per cent of the model context, or 8,000 characters when the context size is unknown. With many installed skills it shortens descriptions first and may then omit skills with a warning. Treat this as a shared runtime budget, not a per-description target: optimise the complete description set, front-load the key use case and trigger words, and test realistic positive and negative prompts. A description-only rewrite cannot promise that every skill remains listed because names, paths, and skills outside the current set also consume the budget. (OA, KI)
+
 ## 14. Exact numbers
 
 | Item                               | Value               | Hard/Soft | Source     |

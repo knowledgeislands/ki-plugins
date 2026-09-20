@@ -1,9 +1,13 @@
 import { afterEach, expect, test } from 'bun:test'
-import { mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { RubricEmitter, RubricFamily } from '../../shared/rubric.ts'
 import {
+  collectPackageScriptSources,
+  collectTrackedMjs,
+  findRelativeNodeModulesScriptUses,
   gradeDependencyFreshness,
   inspectDependencyHolds,
   inspectEngineeringCheckRecords,
@@ -18,6 +22,13 @@ import {
   type PackageRubricContext,
   type ScriptsRubricContext
 } from '../contexts/engineering.ts'
+import {
+  COMMITLINT_CONFIGURATION,
+  hasCommitMessageBaseline,
+  hasPreCommitBaseline,
+  normaliseCommitMessage,
+  normalisePreCommit
+} from '../contexts/git-hooks.ts'
 import catalogue from './index.ts'
 
 const temporaryDirectories: string[] = []
@@ -58,12 +69,16 @@ test('the structured catalogue preserves the engineering criteria', async () => 
   const codes = catalogue.families
     .filter((family) => family.code !== 'RUBRIC')
     .flatMap((family) => family.items.map((item) => item.code))
-  expect(codes).toHaveLength(52)
+  expect(codes).toHaveLength(56)
   expect(new Set(codes).size).toBe(codes.length)
   expect(codes[0]).toBe('PKG-1')
   expect(codes).toContain('TEST-7')
   expect(codes).toContain('DESIGN-1')
+  expect(codes).toContain('DESIGN-2')
   expect(codes).toContain('REVIEW-1')
+  expect(codes).toContain('SCR-10')
+  expect(codes).toContain('SCR-11')
+  expect(codes).toContain('BUN-2')
   expect(codes.at(-1)).toBe('TOML-3')
 
   const observableCoverage = catalogue.families
@@ -81,6 +96,65 @@ test('the structured catalogue preserves the engineering criteria', async () => 
     'not warranted',
     'consistent',
     'follow-up:<canonical-work-item-id>'
+  ])
+})
+
+test('BUN-2 finds tracked mjs files without reporting untracked files', async () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-engineering-'))
+  temporaryDirectories.push(repository)
+  execFileSync('git', ['init', '--quiet', repository])
+  writeFileSync(join(repository, 'script.mjs'), 'export default {}\n')
+  writeFileSync(join(repository, 'untracked.mjs'), 'export default {}\n')
+  execFileSync('git', ['-C', repository, 'add', '--', 'script.mjs'])
+
+  expect(await collectTrackedMjs(repository)).toEqual(['script.mjs'])
+})
+
+test('SCR-10 finds relative node_modules execution in root and safe workspace scripts only', () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-engineering-'))
+  const outside = mkdtempSync(join(tmpdir(), 'ki-engineering-external-'))
+  temporaryDirectories.push(repository, outside)
+  mkdirSync(join(repository, 'apps/site'), { recursive: true })
+  writeFileSync(
+    join(repository, 'apps/site/package.json'),
+    `${JSON.stringify({
+      scripts: {
+        build: 'node ./node_modules/typescript/bin/tsc',
+        resolver: 'node --eval "createRequire(import.meta.url).resolve(\'typescript\')"'
+      }
+    })}\n`
+  )
+  writeFileSync(join(repository, 'eleventy.config.ts'), "const path = '../node_modules/tool/index.js'\n")
+  writeFileSync(join(outside, 'package.json'), '{"scripts":{"build":"bun ../node_modules/hidden/bin.js"}}\n')
+  symlinkSync(outside, join(repository, 'apps/escape'), 'dir')
+
+  const sources = collectPackageScriptSources(
+    repository,
+    {
+      scripts: {
+        build: 'bun ../../node_modules/@11ty/eleventy/cmd.cjs',
+        clean: 'rm -rf dist node_modules',
+        packageBinary: 'bunx --bun @11ty/eleventy',
+        malformed: 42
+      }
+    },
+    ['apps/site', 'apps/escape', '../outside']
+  )
+
+  expect(sources.map((source) => source.packagePath)).toEqual(['.', 'apps/site'])
+  expect(findRelativeNodeModulesScriptUses(sources)).toEqual([
+    {
+      packagePath: '.',
+      manifestPath: 'package.json',
+      scriptName: 'build',
+      fragment: '../../node_modules/@11ty/eleventy/cmd.cjs'
+    },
+    {
+      packagePath: 'apps/site',
+      manifestPath: 'apps/site/package.json',
+      scriptName: 'build',
+      fragment: './node_modules/typescript/bin/tsc'
+    }
   ])
 })
 
@@ -307,6 +381,67 @@ test('SCR-2 proposes removal for any whole-repository or focused native governan
     clean: 'rm -rf dist node_modules',
     prepare: 'husky'
   })
+})
+
+test('the common hook contract detects missing and ordered baselines', () => {
+  expect(hasPreCommitBaseline('')).toBe(false)
+  expect(hasPreCommitBaseline('bunx syncpack format --check || exit 1\nbunx lint-staged || exit 1\n')).toBe(false)
+  expect(hasPreCommitBaseline(normalisePreCommit(''))).toBe(true)
+  expect(hasCommitMessageBaseline('')).toBe(false)
+  expect(hasCommitMessageBaseline(normaliseCommitMessage(''))).toBe(true)
+})
+
+test('SCR-11 conform repairs common prefixes while preserving repository checks', async () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-engineering-'))
+  temporaryDirectories.push(repository)
+  mkdirSync(join(repository, '.husky'), { recursive: true })
+  writeFileSync(join(repository, 'package.json'), '{}\n')
+  writeFileSync(
+    join(repository, '.husky/pre-commit'),
+    'bunx syncpack format --check\nbunx lint-staged\nif test -f custom; then custom-check; fi\n'
+  )
+  writeFileSync(join(repository, '.husky/commit-msg'), 'bunx commitlint --edit "$1"\ncustom-message-check "$1"\n')
+  writeFileSync(join(repository, 'commitlint.config.ts'), 'export default {}\n')
+
+  const session = await createEngineeringSession(
+    { mode: 'conform', repository, userHome: tmpdir(), configuration: {}, packageScriptClaims: [] },
+    () => [{ level: 'FAIL', code: 'SCR-11', message: 'hook drift' }]
+  )
+  const root = session.subjects[1]?.context() as EngineeringRubricContext
+  const family = catalogue.families.find((candidate) => candidate.code === 'SCR') as RubricFamily<
+    EngineeringRubricContext,
+    ScriptsRubricContext
+  >
+  family.items.find((candidate) => candidate.code === 'SCR-11')?.mechanical?.conform?.run(family.selectContext(root))
+
+  const writes = new Map(session.proposal().writes.map((write) => [write.path, write.content]))
+  expect(writes.get('.husky/pre-commit')).toBe(`${normalisePreCommit('if test -f custom; then custom-check; fi\n')}`)
+  expect(writes.get('.husky/commit-msg')).toBe(`${normaliseCommitMessage('custom-message-check "$1"\n')}`)
+  expect(writes.get('commitlint.config.ts')).toBe(COMMITLINT_CONFIGURATION)
+})
+
+test('SCR-11 conform leaves unsafe hook paths untouched', async () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-engineering-'))
+  temporaryDirectories.push(repository)
+  mkdirSync(join(repository, '.husky'), { recursive: true })
+  writeFileSync(join(repository, 'package.json'), '{}\n')
+  const hookTarget = join(repository, 'foreign-pre-commit')
+  writeFileSync(hookTarget, 'foreign-hook\n')
+  symlinkSync(hookTarget, join(repository, '.husky/pre-commit'))
+
+  const session = await createEngineeringSession(
+    { mode: 'conform', repository, userHome: tmpdir(), configuration: {}, packageScriptClaims: [] },
+    () => [{ level: 'FAIL', code: 'SCR-11', message: 'unsafe hook path' }]
+  )
+  const root = session.subjects[1]?.context() as EngineeringRubricContext
+  const family = catalogue.families.find((candidate) => candidate.code === 'SCR') as RubricFamily<
+    EngineeringRubricContext,
+    ScriptsRubricContext
+  >
+  family.items.find((candidate) => candidate.code === 'SCR-11')?.mechanical?.conform?.run(family.selectContext(root))
+
+  expect(session.proposal().writes.some((write) => write.path === '.husky/pre-commit')).toBe(false)
+  expect(readFileSync(hookTarget, 'utf8')).toBe('foreign-hook\n')
 })
 
 test('guarded remedies do not expose unsafe command conform actions', async () => {

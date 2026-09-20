@@ -1,11 +1,14 @@
 ---
 name: ki-authoring
 ki-kind: governance
+ki-applicability: baseline
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 owns: ['.editorconfig', '.rumdl.toml']
 description: >
-  Defines Knowledge Islands Markdown, TOML, README composition, and knowledge-placement conventions. Use to format or audit Markdown or TOML, shape a repository README, decide where a durable learning belongs, or refresh house style. Use `ki-skills` for a SKILL.md, `ki-repo` for repository requirements or a configuration contract, and `ki-engineering` for the toolchain.
+  Govern KI Markdown, TOML, README composition, and durable knowledge placement. Use to format or audit
+  authored documents, shape a README, or decide where learning belongs; use `ki-skills` for SKILL.md quality,
+  `ki-repo` for repository contracts, and `ki-engineering` for code toolchains.
 argument-hint: 'audit <path> | conform <path> | educate <target> | help | refresh'
 ---
 

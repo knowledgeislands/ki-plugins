@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const roots: string[] = []
-const script = fileURLToPath(new URL('../../remove-legacy-ki.mjs', import.meta.url))
+const script = fileURLToPath(new URL('../../internal/remove-legacy-ki.ts', import.meta.url))
 
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
@@ -19,7 +19,7 @@ const repository = (): string => {
   return root
 }
 
-const run = (root: string) => spawnSync('node', [script, root], { encoding: 'utf8' })
+const run = (root: string) => spawnSync('bun', [script, root], { encoding: 'utf8' })
 
 describe('legacy .ki cleanup', () => {
   test('removes only untracked audits and conform output plus empty parent', () => {

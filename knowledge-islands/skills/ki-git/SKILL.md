@@ -1,10 +1,13 @@
 ---
 name: ki-git
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Governs portable Knowledge Islands Git working and commit conventions: Conventional Commit messages, shared-working-tree touched-path tracking, selection between single-working-copy main, single-working-copy branch with PR, and worktrees with PRs, safe Git hygiene, and the stale-lock guard's semantics. Use when preparing or reviewing a commit, coordinating human or agent changes in one working tree, choosing a working and review approach, recovering a stale Git lock, or clarifying who owns hook payload versus runtime registration. Does not configure GitHub repository settings, install hooks, or write agent settings; use ki-repo for repository configuration and ki-repo-dotfiles-chezmoi for runtime bindings.
+  Govern KI Git commits and shared-tree safety: Conventional Commits, touched-path tracking, explicit staging,
+  branch or worktree choice, and stale locks. Use when preparing commits or coordinating concurrent edits;
+  `ki-repo` owns GitHub settings.
 argument-hint: 'audit <repo> | conform <repo> | help | educate <repo> | refresh'
 ---
 
@@ -18,12 +21,13 @@ Read [the Git standard](references/standards-git.md) before preparing a commit, 
 
 The hosted native rubric records the portable review prompts below. Its four policy families are **judgment-only**: an AUDIT renders them as unassessed review work, not as a clean Git result. Before recording a judgment, gather the named read-only evidence (for example `git status --short`, `git branch --show-current`, and the proposed commit diff/message) and retain its outcome with the review. It deliberately has no mechanical policy checks or private Git executor yet.
 
-It does not install a hook, write runtime settings, or add a compatibility execution path.
+Package-backed repositories mechanically bind this skill's message vocabulary through the `ki-engineering` Husky and Commitlint contract. This skill does not install hooks, write runtime settings, or own the package toolchain; its native rubric retains the judgment that a proposed message accurately describes one completed unit.
 
 ## Boundaries
 
 - `ki-repo` owns repository configuration and GitHub settings, including branch-protection choices.
-- The harness owns `hooks/` payload layout; `ki-git` owns the stale-lock guard's portable safety semantics.
+- `ki-engineering` owns repository-local Husky and Commitlint wiring for package-backed repositories; `ki-git` owns the message policy that binding enforces.
+- The harness owns the runtime `hooks/` payload layout; `ki-git` owns the stale-lock guard's portable safety semantics.
 - `ki-repo-dotfiles-chezmoi` owns runtime-specific Claude Code settings registration after it has selected a compatible payload.
 
 ## Operating modes

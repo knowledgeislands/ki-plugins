@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { RubricContextOptions } from '../../shared/rubric.ts'
@@ -36,14 +36,14 @@ describe('website core context', () => {
       JSON.stringify({
         scripts: {
           'ki:site:build': 'bun run --cwd apps/site build',
-          'ki:site:dev': 'bun run --cwd apps/site dev',
+          'ki:site:dev': 'bun run --cwd apps/site ki:site:dev',
           'ki:site:clean': 'bun run --cwd apps/site clean'
         }
       })
     )
     writeFileSync(
       join(repository, 'apps', 'site', 'package.json'),
-      JSON.stringify({ scripts: { build: 'build', dev: 'dev', clean: 'clean' } })
+      JSON.stringify({ scripts: { build: 'build', 'ki:site:dev': 'dev', clean: 'clean' } })
     )
     writeFileSync(join(repository, '.gitignore'), 'dist/\n')
 
@@ -126,4 +126,81 @@ test('diagnoses an explicitly materialised apps/site default', () => {
       .filter((outcome) => outcome.status === 'VIOLATION')
       .map((outcome) => outcome.message)
   ).toContain('site-root = "apps/site" restates the implicit default; remove the key.')
+})
+
+test('rejects a root development alias that targets a bare package key', () => {
+  const repository = root()
+  mkdirSync(join(repository, 'apps', 'site'), { recursive: true })
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-website]\n')
+  writeFileSync(
+    join(repository, 'package.json'),
+    JSON.stringify({
+      scripts: {
+        'ki:site:build': 'bun run --cwd apps/site build',
+        'ki:site:dev': 'bun run --cwd apps/site dev',
+        'ki:site:clean': 'bun run --cwd apps/site clean'
+      }
+    })
+  )
+  writeFileSync(
+    join(repository, 'apps', 'site', 'package.json'),
+    JSON.stringify({ scripts: { build: 'build', dev: 'dev', clean: 'clean' } })
+  )
+  writeFileSync(join(repository, '.gitignore'), 'dist/\n')
+
+  const context = createWebsiteCoreSession(options(repository)).subjects[0].context()
+  const outcomes = SITE.items.find((item) => item.code === 'SITE-5')?.mechanical?.audit.run(context) ?? []
+  expect(outcomes.some((outcome) => outcome.status === 'VIOLATION')).toBe(true)
+})
+
+test('audits every named site and permits one exact primary self alias hop', () => {
+  const repository = root()
+  for (const site of ['site-apex', 'site-tower']) {
+    mkdirSync(join(repository, 'apps', site), { recursive: true })
+    writeFileSync(
+      join(repository, 'apps', site, 'package.json'),
+      JSON.stringify({ scripts: { build: 'build', 'ki:site:dev': 'dev', clean: 'clean' } })
+    )
+  }
+  writeFileSync(
+    join(repository, '.ki.toml'),
+    '[skills.ki-repo-website]\nprimary-site = "apex"\n\n[skills.ki-repo-website.sites]\napex = "apps/site-apex"\ntower = "apps/site-tower"\n'
+  )
+  writeFileSync(
+    join(repository, 'package.json'),
+    JSON.stringify({
+      scripts: {
+        'ki:site:build': 'bun run self:site:apex:build',
+        'ki:site:dev': 'bun run self:site:apex:dev',
+        'ki:site:clean': 'bun run self:site:apex:clean',
+        'self:site:apex:build': 'bun run --cwd apps/site-apex build',
+        'self:site:apex:dev': 'bun run --cwd apps/site-apex ki:site:dev',
+        'self:site:apex:clean': 'bun run --cwd apps/site-apex clean'
+      }
+    })
+  )
+  writeFileSync(join(repository, '.gitignore'), 'apps/site-apex/dist/\napps/site-tower/dist/\n')
+
+  const session = createWebsiteCoreSession(options(repository))
+  const contexts = session.subjects
+    .filter((subject) => subject.families.includes('SITE'))
+    .map((subject) => subject.context())
+
+  expect(contexts.map((context) => [context.siteName, context.siteRoot, context.primary])).toEqual([
+    ['apex', 'apps/site-apex', true],
+    ['tower', 'apps/site-tower', false]
+  ])
+  expect(
+    contexts.flatMap((context) => SITE.items.flatMap((item) => item.mechanical?.audit.run(context) ?? []))
+  ).not.toContainEqual(expect.objectContaining({ status: 'VIOLATION' }))
+
+  const rootPackage = JSON.parse(readFileSync(join(repository, 'package.json'), 'utf8')) as {
+    scripts: Record<string, string>
+  }
+  rootPackage.scripts['self:site:apex:build'] = 'bun run self:site:apex:build:terminal'
+  writeFileSync(join(repository, 'package.json'), JSON.stringify(rootPackage))
+  const primary = createWebsiteCoreSession(options(repository)).subjects[0]?.context()
+  expect(primary && SITE.items.find((item) => item.code === 'SITE-4')?.mechanical?.audit.run(primary)).toContainEqual(
+    expect.objectContaining({ status: 'VIOLATION' })
+  )
 })

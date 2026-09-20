@@ -19,7 +19,7 @@ const BOUNDARY_1: RubricItem<OutcomeContext> = {
     audit: { phase: 'INSPECT', run: ({ outcomes }) => outcomes }
   },
   judgment: {
-    scope: 'Every active and retired checkpoint record and its reconstruction content.',
+    scope: 'Every active checkpoint record and its reconstruction content.',
     prompt:
       'Would this checkpoint reconstruct the work for an agent with no transcript or vendor-session access, without implying that the originating conversation can be reopened?',
     outcomes: ['conforming', 'explicit update required', 'escalate to user'],

@@ -1,73 +1,86 @@
 # Specifications standard
 
-This standard defines how a Specifications corpus is laid out and how each requirement is written. The hosted structured rubric enforces its mechanical criteria; the generated [rubric](rubric.md) publishes every criterion, and the [exemplars](exemplars.md) illustrate representative outcomes.
+This standard defines how a Specifications corpus is laid out and how each accepted requirement is written. The hosted structured rubric enforces its mechanical criteria; the generated [rubric](rubric.md) publishes every criterion, and [exemplars](exemplars.md) illustrate representative shapes.
 
-## The four-doc split
+## The four-document split
 
-`ki-repo` owns applying the non-Knowledge-Base repository-wide documentation topology. This skill owns only the behaviour-level Specification concern.
-
-A non-Knowledge-Base repository's `docs/` separates four durable concerns, and a specification is exactly one of them:
+`ki-repo` owns the repository-wide documentation topology. This skill owns only the behaviour-level Specifications concern:
 
 | Location          | Question | Instrument                               |
 | ----------------- | -------- | ---------------------------------------- |
 | `docs/decisions/` | Why      | Decision Records (`ki-decision-records`) |
-| `docs/specs/`  | What     | Specifications (**this skill**)     |
+| `docs/specs/`     | What     | Specifications (this skill)              |
 | `docs/guides/`    | How      | Guides (`ki-guides`)                     |
-| `docs/roadmap/`   | When     | Repository work items (`ki-work-roadmap`)     |
+| `docs/roadmap/`   | When     | Work records (`ki-work-roadmap`)         |
 
-A requirement states **behaviour**, not rationale and not procedure. If a statement starts explaining _why_, that reasoning belongs in a Decision Record the requirement cites; if it explains _how to operate_, it belongs in a guide.
+A requirement states an accepted contract, not rationale or operating procedure. Reasoning belongs in a Decision Record; instructions belong in a guide.
 
-Consumer-facing requirements name observable public behaviour in language a product user can understand and verify at the public surface. Architectural requirements name an internal boundary or invariant and its evidence. Both use this same corpus and requirement grammar; the distinction guides judgment and wording rather than creating a second document type or mechanical coverage score.
+Specifications distinguish two reader-facing forms:
+
+- **User-observable behaviours** describe outcomes a person or integrating system can observe through the supported product surface.
+- **Quality properties** describe measurable or reviewable characteristics of those outcomes, such as accessibility, compatibility, determinism, performance, reliability, security, and visual fidelity.
+
+Use those names as H2 sections where they fit. A narrower H2 may be used when its opening text explicitly identifies which form it contains. Internal implementation detail belongs in a Decision Record unless it defines a necessary product quality or integration contract.
 
 ## Layout
 
-- Applicability is **declaration-led**. A repository that does not declare `[skills.ki-specs]` has no Specifications obligation, even when an incidental `docs/specs/` directory exists. Once declared, the corpus is authoritative: a missing, malformed, symbolic-linked, or otherwise unsafe registry or area-file evidence fails closed rather than becoming an empty pass.
-- Specifications live in **`docs/specs/`**, flat — **one file per area** (e.g. `authentication.md`, `site-seo.md`, `billing.md`). No nesting.
-- **`index.md`** is the overview and the registry. It carries, in order: a purpose blurb; a "how this fits with other docs" note; a "how to read a requirement" example; the **ID scheme**; the **Gaps convention**; and one or more **areas tables**.
-- Each area file opens with an H1 `# <Title> — <PREFIX>`, a one-paragraph scope blurb linking back to `index.md`, and an optional `> **Status:**` note, then the requirements grouped under `## <sub-area>` H2 sections, and finally a `## Gaps` section.
+- Applicability is declaration-led. A repository that does not declare `[skills.ki-specs]` has no Specifications obligation. Once declared, missing, malformed, symlinked, or otherwise unsafe corpus evidence fails closed.
+- Specifications live flat in **`docs/specs/`**, with **one file per comprehensible feature area** rather than one file per implementation package.
+- **`index.md`** explains the corpus, ID scheme, conformance states, Gaps convention, and registers every area in an areas table.
+- Each area file opens with `# <Title> — <PREFIX>`, a one-paragraph scope linking to `index.md`, optional status context, then requirements grouped under H2 sections, and finally an optional `## Gaps` section.
 
-## The areas table
+## Areas table
 
-In `index.md`, a Markdown table registers each area. The checker locates the columns by the header labels **`Prefix`** and **`File`** (any column order; other columns such as `Covers` are free):
+In `index.md`, a Markdown table registers each area. The checker locates columns by the header labels **`Prefix`** and **`File`**; other columns such as `Covers` are free-form.
 
 ```markdown
-| File              | Prefix          | Covers                                  |
-| ----------------- | --------------- | --------------------------------------- |
-| authentication.md | `AUTH`          | Login, sessions, tokens                 |
-| site-seo.md       | `SITE-SEO`      | Canonical URLs, robots, structured data |
-| bloom.md          | `BLOOM`·`TRUST` | Growth surfaces and trust signals       |
+| File              | Prefix     | Covers                                  |
+| ----------------- | ---------- | --------------------------------------- |
+| authentication.md | `AUTH`     | Login, sessions, tokens                 |
+| site-seo.md       | `SITE-SEO` | Canonical URLs, robots, structured data |
 ```
 
-- A **prefix belongs to exactly one file**; a **file may host more than one prefix** (list them in the cell, separated by `·`, `,`, or `/`).
-- Multiple areas tables are allowed — e.g. one per higher-level Area grouping (`### Public site`, `### Sanctuary`). The checker reads them all.
+A prefix belongs to exactly one file. One file may host more than one prefix, separated in the table by `·`, `,`, or `/`. Multiple areas tables are permitted.
 
-## The requirement
+## Requirement shape
 
-Each requirement is a **level-3 heading** followed by a normative statement and a verification hook:
+Each accepted requirement is a level-3 heading followed by one normative statement and its lifecycle fields:
 
 ```markdown
 ### SITE-SEO-002 — Absolute canonical URL
 
-An indexable page MUST emit a `<link rel="canonical">` whose href is the absolute URL `site.url` + `page.url`.
+An indexable page MUST emit a `<link rel="canonical">` whose href is the absolute page URL.
 
-_Verify:_ a built page at `/culture/` has `<link rel="canonical" href="{site.url}/culture/">`.
+_Conformance:_ conforming
+
+_Verify:_ inspect the built `/culture/` page for its canonical link.
+
+_Evidence:_ `site-output.test.ts` asserts the absolute canonical URL for `/culture/`.
 ```
 
-- **Heading** — `### <PREFIX>-NNN — <title>`. `PREFIX` is one or more uppercase alpha-leading segments joined by hyphens (`AUTH`, `SITE-SEO`); `NNN` is zero-padded, ≥ 3 digits; the separator before the title is an **em dash** (`—`). `NNN` is sequential within its registered prefix (not per H2 or file). A file may host independent prefix sequences; every complete `<PREFIX>-<NNN>` ID is unique across the corpus.
-- **Statement** — one paragraph using an uppercase **BCP 14** keyword (`MUST`, `MUST NOT`, `SHALL`, `SHALL NOT`, `SHOULD`, `SHOULD NOT`, `MAY`, `REQUIRED`, `RECOMMENDED`, `NOT RECOMMENDED`, or `OPTIONAL`). A requirement may pair a `MUST` with a `MUST NOT`; unrelated behaviours split into separate IDs so each verifies independently. RFC 8174 updates RFC 2119: these terms carry their defined meanings only when uppercase.
-- **`_Verify:_`** — one line, the italic label `_Verify:_` followed by the concrete check: a built-output assertion, a unit test, or a linked source file with the specific symbol/behaviour to inspect. This is the hook a test suite (or a reader) uses to confirm the requirement holds.
+- **Heading** — `### <PREFIX>-NNN — <title>`. `PREFIX` is one or more uppercase alpha-leading segments joined by hyphens; `NNN` is zero-padded to at least three digits; the separator is an em dash.
+- **Statement** — one paragraph with an uppercase **BCP 14** keyword (`MUST`, `MUST NOT`, `SHALL`, `SHALL NOT`, `SHOULD`, `SHOULD NOT`, `MAY`, `REQUIRED`, `RECOMMENDED`, `NOT RECOMMENDED`, or `OPTIONAL`). Split unrelated behaviours so they can be verified independently.
+- **`_Conformance:_`** — exactly one of `conforming`, `pending`, or `divergent`. This is the current relationship between the accepted contract and the system.
+- **`_Verify:_`** — the planned check: a concrete built-output assertion, test, inspection, or source symbol capable of deciding conformance.
+- **`_Evidence:_`** — current proof. It is required when conformance is `conforming`, optional when `divergent`, and normally absent when `pending`. Evidence names an actual result or implementation source rather than merely repeating the verification plan.
+
+A numbered requirement remains part of the accepted contract whether conforming, pending, or divergent. Do not hide accepted unfinished behaviour in Gaps.
 
 ## Append-only IDs
 
-IDs are **append-only, sequential per registered prefix, and never reused**. A retired requirement keeps its number, its title struck through with a `(deprecated)` note (a deprecated entry is exempt from the statement/verify checks). **Never renumber to tidy up** — stable IDs are what let tests, commits, and cross-references point at a requirement over time.
+IDs are append-only, sequential per registered prefix, and never reused. A retired requirement keeps its number, with its title struck through and a `(deprecated)` note; deprecated entries are exempt from statement and lifecycle checks. Never renumber merely to tidy an established corpus.
 
-When a requirement's behaviour moves wholesale into an upstream tool or library, an area file may instead retire it into a `## Retired to the tool` section: unheaded bullets of the form `- <ID>[, <ID>…] — <what moved>: <where it lives now>`, with the retired IDs left of the em dash and the citation to their new home right of it. A serial retired this way **stays claimed** — the checker reads it as present when verifying the sequence, and flags it if a requirement heading ever redefines it. Only IDs left of the em dash are read as retired; IDs to the right are citations, not claims.
+When behaviour moves wholesale into an upstream tool or library, an area file may retire IDs under `## Retired tool` using `- <ID>[, <ID>…] — <where the contract now lives>`. IDs on the left remain claimed.
 
-## The Gaps backlog
+## Gaps
 
-Each area file may end with a `## Gaps` section (the heading may extend, e.g. `## Gaps & candidate behaviours`). It holds **unnumbered** bullets: known divergences from the contract, or desirable behaviours not yet built. Gaps are deliberately ID-less so they sit **outside** the as-built contract — a backlog to consider, not something to test against. The checker exempts everything under a `## Gaps …` heading from ID and requirement checks. Promote a gap to a numbered requirement only once it is built and true.
+An optional `## Gaps` section holds unnumbered candidate behaviours or quality properties that have not been accepted into the contract. Gaps may be unbuilt, uncertain, or intentionally awaiting a product decision. They remain ID-less and are exempt from requirement checks.
 
-## Deciding what is a requirement
+Promoting a Gap is a contract decision: move it into the appropriate classification section, allocate the next ID, add its normative statement, declare truthful conformance, and provide a verification plan. It need not already conform.
 
-- **As-built, behaviour-level** — the numbered contract describes what the system **does** now, at the level of observable behaviour, not implementation detail. Anything aspirational lives in Gaps.
-- **Governed by a decision** — where a behaviour follows from a recorded decision, the requirement cites the DR. The corpus need not exhaust this, but the link is the audit trail from why to what.
+## Deciding what to require
+
+- Prefer small feature-oriented areas that a reviewer can comprehend independently.
+- Phrase user-observable behaviour at the supported product surface, not in terms of implementation machinery.
+- Make quality properties measurable or reviewable and identify the surface they qualify.
+- Cite a Decision Record when the requirement follows a recorded decision, preserving the path from why to what.

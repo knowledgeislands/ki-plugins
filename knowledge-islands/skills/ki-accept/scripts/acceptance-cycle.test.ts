@@ -8,6 +8,7 @@ import {
 const input = (overrides: Partial<AcceptanceCycleInput> = {}): AcceptanceCycleInput => ({
   adapter: { kind: 'local', adapter: 'roadmap', root: 'docs/roadmap' },
   item: {
+    kind: 'delivery',
     id: 'KI-HARNESS-001',
     canonical: true,
     pathWithinRoot: true,
@@ -18,6 +19,19 @@ const input = (overrides: Partial<AcceptanceCycleInput> = {}): AcceptanceCycleIn
   },
   authority: { kind: 'human', explicitApproval: true },
   housekeeping: { kind: 'none' },
+  ...overrides
+})
+
+const triageItem = (overrides: Partial<Extract<AcceptanceCycleInput['item'], { kind: 'triage' }>> = {}) => ({
+  kind: 'triage' as const,
+  id: 'KI-HARNESS-002',
+  canonical: true,
+  pathWithinRoot: true,
+  horizon: 'triage' as const,
+  status: 'draft' as const,
+  disposition: 'rejected' as const,
+  dispositionEvidence: 'The concern is no longer applicable.',
+  targetId: null,
   ...overrides
 })
 
@@ -46,16 +60,124 @@ test('accepts an approval-bound named batch closure and reconciles one successfu
           activeRun: 'KI-HARNESS-001',
           itemId: 'KI-HARNESS-001',
           templateMatches: true,
-          scheduledFor: '2026-08-12'
+          scheduledFor: '2026-08-12',
+          completedOn: '2026-08-15',
+          reviewedRevision: { ref: 'a'.repeat(40), verified: true }
         }
       })
     )
   ).toEqual({
     kind: 'accept',
     transition: 'awaiting-review-to-done',
-    templateUpdate: { lastRun: '2026-08-12', activeRun: null },
+    templateUpdate: { lastRun: '2026-08-15', lastRunRef: 'a'.repeat(40), activeRun: null },
     writes: false
   })
+})
+
+test('housekeeping completion requires actual completion and verified reviewed-revision evidence', () => {
+  const accepted = {
+    kind: 'accepted' as const,
+    activeRun: 'KI-HARNESS-001',
+    itemId: 'KI-HARNESS-001',
+    templateMatches: true,
+    scheduledFor: '2026-08-12',
+    completedOn: '2026-08-15',
+    commitThreshold: 100,
+    reviewedRevision: { ref: 'a'.repeat(40), verified: true }
+  }
+  for (const housekeeping of [
+    { ...accepted, completedOn: null },
+    { ...accepted, completedOn: '2026-02-30' },
+    { ...accepted, reviewedRevision: null },
+    { ...accepted, reviewedRevision: { ref: 'a'.repeat(40), verified: false } },
+    { ...accepted, reviewedRevision: { ref: 'HEAD', verified: true } },
+    { ...accepted, itemId: 'wrong-id' }
+  ])
+    expect(evaluateAcceptanceCycle(input({ housekeeping }))).toMatchObject({ kind: 'stop', writes: false })
+  expect(
+    evaluateAcceptanceCycle(
+      input({ housekeeping: { ...accepted, commitThreshold: undefined, reviewedRevision: null } })
+    )
+  ).toMatchObject({
+    kind: 'accept',
+    templateUpdate: { lastRun: '2026-08-15', lastRunRef: null, activeRun: null },
+    writes: false
+  })
+})
+
+test('closes explicitly approved terminal Triage dispositions without delivery evidence or writes', () => {
+  expect(evaluateAcceptanceCycle(input({ item: triageItem() }))).toEqual({
+    kind: 'triage-to-done',
+    disposition: 'rejected',
+    targetId: null,
+    writes: false
+  })
+  for (const disposition of ['duplicate', 'merged'] as const)
+    expect(
+      evaluateAcceptanceCycle(
+        input({ item: triageItem({ disposition, targetId: 'KI-HARNESS-001', dispositionEvidence: 'Owned there.' }) })
+      )
+    ).toEqual({
+      kind: 'triage-to-done',
+      disposition,
+      targetId: 'KI-HARNESS-001',
+      writes: false
+    })
+})
+
+test('requires exact human authority and complete disposition evidence for terminal Triage closure', () => {
+  expect(
+    evaluateAcceptanceCycle(
+      input({
+        item: triageItem(),
+        authority: {
+          kind: 'batch',
+          approved: true,
+          payloadMatchesApproval: true,
+          runMatchesApproval: true,
+          closureItemIds: ['KI-HARNESS-002']
+        }
+      })
+    )
+  ).toMatchObject({ kind: 'stop', reason: 'exact explicit human approval is required for triage disposition' })
+  expect(
+    evaluateAcceptanceCycle(input({ item: triageItem(), authority: { kind: 'human', explicitApproval: false } }))
+  ).toMatchObject({ kind: 'stop', reason: 'exact explicit human approval is required for triage disposition' })
+  expect(evaluateAcceptanceCycle(input({ item: triageItem({ dispositionEvidence: '   ' }) }))).toMatchObject({
+    kind: 'stop',
+    reason: 'triage disposition evidence is required'
+  })
+  expect(evaluateAcceptanceCycle(input({ item: triageItem({ targetId: 'KI-HARNESS-001' }) }))).toMatchObject({
+    kind: 'stop',
+    reason: 'rejected triage disposition must not name a target record'
+  })
+  for (const disposition of ['duplicate', 'merged'] as const)
+    expect(evaluateAcceptanceCycle(input({ item: triageItem({ disposition, targetId: null }) }))).toMatchObject({
+      kind: 'stop',
+      reason: `${disposition} triage disposition must name its target record`
+    })
+  for (const disposition of ['duplicate', 'merged'] as const) {
+    expect(
+      evaluateAcceptanceCycle(input({ item: triageItem({ disposition, targetId: 'not-canonical' }) }))
+    ).toMatchObject({
+      kind: 'stop',
+      reason: `${disposition} triage disposition target must be a canonical work-item identifier`
+    })
+    expect(
+      evaluateAcceptanceCycle(input({ item: triageItem({ disposition, targetId: 'KI-HARNESS-002' }) }))
+    ).toMatchObject({
+      kind: 'stop',
+      reason: `${disposition} triage disposition target must differ from the intake item`
+    })
+  }
+  expect(
+    evaluateAcceptanceCycle(
+      input({
+        item: triageItem(),
+        housekeeping: { kind: 'disposition', activeRun: 'KI-HARNESS-002', itemId: 'KI-HARNESS-002' }
+      })
+    )
+  ).toMatchObject({ kind: 'stop', reason: 'triage disposition cannot reconcile housekeeping state' })
 })
 
 test('stops without writes for unsupported adapters, invalid evidence, and unapproved closure', () => {
@@ -73,13 +195,15 @@ test('stops without writes for unsupported adapters, invalid evidence, and unapp
     reason: 'selected linear adapter cannot accept pending KI-HARNESS-FND-014',
     writes: false
   })
+  const delivery = input().item
+  if (delivery.kind !== 'delivery') throw new Error('expected delivery fixture')
   for (const item of [
-    { ...input().item, canonical: false },
-    { ...input().item, pathWithinRoot: false },
-    { ...input().item, status: 'in-progress' as const },
-    { ...input().item, stepsComplete: false },
-    { ...input().item, deliveryEvidencePresent: false },
-    { ...input().item, reviewHeadings: ['Delivered'] }
+    { ...delivery, canonical: false },
+    { ...delivery, pathWithinRoot: false },
+    { ...delivery, status: 'in-progress' as const },
+    { ...delivery, stepsComplete: false },
+    { ...delivery, deliveryEvidencePresent: false },
+    { ...delivery, reviewHeadings: ['Delivered'] }
   ])
     expect(evaluateAcceptanceCycle(input({ item }))).toMatchObject({ kind: 'stop', writes: false })
   expect(evaluateAcceptanceCycle(input({ authority: { kind: 'human', explicitApproval: false } }))).toMatchObject({
@@ -108,7 +232,9 @@ test('advances last-run only for accepted completion and requires an explicit re
     activeRun: 'wrong-id',
     itemId: 'KI-HARNESS-001',
     templateMatches: true,
-    scheduledFor: '2026-08-12'
+    scheduledFor: '2026-08-12',
+    completedOn: '2026-08-15',
+    reviewedRevision: { ref: 'a'.repeat(40), verified: true }
   }
   expect(evaluateAcceptanceCycle(input({ housekeeping: accepted }))).toMatchObject({
     kind: 'stop',

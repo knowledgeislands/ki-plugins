@@ -65,6 +65,8 @@ Required universal decision metadata.
   - _Remediation:_ diagnostic — Align decision-type metadata with the canonical filename prefix after confirming the record classification.
 - **FM-6 [M] — Core decision metadata** — `id`, `title`, `date`, and `status` are present; ID and title compose the H1 and date uses YYYY-MM-DD. (standards-decision-records.md)
   - _Remediation:_ diagnostic — Complete the required metadata from the canonical H1, filename, and record type.
+- **FM-7 [M] — Shared decision projection eligibility** — A shared record has only decision-owned frontmatter or an explicitly excluded container field and can produce a deterministic identity projection. (standards-decision-records.md)
+  - _Remediation:_ diagnostic — Remove or explicitly govern unknown frontmatter before comparing shared records; do not infer repository-local exclusions.
 
 ## TYPE-FIT — decision classification
 

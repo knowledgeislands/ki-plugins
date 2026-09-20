@@ -11,7 +11,7 @@ test('the Git catalogue exposes the complete judgment-only session contract', ()
     catalogue.families
       .filter((family) => family.code !== 'RUBRIC')
       .flatMap((family) => family.items.map((item) => item.code))
-  ).toEqual(['COMMIT-1', 'BRANCH-1', 'HYGIENE-1', 'LOCK-1'])
+  ).toEqual(['COMMIT-1', 'BRANCH-1', 'BRANCH-2', 'HYGIENE-1', 'LOCK-1'])
   const semanticItems = (
     catalogue.families.filter((family) => family.code !== 'RUBRIC') as unknown as readonly {
       items: readonly { mechanical?: unknown }[]
@@ -29,7 +29,7 @@ test('judgment criteria expose complete v1 review metadata', () => {
     }[]
   ).flatMap((family) => family.items.map((item) => item.judgment))
 
-  expect(judgmentItems).toHaveLength(4)
+  expect(judgmentItems).toHaveLength(5)
   for (const judgment of judgmentItems) {
     expect(judgment?.scope).not.toBeEmpty()
     expect(judgment?.prompt).not.toBeEmpty()
@@ -48,6 +48,7 @@ test('judgment prompts name focused evidence without inventing a Git executor', 
 
   expect(metadata).toContain('git diff --cached')
   expect(metadata).toContain('git branch --show-current')
+  expect(metadata).toContain('git worktree list --porcelain')
   expect(metadata).toContain('git status --short')
   expect(items.every((item) => item.mechanical === undefined)).toBeTrue()
 })

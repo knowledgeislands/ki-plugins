@@ -7,6 +7,7 @@ import type {
   HarnessCapabilityPublicationContext,
   HarnessConfigContext,
   HarnessReviewContext,
+  HarnessRootCapabilitySummaryContext,
   HarnessRubricContext,
   HarnessSkillsContext
 } from '../contexts/harness.ts'
@@ -32,9 +33,19 @@ const fixture = (): string => {
   writeFileSync(join(repository, 'ROADMAP.md'), '# Roadmap\n')
   writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo]\n')
   mkdirSync(join(repository, 'skills', 'group', 'example'), { recursive: true })
+  mkdirSync(join(repository, 'skills', 'group', 'ki-authoring'), { recursive: true })
+  mkdirSync(join(repository, 'skills', 'group', 'ki-repo'), { recursive: true })
   writeFileSync(
     join(repository, 'skills', 'group', 'example', 'SKILL.md'),
-    '---\nname: example\nki-kind: governance\nki-depends-on: []\ndescription: Use example for fixture work.\nargument-hint: help\n---\n\n# Example\n'
+    '---\nname: example\nki-kind: governance\nki-applicability: detected\nki-depends-on: []\ndescription: Use example for fixture work.\nargument-hint: help\n---\n\n# Example\n'
+  )
+  writeFileSync(
+    join(repository, 'skills', 'group', 'ki-authoring', 'SKILL.md'),
+    '---\nname: ki-authoring\nki-kind: governance\nki-applicability: baseline\nki-depends-on: []\ndescription: Use ki-authoring for fixture work.\nargument-hint: help\n---\n\n# KI authoring\n'
+  )
+  writeFileSync(
+    join(repository, 'skills', 'group', 'ki-repo', 'SKILL.md'),
+    '---\nname: ki-repo\nki-kind: governance\nki-applicability: baseline\nki-detects: [example]\nki-depends-on: []\ndescription: Use ki-repo for fixture work.\nargument-hint: help\n---\n\n# KI repo\n'
   )
   return repository
 }
@@ -54,6 +65,21 @@ const capabilityPublicationItem = () => {
     | undefined
   const item = family?.items.find((candidate) => candidate.code === 'CAP-2')
   if (!family || !item) throw new Error('CAP-2 is missing')
+  return { family, item }
+}
+
+const rootCapabilitySummaryItem = () => {
+  const family = catalogue.families.find((candidate) => candidate.code === 'CAP') as
+    | RubricFamily<
+        HarnessRubricContext,
+        HarnessReviewContext & {
+          publication: HarnessCapabilityPublicationContext
+          rootSummary: HarnessRootCapabilitySummaryContext
+        }
+      >
+    | undefined
+  const item = family?.items.find((candidate) => candidate.code === 'CAP-3')
+  if (!family || !item) throw new Error('CAP-3 is missing')
   return { family, item }
 }
 
@@ -77,6 +103,7 @@ test('the catalogue preserves the current compatible-harness criteria', () => {
   expect(codes).toEqual([
     'CAP-1',
     'CAP-2',
+    'CAP-3',
     'PAYLOAD-1',
     'LAY-1',
     'LAY-2',
@@ -118,7 +145,9 @@ test('the session discovers grouped skills once and coalesces marker requests', 
   const context = session.subjects[0]?.context() as HarnessRubricContext
   expect(session.subjects[0]?.context()).toBe(context)
   expect(context.skills.skills).toEqual([
-    { path: 'skills/group/example', directory: 'example', declaredName: 'example' }
+    { path: 'skills/group/example', directory: 'example', declaredName: 'example' },
+    { path: 'skills/group/ki-authoring', directory: 'ki-authoring', declaredName: 'ki-authoring' },
+    { path: 'skills/group/ki-repo', directory: 'ki-repo', declaredName: 'ki-repo' }
   ])
   const { family, item } = configItem()
   const config = family.selectContext(context) as HarnessConfigContext
@@ -193,8 +222,103 @@ test('a missing catalogue produces an exact finding and one marker-bounded confo
   const proposal = session.proposal().writes.find((write) => write.path === 'skills/README.md')
   expect(proposal?.content).toStartWith('# skills\n\n')
   expect(proposal?.content).toContain('<!-- ki-repo-harness:capability-catalogue:start -->')
-  expect(proposal?.content).toContain('This source harness publishes 1 skill: 1 governance skill and 0 process skills.')
+  expect(proposal?.content).toContain(
+    'This source harness publishes 3 skills: 3 governance skills and 0 process skills.'
+  )
   expect(proposal?.content).toContain('<!-- ki-repo-harness:capability-catalogue:end -->')
+})
+
+test('an absent root capability summary is not applicable', () => {
+  const repository = fixture()
+  const session = catalogue.createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
+  const context = session.subjects[0]?.context() as HarnessRubricContext
+  const { family, item } = rootCapabilitySummaryItem()
+  expect(item.mechanical?.audit.run(family.selectContext(context))).toEqual([
+    {
+      status: 'NOT_APPLICABLE',
+      message: 'README.md does not publish an explicit numeric Agent Skills summary.',
+      subject: 'README.md'
+    }
+  ])
+})
+
+test('one stale complete root capability summary produces one numeric-only conform write', () => {
+  const repository = fixture()
+  const original =
+    '# Harness\n\n- **Skills** ([`skills/`](skills)) — 9 reusable [Agent Skills](https://agentskills.io/specification): 8 governance skills that hold standards and 7 process skills that drive workflows. Keep this prose.\n'
+  writeFileSync(join(repository, 'README.md'), original)
+  const session = catalogue.createSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
+  const context = session.subjects[0]?.context() as HarnessRubricContext
+  const { family, item } = rootCapabilitySummaryItem()
+  expect(item.mechanical?.audit.run(family.selectContext(context))).toEqual([
+    {
+      status: 'VIOLATION',
+      message: 'README.md publishes 9/8/7 total/governance/process skills; canonical skill frontmatter requires 3/3/0.',
+      subject: 'README.md'
+    }
+  ])
+  item.mechanical?.conform?.run(family.selectContext(context))
+  expect(session.proposal().writes.find((write) => write.path === 'README.md')?.content).toBe(
+    original
+      .replace('9 reusable', '3 reusable')
+      .replace('8 governance', '3 governance')
+      .replace('7 process', '0 process')
+  )
+})
+
+test('matching, incomplete, ambiguous, and malformed root summaries do not produce writes', () => {
+  const cases = [
+    '3 reusable [Agent Skills](https://agentskills.io/specification): 3 governance skills that hold standards and 0 process skills that drive workflows.',
+    '1 reusable [Agent Skills](https://agentskills.io/specification): see the catalogue.',
+    '1 reusable [Agent Skills](https://agentskills.io/specification): 1 governance skills that hold standards and 0 process skills that drive workflows.\n\n1 reusable [Agent Skills](https://agentskills.io/specification): 1 governance skills that hold standards and 0 process skills that drive workflows.'
+  ]
+  for (const body of cases) {
+    const repository = fixture()
+    writeFileSync(join(repository, 'README.md'), `# Harness\n\n${body}\n`)
+    const session = catalogue.createSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
+    const context = session.subjects[0]?.context() as HarnessRubricContext
+    const { family, item } = rootCapabilitySummaryItem()
+    item.mechanical?.conform?.run(family.selectContext(context))
+    expect(session.proposal().writes.some((write) => write.path === 'README.md')).toBe(false)
+  }
+
+  const repository = fixture()
+  writeFileSync(
+    join(repository, 'README.md'),
+    '# Harness\n\n1 reusable [Agent Skills](https://agentskills.io/specification): 1 governance skills that hold standards and 0 process skills that drive workflows.\n'
+  )
+  writeFileSync(join(repository, 'skills', 'group', 'example', 'SKILL.md'), 'not frontmatter\n')
+  const session = catalogue.createSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
+  const context = session.subjects[0]?.context() as HarnessRubricContext
+  const { family, item } = rootCapabilitySummaryItem()
+  expect(item.mechanical?.audit.run(family.selectContext(context))).toEqual([
+    {
+      status: 'VIOLATION',
+      message: 'skills/group/example/SKILL.md has no complete YAML frontmatter document',
+      subject: 'README.md'
+    }
+  ])
+  item.mechanical?.conform?.run(family.selectContext(context))
+  expect(session.proposal().writes.some((write) => write.path === 'README.md')).toBe(false)
+})
+
+test('an unsafe root README is diagnostic', () => {
+  const repository = fixture()
+  const external = join(repository, 'external-readme')
+  writeFileSync(external, '# External\n')
+  symlinkSync(external, join(repository, 'README.md'))
+  const session = catalogue.createSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
+  const context = session.subjects[0]?.context() as HarnessRubricContext
+  const { family, item } = rootCapabilitySummaryItem()
+  expect(item.mechanical?.audit.run(family.selectContext(context))).toEqual([
+    {
+      status: 'VIOLATION',
+      message: 'README.md is not a physical regular file.',
+      subject: 'README.md'
+    }
+  ])
+  item.mechanical?.conform?.run(family.selectContext(context))
+  expect(session.proposal().writes.some((write) => write.path === 'README.md')).toBe(false)
 })
 
 test('source conformance does not inherit payload or runtime assurance', () => {

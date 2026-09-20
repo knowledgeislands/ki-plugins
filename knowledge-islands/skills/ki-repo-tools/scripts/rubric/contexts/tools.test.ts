@@ -94,6 +94,38 @@ test('audit is read-only and prepares one stable focused repository context', ()
   expect(readFileSync(config, 'utf8')).toBe('[skills.ki-repo]\n[skills.ki-repo-tools]\n')
 })
 
+test('developer delivery guides are required as regular files without prescribing content', () => {
+  const { repository } = fixture()
+  const item = toolItem('TOOL-DEVELOPER-GUIDES')
+  const audit = () => {
+    const context = createToolsSession(options(repository, 'audit')).subjects[0]?.context()
+    if (!context) throw new Error('ki-repo-tools session has no repository context')
+    return item.audit.run(TOOL.selectContext(context))
+  }
+
+  expect(audit().map(({ status, subject }) => ({ status, subject }))).toEqual([
+    { status: 'VIOLATION', subject: 'docs/guides/developer/definition-of-done.md' },
+    { status: 'VIOLATION', subject: 'docs/guides/developer/releasing.md' }
+  ])
+
+  const developerGuides = join(repository, 'docs', 'guides', 'developer')
+  mkdirSync(developerGuides, { recursive: true })
+  writeFileSync(join(developerGuides, 'definition-of-done.md'), '')
+  writeFileSync(join(developerGuides, 'releasing.md'), '')
+
+  expect(audit().map(({ status, subject }) => ({ status, subject }))).toEqual([
+    { status: 'PASS', subject: 'docs/guides/developer/definition-of-done.md' },
+    { status: 'PASS', subject: 'docs/guides/developer/releasing.md' }
+  ])
+
+  rmSync(join(developerGuides, 'releasing.md'))
+  mkdirSync(join(developerGuides, 'releasing.md'))
+  expect(audit()[1]).toMatchObject({
+    status: 'VIOLATION',
+    subject: 'docs/guides/developer/releasing.md'
+  })
+})
+
 test('item-owned actions coalesce bounded chmod commands without changing declaration ownership', () => {
   const { repository, config, executable, install } = fixture()
   const session = createToolsSession(options(repository, 'conform'))

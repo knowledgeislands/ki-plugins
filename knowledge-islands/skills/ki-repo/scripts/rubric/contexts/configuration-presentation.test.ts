@@ -39,7 +39,7 @@ wiki = false
 
 [skills.ki-authoring]
 
-${banner('Governance runtime')}[skills.ki-engineering]
+${banner('Governance and runtime')}[skills.ki-engineering]
 
 [skills.ki-binding]
 
@@ -84,7 +84,7 @@ adapter = "roadmap"
   })
 
   test('diagnoses foundation, owner, and banner-order drift', () => {
-    const result = inspectConfigurationPresentation(`${header}${banner('Governance runtime')}[skills.ki-engineering]
+    const result = inspectConfigurationPresentation(`${header}${banner('Governance and runtime')}[skills.ki-engineering]
 
 [skills.ki-repo]
 

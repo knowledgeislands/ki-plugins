@@ -1,95 +1,126 @@
 # Batch procedure
 
-This is the on-demand procedure for `ki-batch`.
+This is the on-demand procedure for `ki-batch`. The skill owns the process boundary; this reference owns the authorisation shape and execution rules.
 
-The kind, phases, and relationship boundary live in [the skill](../SKILL.md).
+## Contents
 
-## 1. Establish authority and prepare the contract
+- [1. Select and freeze the set](#1-select-and-freeze-the-set)
+- [2. Prepare the lean authorisation](#2-prepare-the-lean-authorisation)
+- [3. Validate before implementation](#3-validate-before-implementation)
+- [4. Run the exact set](#4-run-the-exact-set)
+- [5. Verify and close](#5-verify-and-close)
+- [Safe-local policy](#safe-local-policy)
+- [Batch retention](#batch-retention)
+- [Legacy storage transition](#legacy-storage-transition)
+- [Pure validation model](#pure-validation-model)
 
-### Reviewed-item authority
+## 1. Select and freeze the set
 
-Accept only an explicit candidate set.
+Use `ki-next` to select candidates and `ki-plan` to make every admitted record honestly Ready. For reviewed-item authority, admit only the exact approved set. For outcome authority, scan the eligible repository queue first, prepare the complete non-contentious set that fits the instruction and window, record exclusions, then freeze the set once.
 
-Use the normal forward-work cycle for each candidate: `ki-next` for selection and priority and `ki-plan` for plan shape and readiness. Where bounded parallel work is useful, use runtime subagents and retain orchestration, review, and integration. If `ki-delegation` is active in the same scope, read its packet standard before creating a durable delegation packet. Resolve the selected adapter first, then resolve every candidate through that adapter.
+Every item must be canonical to the selected local adapter, in the same repository, independently deliverable or correctly dependency-ordered, and equipped with an executable plan and verification. Findings discovered after freezing are capture-only inputs to a later batch.
 
-Do not start `ki-implement` in this phase.
+## 2. Prepare the lean authorisation
 
-Check each candidate for a bounded plan, satisfied dependencies, known verification, compatible scope, and a reason it can run independently at its position in the batch.
+Create one regular Markdown file directly beneath `+/_BATCHES/`, named `<REPO>-BATCH-<NNN>.md`, with the same `id` in frontmatter:
 
-Prepare one regular Markdown authorisation beneath `+/_AUTHORISATIONS/`, named `<REPO>-BATCH-<NNN>.md` with the same frontmatter `id`. A batch is single-repository: every named record, its scope, and its run ledger are in that exact repository. Its frontmatter contains the local repository identity, explicit approval and timestamp, the SHA-256 of the approved payload, a unique run ID, expiry timestamp, ordered duplicate-free item IDs, `awaiting-review` completion target, mandatory stops, and an optional exact closure-item list. It contains all of the following:
+```yaml
+---
+id: KI-EXAMPLE-BATCH-001
+repository: https://github.com/knowledgeislands/ki-example
+approved: true
+approved_at: 2026-09-15T06:00:00Z
+authority_mode: reviewed-items
+approved_payload_sha256: <sha256>
+expires_at: 2026-09-15T09:00:00Z
+item_ids: [KI-EXAMPLE-001, KI-EXAMPLE-002]
+completion_target: awaiting-review
+policy: safe-local-v1
+---
+```
 
-- identifier and purpose;
-- named plans in dependency order;
-- repositories and files in scope;
-- timebox;
-- required verification;
-- allowed decisions and delegation;
-- explicit closure authority, if any;
-- completion target; and
-- mandatory stops.
+Outcome mode additionally requires a non-empty `authority_evidence` value. Reviewed-item mode must omit it. `completion_target` is either `awaiting-review` or `done`; `done` grants consolidated closure for every `item_ids` entry and needs no duplicate closure list.
 
-The approved payload is every frontmatter value except `approved_payload_sha256` plus the authored body before `## Run ledger`, in its exact canonical form. Its SHA-256 binds the approval to the reviewed scope, plans, checks, decisions, and stops. After approval, append at most one `## Run ledger`, beginning with `<!-- ki-batch-run: <run-id> <approved-payload-sha256> -->`; it records the outcome but cannot amend authority. The pure helper exposes the exact payload calculation used by its fixtures.
+The run ID is derived as `<batch-id>-RUN-001`. The body contains only the matching H1 and, once execution starts, the append-only `## Run ledger`. Plans, boundaries, files, checks, decisions, review packets, and remedial work stay in canonical items.
 
-Present the complete authorisation for review and require explicit approval before implementation.
+The approval hash covers every frontmatter value except `approved_payload_sha256` plus the authored body before `## Run ledger`, in exact canonical form. Append at most one ledger beginning with:
 
-An omitted field is not implied authority.
+```md
+## Run ledger
 
-### Outcome authority
+<!-- ki-batch-run: KI-EXAMPLE-BATCH-001-RUN-001 <approved-payload-sha256> -->
+```
 
-Read and follow [the outcome-authority procedure](standards-outcome-authority.md). It permits generated selection and immediate execution only from affirmative current human authority, and retains exact scope, evidence, consolidated acceptance, and mandatory stops.
+The marker binds the ledger to the approved payload. Ledger entries record only item ID, result, baseline, result commit, and material exception. They do not amend authority or repeat item evidence.
 
-## 2. Validate before implementation
+The repository may keep already-completed pre-change authorisations readable until normal retention cleanup so their hashes remain verifiable. That compatibility is not an alternative authoring contract; new batches use the shape above.
 
-Resolve the approved regular local authorisation, the selected adapter, and every named canonical work item afresh. An absent, malformed, foreign, expired, unbound, duplicate, or changed authority is a no-write stop. Current outcome authority may generate the structured record as defined above; ordinary conversation, a clean gate, or an unstructured file does not substitute for it. A remote adapter stops before execution pending `KI-HARNESS-FND-014`; do not infer a local record path or call a remote API.
+## 3. Validate before implementation
 
-Confirm that each item remains `ready`, is a canonical record for the resolved local adapter, has a bounded approved plan, its dependencies remain satisfied and correctly ordered, its one repository and file or system boundary still match, its required checks are available, its delegation is authorised, and no mandatory stop has already occurred.
+Resolve one approved regular local authorisation and reject unsupported or retired fields in a newly authored record. Confirm repository identity, approval, current expiry, payload hash, run binding, policy, duplicate-free exact IDs, completion target, canonical Ready records, dependency order, and locally executable adapter.
 
-Reject an invalid item plainly rather than quietly omitting it.
+Apply `ki-git` shared-working-tree hygiene: record expected `HEAD`, pre-existing dirty paths, thread-local touched paths, contested paths, and staged paths. Unrelated pre-existing unstaged paths do not block an independent batch. A moved `HEAD`, untracked touched-path set, contested touched path, or another actor's staged path requires no-write stop and revalidation.
 
-Stop the whole batch when its dependency order, authority, or completion target is no longer honest.
+Surface all known missing decisions, external dependencies, conflicts, and unavailable verification before the first implementation. Do not start an item whose answer could change its authority boundary.
 
-## 3. Surface known questions
+## 4. Run the exact set
 
-Before starting the first record, collect every known missing decision, external dependency, conflict, or unavailable verification into one concise question set.
+Run named items in dependency order through their ordinary `ki-implement` cycles. Keep each item's baseline, implementation, focused verification, and six-heading review packet in that item. The operational `in-progress` transition does not require a separate commit; Ready may land as `awaiting-review` with the implementation.
 
-Do not start a record whose answer can change its scope, public contract, repository boundary, safety treatment, or completion target. Record the named decision and dependency effect in the batch ledger.
+Prefer this commit topology when repository state permits:
 
-## 4. Run one bounded cycle
+1. one preparation and authorisation commit;
+2. one delivery commit for each of the `N` named items;
+3. one consolidated closure commit after the aggregate gate.
 
-Run named items in dependency order.
+This produces `N + 2` commits without weakening per-item evidence. Stop or park only the affected item, and continue solely where independence is proven. Append a concise ledger row for every admitted item, including a park or stop.
 
-For each independent record, invoke its normal `ki-implement` cycle and preserve that record's lifecycle transition, baseline, scope, verification, and review packet.
+## 5. Verify and close
 
-Use delegation only when the authorisation permits it and the item's plan supports it.
+Run focused checks during each item cycle. After all deliverable items reach `awaiting-review`, run one aggregate repository gate. `completion_target: awaiting-review` stops there for normal human review.
 
-Review each completed cycle before starting a dependent one.
+For `completion_target: done`, recheck every item's current review packet and aggregate evidence, then invoke `ki-accept` once for consolidated acceptance of the full named set. Partial closure is not covered by the authorisation: park the unresolved item and stop closure, or prepare a later separately authorised batch.
 
-Append the run ledger entry per item to the approved authorisation: starting state, resulting state, baseline and resulting evidence, verification, decisions, delegation used, and any park or stop reason. The marker binds the ledger to the approved payload; it is a run account, never a parallel tracker or replacement for the canonical records.
+Record non-blocking improvements as receiver-owned candidates for the next wave. Do not reopen delivered records or widen the active set. Pruning is never implied.
 
-When an item is ambiguous or blocked, park it with the evidence, named decision needed, and dependency effect.
+## Safe-local policy
 
-Continue only items proven independent of the parked item and within the authorisation.
+`policy: safe-local-v1` fixes these mandatory stops:
 
-## 5. Review closure and recap
+- an unapproved public-contract decision;
+- material scope expansion;
+- destructive or irreversible work;
+- external coordination;
+- verification failure or unavailable required verification;
+- push or release.
 
-Records reach `awaiting-review` through `ki-implement`; the batch does not self-certify delivery evidence.
+Outcome authority may cover a public-contract decision only when the current human instruction or an admitted approved item explicitly decides it. The policy name centralises common stops; it does not weaken a stricter item-level stop.
 
-Invoke named batched closure through `ki-accept` only when the authorisation expressly grants that authority for those records. Outcome-authorised `done` completion is consolidated human authority, not agent self-approval: re-check each item’s exact review packet and current repository evidence before recording closure.
+## Batch retention
 
-Otherwise stop each record at awaiting-review for normal human review.
+`+/_BATCHES/` holds temporary authority and run-account inputs. `_AUTHORISATIONS` is retired and has no discovery fallback.
 
-After the run, produce a concise `ki-recap`-shaped record of delivered items, verification, decisions, parks, failures, deferred work, and proposed learning routes.
+Batch records are temporary authority and run-account inputs, not durable follow-up stores. Regular `ki-next` and `ki-recap` housekeeping may remove an inactive batch as soon as every named item's useful outcome or follow-up has been dispositioned in its canonical work record, committed history, or an explicit no-follow-up finding. Do not retain a completed record merely to satisfy a seven-day minimum.
 
-Pruning is never implied by batch completion.
+Seven days is the cleanup deadline for an inactive record whose disposition remains incomplete. Activity is the latest of the last Git commit changing the exact path, last recorded run activity, approval time, and expiry. At or after seven days, housekeeping must report the record as overdue, route any still-useful follow-up to its canonical owner, record explicit evidence when nothing useful remains, and then prune the batch in the same maintenance cycle. Filesystem modification time is not evidence and incidental formatting or housekeeping must not restart the relevance clock.
 
-## Controlled dry-run model
+The caller must prove the exact flat path is a regular file within the physical Git root with no symlinked ancestor, committed with identical HEAD, index, and working-copy bytes. It must inspect the full ledger, prove the batch inactive, and provide canonical outcome or follow-up disposition evidence for every item. Active, malformed, unbound, uncommitted, or unknown batches remain retained with a reason. Incomplete disposition before seven days remains visible for routing; incomplete disposition at or after seven days is overdue maintenance, not permission for indefinite retention.
 
-`scripts/internal/authorisation.ts` exposes a pure approval-payload calculation and a regular-file resolver. `scripts/internal/batch-cycle.ts` exposes a pure `evaluateBatchCycle()` helper. Their focused fixture tests prove that changed approval payloads, mismatched run records, duplicate IDs, unresolved or remote adapters, non-canonical or out-of-scope records, missing plans/checks, unauthorised delegation, stops, reversed dependencies, a dirty tree, a failed gate, an unready item, an unsatisfied dependency, and an early decision produce a named no-write outcome.
+`scripts/internal/batch-retention.ts` is a pure selector and never reads or deletes files. Immediately before deletion, revalidate all evidence. Delete only the selected exact paths, commit only owned deletions under `ki-git`, and report Git-history recovery. This policy never authorises work-item pruning.
 
-The model may report `coordinate` only for a clean, authority-bound, same-repository set of named canonical Ready items through a locally executable selected adapter. It verifies current evidence for outcome authority and complete closure scope for a `done` target. It does not invoke any skill, run a command, write a file, or mutate an item.
+## Legacy storage transition
 
-## Mandatory stops
+`+/_AUTHORISATIONS/` is retired storage, not a discovery fallback. Classify each legacy entry from fresh caller-supplied filesystem, Git, lifecycle, canonical-outcome, destination, and age evidence before any mutation:
 
-Stop the affected item and escalate for a public-contract change outside the approved plan, material scope expansion, destructive or irreversible work, a new external dependency or coordination need, failed required verification, push or release, or an unapproved decision.
+- **Relocate** a committed, unchanged, contained regular record whose useful outcome or follow-up is not yet dispositioned. Preserve its exact filename and bytes beneath `+/_BATCHES/`, stop on an existing or unknown destination, verify the whole-file hash after moving, and re-parse it as `retained-legacy` non-executable evidence.
+- **Prune** a completed record as soon as `selectRetirableBatches` selects its byte-identical canonical-path projection under the ordinary inactivity, disposition, containment, and commit rules. A verified empty exact `+/_AUTHORISATIONS` directory contains no evidence and may also be pruned.
+- **Reauthorise** valid active or resumable legacy work through a newly approved lean exact-set record. Never translate an old approval, policy, run identity, or closure scope into current authority.
+- **Retain** malformed, uncommitted, symlinked, misplaced, destination-colliding, unknown, or incompletely evidenced entries at their existing path with the classifier's reason.
 
-Do not continue by broadening the authorisation, guessing the decision, or converting a stop into a silent omission.
+The pure `scripts/internal/legacy-batch-migration.ts` classifier performs no reads or writes. Native filesystem mechanics belong to the existing tools-ki batch automation owner; a receiving repository retains authority for its own relocate, prune, retain, or fresh-authorisation action and must revalidate immediately before mutation.
+
+The transition was motivated by observed legacy records in Techne, KI Website, tools-ki, mcp-acquire-whatsapp, mcp-git-audit, mcp-gsuite, and mcp-m365. This inventory is migration evidence, not authority to write those repositories.
+
+## Pure validation model
+
+`scripts/internal/authorisation.ts`, `batch-cycle.ts`, `batch-retention.ts`, and `legacy-batch-migration.ts` expose no-write helpers. Their fixtures prove payload integrity, current-shape validation, narrow retained-record readability, derived run and closure scope, adapter and work-item eligibility, dependency order, working-tree hygiene, stop handling, conservative retention, and the four legacy transition outcomes. A pure helper may report coordination or migration eligibility; it never invokes a skill, runs a command, writes a file, accepts work, moves evidence, or removes a record.

@@ -33,6 +33,10 @@ A team move is an authority-gated migration stop, not a normal lifecycle transit
 
 Linear archives closed inactive Issues automatically; it has no manual archive action. Deletion is distinct, recoverable only for Linear's documented retention period, and is not a KI prune operation. This adapter defines no archive, delete, or prune action.
 
+## Timestamp projection
+
+The adapter projects Linear's provider-native Issue creation and update timestamps as portable `created_at` and `updated_at` values. It does not duplicate them into the Issue description or comments or treat a KI read as a provider update. The executor must return the post-write provider timestamp with its opaque snapshot evidence rather than manufacture a local timestamp.
+
 ## Execution boundary
 
 Remote discovery, authentication, stale-read checks, conflict handling, and every mutation fail closed pending `KI-HARNESS-FND-014`. A future executor must re-read each Issue immediately before an approved write and stop on changed workflow metadata, concurrent human updates, missing permissions, uncertain current locator/team, or moved-field uncertainty.

@@ -1,10 +1,13 @@
 ---
 name: ki-delegation
 ki-kind: governance
+ki-applicability: declaration-only
 ki-depends-on: []
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
-  Governs durable delegation packets for approved high-risk agent work: explicit locked decisions, authority, isolation, escalation, verification, and return boundaries that survive a runtime handoff. Use when a delegated change needs an auditable cross-agent brief or when designing or auditing that packet. Ordinary runtime subagent task selection and execution stay with the active process and runtime; model-purpose policy belongs to ki-tokenomics; cross-repository work transfer is ki-trades.
+  Govern durable packets for approved high-risk agent delegation: authority, isolation, locked decisions,
+  escalation, verification, and return. Use when a cross-agent brief must survive a handoff; process skills
+  own execution and `ki-trades` cross-repository transfer.
 argument-hint: 'audit <repo> | conform <repo> | educate <work-item> | help | refresh'
 ---
 

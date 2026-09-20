@@ -7,6 +7,7 @@ The full, quotable standard behind the `ki-repo-tools` skill. A `tools-*` repo h
 - [Scope: container, not contents](#scope-container-not-contents)
 - [Repository layout](#repository-layout)
 - [The executable — `bin/<tool>`](#the-executable--bintool)
+- [Developer delivery guides](#developer-delivery-guides)
 - [Versioning & releases](#versioning--releases)
 - [Release readiness](#release-readiness)
 - [The distribution contract](#the-distribution-contract)
@@ -35,11 +36,14 @@ tools-<name>/
 ├── .github/workflows/*.yml # CI: lint + test on every push. Expected.
 ├── man/<name>.1            # Optional manual source; when present, mandoc runs in CI.
 ├── CHANGELOG.md            # semver release history or current-release baseline. Expected.
+├── docs/guides/developer/
+│   ├── definition-of-done.md             # Required repository-defined delivery-readiness guide.
+│   └── releasing.md        # Required repository-defined release guide.
 ├── README.md · LICENSE     # ki-repo's job.
-└── .ki.toml         # qualified ki-repo + ki-repo-tools declarations.
+└── .ki.toml                # qualified ki-repo + ki-repo-tools declarations.
 ```
 
-- **`bin/` with ≥1 executable file is the only hard requirement** — its absence is a FAIL, since without it there is no tool. Everything else is expected-but-optional (WARN when absent): a repo can be mid-scaffold.
+- **`bin/` with ≥1 executable file and both developer delivery guides are hard requirements** — their absence is a FAIL. Everything else is expected-but-optional (WARN when absent): a repo can be mid-scaffold.
 - The **primary** bin file is the one whose name matches the repo's `<name>` (a `tools-mgit` repo → `bin/mgit`); the capability checks read its shebang.
 
 ## The executable — `bin/<tool>`
@@ -47,6 +51,12 @@ tools-<name>/
 - Lives at `bin/<tool>` and carries the **executable bit**. Git tracks the exec bit, so `chmod +x bin/<tool>` is committed once and travels with the repo — a bin file without it is a FAIL (the curl installer and Homebrew formula both rely on it).
 - Answers `--version` (and `-V` where the CLI convention allows), printing the tool name and version. Hosted audit never executes the physical primary executable; a separately authorized isolated diagnostic supplies any runtime evidence.
 - Follows the XDG Base Directory spec for any config/state/cache it writes (`$XDG_CONFIG_HOME`, `$XDG_STATE_HOME`, `$XDG_CACHE_HOME` with the documented `$HOME`-relative fallbacks) rather than scattering dotfiles in `$HOME`.
+
+## Developer delivery guides
+
+Every tool repository carries physical regular files at `docs/guides/developer/definition-of-done.md` and `docs/guides/developer/releasing.md`. `ki-repo-tools` enforces only their presence and safe file type; each repository defines the contents that fit its tool, delivery risks, and release mechanism.
+
+`definition-of-done.md` is the repository's local route for deciding that a change is complete. `releasing.md` is its local route for preparing and publishing a release. `ki-guides` governs their ordinary guide placement and form when selected, but neither skill imposes a universal substantive checklist.
 
 ## Versioning & releases
 
