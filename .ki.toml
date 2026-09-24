@@ -51,4 +51,5 @@ visibility = "public" # Cowork's extraKnownMarketplaces GitHub source must reach
 routes."knowledgeislands/ki-agentic-harness" = { import = ["knowledge"] }
 
 [skills.ki-agora]
-memberships.ki-all = { home = "https://github.com/knowledgeislands/ki-agentic-harness", role = "maintainer" }
+memberships.ki-all = { home = "https://github.com/knowledgeislands/ki-arcadia-principal", role = "product" }
+memberships.ki-fnd = { home = "https://github.com/knowledgeislands/ki-arcadia-principal", role = "product" }
