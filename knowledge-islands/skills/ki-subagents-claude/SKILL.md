@@ -9,7 +9,7 @@ ki-shared-dependencies: [ki-skills:rubric]
 description: >
   Audit or write Claude Code Markdown/YAML projections of approved portable KI subagent roles. Use for
   Claude-native agent source shape and fields; use `ki-subagents` for runtime-neutral role design and
-  `ki-subagents-codex` for Codex TOML.
+  `ki-subagents-chatgpt` for Codex TOML.
 argument-hint: 'audit <agent-or-dir> | conform <agent> | help | educate <description> | refresh'
 ---
 
@@ -52,4 +52,4 @@ Invoked as `help`, `-h`, or `?`, explain the skill, invocation, modes, runtime b
 - Run the host audit, then judge. Structured items own the mechanical layer; the model owns the judgment layer.
 - A WARN is not a FAIL. Length and the third-person-description heuristic are _recommendations_ — report them, but an agent can ship over a soft cap with a reason.
 - This adapter audits Claude source definitions, not portable semantics, skills, or effective runtime state.
-- For Codex TOML use `ki-subagents-codex`; for a `SKILL.md` use `ki-skills`.
+- For Codex TOML use `ki-subagents-chatgpt`; for a `SKILL.md` use `ki-skills`.

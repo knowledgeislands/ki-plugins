@@ -115,14 +115,14 @@ When several distinct targets (client apps, environments, hosts) each need their
 
 ## Agent-instruction layering
 
-Two layers, and the decision rule for which one a piece of guidance belongs in:
+First route reusable rules and procedures to their owning skill, as `ki-authoring`'s knowledge-promotion standard requires. Neither a chezmoi source file nor a rendered personal instruction file is the authority for portable skill doctrine. Then choose the appropriate agent-instruction layer:
 
-- **Layer 1 — repository-local.** A thin root index file that imports one topic file per concern. Extend it by appending to an existing topic file, or by adding a new topic file plus one import line — never by growing the root index itself.
-- **Layer 2 — user-level.** A `private_`-prefixed, `dot_`-targeted file that chezmoi renders to the selected runtime's global agent-config location, applying across every repository and session on that machine, and syncing via the normal `chezmoi update`/`apply` flow.
+- **Layer 1 — repository-local.** Root `AGENTS.md` carries shared guidance; a runtime's root orientation file carries only its specific additions. Keep either index thin and put lengthy on-demand detail in an appropriate tracked guide or skill.
+- **Layer 2 — user-level.** A `private_`-prefixed, `dot_`-targeted file that chezmoi renders to the selected runtime's global agent-config location, applying across every repository and session on that machine, and syncing via the normal `chezmoi update`/`apply` flow. It carries personal preferences and runtime-specific bindings, not rules required for another contributor to use a skill.
 
-**Decision rule**: repository-specific guidance → Layer 1. A personal preference that holds across every project → Layer 2. A fact about the user themselves (their role, their working style) → a persistent-memory mechanism, not either instruction layer.
+**Decision rule**: reusable doctrine → owning skill; repository-specific guidance → Layer 1; cross-project personal preference or machine binding → Layer 2. Runtime memory is only an explicitly opted-in personal retrieval aid, never the canonical home for repository or skill rules. Remove a duplicate from its old layer after promotion.
 
-This is a _repository-local-vs-user-level_ split — a different axis from the runtime-neutral-vs-runtime-binding split owned by `ki-repo`. A chezmoi repository commonly uses both: this skill decides where guidance lives, while `ki-repo` decides which file carries runtime-neutral orientation within Layer 1.
+When reviewing a skill against managed personal instructions, check that it still works without those files. If user-level evidence is unavailable, report that limit rather than claiming portability was proven. This placement check complements `ki-skills`' KI-SHAPE-10; it does not replace the skill-quality audit.
 
 ## OS/tooling gotchas
 

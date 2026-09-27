@@ -166,7 +166,7 @@ The detection signals `ki-repo` uses (one recursive tree read + `package.json`):
 | `ki-skills` | `skills/*/SKILL.md` | `[skills.ki-skills]` |
 | `ki-subagents` | Claude Markdown or Codex TOML projection | `[skills.ki-subagents]` |
 | `ki-subagents-claude` | `subagents/**/*.md` | `[skills.ki-subagents-claude]` |
-| `ki-subagents-codex` | `.codex/agents/**/*.toml` | `[skills.ki-subagents-codex]` |
+| `ki-subagents-chatgpt` | `.codex/agents/**/*.toml` | `[skills.ki-subagents-chatgpt]` |
 | `ki-checkpoint` | `+/_CHECKPOINTS/` subarea | `[skills.ki-checkpoint]` |
 
 This is the **one place** `ki-repo` reads across skill tables. It normally reads only table **presence**; app discovery also consumes the core-owned `site-root` solely to locate the selected Vite config and package manifest. The website core still owns and validates that value, preserving _validate down, ignore across_ for its contents. It is an **audit-time enforcement** run by `repo`'s auditor, not behaviour baked into the regular use of each skill. A repo opts out of a single signal with a `coverage-<skill> = false` entry under `[skills.ki-repo.checks]`; the auditor emits an informational note so that deliberate non-activation remains explicit. Website keys are independent: `coverage-website`, `coverage-website-content`, `coverage-website-app`, and `coverage-website-cloudflare` do not disable one another.

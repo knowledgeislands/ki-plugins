@@ -7,7 +7,7 @@ ki-shared-dependencies: [ki-skills:rubric]
 description: >
   Define or assess runtime-neutral KI subagent roles: identity, delegation purpose, instructions, lane,
   grounding, hand-offs, orchestration, and evidence. Use before a native projection; use `ki-subagents-claude`
-  or `ki-subagents-codex` for runtime files.
+  or `ki-subagents-chatgpt` for runtime files.
 argument-hint: 'audit | conform | educate | refresh | help'
 ---
 
@@ -17,7 +17,7 @@ argument-hint: 'audit | conform | educate | refresh | help'
 
 This is the runtime-neutral parent for a subagent role. It owns the role's stable identity, selection purpose, core instructions, lane, grounding, hand-offs, orchestration intent, and evidence that selecting the role improves an outcome. It owns no runtime field, file extension, path, installation, activation, effective setting, or execution claim.
 
-Use `ki-subagents-claude` to project an approved role into Claude Code Markdown/YAML. Use `ki-subagents-codex` to project it into Codex standalone TOML. Choose the adapter only after this semantic work is explicit; do not copy one runtime's fields into the other.
+Use `ki-subagents-claude` to project an approved role into Claude Code Markdown/YAML. Use `ki-subagents-chatgpt` to project it into Codex standalone TOML. Choose the adapter only after this semantic work is explicit; do not copy one runtime's fields into the other.
 
 ## Operating modes
 

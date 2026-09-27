@@ -4,22 +4,23 @@ import type { ChezmoiRubricContext, ReviewContext } from '../contexts/chezmoi.ts
 const LAYER_J1: RubricItem<ReviewContext> = {
   code: 'LAYER-J1',
   title: 'Agent-instruction layering',
-  description: 'Agent guidance is placed at the correct repository, user, or persistent-memory layer.',
+  description: 'Reusable doctrine belongs in skills; repository and personal guidance use their own layers.',
   sources: ['standards-chezmoi-dotfiles.md'],
   judgment: {
-    scope: 'Each piece of agent guidance and its repository-local, user-level, or persistent-memory audience.',
+    scope:
+      'Managed agent guidance, its reusable-skill or repository or personal audience, and available portability evidence.',
     prompt:
-      'Does each piece of agent guidance sit at the correct repository-local, user-level, or persistent-memory layer?',
+      'Is reusable doctrine owned by a skill, shared repository guidance in root AGENTS.md, and personal runtime guidance free of hidden skill prerequisites?',
     outcomes: ['conforming', 'relocation required', 'scope decision required'],
     guidance:
-      'Move the guidance to the narrowest durable layer that owns its scope, or record the reason a broader layer is required.'
+      'Move guidance to its skill, repository, or personal owner; remove duplicates and report when unavailable personal evidence prevents a portability conclusion.'
   }
 }
 
 export const LAYER: RubricFamily<ChezmoiRubricContext, ReviewContext> = {
   code: 'LAYER',
   title: 'Instruction layering',
-  description: 'Judgment criteria for repository, user, and memory guidance.',
+  description: 'Judgment criteria for skill, repository, user, and memory guidance.',
   standard: 'standards-chezmoi-dotfiles.md',
   selectContext: (context) => context.review,
   items: [LAYER_J1]

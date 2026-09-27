@@ -1025,10 +1025,13 @@ coverage-guides = false
       expect.objectContaining({ message: expect.stringContaining('looks governed by ki-subagents (') })
     )
     expect(findings).toContainEqual(
-      expect.objectContaining({ message: expect.stringContaining('looks governed by ki-subagents-codex') })
+      expect.objectContaining({ message: expect.stringContaining('looks governed by ki-subagents-chatgpt') })
     )
 
-    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\n\n[skills.ki-subagents]\n\n[skills.ki-subagents-codex]\n')
+    writeFileSync(
+      join(root, '.ki.toml'),
+      '[skills.ki-repo]\n\n[skills.ki-subagents]\n\n[skills.ki-subagents-chatgpt]\n'
+    )
     expect((await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'COV-1')).toEqual([])
   })
 

@@ -88,13 +88,13 @@ Judgment criteria for format-preserving Pattern A and Pattern C editors.
 
 → [standard](standards-chezmoi-dotfiles.md)
 
-Judgment criteria for repository, user, and memory guidance.
+Judgment criteria for skill, repository, user, and memory guidance.
 
-- **LAYER-J1 [J] — Agent-instruction layering** — Agent guidance is placed at the correct repository, user, or persistent-memory layer. (standards-chezmoi-dotfiles.md)
-  - _Evidence scope:_ Each piece of agent guidance and its repository-local, user-level, or persistent-memory audience.
-  - _Review prompt:_ Does each piece of agent guidance sit at the correct repository-local, user-level, or persistent-memory layer?
+- **LAYER-J1 [J] — Agent-instruction layering** — Reusable doctrine belongs in skills; repository and personal guidance use their own layers. (standards-chezmoi-dotfiles.md)
+  - _Evidence scope:_ Managed agent guidance, its reusable-skill or repository or personal audience, and available portability evidence.
+  - _Review prompt:_ Is reusable doctrine owned by a skill, shared repository guidance in root AGENTS.md, and personal runtime guidance free of hidden skill prerequisites?
   - _Outcomes:_ conforming; relocation required; scope decision required
-  - _Conforming guidance:_ Move the guidance to the narrowest durable layer that owns its scope, or record the reason a broader layer is required.
+  - _Conforming guidance:_ Move guidance to its skill, repository, or personal owner; remove duplicates and report when unavailable personal evidence prevents a portability conclusion.
 
 ## SHELL — Shell paths and completions
 

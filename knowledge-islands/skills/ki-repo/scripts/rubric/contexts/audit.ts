@@ -698,8 +698,8 @@ const COVERAGE: { skill: string; table: string; artifact: string; detect: (s: Si
     detect: (s) => [...s.tree].some((p) => /^subagents\/.+\.md$/.test(p) && !/(^|\/)README\.md$/i.test(p))
   },
   {
-    skill: 'subagents-codex',
-    table: skillTable('ki-subagents-codex'),
+    skill: 'subagents-chatgpt',
+    table: skillTable('ki-subagents-chatgpt'),
     artifact: '.codex/agents/**/*.toml',
     detect: (s) => [...s.tree].some((p) => /^\.codex\/agents\/.+\.toml$/.test(p))
   },

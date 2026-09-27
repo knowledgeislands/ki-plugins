@@ -14,4 +14,4 @@ A portable subagent role is a runtime-neutral delegation contract. It defines a 
 
 ## Boundary
 
-Claude Code Markdown/YAML and its fields are owned by `ki-subagents-claude`. Codex standalone TOML and its fields are owned by `ki-subagents-codex`. Installation, publication, activation, effective settings, and runtime execution are host/runtime questions. The current Harness host implements no generic subagent publisher, so neither adapter may claim them.
+Claude Code Markdown/YAML and its fields are owned by `ki-subagents-claude`. Codex standalone TOML and its fields are owned by `ki-subagents-chatgpt`. Installation, publication, activation, effective settings, and runtime execution are host/runtime questions. The current Harness host implements no generic subagent publisher, so neither adapter may claim them.
