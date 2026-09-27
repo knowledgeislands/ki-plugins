@@ -43,6 +43,14 @@ const delegatedNoteTypeRecord = (
     segments[2]?.endsWith('.md')
   )
     return true
+  if (
+    segments[0] === zones.inbound &&
+    segments[1] === '_ACQUIRE' &&
+    segments[2] &&
+    segments.length === 4 &&
+    segments[3]?.endsWith('.md')
+  )
+    return true
 
   return (
     (segments[0] === zones.inbound || segments[0] === zones.outbound) &&

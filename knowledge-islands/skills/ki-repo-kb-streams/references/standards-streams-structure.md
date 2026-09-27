@@ -32,7 +32,7 @@ The container does not prescribe a topical-folder or `groups` vocabulary. Where 
 
 Roadmap horizons and lifecycle are frontmatter fields. Do not represent `Triage`, `Now`, `Next`, `Soon`, `Waiting for`, `Parked`, or `Future` with paths below `Streams/Roadmap/`.
 
-Substantive prospective work is deduplicated against the canonical queue, then captured without an approval gate as a flat `status: draft`, `horizon: triage` roadmap record. Its identity is allocated from the canonical `_ISSUES.md` high-water ledger, and the capture is reported after creation. Capture records the possibility of work; it does not adopt, prioritise, plan, or authorise delivery.
+Substantive prospective work is deduplicated against the canonical queue, then captured without an approval gate as a flat `status: draft`, `horizon: triage` roadmap record. Its identity is allocated from the canonical `_ISSUES.md` high-water ledger and reserved by the committed ledger advance that precedes the record, and the capture is reported after creation. Capture records the possibility of work; it does not adopt, prioritise, plan, or authorise delivery.
 
 Explicit human approval is required before a captured record leaves triage or is renamed, rejected, or merged into another record. Approval never bypasses the shared lifecycle or done-before-prune rules, and this intake contract creates no direct discard path. Silence, discussion, and automatic capture are not approval. Apply adoption through `ki-next`; route an approved rejected, duplicate, or merged disposition to `ki-accept` so Triage reaches retained `done` before any later prune.
 

@@ -74,6 +74,48 @@ export const captureDecision = (input: {
 }): 'capture-triage' | 'refuse' =>
   input.substantive && !input.existingOwner && !input.resolvedOrRhetorical ? 'capture-triage' : 'refuse'
 
+export type IssueLedgerSnapshot =
+  | { readonly mode: 'repository'; readonly lastId: number }
+  | { readonly mode: 'areas'; readonly areas: Readonly<Record<string, number>> }
+
+export type IssueAllocationDecision =
+  | {
+      readonly kind: 'publish-proposed' | 'reallocate-and-publish'
+      readonly serial: number
+      readonly ledgerHighWater: number
+    }
+  | { readonly kind: 'refuse'; readonly reason: string }
+
+const highWaterFor = (snapshot: IssueLedgerSnapshot, area: string | null): { readonly value: number } | undefined => {
+  const value =
+    snapshot.mode === 'repository' && area === null
+      ? snapshot.lastId
+      : snapshot.mode === 'areas' && area
+        ? snapshot.areas[area]
+        : undefined
+  return Number.isSafeInteger(value) && value !== undefined && value >= 0 ? { value } : undefined
+}
+
+export const issueAllocationDecision = (input: {
+  readonly inspected: IssueLedgerSnapshot
+  readonly current: IssueLedgerSnapshot
+  readonly area: string | null
+  readonly proposedSerial: number
+}): IssueAllocationDecision => {
+  const inspected = highWaterFor(input.inspected, input.area)
+  const current = highWaterFor(input.current, input.area)
+  if (!inspected || !current || current.value < inspected.value)
+    return { kind: 'refuse', reason: 'Issue-ledger scope is invalid or its high-water mark regressed.' }
+
+  const serial = current.value + 1
+  const proposedIsFresh = current.value === inspected.value && input.proposedSerial === serial
+  return {
+    kind: proposedIsFresh ? 'publish-proposed' : 'reallocate-and-publish',
+    serial,
+    ledgerHighWater: serial
+  }
+}
+
 export const adoptionDecision = (
   candidate: Candidate,
   destination: Candidate['horizon'],

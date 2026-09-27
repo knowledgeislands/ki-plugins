@@ -1,0 +1,46 @@
+{
+  "contract": 1,
+  "owner": "ki-repo-mcp",
+  "profiles": {
+    "legacy-v1-core": {
+      "requires": ["src/config/index.ts", "src/utils/audit-log.ts"],
+      "files": [
+        {
+          "source": "legacy-v1-core/access-level.ts.txt",
+          "destination": "src/utils/access-level.ts",
+          "sha256": "a1a18a4dba5cc9f86fa8d44f548065c73907a38dff8ce5a4fc2389b578c9bda4"
+        },
+        {
+          "source": "legacy-v1-core/annotations.ts.txt",
+          "destination": "src/utils/annotations.ts",
+          "sha256": "3c018bcc496dbe2b92cdea9203c8f03897a8113ef7d2b1526cb593a5060bfae6"
+        },
+        {
+          "source": "legacy-v1-core/results.ts.txt",
+          "destination": "src/utils/results.ts",
+          "sha256": "68827d7706e3b4f7dcce2072f5a0bcb2073024e044796a4f0fcf8ab72f1bb53b"
+        }
+      ]
+    },
+    "modern-v2-core": {
+      "requires": ["src/config/index.ts", "src/utils/audit-log.ts", "src/utils/errors.ts"],
+      "files": [
+        {
+          "source": "modern-v2-core/access-level.ts.txt",
+          "destination": "src/utils/access-level.ts",
+          "sha256": "d2e30b351e0b1d318bf3d288636d32db5457607da2862ee1ed48aa2951e2413e"
+        },
+        {
+          "source": "modern-v2-core/annotations.ts.txt",
+          "destination": "src/utils/annotations.ts",
+          "sha256": "ab446e5ca96bd3eb29832847f03f9060eb8c775df6b73402a48eee433f3a0d7c"
+        },
+        {
+          "source": "modern-v2-core/results.ts.txt",
+          "destination": "src/utils/results.ts",
+          "sha256": "14e0ea674f2448debb7dc56f9e337a3ab1940b094018bf895518f25654cb0b66"
+        }
+      ]
+    }
+  }
+}

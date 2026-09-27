@@ -263,13 +263,18 @@ test('adapter and protocol records delegate note-type metadata to their owning s
     'Streams/Housekeeping/TEMPLATE.md',
     '+/_BATCHES/KI-EXAMPLE-BATCH-001.md',
     '+/_CHECKPOINTS/active-thread.md',
+    '+/_ACQUIRE/granola/2026-07-28--example.md',
     '+/_TRADES/sender/repository/TRD-01234567.md',
     '-/_TRADES/receiver/repository/TRD-89abcdef.md'
   ]
   for (const relativePath of records) {
     const path = join(repository, relativePath)
     mkdirSync(dirname(path), { recursive: true })
-    const classification = relativePath.includes('/_CHECKPOINTS/') ? 'type: ki-checkpoint\n' : ''
+    const classification = relativePath.includes('/_CHECKPOINTS/')
+      ? 'type: ki-checkpoint\n'
+      : relativePath.includes('/_ACQUIRE/')
+        ? 'type: granola-meeting\n'
+        : ''
     writeFileSync(path, `---\n${classification}status: active\n---\n\n# Delegated record\n`)
   }
 
@@ -325,13 +330,17 @@ test('retired handoff classification fails even in a valid trade path while loca
   for (const relativePath of records) expect(finding?.message).toContain(relativePath)
 })
 
-test('active checkpoint delegation preserves YAML and configured field validation', () => {
+test('acquisition and active checkpoint delegation preserve YAML and configured field validation', () => {
   const repository = createBase()
   writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-kb]\nrequired_frontmatter = ["author"]\n')
   const active = join(repository, '+', '_CHECKPOINTS', 'Active.md')
   mkdirSync(dirname(active), { recursive: true })
   writeFileSync(active, '---\ntype: ki-checkpoint\ninvalidKey: value\n---\n\n# Active\n')
   writeFileSync(join(dirname(active), 'Malformed.md'), '---\ntype: [\n---\n\n# Malformed\n')
+  const acquired = join(repository, '+', '_ACQUIRE', 'granola', '2026-07-28--example.md')
+  mkdirSync(dirname(acquired), { recursive: true })
+  writeFileSync(acquired, '---\ntype: granola-meeting\ninvalidKey: value\n---\n\n# Acquired\n')
+  writeFileSync(join(dirname(acquired), 'Malformed.md'), '---\ntype: [\n---\n\n# Malformed\n')
   const findings = collectKbAuditEvidence(repository)
   expect(findings.find((finding) => finding.code === 'NOTE-1c')?.level).toBe('PASS')
   expect(findings.find((finding) => finding.code === 'NOTE-1a')?.level).toBe('FAIL')
@@ -347,6 +356,9 @@ test('delegation does not cover obsolete batch paths or noncanonical checkpoint 
     '+/_CHECKPOINTS/nested/Thread.md',
     '+/_CHECKPOINTS/_RETIRED/Thread.md',
     '+/_CHECKPOINTS/_RETIRED/nested/Thread.md',
+    '+/_ACQUIRE/Meeting.md',
+    '+/_ACQUIRE/granola/nested/Meeting.md',
+    '-/_ACQUIRE/granola/Meeting.md',
     '-/_CHECKPOINTS/Thread.md'
   ]
   for (const relativePath of records) {

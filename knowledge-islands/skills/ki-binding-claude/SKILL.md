@@ -9,7 +9,7 @@ ki-shared-dependencies: [ki-binding:binding, ki-skills:rubric]
 description: >
   Audit or safely conform Claude-native MCP configuration across Claude Code, Desktop, web conventions, and
   the KI Cowork plugin projection. Use when Claude MCP surfaces drift or Cowork needs rebuilding; `ki-binding`
-  owns portable source and `ki-binding-codex` owns Codex.
+  owns portable source and `ki-binding-chatgpt` owns Codex.
 argument-hint: 'audit [project] | conform [project] | help | educate [project] | refresh'
 ---
 

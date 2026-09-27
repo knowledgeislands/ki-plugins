@@ -7,6 +7,7 @@ import type {
   RubricPublicationContext,
   RubricSession
 } from '../../shared/rubric.ts'
+import { prepareToolSharedCode, type ToolSharedCodeContext } from './shared-code.ts'
 
 type NodeKind = 'missing' | 'file' | 'directory' | 'unsafe'
 type RootState = 'absent' | 'physical' | 'unsafe'
@@ -81,6 +82,7 @@ export type ToolsConfigContext = {
   readonly applicable: boolean
   readonly config: ConfigState
   readonly configKeys: readonly string[]
+  readonly sharedProfile: unknown
   readonly requestMarker?: () => void
 }
 
@@ -91,6 +93,7 @@ export type ToolsRubricContext = {
   readonly language: LanguageToolsContext
   readonly manual: ManualToolsContext
   readonly config: ToolsConfigContext
+  readonly sharedCode: ToolSharedCodeContext
 }
 
 const nodeKind = (path: string): NodeKind => {
@@ -153,19 +156,26 @@ const executable = (path: string): boolean => (lstatSync(path).mode & 0o111) !==
 const inspectConfig = (
   path: string,
   kind: NodeKind
-): { readonly state: ConfigState; readonly keys: readonly string[]; readonly content: string | null } => {
-  if (kind === 'missing') return { state: 'missing', keys: [], content: null }
-  if (kind !== 'file') return { state: 'unsafe', keys: [], content: null }
+): {
+  readonly state: ConfigState
+  readonly keys: readonly string[]
+  readonly content: string | null
+  readonly values: Readonly<Record<string, unknown>>
+} => {
+  if (kind === 'missing') return { state: 'missing', keys: [], content: null, values: {} }
+  if (kind !== 'file') return { state: 'unsafe', keys: [], content: null, values: {} }
   const content = readableText(path)
-  if (content === null) return { state: 'unsafe', keys: [], content: null }
+  if (content === null) return { state: 'unsafe', keys: [], content: null, values: {} }
   try {
     const parsed = Bun.TOML.parse(content) as Record<string, unknown>
     const candidate = (parsed.skills as Record<string, unknown> | undefined)?.[TOOLS_TABLE]
-    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate))
-      return { state: 'present', keys: Object.keys(candidate as Record<string, unknown>), content }
-    return { state: 'absent', keys: [], content }
+    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+      const values = candidate as Record<string, unknown>
+      return { state: 'present', keys: Object.keys(values), content, values }
+    }
+    return { state: 'absent', keys: [], content, values: {} }
   } catch {
-    return { state: 'malformed', keys: [], content }
+    return { state: 'malformed', keys: [], content, values: {} }
   }
 }
 
@@ -327,13 +337,23 @@ export const createToolsSession = ({
   const configEvidence =
     rootState === 'physical'
       ? inspectConfig(configPath, nodeKind(configPath))
-      : { state: 'missing' as const, keys: [], content: null }
+      : { state: 'missing' as const, keys: [], content: null, values: {} }
   const applicable = configEvidence.state === 'present'
 
   const requestedExecutables = new Set<string>()
+  const sharedWrites = new Map<string, ConformWrite>()
+  const sharedCommands = new Map<string, ConformCommand>()
   let markerRequested = false
   let manualSpacingRequested = false
   const originalConfig = configEvidence.content
+  const sharedCode = prepareToolSharedCode({
+    root,
+    profile: configEvidence.values.profile,
+    parameters: configEvidence.values,
+    mode,
+    writes: sharedWrites,
+    commands: sharedCommands
+  })
   const context: ToolsRubricContext = {
     rubric: { publication },
     tool: {
@@ -406,6 +426,7 @@ export const createToolsSession = ({
       applicable,
       config: configEvidence.state,
       configKeys: configEvidence.keys,
+      sharedProfile: configEvidence.values.profile,
       ...(mode === 'conform' &&
       inspectedBins.state === 'present' &&
       configEvidence.state === 'absent' &&
@@ -416,18 +437,20 @@ export const createToolsSession = ({
             }
           }
         : {})
-    }
+    },
+    sharedCode
   }
 
   return {
     subjects: [
       { families: ['RUBRIC'], context: () => context },
-      { families: ['TOOL', 'SHELL', 'LANG', 'MAN', 'CONFIG'], context: () => context, subject: root }
+      { families: ['TOOL', 'SHELL', 'LANG', 'MAN', 'CONFIG', 'SHARED'], context: () => context, subject: root }
     ],
     proposal: () => {
       const commands = [...requestedExecutables]
         .sort()
         .map((path): ConformCommand => ({ program: 'chmod', arguments: ['+x', path] }))
+      commands.push(...sharedCommands.values())
       const writes: ConformWrite[] = [
         ...(markerRequested && originalConfig !== null
           ? [
@@ -439,7 +462,8 @@ export const createToolsSession = ({
           : []),
         ...(manualSpacingRequested && manualSource !== null
           ? [{ path: manualPath, content: normaliseManualSpacing(manualSource) }]
-          : [])
+          : []),
+        ...sharedWrites.values()
       ]
       return { writes, ...(commands.length > 0 ? { commands } : {}) }
     }

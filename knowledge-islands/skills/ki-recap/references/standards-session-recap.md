@@ -66,15 +66,18 @@ The standard owns the placement ladder, promotion evidence, and duplicate-reconc
 | --- | --- |
 | Stable repository convention | Portable `AGENTS.md`, or a runtime file only when it is genuinely runtime-specific |
 | Checker, rubric, shared rule, or reusable operation | Its owning skill, standard, reference, agent, or hook — add a criterion only after scanning the relevant catalogue and linter |
+| New reusable repository-review concept | The `ki-repo` REVIEW procedure — raise it as a repository-review checklist candidate and offer the canonical update |
 | A bounded procedure | An existing appropriate guide, rather than new standing orientation |
 | Durable personal fact or user preference | Runtime memory or synchronised personal configuration, according to its scope |
 | Deferred work with no home yet | Non-KB: `ROADMAP.md`, or a `ki-plan` if it is multi-step. KB: `Streams/Roadmap/`, or a `ki-plan` if it is multi-step. |
 
 Use `highCostCandidates` from the grounding helper as a starting list, not the full set — warm context surfaces things the helper cannot see (a design dead-end, a rejected approach).
 
+For a repository-review checklist candidate, name the concept and the gap it would close, then ask whether to update the canonical `ki-repo` REVIEW reference. Do not edit the checklist merely because the recap identified the candidate; user confirmation still governs the durable learning write. If approved, preserve that reference's broad-to-narrow structure and reconcile any lower-layer copy or pointer.
+
 ### Per-record review mini recap
 
-When `ki-accept` requests a record-scoped recap, do not run or imply a full-session recap. Ground only the record's delivered outputs and verification evidence, then record these H3 parts in a roadmap item's `## Review` section or the equivalent proposal review evidence: **Delivered**, **Summary of changes**, **Verification**, **Outstanding concerns**, and **Mini recap**. The summary names the material changes and useful primary paths; verification records concrete commands, outcomes, and the checked evidence revision; concerns hold open questions and further review analysis. The mini recap may name a learning and its proposed route, but it must say that the route is unapproved. User closure of the record sets it Done only; it does not approve a guide, rubric, agent, hook, memory, or other durable learning write.
+When `ki-accept` requests a record-scoped recap, do not run or imply a full-session recap. Ground only the record's delivered outputs and verification evidence, then record these H3 parts in a roadmap item's `## Review` section or the equivalent proposal review evidence: **Delivered**, **Change Summary**, **Verification**, **Outstanding concerns**, and **Mini recap**. The summary names the material changes and useful primary paths; verification records concrete commands, outcomes, and the checked evidence revision; concerns hold open questions and further review analysis. The mini recap may name a learning and its proposed route, but it must say that the route is unapproved. User closure of the record sets it Done only; it does not approve a guide, rubric, agent, hook, memory, or other durable learning write.
 
 ## 5. Discussion coverage
 
@@ -115,7 +118,39 @@ Close the recap with an **Actions** section: a short, concrete, imperative list 
 - `APPLY-LEARNING-ROUTE` — Apply an approved learning route from the knowledge-promotion standard (for example, a repository rule, skill criterion, hook, memory, or personal configuration update).
 - `RERUN-FAILING-GATE` — Re-run a gate that was left failing, or finish a mid-change thread.
 
-If nothing is actionable, say so in one line ("No actions — tree clean, nothing outstanding"). Do **not** perform the actions unprompted — this section is the checklist the user acts on (or asks you to act on); durable writes still require the step-4 confirmation.
+Decide the Actions list from the grounded evidence before considering the terminal rendering. The completion banner is derived from an empty Actions list, never a goal: do not suppress, downgrade, or reroute a genuine action to make the banner eligible. In particular, reconcile outstanding claims against the grounding helper's current `filesTouched` evidence rather than warm context, and do not call work verified unless the required gate actually ran and passed.
+
+Render the completion banner only when all of these conditions hold together:
+
+1. The grounding helper reports `repository.status: available`, a non-null full `HEAD`, `worktree: clean`, and an empty `filesTouched` list at recap time.
+2. Steps 3–5 leave no outstanding work, decision, failing or omitted verification, or other Action.
+3. Every learning harvested in step 4 has a decided route: it was written to its approved durable owner or the user explicitly declined it. A proposed route awaiting confirmation is undecided and blocks the banner.
+
+The banner states current evidence rather than a session event, so two recaps over an unchanged `HEAD` both render it. That repetition is correct and deliberately unguarded: it means a banner withheld under conditions 1–3, or missed in error, is recovered by the next recap at which those conditions hold. A condition on recap history would instead make a miss permanent, because the only route back to eligibility would be doing more work — absurd when the claim being made is that no work remains.
+
+An unpushed commit does **not** block the banner. Pushing is a separate user decision and may trigger deployment. The banner attests only that the named local `HEAD` has a clean working copy and that this session has no outstanding work or unrouted learning; it does not claim the remote is synchronised.
+
+When every condition passes, render this five-line frame literally and without colour, ANSI escapes, substituted wording, or improvised art:
+
+```text
+╭──────────────────────────────────────────────────╮
+│  █▀▀▄ █▀▀█ █▄ █ █▀▀▀   · thread closed           │
+│  █  █ █  █ █ ██ █▀▀    · nothing outstanding     │
+│  █▄▄▀ █▄▄█ █  █ █▄▄▄   · every learning routed   │
+╰──────────────────────────────────────────────────╯
+```
+
+Each framed line is exactly 52 terminal display columns. Measure terminal display width by Unicode code point width, not byte length. Keep the frame byte-identical so transcript archives can find completed sessions by searching for `█▄▄▀ █▄▄█ █  █ █▄▄▄`.
+
+Immediately below the frame, render the variable evidence line with three leading spaces:
+
+```text
+   <repository-basename> · <seven-character-HEAD> · <YYYY-MM-DD>
+```
+
+Use the physical Git root's basename, the seven-character abbreviation of the full `HEAD` observed by the same grounding pass, and the recap date. The evidence line stays outside the frame and is not padded to 52 columns.
+
+If the Actions list is empty but any banner condition fails, retain a truthful one-line no-actions state that names the numbered condition which blocked the banner, and any material evidence gap behind it; never render a partial or weakened banner. A bare “none” hides the difference between a finished session and one whose completion check did not pass, and leaves the reader no way to tell that the banner was owed. Do **not** perform Actions unprompted — the section is a checklist for the user to act on (or ask you to act on); durable writes still require the step-4 confirmation.
 
 ## 7. Route future-work selection to `ki-next`
 

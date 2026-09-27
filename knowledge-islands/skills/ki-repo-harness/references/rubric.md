@@ -47,11 +47,11 @@ Host-owned provenance and activation evidence not derived from source layout.
 
 → [standard](standards-compatible-harness.md)
 
-The five-part source container and its required physical root files.
+The four-part source container and its required physical root files.
 
-- **LAY-1 [M] — Five-part directory layout** — skills/, subagents/, mcp/, evals/, and hooks/ all exist as physical directories at the source-harness root. (standards-compatible-harness.md#source-harness-layout)
+- **LAY-1 [M] — Four-part directory layout** — skills/, subagents/, evals/, and hooks/ all exist as physical directories at the source-harness root. (standards-compatible-harness.md#source-harness-layout)
   - _Remediation:_ diagnostic — Create or repair the missing physical source-harness shelf, then rerun the audit.
-- **LAY-2 [M] — Shelf descriptions** — Each five-part source directory contains a physical README.md declaring its purpose and status. (standards-compatible-harness.md#source-harness-layout)
+- **LAY-2 [M] — Shelf descriptions** — Each four-part source directory contains a physical README.md declaring its purpose and status. (standards-compatible-harness.md#source-harness-layout)
   - _Remediation:_ diagnostic — Add the missing physical shelf README with its purpose and status, then rerun the audit.
 - **LAY-3 [M] — Root Claude orientation** — CLAUDE.md exists as a physical file at the source-harness root. (standards-compatible-harness.md#root-orientation)
   - _Remediation:_ diagnostic — Create or repair the required physical root file with owner-approved content, then rerun the audit.
@@ -66,14 +66,14 @@ The five-part source container and its required physical root files.
 
 Coverage and freshness of the effective source-harness orientation.
 
-- **CLAUDE-1 [J] — Harness introduction** — The root orientation opens by explaining the source harness and naming all five parts. (standards-compatible-harness.md#root-orientation)
+- **CLAUDE-1 [J] — Harness introduction** — The root orientation opens by explaining the source harness and naming all four parts. (standards-compatible-harness.md#root-orientation)
   - _Evidence scope:_ The effective root orientation and all five source-harness shelves.
-  - _Review prompt:_ Does the effective root orientation explain the source harness and name all five parts?
+  - _Review prompt:_ Does the effective root orientation explain the source harness and name all four parts?
   - _Outcomes:_ conforming; orientation revision; not applicable
   - _Conforming guidance:_ Revise the orientation with owner-approved current source facts; do not infer shelf status from an unverified payload.
-- **CLAUDE-2 [J] — Five-part status** — The root orientation gives a current status for every source-harness part. (standards-compatible-harness.md#root-orientation)
-  - _Evidence scope:_ The orientation status table or equivalent and the five physical source shelves.
-  - _Review prompt:_ Does the orientation status table or equivalent agree with the five actual source shelves?
+- **CLAUDE-2 [J] — Four-part status** — The root orientation gives a current status for every source-harness part. (standards-compatible-harness.md#root-orientation)
+  - _Evidence scope:_ The orientation status table or equivalent and the four physical source shelves.
+  - _Review prompt:_ Does the orientation status table or equivalent agree with the four actual source shelves?
   - _Outcomes:_ conforming; orientation revision; source evidence required
   - _Conforming guidance:_ Update the orientation only from current source evidence and preserve the distinction between source shelves and installed payload.
 - **CLAUDE-3 [J] — Working conventions** — The root orientation routes working conventions for every source-harness part. (standards-compatible-harness.md#root-orientation)

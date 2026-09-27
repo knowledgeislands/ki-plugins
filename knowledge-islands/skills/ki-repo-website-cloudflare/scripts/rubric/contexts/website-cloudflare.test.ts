@@ -27,10 +27,10 @@ const options = (repository: string, mode: 'audit' | 'conform' = 'audit'): Rubri
 
 const writeCanonicalRepository = (repository: string): void => {
   mkdirSync(join(repository, 'apps', 'site'), { recursive: true })
-  mkdirSync(join(repository, 'docs', 'guides'), { recursive: true })
+  mkdirSync(join(repository, 'docs', 'guides', 'developer'), { recursive: true })
   writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-website]\n\n[skills.ki-repo-website-cloudflare]\n')
   writeFileSync(
-    join(repository, 'docs', 'guides', 'cloudflare.md'),
+    join(repository, 'docs', 'guides', 'developer', 'cloudflare.md'),
     '# Cloudflare\n\nBuild command: `bun run ki:site:build`.\n'
   )
   writeFileSync(
@@ -98,6 +98,39 @@ describe('ki-repo-website-cloudflare session', () => {
     expect(readFileSync(join(repository, 'apps', 'site', 'package.json'), 'utf8')).toBe(before.package)
     expect(readFileSync(join(repository, 'package.json'), 'utf8')).toBe(before.rootPackage)
     expect(readFileSync(join(repository, '.gitignore'), 'utf8')).toBe(before.gitignore)
+  })
+
+  test('accepts only exact Cloudflare tasks declared by the root Turborepo graph', () => {
+    const repository = makeRoot()
+    writeCanonicalRepository(repository)
+    const rootPackagePath = join(repository, 'package.json')
+    const rootPackage = JSON.parse(readFileSync(rootPackagePath, 'utf8')) as {
+      scripts: Record<string, string>
+    }
+    const deployOutcomes = () => {
+      const session = createWebsiteCloudflareSession(options(repository))
+      const subject = session.subjects.find((candidate) => candidate.families.includes('WCF'))
+      if (!subject) throw new Error('missing Cloudflare website context')
+      const context = WCF.selectContext(subject.context())
+      return WCF.items.find((item) => item.code === 'WCF-13')?.mechanical?.audit.run(context) ?? []
+    }
+
+    rootPackage.scripts['ki:site:deploy'] = 'turbo run deploy'
+    writeFileSync(rootPackagePath, `${JSON.stringify(rootPackage, null, 2)}\n`)
+    writeFileSync(join(repository, 'turbo.json'), '{\n// deployment graph\n"tasks":{"deploy":{}}\n}\n')
+    expect(deployOutcomes()).not.toContainEqual(expect.objectContaining({ status: 'VIOLATION' }))
+
+    writeFileSync(join(repository, 'turbo.json'), '{"tasks":{"preview":{}}}\n')
+    expect(deployOutcomes()).toContainEqual(expect.objectContaining({ status: 'VIOLATION' }))
+
+    rootPackage.scripts['ki:site:deploy'] = 'turbo run preview'
+    writeFileSync(rootPackagePath, `${JSON.stringify(rootPackage, null, 2)}\n`)
+    expect(deployOutcomes()).toContainEqual(expect.objectContaining({ status: 'VIOLATION' }))
+
+    rootPackage.scripts['ki:site:deploy'] = 'turbo run deploy && echo chained'
+    writeFileSync(rootPackagePath, `${JSON.stringify(rootPackage, null, 2)}\n`)
+    writeFileSync(join(repository, 'turbo.json'), '{"tasks":{"deploy":{}}}\n')
+    expect(deployOutcomes()).toContainEqual(expect.objectContaining({ status: 'VIOLATION' }))
   })
 
   test('consumes an explicit site root from website core and keeps the hosting table keyless', () => {
@@ -345,23 +378,23 @@ describe('ki-repo-website-cloudflare session', () => {
     expect(guideItem?.run(contextFor())?.[0]).toEqual({
       status: 'PASS',
       message: 'The Cloudflare guide is tracked, ready to carry the dashboard-owned settings.',
-      subject: 'docs/guides/cloudflare.md'
+      subject: 'docs/guides/developer/cloudflare.md'
     })
 
-    rmSync(join(repository, 'docs', 'guides', 'cloudflare.md'))
+    rmSync(join(repository, 'docs', 'guides', 'developer', 'cloudflare.md'))
     const missing = guideItem?.run(contextFor())
     expect(missing?.[0]?.status).toBe('VIOLATION')
     expect(missing?.[0]?.message).toContain('no reconstructable record')
 
-    writeFileSync(join(repository, 'docs', 'guides', 'cloudflare.md'), '\n')
+    writeFileSync(join(repository, 'docs', 'guides', 'developer', 'cloudflare.md'), '\n')
     expect(guideItem?.run(contextFor())?.[0]?.status).toBe('VIOLATION')
   })
 
   test('audits every selected named Cloudflare site and honours a subset', () => {
     const repository = makeRoot()
-    mkdirSync(join(repository, 'docs', 'guides'), { recursive: true })
+    mkdirSync(join(repository, 'docs', 'guides', 'developer'), { recursive: true })
     writeFileSync(
-      join(repository, 'docs', 'guides', 'cloudflare.md'),
+      join(repository, 'docs', 'guides', 'developer', 'cloudflare.md'),
       '# Cloudflare\n\nBuild command: `bun run ki:site:build`.\n'
     )
     for (const site of ['site-apex', 'site-tower']) {

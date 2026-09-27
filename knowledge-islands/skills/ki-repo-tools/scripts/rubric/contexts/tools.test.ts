@@ -1,10 +1,12 @@
 import { afterEach, expect, test } from 'bun:test'
+import { execFileSync } from 'node:child_process'
 import { chmodSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { RubricContextOptions } from '../../shared/rubric.ts'
 import { CONFIG } from '../items/config.ts'
 import { MAN } from '../items/manual.ts'
+import { SHARED } from '../items/shared-code.ts'
 import { TOOL } from '../items/tool.ts'
 import { createToolsSession } from './tools.ts'
 
@@ -72,6 +74,12 @@ const manualItem = () => {
 const manualStyleItem = () => {
   const candidate = MAN.items.find((entry) => entry.code === 'MAN-STYLE')
   if (!candidate?.mechanical) throw new Error('MAN-STYLE mechanical item is missing')
+  return candidate.mechanical
+}
+
+const sharedItem = () => {
+  const candidate = SHARED.items.find((entry) => entry.code === 'SHARED-1')
+  if (!candidate?.mechanical) throw new Error('SHARED-1 mechanical item is missing')
   return candidate.mechanical
 }
 
@@ -147,6 +155,207 @@ test('item-owned actions coalesce bounded chmod commands without changing declar
   expect(lstatSync(executable).mode & 0o111).toBe(0)
   expect(lstatSync(install).mode & 0o111).toBe(0)
   expect(readFileSync(config, 'utf8')).toBe('[skills.ki-repo]\n[skills.ki-repo-tools]\n')
+})
+
+test('declared source profile renders a missing installer and becomes idempotent', () => {
+  const { repository, config, install } = fixture()
+  mkdirSync(join(repository, 'man'))
+  writeFileSync(join(repository, 'man', 'demo.1'), '.TH demo 1\n')
+  writeFileSync(
+    config,
+    [
+      '[skills.ki-repo]',
+      '[skills.ki-repo-tools]',
+      'profile = "source-script-v1"',
+      'tool = "demo"',
+      'repository = "knowledgeislands/tools-demo"',
+      'env_prefix = "DEMO"',
+      'manual_path = "man/demo.1"',
+      ''
+    ].join('\n')
+  )
+  rmSync(install)
+  const session = createToolsSession(options(repository, 'conform'))
+  const context = session.subjects[0]?.context()
+  if (!context) throw new Error('ki-repo-tools session has no repository context')
+
+  sharedItem().conform?.run(SHARED.selectContext(context))
+  const proposal = session.proposal()
+  expect(proposal.writes.map((write) => write.path)).toEqual(['install.sh'])
+  expect(proposal.commands).toEqual([{ program: 'chmod', arguments: ['+x', 'install.sh'] }])
+  const installer = proposal.writes[0]
+  if (!installer) throw new Error('installer proposal is missing')
+  writeFileSync(join(repository, installer.path), installer.content)
+  chmodSync(join(repository, installer.path), 0o755)
+  execFileSync('bash', ['-n', join(repository, installer.path)])
+
+  const repeated = createToolsSession(options(repository, 'conform'))
+  const repeatedContext = repeated.subjects[0]?.context()
+  if (!repeatedContext) throw new Error('ki-repo-tools session has no repository context')
+  sharedItem().conform?.run(SHARED.selectContext(repeatedContext))
+  expect(repeated.proposal()).toEqual({ writes: [] })
+  expect(sharedItem().audit.run(SHARED.selectContext(repeatedContext))).toEqual(
+    expect.arrayContaining([expect.objectContaining({ status: 'PASS', subject: 'install.sh' })])
+  )
+})
+
+test('declared profile refuses modified or obsolete managed scripts', () => {
+  const { repository, config, install } = fixture()
+  mkdirSync(join(repository, 'man'))
+  mkdirSync(join(repository, 'release'))
+  writeFileSync(join(repository, 'man', 'demo.1'), '.TH demo 1\n')
+  writeFileSync(
+    config,
+    [
+      '[skills.ki-repo]',
+      '[skills.ki-repo-tools]',
+      'profile = "source-script-v1"',
+      'tool = "demo"',
+      'repository = "knowledgeislands/tools-demo"',
+      'env_prefix = "DEMO"',
+      'manual_path = "man/demo.1"',
+      ''
+    ].join('\n')
+  )
+  writeFileSync(install, '#!/bin/sh\nmodified\n')
+  writeFileSync(
+    join(repository, 'release', 'package.sh'),
+    '#!/bin/sh\n# @ki-managed ki-repo-tools profile=retired template=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n'
+  )
+  const session = createToolsSession(options(repository, 'conform'))
+  const context = session.subjects[0]?.context()
+  if (!context) throw new Error('ki-repo-tools session has no repository context')
+
+  sharedItem().conform?.run(SHARED.selectContext(context))
+  expect(session.proposal()).toEqual({ writes: [] })
+  expect(sharedItem().audit.run(SHARED.selectContext(context))).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ status: 'VIOLATION', subject: 'install.sh' }),
+      expect.objectContaining({ status: 'VIOLATION', subject: 'release/package.sh' })
+    ])
+  )
+})
+
+test('profile configuration rejects parameters outside the selected profile', () => {
+  const { repository, config } = fixture()
+  mkdirSync(join(repository, 'man'))
+  mkdirSync(join(repository, 'release'))
+  writeFileSync(join(repository, 'man', 'demo.1'), '.TH demo 1\n')
+  writeFileSync(
+    join(repository, 'release', 'signing-public.pem'),
+    '-----BEGIN PUBLIC KEY-----\nZmFrZQ==\n-----END PUBLIC KEY-----\n'
+  )
+  writeFileSync(
+    config,
+    [
+      '[skills.ki-repo]',
+      '[skills.ki-repo-tools]',
+      'profile = "source-script-v1"',
+      'tool = "demo"',
+      'repository = "knowledgeislands/tools-demo"',
+      'env_prefix = "DEMO"',
+      'manual_path = "man/demo.1"',
+      'public_key_path = "release/signing-public.pem"',
+      ''
+    ].join('\n')
+  )
+  const context = createToolsSession(options(repository, 'audit')).subjects[0]?.context()
+  if (!context) throw new Error('ki-repo-tools session has no repository context')
+
+  expect(configItem().audit.run(CONFIG.selectContext(context))).toContainEqual({
+    status: 'VIOLATION',
+    message: 'The marker contains unknown keys: public_key_path.',
+    subject: '.ki.toml'
+  })
+  expect(sharedItem().audit.run(SHARED.selectContext(context))).toContainEqual({
+    status: 'VIOLATION',
+    message: 'Invalid or missing profile parameters: public_key_path.',
+    subject: '.ki.toml'
+  })
+})
+
+test('archive profiles render packaging and preserve explicit release extensions', () => {
+  for (const profile of ['archive-sha256-v1', 'signed-archive-v1']) {
+    const { repository, config, install } = fixture()
+    mkdirSync(join(repository, 'man'))
+    mkdirSync(join(repository, 'release'))
+    writeFileSync(join(repository, 'man', 'demo.1'), '.TH demo 1\n')
+    writeFileSync(join(repository, 'release', 'package.test.sh'), '#!/bin/sh\n')
+    const profileLines = [
+      '[skills.ki-repo]',
+      '[skills.ki-repo-tools]',
+      `profile = "${profile}"`,
+      'tool = "demo"',
+      'repository = "knowledgeislands/tools-demo"',
+      'env_prefix = "DEMO"',
+      'manual_path = "man/demo.1"'
+    ]
+    if (profile === 'signed-archive-v1') {
+      writeFileSync(
+        join(repository, 'release', 'signing-public.pem'),
+        '-----BEGIN PUBLIC KEY-----\nZmFrZQ==\n-----END PUBLIC KEY-----\n'
+      )
+      profileLines.push('public_key_path = "release/signing-public.pem"')
+    }
+    profileLines.push('')
+    writeFileSync(config, profileLines.join('\n'))
+    rmSync(install)
+    const session = createToolsSession(options(repository, 'conform'))
+    const context = session.subjects[0]?.context()
+    if (!context) throw new Error('ki-repo-tools session has no repository context')
+
+    sharedItem().conform?.run(SHARED.selectContext(context))
+
+    expect(
+      session
+        .proposal()
+        .writes.map((write) => write.path)
+        .sort()
+    ).toEqual(['install.sh', 'release/package.sh'])
+    for (const write of session.proposal().writes) {
+      const target = join(repository, write.path)
+      writeFileSync(target, write.content)
+      execFileSync('bash', ['-n', target])
+    }
+    expect(sharedItem().audit.run(SHARED.selectContext(context))).toEqual(
+      expect.arrayContaining([expect.objectContaining({ status: 'INFO' })])
+    )
+  }
+})
+
+test('signed profile fails closed when the repository-owned public key is invalid', () => {
+  const { repository, config, install } = fixture()
+  mkdirSync(join(repository, 'man'))
+  mkdirSync(join(repository, 'release'))
+  writeFileSync(join(repository, 'man', 'demo.1'), '.TH demo 1\n')
+  writeFileSync(join(repository, 'release', 'signing-public.pem'), 'not a public key\n')
+  writeFileSync(
+    config,
+    [
+      '[skills.ki-repo]',
+      '[skills.ki-repo-tools]',
+      'profile = "signed-archive-v1"',
+      'tool = "demo"',
+      'repository = "knowledgeislands/tools-demo"',
+      'env_prefix = "DEMO"',
+      'manual_path = "man/demo.1"',
+      'public_key_path = "release/signing-public.pem"',
+      ''
+    ].join('\n')
+  )
+  rmSync(install)
+  const session = createToolsSession(options(repository, 'conform'))
+  const context = session.subjects[0]?.context()
+  if (!context) throw new Error('ki-repo-tools session has no repository context')
+
+  sharedItem().conform?.run(SHARED.selectContext(context))
+
+  expect(session.proposal()).toEqual({ writes: [] })
+  expect(sharedItem().audit.run(SHARED.selectContext(context))).toContainEqual({
+    status: 'VIOLATION',
+    message: 'Invalid or missing profile parameters: public_key_path.',
+    subject: '.ki.toml'
+  })
 })
 
 test('static audit never invokes the executable and accepts a physical src/tests directory', () => {

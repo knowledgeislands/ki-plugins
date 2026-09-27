@@ -25,6 +25,8 @@ done = "closed"
 
 The `lifecycle` table names exact remote values for queue, readiness, review, and done. `metadata_owner` names the authority that resolves a label, Issue-field, or Project-field conflict; `dependencies` and `hierarchy` are separate non-empty mappings and must never silently be treated as interchangeable. The local rubric checks that this declaration is complete, but it does not contact GitHub or prove that the remote configuration matches it.
 
+The root `[skills.ki-work-github-issues]` declaration is also the repository-local authority consumed by `ki-repo`: it requires the GitHub Issues feature to be enabled and `package.json` `bugs` to carry the canonical `https://github.com/<owner>/<repository>/issues` URL. Without that root declaration, `ki-repo` requires Issues disabled and the `bugs` field absent. This adapter owns the selection meaning; `ki-repo` owns live repository settings and package metadata enforcement.
+
 ## Lifecycle, migration, and retention
 
 An Issue is the remote record. Its body and comments are the intended locations for plan, delivery, and review evidence. Never infer readiness from `open` or acceptance from a merged pull request. `done` maps to the declared closed value; closed Issues are retained evidence. This adapter defines no archive or delete/prune operation.

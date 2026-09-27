@@ -6,11 +6,12 @@ The sources behind [the cross-repository trade standard](standards-trades.md) an
 
 | Source                                                            | last reviewed |
 | ----------------------------------------------------------------- | ------------- |
-| `GDR-KI-HARNESS-005` — cross-repository trade routes              | 2026-08-06    |
-| `ki-repo` configuration and local registered-repository contracts | 2026-08-06    |
+| `GDR-KI-HARNESS-005` — cross-repository trade routes              | 2026-09-22    |
+| `ki-repo` configuration and local registered-repository contracts | 2026-09-22    |
 
 ## Last review
 
+- 2026-09-22 — Clarified standing knowledge-intake authority, the itemized observation-policy matrix, revocation evidence, and the separate authority required for future automation.
 - 2026-08-06 — Added committed preparations, silent Git observation, independent receipt and decision axes, sender observation policies, direct applied work, raw sender-projection equality, and policy-led release.
 - 2026-08-05 — Separated derived sender and receiver delivery statuses from the receiver-owned decision status; added `unconsidered` and `in_progress` decisions.
 - 2026-08-05 — Clarified that a sender may declare an export and create its local outbound record before the receiver participates; activation remains reciprocal.

@@ -25,7 +25,7 @@ afterEach(() => {
 const fixture = (): string => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-repo-harness-'))
   temporaryDirectories.push(repository)
-  for (const part of ['skills', 'subagents', 'mcp', 'evals', 'hooks']) {
+  for (const part of ['skills', 'subagents', 'evals', 'hooks']) {
     mkdirSync(join(repository, part))
     writeFileSync(join(repository, part, 'README.md'), `# ${part}\n`)
   }
@@ -226,6 +226,26 @@ test('a missing catalogue produces an exact finding and one marker-bounded confo
     'This source harness publishes 3 skills: 3 governance skills and 0 process skills.'
   )
   expect(proposal?.content).toContain('<!-- ki-repo-harness:capability-catalogue:end -->')
+})
+
+test('a declared non-KI provider can publish without the KI baseline in its source shelf', () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-repo-harness-provider-'))
+  temporaryDirectories.push(repository)
+  mkdirSync(join(repository, 'skills', 'hnr-backend'), { recursive: true })
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-harness]\nprefix = "hnr"\n')
+  writeFileSync(join(repository, 'skills', 'README.md'), '# HNR skills\n')
+  writeFileSync(
+    join(repository, 'skills', 'hnr-backend', 'SKILL.md'),
+    '---\nname: hnr-backend\nki-kind: governance\nki-applicability: declaration-only\nki-depends-on: []\ndescription: Use HNR backend conventions.\n---\n'
+  )
+  const session = catalogue.createSession({ mode: 'conform', repository, userHome: tmpdir(), configuration: {} })
+  const context = session.subjects[0]?.context() as HarnessRubricContext
+  expect(context.capabilityPublication.state).toBe('missing')
+  expect(context.capabilityPublication.issues).toEqual([])
+  context.capabilityPublication.requestUpdate?.()
+  expect(session.proposal().writes.find((write) => write.path === 'skills/README.md')?.content).toContain(
+    'This source harness publishes 1 skill: 1 governance skill and 0 process skills.'
+  )
 })
 
 test('an absent root capability summary is not applicable', () => {

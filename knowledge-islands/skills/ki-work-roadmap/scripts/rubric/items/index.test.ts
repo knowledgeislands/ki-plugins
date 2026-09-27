@@ -162,6 +162,7 @@ test('the structured catalogue represents the flat work-item standard', () => {
     'ITEM-3',
     'ITEM-4',
     'ITEM-5',
+    'ITEM-6',
     'ROOT-1',
     'EXEC-1',
     'EXEC-2',
@@ -185,6 +186,17 @@ test('roadmap commit guidance separates pruning rather than every lifecycle tran
   expect(metadata).toContain('prior committed done state')
   expect(metadata).toContain('one or more eligible records')
   expect(metadata).toContain('dedicated prune-only commit')
+})
+
+test('the ledger criterion states reservation ordering without claiming to detect it', () => {
+  const item = items.find((candidate) => candidate.code === 'ROAD-7')
+
+  expect(item?.description).toContain(
+    'committing the applicable ledger advance on its own before the record is written'
+  )
+  expect(item?.description).toContain('one designated writing checkout')
+  expect(item?.description).toContain('cannot observe the commit ordering')
+  expect(item?.description).not.toContain('atomic ledger advance')
 })
 
 test('every criterion declares its v1 remediation or review evidence', () => {
@@ -283,6 +295,19 @@ test('an area-qualified work item uses its configured namespace and area ledger'
   renameSync(source, target)
   writeFileSync(target, readFileSync(target, 'utf8').replace('id: TEST-001', 'id: TEST-CORE-001\narea: CORE'))
   writeFileSync(join(repository, 'docs', 'roadmap', ISSUE_LEDGER), issueLedger(new Map([['CORE', 1]])))
+  expect(inspectRoadmap(repository).filter((finding) => finding.level === 'FAIL')).toEqual([])
+})
+
+test('a repository code and work-item identifier may begin with a digit', () => {
+  const repository = createFixture()
+  writeFileSync(
+    join(repository, '.ki.toml'),
+    '[skills.ki-repo]\nrepo_code = "5GE"\n\n[skills.ki-work-roadmap]\nthemes = ["foundation-tooling"]\n'
+  )
+  const source = join(repository, 'docs', 'roadmap', 'TEST-001-build-the-foundation.md')
+  const target = join(repository, 'docs', 'roadmap', '5GE-001-build-the-foundation.md')
+  renameSync(source, target)
+  writeFileSync(target, readFileSync(target, 'utf8').replace('id: TEST-001', 'id: 5GE-001'))
   expect(inspectRoadmap(repository).filter((finding) => finding.level === 'FAIL')).toEqual([])
 })
 
@@ -578,7 +603,7 @@ test('awaiting-review Steps are all checked', () => {
       .replace('- [ ] Implement the first slice.', '- [x] Implement the first slice.')
       .replace(
         '## Discussion',
-        '## Review\n\n### Delivered\n\nThe first slice is delivered.\n\n### Summary of changes\n\nOne change.\n\n### Verification\n\n`bun test` passes.\n\n### Outstanding concerns\n\nNone.\n\n### Post-change review\n\nReady for the user review.\n\n### Mini recap\n\nNo learning route proposed.\n\n## Discussion'
+        '## Review\n\n### Delivered\n\nThe first slice is delivered.\n\n### Change Summary\n\nOne change.\n\n### Verification\n\n`bun test` passes.\n\n### Outstanding concerns\n\nNone.\n\n### Post-change review\n\nReady for the user review.\n\n### Mini recap\n\nNo learning route proposed.\n\n## Discussion'
       )
   )
   expect(inspectRoadmap(repository).filter((finding) => finding.area === 'ITEM-3')).toEqual([])
@@ -586,7 +611,7 @@ test('awaiting-review Steps are all checked', () => {
   expect(inspectRoadmap(repository)).toContainEqual(
     expect.objectContaining({
       area: 'ITEM-3',
-      msg: '## Review must contain Delivered → Summary of changes → Verification → Outstanding concerns → Post-change review → Mini recap in order'
+      msg: '## Review must contain Delivered → Change Summary → Verification → Outstanding concerns → Post-change review → Mini recap in order'
     })
   )
   writeFileSync(

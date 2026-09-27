@@ -1,6 +1,7 @@
 import type { SkillRubricDefinition } from '../../shared/rubric.ts'
 import { createDecisionRecordsSession, type DecisionRecordsRubricContext } from '../contexts/decision-records.ts'
 import { BODY } from './body.ts'
+import { DEPENDS } from './depends.ts'
 import { FILENAME } from './filename.ts'
 import { FM } from './frontmatter.ts'
 import { INDEX } from './index-records.ts'
@@ -13,5 +14,5 @@ export default {
   name: 'ki-decision-records',
   concern: 'decision records',
   createSession: createDecisionRecordsSession,
-  families: [RUBRIC, FILENAME, ROOT, FM, TYPE_FIT, BODY, INDEX]
+  families: [RUBRIC, FILENAME, ROOT, FM, TYPE_FIT, BODY, INDEX, DEPENDS]
 } satisfies SkillRubricDefinition<DecisionRecordsRubricContext>

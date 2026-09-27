@@ -5,6 +5,7 @@ import { CONFIG } from './config.ts'
 import { LANG } from './language.ts'
 import { MAN } from './manual.ts'
 import { RUBRIC } from './publication.ts'
+import { SHARED } from './shared-code.ts'
 import { SHELL } from './shell.ts'
 import { TOOL } from './tool.ts'
 
@@ -14,5 +15,5 @@ export default {
   concern: 'command-line tool repository structure',
   packageScripts: ['ki:tools:lint-man'],
   createSession: createToolsSession,
-  families: [RUBRIC, TOOL, SHELL, LANG, COMPLETION, MAN, CONFIG]
+  families: [RUBRIC, TOOL, SHELL, LANG, COMPLETION, MAN, CONFIG, SHARED]
 } satisfies SkillRubricDefinition<ToolsRubricContext>

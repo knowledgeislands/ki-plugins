@@ -1,4 +1,5 @@
 import type { RubricFamily, RubricItem } from '../../shared/rubric.ts'
+import { supportedToolSharedProfiles, toolSharedProfileParameters } from '../contexts/shared-code.ts'
 import type { ToolsConfigContext, ToolsRubricContext } from '../contexts/tools.ts'
 
 const STANDARD = 'standards-tool-repositories.md'
@@ -6,8 +7,8 @@ const TABLE = 'ki-repo-tools'
 
 const CONFIG_1: RubricItem<ToolsConfigContext> = {
   code: 'CONFIG-1',
-  title: 'Opt-in marker and keys',
-  description: 'A keyless qualified `ki-repo-tools` marker is present and validated down.',
+  title: 'Opt-in marker and delivery profile',
+  description: 'A qualified `ki-repo-tools` marker is present and any delivery-profile keys are validated down.',
   sources: [STANDARD],
   mechanical: {
     level: 'WARN',
@@ -47,18 +48,49 @@ const CONFIG_1: RubricItem<ToolsConfigContext> = {
               subject: '.ki.toml'
             }
           ]
+        const allowed = new Set([
+          'profile',
+          ...(typeof context.sharedProfile === 'string' ? toolSharedProfileParameters(context.sharedProfile) : [])
+        ])
+        const unknown = context.configKeys.filter((key) => !allowed.has(key))
+        if (unknown.length > 0)
+          return [
+            {
+              status: 'VIOLATION',
+              message: `The marker contains unknown keys: ${unknown.join(', ')}.`,
+              subject: '.ki.toml'
+            }
+          ]
+        if (
+          context.sharedProfile !== undefined &&
+          (typeof context.sharedProfile !== 'string' || !supportedToolSharedProfiles().includes(context.sharedProfile))
+        )
+          return [
+            {
+              status: 'VIOLATION',
+              message: `profile must be one of: ${supportedToolSharedProfiles().join(', ')}.`,
+              subject: '.ki.toml'
+            }
+          ]
+        const hasParameters = context.configKeys.some((key) => key !== 'profile')
         return [
-          context.configKeys.length === 0
+          context.sharedProfile === undefined && !hasParameters
             ? {
                 status: 'PASS',
-                message: `The keyless [skills.${TABLE}] marker is present.`,
+                message: `The keyless [skills.${TABLE}] marker is present; installer files remain repository-owned.`,
                 subject: '.ki.toml'
               }
-            : {
-                status: 'VIOLATION',
-                message: `The keyless marker contains unknown keys: ${context.configKeys.join(', ')}.`,
-                subject: '.ki.toml'
-              }
+            : context.sharedProfile !== undefined
+              ? {
+                  status: 'PASS',
+                  message: `Configured tool delivery profile: ${String(context.sharedProfile)}.`,
+                  subject: '.ki.toml'
+                }
+              : {
+                  status: 'VIOLATION',
+                  message: 'Delivery parameters require a profile.',
+                  subject: '.ki.toml'
+                }
         ]
       }
     },

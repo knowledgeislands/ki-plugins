@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# @ki-managed ki-repo-tools profile=signed-archive-v1 template={{TEMPLATE_SHA256}}
+set -euo pipefail
+
+tool='{{TOOL}}'
+repository='{{REPOSITORY}}'
+install_dir="${{{ENV_PREFIX}}_INSTALL_DIR:-$HOME/.local/bin}"
+man_dir="${{{ENV_PREFIX}}_MAN_INSTALL_DIR:-$(dirname -- "$install_dir")/share/man/man1}"
+version="${1:-${{{ENV_PREFIX}}_VERSION:-}}"
+
+die() { printf '%s-install: error: %s\n' "$tool" "$*" >&2; exit 1; }
+need() { command -v "$1" >/dev/null 2>&1 || die "$1 is required"; }
+cleanup() { rm -rf "${stage:-}"; }
+trap cleanup EXIT HUP INT TERM
+
+if [[ "$version" == '--link' ]]; then
+  root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+  mkdir -p "$install_dir" "$man_dir"
+  ln -sfn "$root/bin/$tool" "$install_dir/$tool"
+  ln -sfn "$root/{{MANUAL_PATH}}" "$man_dir/$tool.1"
+  exit 0
+fi
+
+need curl
+need openssl
+need shasum
+need tar
+if [[ -z "$version" ]]; then
+  version=$(curl --fail --silent --show-error --location --max-redirs 3 \
+    "https://api.github.com/repos/$repository/releases/latest" |
+    sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -n 1)
+fi
+[[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || die 'version must be exact vX.Y.Z'
+
+stage=$(mktemp -d)
+archive="$tool-$version.tar.gz"
+base="https://github.com/$repository/releases/download/$version"
+for asset in "$archive" SHA256SUMS SHA256SUMS.sig; do
+  curl --fail --silent --show-error --location --max-redirs 3 --proto '=https' --proto-redir '=https' \
+    --output "$stage/$asset" "$base/$asset"
+done
+cat >"$stage/release-key.pem" <<'KEY'
+{{PUBLIC_KEY_PEM}}
+KEY
+openssl pkeyutl -verify -rawin -pubin -inkey "$stage/release-key.pem" \
+  -in "$stage/SHA256SUMS" -sigfile "$stage/SHA256SUMS.sig" >/dev/null 2>&1 || die 'release signature failed'
+expected=$(awk -v name="$archive" '$2 == name { print $1 }' "$stage/SHA256SUMS")
+[[ "$expected" =~ ^[0-9a-f]{64}$ ]] || die 'archive checksum is missing'
+[[ "$(shasum -a 256 "$stage/$archive" | awk '{print $1}')" == "$expected" ]] || die 'archive checksum failed'
+members=$(tar -tzf "$stage/$archive")
+[[ "$members" == "$tool"$'\n'"man/$tool.1" ]] || die 'archive shape is invalid'
+tar -xzf "$stage/$archive" -C "$stage"
+mkdir -p "$install_dir" "$man_dir"
+install -m 0755 "$stage/$tool" "$install_dir/$tool"
+install -m 0644 "$stage/man/$tool.1" "$man_dir/$tool.1"

@@ -66,6 +66,25 @@ updated_at: 2026-08-12T09:30:00Z
 
 An optional non-empty `transferred_from` records a durable handoff origin.
 
+### Task links
+
+An item MAY carry `task_links` in its own frontmatter. This is the only authoritative structured map from that item to tasks in other systems; do not create a shared writable lookup table or copy remote task status into the KI lifecycle. The field is absent when no link has been verified. When present, it is a non-empty map from provider names matching `^[a-z][a-z0-9-]*$` to non-empty lists of reference objects. Each reference has exactly six non-empty string fields: `authority`, `scope`, `id`, `key`, `url`, and `relation`. Do not infer a URL scheme or provider-specific ID grammar from the portable field. A Paperclip reference uses its admitted instance base URL as `authority`, stable company UUID as `scope`, stable task UUID as `id`, current readable issue key as `key`, and company-prefixed issue URL as `url`.
+
+```yaml
+task_links:
+  paperclip:
+    - authority: http://127.0.0.1:3100
+      scope: 558dd49e-7615-409f-b7b2-7f19e22171d9
+      id: b76a4ec9-be48-4a3c-8568-7885b5e6789b
+      key: KIS-5
+      url: http://127.0.0.1:3100/KIS/issues/KIS-5
+      relation: implementation
+```
+
+`relation` is one of `evaluation`, `implementation`, `review`, `integration`, `coordination`, or `related`. It describes why the item cites the task, not whether the task is active, complete, or assigned. A single item may cite several tasks from one provider and several providers. The qualified identity is provider + authority + scope + id; `key` and `url` are readable locators that may change without changing identity. A duplicate identity with the same relation within one item is invalid. A task may be referenced as context from several items, but a delivery task has at most one governing KI work item, recorded in the task-side locator.
+
+These links preserve historical evaluation, implementation and integration evidence after task completion. They are neither a current claim nor a release. Before assigning work, reconcile the item's local claim or hold note against current task and worktree evidence and record the decision on the item through its designated writing checkout. Missing links, stale locators, paused agents and finished historical tasks do not establish availability. Offline structural validation cannot certify live task ownership. Map writes preserve `created_at`, advance `updated_at`, and follow the [roadmap write locus](standards-repository-roadmaps.md#roadmap-write-locus).
+
 ## Timestamps
 
 `created_at` and `updated_at` are mandatory for every local work item. Local work-item timestamps use canonical RFC 3339 UTC at second precision: `YYYY-MM-DDTHH:MM:SSZ`. A new record writes the same instant to both fields. `created_at` is immutable. A governed lifecycle or semantic body mutation preserves `created_at` and advances `updated_at` to the later of the current UTC second or one second after its previous value. Read-only inspection and formatting-only normalisation do not advance `updated_at`.
@@ -206,12 +225,12 @@ Record material departures, decisions, and newly discovered constraints under th
 
 ### Awaiting review
 
-Before setting `status: awaiting-review`, insert `## Review` immediately before `Discussion` with `### Delivered`, `### Summary of changes`, `### Verification`, `### Outstanding concerns`, `### Post-change review`, and `### Mini recap` in that exact order. The roadmap checker enforces this review-packet shape.
+Before setting `status: awaiting-review`, insert `## Review` immediately before `Discussion` with `### Delivered`, `### Change Summary`, `### Verification`, `### Outstanding concerns`, `### Post-change review`, and `### Mini recap` in that exact order. The roadmap checker enforces this review-packet shape.
 
 - **Delivered** states the approved boundary and exclusions, plus immutable baseline and resulting evidence.
-- **Summary of changes** names concrete changed files, material decisions, and approved deviations.
+- **Change Summary** names concrete changed files, material decisions, and approved deviations.
 - **Verification** records exact gates and their outcomes.
-- **Outstanding concerns** records unresolved, unchecked, or failing issues, or explicitly says none.
+- **Outstanding concerns** records unresolved, unchecked, or failing issues, or explicitly says none. A concern that names work somebody should still do needs its own identifier before acceptance, and this section cites it. This section is evidence for one acceptance decision, not a backlog: it is deleted with the record at the prune, and anything held only here is held nowhere.
 - **Post-change review** freshly assesses goal, scope, regression risk, and acceptance readiness.
 - **Mini recap** restates item-scoped delivery, verification, and concerns, then proposes learning routes without promoting them.
 
@@ -228,6 +247,8 @@ After explicit acceptance, insert terminal `## Done` immediately before `Discuss
 For terminal Triage, `## Done` instead records who approved the disposition and when — `Disposed <date> by <name> as <intake_disposition> on the intake evidence above.` — and nothing else. Evidence belongs in `## Intake disposition`.
 
 Retain the accepted record until an explicitly selected prune path or glob.
+
+Pruning destroys the record's contents along with the record. Before selecting an item, confirm that every concern its `### Outstanding concerns` still leaves open is carried by a live identifier elsewhere; a deferral that exists only inside the record being removed ceases to exist, and nothing reports that it did.
 
 At every stage, `Discussion` remains the final top-level section.
 

@@ -40,11 +40,11 @@ There are no simple or thematic profiles, theme `ROADMAP.md` files, `plans/` dir
 
 The item identifier is globally unique within its repository. A repository chooses one issuing mode: repository-wide `<REPO>-<NNN>`, or fixed-area `<REPO>-<AREA>-<NNN>`.
 
-`<REPO>` is the stable uppercase `repo_code` in the `ki-repo` table.
+`<REPO>` is the stable uppercase alphanumeric `repo_code` in the `ki-repo` table and matches `[A-Z0-9][A-Z0-9-]{1,23}`.
 
 `<AREA>` is an uppercase code for a fixed issuing namespace. It is selected when the item opens, recorded as `area:` frontmatter, and never changes. It is not a mutable theme or group.
 
-`<NNN>` is a zero-padded serial allocated from `001`. In repository-wide mode it is one repository sequence. In fixed-area mode it is one sequence per area. Never lower a high-water mark, fill a gap, or reuse a number after pruning.
+`<NNN>` is a zero-padded serial allocated from `001`. In repository-wide mode it is one repository sequence. In fixed-area mode it is one sequence per area. Never lower a high-water mark, fill a gap, or reuse a number after pruning. An identifier proposed during planning is provisional, not reserved. A serial becomes reserved only when its advanced ledger is committed, and the commit that advances the ledger precedes the commit that writes the record. The writer must re-read the applicable `_ISSUES.md` high-water mark immediately before allocating, allocate one greater than that current value, and commit the advance before the record exists. If the ledger changed since inspection, discard the proposed serial and reallocate from the latest value. [Number reservation](#number-reservation) owns the ordering and the write locus it depends on.
 
 `docs/roadmap/_ISSUES.md` is the canonical durable allocation ledger. Repository-wide mode uses `last_id`; fixed-area mode uses a code-sorted `areas: { AREA: N }` map. The checker verifies that the ledger matches the configured issuing mode and no retained item exceeds its applicable high-water mark; CONFORM scaffolds the file only when it is absent.
 
@@ -121,6 +121,8 @@ Every confirmed move is re-evaluated at its destination.
 
 ## Work-item discipline
 
+When an item has verified tasks in Paperclip or another task system, keep their qualified, provider-keyed `task_links` on that item using the [work-item format](standards-work-item-format.md#task-links). This is an association record, not a second lifecycle, a live ownership claim, or a central task registry. Write and reconcile it only through the repository's [designated primary checkout](#roadmap-write-locus).
+
 Every item conforms to [the work-item format](standards-work-item-format.md), including the final topic-oriented `Discussion` section and the detail required at its current horizon and lifecycle state.
 
 An item begins with a mandatory plain-language Goal, then its outcome evidence, boundary, current context, and enough discussion to preserve decision-useful reasoning.
@@ -162,6 +164,20 @@ Every process-owned lifecycle or semantic work-item mutation preserves `created_
 Lifecycle states record operational truth; a transition does not create a mandatory standalone Git commit. Commit a status update with the coherent planning, implementation, review, or closure changes it describes. Git history need not contain every intermediate lifecycle state: an item's first committed form may already be `ready` when capture, shaping, and readiness approval form one coherent operation, and implementation may take a committed `ready` item to `awaiting-review` with its delivery changes after passing through `in-progress` operationally. The state that lands must satisfy its own evidence and authority gates.
 
 Pruning is the exception. Repository history must contain the selected item as `done` in a commit earlier than the commit that deletes it. A prune commit contains only the removal of one or more explicitly selected, eligible `done` work records; it does not combine a lifecycle transition, implementation, acceptance, or unrelated change. This preserves an inspectable accepted record before its later cleanup without forcing every earlier transition into a separate commit.
+
+### Number reservation
+
+Number reservation is the other exception, and it orders two commits rather than separating them. Advance the applicable `_ISSUES.md` high-water mark and commit that advance on its own, then write the record. The ledger advance may not wait for the record it reserves.
+
+The ordering, not the coupling, is what makes a reservation real. Publishing a record together with its advance is safe against one writer and unsafe against two: two writers that read the same high-water mark both believe they own the next serial, and neither discovers the collision until the second record is written. Re-reading the ledger immediately before publication does not close that window, because the window is between the read and the commit. A committed advance is observable to every other writer at the moment the reservation is taken, which is the earliest point at which it can be observed at all.
+
+The reservation commit contains only the ledger advance. It is not a lifecycle transition and carries no work-item evidence, so it does not weaken the rule that a state which lands must satisfy its own gates. Nothing else reserves a number: a plan, an approval, a warm session, a branch name, or an uncommitted working copy is not a reservation.
+
+### Roadmap write locus
+
+A committed advance only reserves a number if every writer commits to the same history. Two isolated checkouts that each commit an advance on their own branch reproduce the collision exactly, one merge later.
+
+Every write under the roadmap directory — capture, shaping, a lifecycle transition, acceptance, or a prune — is therefore serialised through one designated writing checkout per repository, and concurrent writers queue there rather than each holding their own. A run that works in an isolated checkout for delivery does not use it for roadmap records; it takes its number and writes its record in the designated checkout. Where a coordination plane schedules those runs, its own standard names which checkout is designated; this standard requires only that exactly one is.
 
 ## Trade review
 

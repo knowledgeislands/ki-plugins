@@ -9,15 +9,14 @@ const outcomes = (values: readonly AuditOutcome[], pass: string): RubricOutcomes
 
 const REQ_1: RubricItem<SpecRequirementContext> = {
   code: 'REQ-1',
-  title: 'requirements carry an RFC-2119 keyword',
-  description:
-    'Each active requirement contains an uppercase RFC-2119 keyword so its statement is normative and testable.',
+  title: 'requirement statements carry a BCP 14 keyword',
+  description: 'The opening statement paragraph of each active requirement contains an uppercase BCP 14 keyword.',
   sources: [SOURCE],
   mechanical: {
     level: 'FAIL',
     remediation: {
       class: 'diagnostic',
-      guidance: 'Rewrite the affected requirement with the intended RFC-2119 keyword, then rerun the audit.'
+      guidance: 'Add the intended BCP 14 keyword to the requirement statement, then rerun the audit.'
     },
     audit: {
       phase: 'INSPECT',
@@ -29,10 +28,10 @@ const REQ_1: RubricItem<SpecRequirementContext> = {
                 .filter((requirement) => !requirement.deprecated && !requirement.hasNormativeKeyword)
                 .map((requirement) => ({
                   status: 'VIOLATION',
-                  message: `${requirement.id} has no RFC-2119 keyword in its statement.`,
+                  message: `${requirement.id} has no BCP 14 keyword in its statement.`,
                   subject: requirement.file
                 })),
-              'Every active requirement carries an RFC-2119 keyword.'
+              'Every active requirement statement carries a BCP 14 keyword.'
             )
     }
   }

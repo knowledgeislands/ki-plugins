@@ -7,7 +7,7 @@ ki-depends-on: [ki-skills, ki-subagents, ki-decision-records, ki-work-roadmap]
 ki-shared-dependencies: [ki-skills:rubric]
 contributes: [skills/README.md]
 description: >
-  Audit or design a KI-compatible harness that publishes skills, subagents, MCP servers, evals, and hooks as a
+  Audit or design a KI-compatible harness that publishes skills, subagents, evals, and hooks as a
   verified installed payload. Use for source layout, prefix identity, declarations, or catalogue publication;
   each capability skill owns content quality.
 argument-hint: 'audit [path] | conform [path] | educate <name> | help | refresh'
@@ -15,7 +15,7 @@ argument-hint: 'audit [path] | conform [path] | educate <name> | help | refresh'
 
 # Knowledge Islands compatible harnesses
 
-This skill governs two related shapes: the five-part **source harness** where capabilities are authored together, and the smaller verified **compatible payload** installed from it. The installed payload, never a checkout or repository-local executor, is the source used by the `ki` host.
+This skill governs two related shapes: the four-part **source harness** where capabilities are authored together, and the smaller verified **compatible payload** installed from it. MCP servers remain independently released repositories outside that source harness. The installed payload, never a checkout or repository-local executor, is the source used by the `ki` host.
 
 The complete contract is in [the compatible harness standard](references/standards-compatible-harness.md). Its structured TypeScript catalogue under `scripts/rubric/items/` is canonical; [the generated rubric](references/rubric.md) is the readable publication. [Sources](references/sources.md) record provenance, and [exemplars](references/exemplars.md) illustrate the source-versus-installed distinction.
 
@@ -27,7 +27,7 @@ The universal modes are **AUDIT · CONFORM · EDUCATE · REFRESH**.
 
 - Run `ki repo audit --skill ki-repo-harness --repo <path>`. The host executes declared dependencies before the harness delta and reports mechanical results.
 - Review the generated rubric's judgment criteria, especially capability and payload boundaries. Source layout does not establish a verified payload, local-development selection, activation, resolved capability, component result, or execution; obtain those states from `tools-ki` or report them unavailable.
-- Run separately coverage-detected owning audits where applicable: `ki-engineering` for the development toolchain, `ki-repo` for repository governance, and `ki-repo-mcp` when the MCP shelf contains server code.
+- Run separately coverage-detected owning audits where applicable: `ki-engineering` for the development toolchain and `ki-repo` for repository governance. Audit each independent MCP repository with `ki-repo-mcp`.
 - Report sibling findings under their owning skill and harness findings under this skill.
 
 ### Mode CONFORM — apply safe harness repairs
@@ -39,7 +39,7 @@ The universal modes are **AUDIT · CONFORM · EDUCATE · REFRESH**.
 
 ### Mode EDUCATE — explain or design a compatible harness
 
-Run `ki repo educate --skill ki-repo-harness --repo <path>` to explain the source layout, current installed payload, identity rules, marker, and ownership boundaries. When designing a new harness, use the standard and exemplars to author the five source shelves and root files; installation and runtime activation remain direct `ki` host operations, not skill scripts or package aliases.
+Run `ki repo educate --skill ki-repo-harness --repo <path>` to explain the source layout, current installed payload, identity rules, marker, and ownership boundaries. When designing a new harness, use the standard and exemplars to author the four source shelves and root files; installation and runtime activation remain direct `ki` host operations, not skill scripts or package aliases.
 
 ### Mode REFRESH — re-anchor the source and installed contracts
 

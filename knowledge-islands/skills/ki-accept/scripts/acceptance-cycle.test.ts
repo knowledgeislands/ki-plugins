@@ -115,12 +115,12 @@ test('closes explicitly approved terminal Triage dispositions without delivery e
   for (const disposition of ['duplicate', 'merged'] as const)
     expect(
       evaluateAcceptanceCycle(
-        input({ item: triageItem({ disposition, targetId: 'KI-HARNESS-001', dispositionEvidence: 'Owned there.' }) })
+        input({ item: triageItem({ disposition, targetId: '5GE-P2-001', dispositionEvidence: 'Owned there.' }) })
       )
     ).toEqual({
       kind: 'triage-to-done',
       disposition,
-      targetId: 'KI-HARNESS-001',
+      targetId: '5GE-P2-001',
       writes: false
     })
 })

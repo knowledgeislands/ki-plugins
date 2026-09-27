@@ -55,7 +55,7 @@ const NOTE_1C: RubricItem<KbNoteContext> = {
   code: 'NOTE-1c',
   title: 'explicit note type metadata',
   description:
-    'Every KB-owned note frontmatter uses note_type and never the legacy generic type field or retired handoff classification; adapter and protocol records remain with their owning skills.',
+    'Every KB-owned note frontmatter uses note_type and never the legacy generic type field or retired handoff classification; acquisition-adapter and protocol records remain with their owning skills.',
   sources: [FRONTMATTER],
   mechanical: {
     level: 'FAIL',

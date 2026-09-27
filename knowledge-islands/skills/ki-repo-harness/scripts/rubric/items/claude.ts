@@ -6,11 +6,11 @@ const STANDARD = ['standards-compatible-harness.md#root-orientation'] as const
 const CLAUDE_1: RubricItem<HarnessReviewContext> = {
   code: 'CLAUDE-1',
   title: 'Harness introduction',
-  description: 'The root orientation opens by explaining the source harness and naming all five parts.',
+  description: 'The root orientation opens by explaining the source harness and naming all four parts.',
   sources: STANDARD,
   judgment: {
     scope: 'The effective root orientation and all five source-harness shelves.',
-    prompt: 'Does the effective root orientation explain the source harness and name all five parts?',
+    prompt: 'Does the effective root orientation explain the source harness and name all four parts?',
     outcomes: ['conforming', 'orientation revision', 'not applicable'],
     guidance:
       'Revise the orientation with owner-approved current source facts; do not infer shelf status from an unverified payload.'
@@ -19,12 +19,12 @@ const CLAUDE_1: RubricItem<HarnessReviewContext> = {
 
 const CLAUDE_2: RubricItem<HarnessReviewContext> = {
   code: 'CLAUDE-2',
-  title: 'Five-part status',
+  title: 'Four-part status',
   description: 'The root orientation gives a current status for every source-harness part.',
   sources: STANDARD,
   judgment: {
-    scope: 'The orientation status table or equivalent and the five physical source shelves.',
-    prompt: 'Does the orientation status table or equivalent agree with the five actual source shelves?',
+    scope: 'The orientation status table or equivalent and the four physical source shelves.',
+    prompt: 'Does the orientation status table or equivalent agree with the four actual source shelves?',
     outcomes: ['conforming', 'orientation revision', 'source evidence required'],
     guidance:
       'Update the orientation only from current source evidence and preserve the distinction between source shelves and installed payload.'

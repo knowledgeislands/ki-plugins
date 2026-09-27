@@ -1,5 +1,7 @@
 # Readiness procedure
 
+`ki-plan` resolves only an already-published identifier. It never allocates or reserves a new one. Re-resolve the named record and its source revision immediately before mutation; stop and reload if either changed after inspection.
+
 For every shaped local record, preserve `created_at` and advance `updated_at` to the later of the current UTC second or one second after its observed value. Compare the observed source revision immediately before publication and refuse absent or malformed timestamps or any source drift. Read-only planning does not advance timestamps; remote adapters project provider-native values.
 
 `ki-plan <work>...` operates only records that `ki-next` has selected into `now` or `next`.

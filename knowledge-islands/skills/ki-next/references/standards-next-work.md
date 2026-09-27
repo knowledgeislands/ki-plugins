@@ -49,6 +49,8 @@ After a terminal decision, report the next condition required by the sender's ob
 
 Receiver-local standing knowledge intake is not an inbound trade disposition. When `ki-trades` validates a marked `STI-*` capture against an exact active subtype grant, route the knowledge proportionately: augment an existing record only inside its established goal and boundary; create a local draft for a distinct insight, decision, dependency, or scope; or retain directly as canonical knowledge when knowledge itself is the outcome. A public contract or implementation consequence still becomes receiver-local work. Never infer selection, priority, implementation, acceptance, completion, or publication authority from the standing route, source repository, or Agora membership.
 
+`unattended` and `receipt` are itemized observation policies only. They do not activate standing intake, grant automatic transfer or execution authority, or weaken receiver-owned disposition. Any future autonomous transport or application requires a separate explicit authority contract.
+
 ## 3. Review relevance and capture
 
 Run this pass for `--review`, or briefly when grounded evidence shows a material concern.
@@ -58,6 +60,8 @@ Identify only evidence-backed proposals: stale or obsolete work, duplicates, cha
 Do not change adopted content until the user confirms exact wording and placement. Bounded Triage capture follows the exception below.
 
 ### Capture substantive prospective work
+
+Any identifier named before publication is provisional. Immediately before allocating, re-read the applicable `_ISSUES.md` scope; if its high-water mark differs from the inspected value or the proposed serial is not exactly one greater, discard the proposed serial and reallocate from the latest value. Then commit the ledger advance on its own, in the repository's designated roadmap writing checkout, before writing the record it reserves. Never treat a plan, recap, approval, warm session context, or an uncommitted working copy as an identifier reservation. The [roadmap standard](../../ki-work-roadmap/references/standards-repository-roadmaps.md#number-reservation) owns that ordering and the write locus it depends on.
 
 During the current interaction, capture a distinct prospective outcome, concern, dependency, or decision once it is substantive enough to state a plain-language Goal, Context, Boundary, and decision-useful Discussion. Do not require prior approval. Allocate the next canonical identity, create one `horizon: triage`, `status: draft` record with matching timestamps, and report the capture after writing it. Capture creates durable intake only; it does not adopt, prioritise, plan, implement, batch, accept, or prune work.
 
@@ -145,6 +149,8 @@ It shapes the same item through the stage-detail contract and stops for review b
 That handoff does not permit `ki-next` to infer batch, selection, or implementation authority.
 
 ## 7. Spawn due housekeeping work
+
+A due-run identity is provisional until publication. Re-read the applicable issue ledger immediately before spawning and reallocate if it advanced. Commit the ledger advance on its own first, then write the spawned record and the template `active-run` linkage as one coherent change.
 
 After grounding and before ordinary candidate selection, evaluate each active housekeeping template under the adapter's template horizon. Use `ki-work-housekeeping`'s read-only `evaluateHousekeepingSchedule({ repository, schedule, today })` capability with freshly read template fields and an explicit UTC date. Its owner standard defines calendar-or-commit eligibility, first-parent evidence, missing-history diagnostics, initial runs, and grace. Do not reimplement that calculation or treat unknown volume as zero; preserve manual confirmation, paused, and active-run guards.
 

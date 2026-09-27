@@ -14,7 +14,7 @@ import {
 } from './capability-publication.ts'
 import { prepareRootCapabilitySummary, type RootCapabilitySummaryDraft } from './root-capability-summary.ts'
 
-export const HARNESS_PARTS = ['skills', 'subagents', 'mcp', 'evals', 'hooks'] as const
+export const HARNESS_PARTS = ['skills', 'subagents', 'evals', 'hooks'] as const
 export type HarnessPart = (typeof HARNESS_PARTS)[number]
 
 type PathState = 'missing' | 'file' | 'directory' | 'unsafe'
@@ -228,7 +228,7 @@ export const createHarnessSession = ({
   } else {
     capabilitySourceIssues.push('skills/README.md is missing or is not a physical file')
   }
-  const capabilityDraft = prepareCapabilityPublication(skillsReadme, capabilitySources)
+  const capabilityDraft = prepareCapabilityPublication(skillsReadme, capabilitySources, prefix ?? 'ki')
   const capabilityIssues = [...capabilitySourceIssues, ...capabilityDraft.issues].sort()
   let capabilityPublicationRequested = false
   const rootReadmePath = join(root, 'README.md')

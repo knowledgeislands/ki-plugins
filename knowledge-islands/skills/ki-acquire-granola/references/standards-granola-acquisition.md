@@ -7,6 +7,7 @@ This standard defines the provider-specific contract for faithfully acquiring Gr
 ## Contents
 
 - [Source boundary](#source-boundary)
+- [Transport recovery](#transport-recovery)
 - [Provider operations](#provider-operations)
 - [Complete identity enumeration](#complete-identity-enumeration)
 - [Folder, unfoldered, and receiver evidence](#folder-unfoldered-and-receiver-evidence)
@@ -28,6 +29,10 @@ Granola's official remote MCP is the selected source adapter. The verified surfa
 Natural-language query is exploratory and MUST NOT be treated as a faithful acquisition record. Acquisition uses listing, detail, and transcript projections. An implementation MUST allowlist the read-only tools it expects and MUST stop if a mutation-capable operation appears or a required read changes shape incompatibly.
 
 The adapter MUST NOT change a folder, tag, note, meeting, workspace, archive state, or deletion state. OAuth and provider credentials remain in the client credential store and MUST NOT enter a KEP, repository configuration, fixture, log, or trade.
+
+## Transport recovery
+
+An MCP response carrying `CLIENT_HTTP_NOT_IMPLEMENTED` is a transport failure, not evidence of an empty Granola account. When the public endpoint remains reachable but Granola schema inspection or a read-only call returns that error, the operator SHOULD restart the single-user `mcporter` daemon with `mcporter daemon restart`, then retry the same read-only operation once. Acquisition MUST still stop if the retry fails and MUST accept an empty source only when a successful listing explicitly reports zero meetings.
 
 ## Provider operations
 

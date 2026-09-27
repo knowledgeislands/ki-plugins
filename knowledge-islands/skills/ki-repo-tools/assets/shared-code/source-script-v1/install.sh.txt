@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# @ki-managed ki-repo-tools profile=source-script-v1 template={{TEMPLATE_SHA256}}
+set -euo pipefail
+
+tool='{{TOOL}}'
+repository='{{REPOSITORY}}'
+install_dir="${{{ENV_PREFIX}}_INSTALL_DIR:-$HOME/.local/bin}"
+man_dir="${{{ENV_PREFIX}}_MAN_INSTALL_DIR:-$(dirname -- "$install_dir")/share/man/man1}"
+version="${1:-${{{ENV_PREFIX}}_VERSION:-}}"
+
+die() { printf '%s-install: error: %s\n' "$tool" "$*" >&2; exit 1; }
+need() { command -v "$1" >/dev/null 2>&1 || die "$1 is required"; }
+cleanup() { rm -rf "${stage:-}"; }
+trap cleanup EXIT HUP INT TERM
+
+if [[ "$version" == '--link' ]]; then
+  root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+  mkdir -p "$install_dir" "$man_dir"
+  ln -sfn "$root/bin/$tool" "$install_dir/$tool"
+  ln -sfn "$root/{{MANUAL_PATH}}" "$man_dir/$tool.1"
+  exit 0
+fi
+
+need curl
+need shasum
+if [[ -z "$version" ]]; then
+  version=$(curl --fail --silent --show-error --location --max-redirs 3 \
+    "https://api.github.com/repos/$repository/releases/latest" |
+    sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -n 1)
+fi
+[[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || die 'version must be exact vX.Y.Z'
+
+stage=$(mktemp -d)
+base="https://github.com/$repository/releases/download/$version"
+curl --fail --silent --show-error --location --max-redirs 3 --proto '=https' --proto-redir '=https' \
+  --output "$stage/SHA256SUMS" "$base/SHA256SUMS"
+for asset in "$tool" "$tool.1"; do
+  curl --fail --silent --show-error --location --max-redirs 3 --proto '=https' --proto-redir '=https' \
+    --output "$stage/$asset" "$base/$asset"
+  expected=$(awk -v name="$asset" '$2 == name { print $1 }' "$stage/SHA256SUMS")
+  [[ "$expected" =~ ^[0-9a-f]{64}$ ]] || die "missing checksum for $asset"
+  [[ "$(shasum -a 256 "$stage/$asset" | awk '{print $1}')" == "$expected" ]] || die "checksum failed for $asset"
+done
+mkdir -p "$install_dir" "$man_dir"
+install -m 0755 "$stage/$tool" "$install_dir/$tool"
+install -m 0644 "$stage/$tool.1" "$man_dir/$tool.1"

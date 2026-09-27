@@ -15,9 +15,8 @@ const rootUnavailable = (context: HarnessLayoutContext): readonly AuditOutcome[]
 
 const LAY_1: RubricItem<HarnessLayoutContext> = {
   code: 'LAY-1',
-  title: 'Five-part directory layout',
-  description:
-    'skills/, subagents/, mcp/, evals/, and hooks/ all exist as physical directories at the source-harness root.',
+  title: 'Four-part directory layout',
+  description: 'skills/, subagents/, evals/, and hooks/ all exist as physical directories at the source-harness root.',
   sources: ['standards-compatible-harness.md#source-harness-layout'],
   mechanical: {
     level: 'FAIL',
@@ -44,7 +43,7 @@ const LAY_1: RubricItem<HarnessLayoutContext> = {
 const LAY_2: RubricItem<HarnessLayoutContext> = {
   code: 'LAY-2',
   title: 'Shelf descriptions',
-  description: 'Each five-part source directory contains a physical README.md declaring its purpose and status.',
+  description: 'Each four-part source directory contains a physical README.md declaring its purpose and status.',
   sources: ['standards-compatible-harness.md#source-harness-layout'],
   mechanical: {
     level: 'WARN',
@@ -138,7 +137,7 @@ const LAY_5 = rootFileItem(
 export const LAY: RubricFamily<HarnessRubricContext, HarnessLayoutContext> = {
   code: 'LAY',
   title: 'Source-harness layout and files',
-  description: 'The five-part source container and its required physical root files.',
+  description: 'The four-part source container and its required physical root files.',
   standard: STANDARD[0],
   selectContext: (context) => context.layout,
   items: [LAY_1, LAY_2, LAY_3, LAY_4, LAY_5]

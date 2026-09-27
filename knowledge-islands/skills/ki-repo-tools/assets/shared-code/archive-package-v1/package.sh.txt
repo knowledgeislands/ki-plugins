@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# @ki-managed ki-repo-tools profile={{PROFILE}} template={{TEMPLATE_SHA256}}
+set -euo pipefail
+
+tool='{{TOOL}}'
+version=${1:?usage: release/package.sh vX.Y.Z}
+[[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
+  printf 'error: version must be exact vX.Y.Z\n' >&2
+  exit 2
+}
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+output="$root/release/dist"
+stage=$(mktemp -d)
+trap 'rm -rf "$stage"' EXIT HUP INT TERM
+mkdir -p "$output" "$stage/man"
+install -m 0755 "$root/bin/$tool" "$stage/$tool"
+install -m 0644 "$root/{{MANUAL_PATH}}" "$stage/man/$tool.1"
+archive="$output/$tool-$version.tar.gz"
+tar -C "$stage" -czf "$archive" "$tool" "man/$tool.1"
+(cd "$output" && shasum -a 256 "$(basename -- "$archive")" >SHA256SUMS)
+printf '%s\n' "$archive"

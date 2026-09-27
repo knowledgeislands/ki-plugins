@@ -14,7 +14,9 @@ argument-hint: 'help | inspire <website-or-component> | refresh'
 
 Turn a curated collection of design galleries into useful references for the current website or component. This is a research and design process, with no required governance dependencies or implementation stack.
 
-Read [the source list](references/sources.md) when choosing galleries or refreshing the collection. It owns the URLs, routing notes, and review dates. Inclusion expresses interest in a gallery, not approval of every design it contains.
+Read [the source list](references/sources.md) when choosing resources or refreshing the collection. It owns the URLs, routing notes, and review dates. Inclusion expresses interest in a resource, not approval of every design or output it contains.
+
+Focused design tools may complement the galleries by turning inspiration into defensible implementation choices. Their inclusion records a useful design resource, not a universal product or accessibility recommendation.
 
 ## Operating modes
 
@@ -24,9 +26,13 @@ For `help`, `-h`, or `?`, explain the source collection, inspiration output, and
 
 ### Mode INSPIRE
 
+For a colour-system, palette, or gamut question, start with the focused colour resources before expanding into whole-site galleries. For an existing-brand reconstruction, use a brand-data resource to locate candidate assets and tokens, then verify them against the brand's authoritative source and usage rights.
+
+For responsive typography or spacing scales, start with the fluid-design resource. Use the contrast resource as a validation boundary after selecting candidate colours; it complements rather than replaces contextual visual evaluation.
+
 Use the current brief: page or component, audience, intended action, visual preferences, and any existing brand or technical constraints. Ask only for missing context that would materially change the search; an exploratory request can start with a stated assumption.
 
-Choose the smallest useful set of galleries from the source list. A component request normally starts with its specialist gallery; a broader page request can start with Unsection or MotionSites. Expand when the first sources do not offer a useful fit, preserving any sources the user explicitly requested.
+Choose the smallest useful set of resources from the source list. A component request normally starts with its specialist gallery; a broader page request can start with Unsection or MotionSites. Expand when the first sources do not offer a useful fit, preserving any sources the user explicitly requested.
 
 Inspect promising entries visually using the available browser or image tools, and follow the original website when interaction or responsive behaviour matters. A text extract can establish a gallery's subject but cannot establish a design's appearance. For motion, observe a recording or live interaction; a still image does not establish timing or behaviour. If access is limited, identify the unverified aspects and offer accessible references without inventing observations.
 
@@ -44,4 +50,4 @@ For example:
 
 Refresh the canonical skill under `skills/design/ki-design-inspiration/` in `ki-agentic-harness`. From an installed copy, report suggested updates and route them to that source repository.
 
-Follow the cadence in [the source list](references/sources.md), or refresh when a link fails, a gallery changes purpose, or the user asks to update the collection. Revisit each source, verify its current subject and access state, and reconcile its routing notes. Retain unavailable sources with an honest access note; update a URL only after establishing the destination's identity. Preserve user selections and distinguish proposed additions from accepted collection members. Record actual review dates and current limitations, then check the edited skill against `ki-skills`.
+Follow the cadence in [the source list](references/sources.md), or refresh when a link fails, a resource changes purpose, or the user asks to update the collection. Revisit each source, verify its current subject and access state, and reconcile its routing notes. Retain unavailable sources with an honest access note; update a URL only after establishing the destination's identity. Preserve user selections and distinguish proposed additions from accepted collection members. Record actual review dates and current limitations, then check the edited skill against `ki-skills`.

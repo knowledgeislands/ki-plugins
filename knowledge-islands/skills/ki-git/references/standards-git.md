@@ -1,5 +1,15 @@
 # Git standard
 
+## Contents
+
+- [Scope and ownership](#scope-and-ownership)
+- [Commit messages](#commit-messages)
+- [Commit, publication, and integration authority](#commit-publication-and-integration-authority)
+- [Working-copy and review approaches](#working-copy-and-review-approaches)
+- [Safe Git hygiene](#safe-git-hygiene)
+- [Stale-lock guard](#stale-lock-guard)
+- [Runtime binding and enforcement](#runtime-binding-and-enforcement)
+
 ## Scope and ownership
 
 `ki-git` is the sole owner of portable Knowledge Islands Git and commit policy.
@@ -32,17 +42,48 @@ The binding does not attempt to decide whether a summary is genuinely imperative
 
 Other skills MAY define a narrowly-scoped trailer block as durable evidence for their own concern. For example, `ki-engineering` owns the `KI-Consistency-Review-*` block for an advisory code-consistency review. That block is portable commit metadata, not a new Git-hygiene policy: `ki-git` neither interprets its engineering outcome nor requires it on ordinary commits.
 
+## Commit, publication, and integration authority
+
+A local commit preserves one verified unit of authorised repository work. Ordinary interactive work should commit that unit in the primary checkout once it is verified, rather than leaving it dirty for a later instruction. A repository may withhold that default in its own instructions, but silence is not a withholding: an actor that has finished and verified a unit of requested work already holds the authority to commit it locally, and a repository that wants commits gated says so. A branch or linked-worktree delivery may commit only to its own branch unless separate integration authority has been granted.
+
+A request to change, finish, or commit work does not imply authority to push. Pushing publishes the current ref and can carry commits made by other writers, trigger CI, or deploy. It requires explicit current-user instruction or a standing repository workflow that names the actor and scope.
+
+Merging or fast-forwarding a delivery into the primary branch is a separate integration decision. A worker may prepare and commit a reviewable branch without receiving authority to merge it. Autonomy, assignment, task completion, or ownership of a worktree does not grant push or integration authority. Report publication as an action taken or not taken; do not treat a shared ref's current position as durable session-owned state.
+
+An unattended task-branch workflow may grant commit, non-force push of only the recorded task branch, and creation or update of its draft pull request as one bounded standing authority. That grant does not cover the primary branch, tags, releases, deployment, or remote-branch deletion.
+
+Pull-request review, approval, merge, and auto-merge are separate capabilities. A repository may delegate any combination to a stable named agent through explicit current-user instruction or durable repository-owned policy. The grant names the agent identity, repository and target refs, permitted actions, eligible work domain, required checks or reviews, allowed merge method, and expiry or revocation condition. An agent name, role, task assignment, broad autonomy, or access credential is not itself a grant. Approval never implies merge; merge never implies approval. An agent never approves its own delivery; a repository that permits one agent to both approve and merge still requires authorship separation and hosting protection.
+
+An authorised integration agent may merge only an eligible delivery within its grant after required evidence passes; it may not bypass protection or widen the grant because a check is unavailable. Use a durable `ki-delegation` packet when one high-risk task-specific handoff needs locked authority and escalation evidence; ordinary standing integration authority belongs in repository policy.
+
 ## Working-copy and review approaches
 
-`main` is open by default in Knowledge Islands repositories.
+`main` is open by default in Knowledge Islands repositories, and ordinary interactive work uses the repository's primary checkout rather than creating a linked worktree. A repository instruction, explicit user request, or unattended coordination policy may require a branch or worktree boundary.
 
-Select one of three approaches from repository policy, the requested review boundary, and whether work must proceed concurrently:
+Select one of four approaches from repository policy, the requested review boundary, and whether work must proceed concurrently:
 
 - **`single-working-copy-on-main`** — use for small, focused, independently verified changes when local instructions permit direct commits and no isolated review boundary is needed. Human and agent threads may share the working copy when they retain disjoint file-level change boundaries and coordinate Git writes.
 - **`single-working-copy-on-branch-with-pr`** — use when one delivery is active in the working copy and protection, the user, or a useful isolated review boundary calls for a branch and pull request. Multiple threads may contribute to that one delivery under the same shared-working-tree hygiene.
 - **`worktrees-with-pr`** — use when concurrent or independently isolated deliveries need separate branches, indexes, and working files. Give each branch its own worktree and PR, then integrate through the repository's review and merge policy.
+- **`worktrees-with-local-integration`** — use isolated task branches for local delivery without remote publication. Independently review the exact delivery commit, then let the repository's authorised integration owner merge it into the named local destination branch under the serialised write boundary below. No push or pull request is implied.
 
-Do not invent a branch, pull-request, or worktree requirement merely because several actors may modify one working copy. Use worktrees when concurrent deliveries require separate branches or isolated working files; do not keep independent branch work in one working copy merely because separate indexes are possible.
+Do not invent a branch, pull-request, or worktree requirement merely because several interactive actors may modify one working copy. Use worktrees when concurrent deliveries require separate branches or isolated working files, or when an unattended coordinator must not mutate a human's checkout; do not keep independent branch work in one working copy merely because separate indexes are possible.
+
+### Local integration write boundary
+
+Identify an integration destination by repository, host, designated checkout and branch, not by the branch name alone. For laptop-local operation, successful delivery places the reviewed result in the human's primary checkout on local `main` and in its working files. Verify both; advancing a ref in another clone or publishing a remote ref is a different action. A remote worker's own `main` remains that worker's local branch unless the repository explicitly designates it as the delivery destination.
+
+Local integration is a bounded exception to implementation-worktree isolation. The repository's grant identifies its integration owner and destination; it may authorise that owner to update the primary checkout so the human can see the delivered files. The grant does not permit development in that checkout, switching its branch, or overwriting another actor's work.
+
+Before integration, establish exclusive ownership of the repository's short Git write window, re-read the destination and reviewed source commits, and inspect the primary checkout's branch, index and working state. Stop if another actor owns the window, the index contains unrelated staged work, a Git operation is in progress, or tracked or untracked changes would be overwritten. A per-agent concurrency limit is not a repository lock. Do not use a ref-only update to move a branch that is checked out elsewhere.
+
+Verify the proposed combined result against the current destination before advancing it. A clean merge that preserves the reviewed change may use the existing grant; conflict resolution changes the candidate and requires renewed verification and review. Advance only the authorised local destination using the granted merge method, record the resulting commit and integration evidence, then release the write window. Never reset, force-update or stash another actor's state to make a merge proceed.
+
+### Worktree location
+
+A linked worktree lives under one explicit, runtime-owned root outside the repository's primary working tree and outside its Git common directory. The root must not be discoverable as another estate or workspace member, and its repository and task identity must prevent path collisions. Do not use an ad hoc sibling inside a normal workspace tree, a repository-local untracked directory, or a path under `.git` for working files.
+
+The coordinator that creates a worktree owns its location, branch association, and retirement evidence. A portable policy names the containment properties rather than one user's absolute path; an XDG state/data root or a coordinator-owned application-state root is an appropriate implementation.
 
 ### Finished worktree retirement
 

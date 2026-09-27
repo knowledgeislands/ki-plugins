@@ -50,13 +50,15 @@ const PREFIX_TO_TYPE: Record<string, { decisionType: string; decisionTypeUrl: st
     decisionTypeUrl: 'https://knowledgeislands.info/specifications/decision-records/kdr'
   }
 }
-const ID = /^(SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-([A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*)-(XXX|\d{3,})$/
+const ID = /^(SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-([A-Z0-9]*[A-Z][A-Z0-9]*(?:-[A-Z0-9]*[A-Z][A-Z0-9]*)*)-(XXX|\d{3,})$/
 const INDEX_ENTRY =
-  /^\s*(\d+)\.\s+\[((?:SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-[A-Z][A-Z0-9-]+-(?:XXX|\d{3,}))\]\(([^)]+)\)/
+  /^\s*(\d+)\.\s+\[((?:SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-[A-Z0-9]*[A-Z][A-Z0-9-]*-(?:XXX|\d{3,}))\]\(([^)]+)\)/
 const INDEX_ENTRY_TARGET =
-  /^(\s*\d+\.\s+\[((?:SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-[A-Z][A-Z0-9-]+-(?:XXX|\d{3,}))\]\()([^)]+)(\).*)$/
-const DECISION_LINK = /\[((?:SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-[A-Z][A-Z0-9-]+-(?:XXX|\d{3,}))\]\(([^)]+)\)/
-const HEADING = /^#\s+((?:SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-[A-Z][A-Z0-9-]+-(?:XXX|\d{3,})):\s+(.+)$/m
+  /^(\s*\d+\.\s+\[((?:SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-[A-Z0-9]*[A-Z][A-Z0-9-]*-(?:XXX|\d{3,}))\]\()([^)]+)(\).*)$/
+const DECISION_LINK = /\[((?:SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-[A-Z0-9]*[A-Z][A-Z0-9-]*-(?:XXX|\d{3,}))\]\(([^)]+)\)/
+const BODY_CITATION =
+  /(?:SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-[A-Z0-9]*[A-Z][A-Z0-9]*(?:-[A-Z0-9]*[A-Z][A-Z0-9]*)*-(?:XXX|\d{3,})/g
+const HEADING = /^#\s+((?:SDR|PDR|ADR|DDR|XDR|ODR|GDR|RDR|KDR)-[A-Z0-9]*[A-Z][A-Z0-9-]*-(?:XXX|\d{3,})):\s+(.+)$/m
 
 export type DecisionRecord = {
   file: string
@@ -76,6 +78,7 @@ export type DecisionRecord = {
   status?: string
   decisionTypeUrl?: string
   decisionType?: string
+  dependsOn: readonly string[]
   sharedRecord: boolean
   sharedProjection?: string
   sharedProjectionIssue?: string
@@ -90,6 +93,15 @@ export type FilenameRubricContext = {
   invalidFilenames: readonly string[]
   duplicateIds: ReadonlyMap<string, readonly string[]>
   serialGaps: ReadonlyMap<string, readonly number[]>
+}
+
+export type DependsRubricContext = {
+  records: readonly DecisionRecord[]
+  malformedDependencies: readonly { id: string; target: string }[]
+  unresolvedDependencies: readonly { id: string; target: string }[]
+  dependencyCycles: readonly (readonly string[])[]
+  dependencyOrderViolations: readonly { id: string; target: string }[]
+  forwardCitations: readonly { id: string; target: string }[]
 }
 
 export type RecordsRubricContext = {
@@ -124,6 +136,7 @@ export type DecisionRecordsRubricContext = {
   typeFit: RecordsRubricContext
   body: RecordsRubricContext
   index: IndexRubricContext
+  depends: DependsRubricContext
 }
 
 type IndexDraft = {
@@ -196,6 +209,20 @@ const frontmatterValue = (frontmatter: string | undefined, key: string): string 
   return quoted?.[2] ?? value
 }
 
+const frontmatterList = (frontmatter: string | undefined, key: string): readonly string[] => {
+  if (!frontmatter) return []
+  let parsed: unknown
+  try {
+    parsed = Bun.YAML.parse(frontmatter)
+  } catch {
+    return []
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return []
+  const value = (parsed as Record<string, unknown>)[key]
+  if (!Array.isArray(value)) return []
+  return value.filter((entry): entry is string => typeof entry === 'string').map((entry) => entry.trim())
+}
+
 const readRecords = (directory: string, entries: readonly string[], indexFile: string): DecisionRecord[] => {
   const records: DecisionRecord[] = []
   for (const file of entries.filter((entry) => entry.endsWith('.md') && entry !== indexFile)) {
@@ -235,6 +262,7 @@ const readRecords = (directory: string, entries: readonly string[], indexFile: s
       ...(frontmatterValue(frontmatter, 'decision_type')
         ? { decisionType: frontmatterValue(frontmatter, 'decision_type') }
         : {}),
+      dependsOn: frontmatterList(frontmatter, 'decision_depends_on'),
       sharedRecord,
       ...(sharedProjection?.projection ? { sharedProjection: sharedProjection.projection } : {}),
       ...(sharedProjection?.issue ? { sharedProjectionIssue: sharedProjection.issue } : {}),
@@ -298,6 +326,81 @@ const revealOrderEvidence = (indexIds: readonly string[]): readonly { id: string
     maximumBySeries.set(series, Math.max(previous ?? 0, serial))
   }
   return outOfOrderIds
+}
+
+const dependencyCycles = (edges: ReadonlyMap<string, readonly string[]>): string[][] => {
+  const visiting = new Set<string>()
+  const visited = new Set<string>()
+  const stack: string[] = []
+  const cycles: string[][] = []
+  const reported = new Set<string>()
+  const visit = (node: string): void => {
+    visiting.add(node)
+    stack.push(node)
+    for (const next of edges.get(node) ?? []) {
+      if (visiting.has(next)) {
+        const cycle = stack.slice(stack.indexOf(next))
+        const key = [...cycle].sort().join(' ')
+        if (!reported.has(key)) {
+          reported.add(key)
+          cycles.push([...cycle, next])
+        }
+      } else if (!visited.has(next)) visit(next)
+    }
+    stack.pop()
+    visiting.delete(node)
+    visited.add(node)
+  }
+  for (const node of edges.keys()) if (!visited.has(node)) visit(node)
+  return cycles
+}
+
+const dependencyEvidence = (
+  records: readonly DecisionRecord[],
+  indexIds: readonly string[]
+): Omit<DependsRubricContext, 'records'> => {
+  const known = new Set(records.map((record) => record.id))
+  const localScopes = new Set(records.map((record) => record.scope))
+  const positions = new Map(indexIds.map((id, position) => [id, position]))
+  const malformedDependencies: { id: string; target: string }[] = []
+  const unresolvedDependencies: { id: string; target: string }[] = []
+  const dependencyOrderViolations: { id: string; target: string }[] = []
+  const forwardCitations: { id: string; target: string }[] = []
+  const edges = new Map<string, string[]>()
+  for (const record of records) {
+    const resolved: string[] = []
+    for (const target of record.dependsOn) {
+      const identity = target.match(ID)
+      if (!identity) {
+        malformedDependencies.push({ id: record.id, target })
+        continue
+      }
+      if (known.has(target)) {
+        resolved.push(target)
+        const dependency = positions.get(target)
+        const dependent = positions.get(record.id)
+        if (dependency !== undefined && dependent !== undefined && dependency > dependent)
+          dependencyOrderViolations.push({ id: record.id, target })
+        continue
+      }
+      if (localScopes.has(identity[2] as string)) unresolvedDependencies.push({ id: record.id, target })
+    }
+    edges.set(record.id, resolved)
+    if (record.serial !== 'XXX')
+      for (const target of new Set(record.body.match(BODY_CITATION) ?? [])) {
+        const identity = target.match(ID)
+        if (!identity || identity[3] === 'XXX') continue
+        if (identity[1] !== record.prefix || identity[2] !== record.scope) continue
+        if (Number(identity[3]) > Number(record.serial)) forwardCitations.push({ id: record.id, target })
+      }
+  }
+  return {
+    malformedDependencies,
+    unresolvedDependencies,
+    dependencyCycles: dependencyCycles(edges),
+    dependencyOrderViolations,
+    forwardCitations
+  }
 }
 
 const createIndexDraft = (repository: string, path: string, original: string): IndexDraft => {
@@ -467,6 +570,7 @@ export const createDecisionRecordsSession = ({
         : {})
     },
     typeFit: { records },
+    depends: { records, ...dependencyEvidence(records, indexIds) },
     body: { records },
     index: {
       indexFile,
@@ -493,7 +597,7 @@ export const createDecisionRecordsSession = ({
   return {
     subjects: [
       { families: ['RUBRIC'], context: () => context },
-      { families: ['FILENAME', 'ROOT', 'FM', 'TYPE-FIT', 'BODY', 'INDEX'], context: () => context }
+      { families: ['FILENAME', 'ROOT', 'FM', 'TYPE-FIT', 'BODY', 'INDEX', 'DEPENDS'], context: () => context }
     ],
     proposal: () => {
       const indexWrite = indexDraft?.proposal()

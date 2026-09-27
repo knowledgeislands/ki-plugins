@@ -51,6 +51,7 @@ test('the default export is the sole catalogue entrypoint and families are compl
 })
 
 test('the owned rumdl template preserves unsafe structural rules and prevents the standard-flavor MD056 destructive fix', () => {
+  expect(RUMDL_DEFAULT).toContain('".git"')
   expect(RUMDL_DEFAULT).toContain('"MD005"')
   expect(RUMDL_DEFAULT).toContain('"MD075"')
   expect(RUMDL_DEFAULT).not.toMatch(/disable = \[[^\]]*"MD056"/)

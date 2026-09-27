@@ -644,11 +644,8 @@ test('every submitted trade declares an observation policy', () => {
 test('each trade kind accepts only its supported observation policies', () => {
   const { home, local } = fixture()
   const invalid = [
-    ['knowledge', 'unattended'],
     ['knowledge', 'decision'],
-    ['knowledge', 'completion'],
-    ['work', 'unattended'],
-    ['work', 'receipt']
+    ['knowledge', 'completion']
   ] as const
 
   for (const [index, [kind, observation]] of invalid.entries()) {
@@ -660,9 +657,7 @@ test('each trade kind accepts only its supported observation policies', () => {
     createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo']))),
     RECORD
   ).map((outcome) => outcome.message)
-  expect(messages).toContain('observation must be one of receipt, decision, completion')
-  expect(messages).toContain('knowledge trades require observation receipt')
-  expect(messages).toContain('work trades require observation decision or completion')
+  expect(messages).toContain('knowledge trades require observation unattended or receipt')
 })
 
 test('itemized subtype classifies knowledge only and never upgrades work', () => {
@@ -704,7 +699,10 @@ test('itemized subtype classifies knowledge only and never upgrades work', () =>
 test('each trade kind accepts every supported observation policy', () => {
   const { home, local } = fixture()
   const valid = [
+    ['knowledge', 'unattended'],
     ['knowledge', 'receipt'],
+    ['work', 'unattended'],
+    ['work', 'receipt'],
     ['work', 'decision'],
     ['work', 'completion']
   ] as const
@@ -895,6 +893,35 @@ test('only terminal receiver dispositions permit sender release and receiver pru
     status: 'INFO',
     message: 'eligible sender release is observable; receiver may prune this inbound copy',
     subject: `+/_TRADES/peer/repo/${retainedId}.md`
+  })
+})
+
+test('unattended requests no response but still waits for evidenced receipt', () => {
+  const { home, local, peer } = fixture()
+  const id = 'TRD-0000002f'
+  writeRecord(local, '-', 'peer/repo', id, record(id, 'local/repo', 'peer/repo', [], undefined, 'work', 'unattended'))
+
+  const beforeReceipt = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
+  expect(mechanicalOutcomes(beforeReceipt, RELEASE)).toEqual([
+    {
+      status: 'PASS',
+      message: 'receiver has not created an inbound copy; sender retains the outbound record',
+      subject: `-/_TRADES/peer/repo/${id}.md`
+    }
+  ])
+
+  writeRecord(
+    peer,
+    '+',
+    'local/repo',
+    id,
+    record(id, 'local/repo', 'peer/repo', ['decision_status: unconsidered'], undefined, 'work', 'unattended')
+  )
+  const afterReceipt = createTradesSession(options(local, home, tradeConfiguration('local/repo', ['peer/repo'])))
+  expect(mechanicalOutcomes(afterReceipt, RELEASE)).toContainEqual({
+    status: 'INFO',
+    message: 'unattended observation policy permits sender release',
+    subject: `-/_TRADES/peer/repo/${id}.md`
   })
 })
 

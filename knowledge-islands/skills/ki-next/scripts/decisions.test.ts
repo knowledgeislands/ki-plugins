@@ -4,6 +4,7 @@ import {
   captureDecision,
   deferralDecision,
   housekeepingSpawnDecision,
+  issueAllocationDecision,
   promotionDecision,
   rankCandidates,
   resolveSelectedAdapter,
@@ -66,6 +67,49 @@ test('captures only substantive unowned work and gates triage adoption', () => {
   expect(adoptionDecision(triage, 'next', true, false)).toBe('refuse')
   expect(deferralDecision(triage, 'future', true, true)).toBe('refuse')
   expect(deferralDecision({ ...triage, horizon: 'future' }, 'triage', true, true)).toBe('refuse')
+})
+
+test('re-reads issue-ledger scope immediately before publishing record and ledger atomically', () => {
+  expect(
+    issueAllocationDecision({
+      inspected: { mode: 'repository', lastId: 41 },
+      current: { mode: 'repository', lastId: 41 },
+      area: null,
+      proposedSerial: 42
+    })
+  ).toEqual({ kind: 'publish-proposed', serial: 42, ledgerHighWater: 42 })
+  expect(
+    issueAllocationDecision({
+      inspected: { mode: 'repository', lastId: 41 },
+      current: { mode: 'repository', lastId: 44 },
+      area: null,
+      proposedSerial: 42
+    })
+  ).toEqual({ kind: 'reallocate-and-publish', serial: 45, ledgerHighWater: 45 })
+  expect(
+    issueAllocationDecision({
+      inspected: { mode: 'areas', areas: { CORE: 7, OPS: 3 } },
+      current: { mode: 'areas', areas: { CORE: 8, OPS: 3 } },
+      area: 'CORE',
+      proposedSerial: 8
+    })
+  ).toEqual({ kind: 'reallocate-and-publish', serial: 9, ledgerHighWater: 9 })
+  expect(
+    issueAllocationDecision({
+      inspected: { mode: 'areas', areas: { CORE: 7 } },
+      current: { mode: 'areas', areas: { CORE: 7 } },
+      area: 'CORE',
+      proposedSerial: 8
+    })
+  ).toEqual({ kind: 'publish-proposed', serial: 8, ledgerHighWater: 8 })
+  expect(
+    issueAllocationDecision({
+      inspected: { mode: 'repository', lastId: 9 },
+      current: { mode: 'repository', lastId: 8 },
+      area: null,
+      proposedSerial: 10
+    })
+  ).toMatchObject({ kind: 'refuse' })
 })
 
 test('spawns only one active housekeeping run and separates direct trade application', () => {

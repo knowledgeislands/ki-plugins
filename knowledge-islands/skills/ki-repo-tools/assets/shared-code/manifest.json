@@ -1,0 +1,51 @@
+{
+  "contract": 1,
+  "owner": "ki-repo-tools",
+  "profiles": {
+    "source-script-v1": {
+      "required_params": ["tool", "repository", "env_prefix", "manual_path"],
+      "files": [
+        {
+          "source": "source-script-v1/install.sh.txt",
+          "destination": "install.sh",
+          "sha256": "3a706550cabd38052b68b93b1d549f748950fe6e70d0d853f5bc7afaeccd78dd",
+          "executable": true
+        }
+      ]
+    },
+    "archive-sha256-v1": {
+      "required_params": ["tool", "repository", "env_prefix", "manual_path"],
+      "files": [
+        {
+          "source": "archive-sha256-v1/install.sh.txt",
+          "destination": "install.sh",
+          "sha256": "bb5ef65e011fbcf129cf438fcb61787a6100ae4c2ca6edeaf5947c877f993190",
+          "executable": true
+        },
+        {
+          "source": "archive-package-v1/package.sh.txt",
+          "destination": "release/package.sh",
+          "sha256": "065f27502141db24dd26652130c1758c1021bb3c4160b865ed2c08ac34b2ce56",
+          "executable": true
+        }
+      ]
+    },
+    "signed-archive-v1": {
+      "required_params": ["tool", "repository", "env_prefix", "manual_path", "public_key_path"],
+      "files": [
+        {
+          "source": "signed-archive-v1/install.sh.txt",
+          "destination": "install.sh",
+          "sha256": "ee48139b333adb8ee6d86e5262aa503a62e0f76657a670b75bb221c2def60473",
+          "executable": true
+        },
+        {
+          "source": "archive-package-v1/package.sh.txt",
+          "destination": "release/package.sh",
+          "sha256": "065f27502141db24dd26652130c1758c1021bb3c4160b865ed2c08ac34b2ce56",
+          "executable": true
+        }
+      ]
+    }
+  }
+}

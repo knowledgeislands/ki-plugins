@@ -2,6 +2,7 @@
 /** Mechanical auditor for flat non-KB repository work items. */
 import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
+import { parse as parseYaml } from 'yaml'
 
 type Level = 'FAIL' | 'WARN' | 'POLISH' | 'ADVISORY' | 'INFO' | 'NA' | 'PASS'
 export type Finding = { level: Level; area: string; msg: string; ref?: string; file?: string }
@@ -33,13 +34,17 @@ type RoadmapConfiguration = {
 
 export const HORIZONS = ['now', 'next', 'soon', 'waiting-for', 'parked', 'future', 'triage'] as const
 
-const ID_RE = /^[A-Z][A-Z0-9-]{1,23}-\d{3,}$/
-const FILE_RE = /^([A-Z][A-Z0-9-]{1,23}-\d{3,})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/
+const ID_RE = /^[A-Z0-9][A-Z0-9-]{1,23}-\d{3,}$/
+const FILE_RE = /^([A-Z0-9][A-Z0-9-]{1,23}-\d{3,})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/
 const THEME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const AREA_RE = /^[A-Z][A-Z0-9]*$/
 const COMMIT_RE = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/
 const TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
 const TRADE_RE = /^TRD-[0-9a-f]{8}$/
+const TASK_PROVIDER_RE = /^[a-z][a-z0-9-]*$/
+const TASK_RELATIONS = new Set(['evaluation', 'implementation', 'review', 'integration', 'coordination', 'related'])
+const TASK_FIELDS = ['authority', 'scope', 'id', 'key', 'url', 'relation'] as const
+const TASK_LINKS_PARSE_ERROR = Symbol('task_links parse error')
 const MAX_TITLE_WORDS = 4
 const STATUS = new Set(['draft', 'ready', 'in-progress', 'awaiting-review', 'done'])
 const INTAKE_DISPOSITIONS = new Set(['rejected', 'duplicate', 'merged'])
@@ -72,17 +77,64 @@ const canonicalTimestamp = (value: string): boolean => {
   return Number.isFinite(milliseconds) && new Date(milliseconds).toISOString().replace('.000Z', 'Z') === value
 }
 
+const parseTaskLinks = (lines: readonly string[], display: string): unknown => {
+  try {
+    return (parseYaml(`task_links:\n${lines.join('\n')}`) as { task_links?: unknown } | null)?.task_links
+  } catch (error) {
+    const detail = error instanceof Error ? error.message.split('\n')[0] : 'parse failed'
+    add('FAIL', 'ITEM-1', `task_links YAML is invalid: ${detail}`, FORMAT, display)
+    return TASK_LINKS_PARSE_ERROR
+  }
+}
+
+const validateTaskLinks = (links: unknown, display: string): void => {
+  if (links === TASK_LINKS_PARSE_ERROR) return
+  if (!links || typeof links !== 'object' || Array.isArray(links) || !Object.keys(links).length) {
+    add('FAIL', 'ITEM-1', 'task_links must be a non-empty provider map', FORMAT, display)
+    return
+  }
+  for (const [provider, references] of Object.entries(links)) {
+    if (!TASK_PROVIDER_RE.test(provider))
+      add('FAIL', 'ITEM-1', `task_links provider '${provider}' must be lowercase kebab-case`, FORMAT, display)
+    if (!Array.isArray(references) || !references.length) {
+      add('FAIL', 'ITEM-1', `task_links provider '${provider}' must have references`, FORMAT, display)
+      continue
+    }
+    const identities = new Set<string>()
+    for (const reference of references) {
+      if (!reference || typeof reference !== 'object' || Array.isArray(reference)) {
+        add('FAIL', 'ITEM-1', 'task_links reference must be a field map', FORMAT, display)
+        continue
+      }
+      const keys = Object.keys(reference)
+      if (keys.length !== TASK_FIELDS.length || TASK_FIELDS.some((field) => !keys.includes(field)))
+        add('FAIL', 'ITEM-1', 'task_links reference must have exactly six required fields', FORMAT, display)
+      const record = reference as Record<string, unknown>
+      if (TASK_FIELDS.some((field) => typeof record[field] !== 'string' || !(record[field] as string).trim()))
+        add('FAIL', 'ITEM-1', 'task_links reference fields must be non-empty strings', FORMAT, display)
+      if (typeof record.relation === 'string' && !TASK_RELATIONS.has(record.relation))
+        add('FAIL', 'ITEM-1', `task_links relation '${record.relation}' is invalid`, FORMAT, display)
+      const identity = JSON.stringify([provider, record.authority, record.scope, record.id, record.relation])
+      if (identities.has(identity))
+        add('FAIL', 'ITEM-1', 'task_links repeats a task identity and relation', FORMAT, display)
+      identities.add(identity)
+    }
+  }
+}
+
 const parseFrontmatter = (
   text: string,
   display: string
-): { values: Record<string, string | boolean | null | string[] | undefined>; body: string } | undefined => {
+): { values: Record<string, unknown>; body: string } | undefined => {
   const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/)
   if (!match) {
     add('FAIL', 'ITEM-1', 'work item must begin with YAML frontmatter', FORMAT, display)
     return undefined
   }
-  const values: Record<string, string | boolean | null | string[] | undefined> = {}
-  for (const line of match[1].split(/\r?\n/)) {
+  const values: Record<string, unknown> = {}
+  const lines = match[1].split(/\r?\n/)
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index]
     const field = line.match(/^([a-z][a-z0-9]*(?:_[a-z0-9]+)*):\s*(.*?)\s*$/)
     if (!field) {
       add('FAIL', 'ITEM-1', `frontmatter line is invalid: ${line}`, FORMAT, display)
@@ -90,6 +142,18 @@ const parseFrontmatter = (
     }
     const [, key, raw] = field
     if (key in values) add('FAIL', 'ITEM-1', `frontmatter repeats '${key}'`, FORMAT, display)
+    if (key === 'task_links') {
+      if (raw) {
+        add('FAIL', 'ITEM-1', 'task_links must be a nested provider map', FORMAT, display)
+        values[key] = TASK_LINKS_PARSE_ERROR
+        continue
+      }
+      const nested: string[] = []
+      while (index + 1 < lines.length && (lines[index + 1] === '' || /^\s+/.test(lines[index + 1])))
+        nested.push(lines[++index])
+      values[key] = parseTaskLinks(nested, display)
+      continue
+    }
     if (raw === '[]') values[key] = []
     else if (/^\[[^\]]*\]$/.test(raw)) {
       values[key] = raw
@@ -133,7 +197,7 @@ const roadmapConfiguration = (repository: string): RoadmapConfiguration | undefi
         ? (repoTable as Record<string, unknown>)
         : undefined
     const code = repoValues?.repo_code
-    if (typeof code !== 'string' || !/^[A-Z][A-Z0-9-]{1,23}$/.test(code)) {
+    if (typeof code !== 'string' || !/^[A-Z0-9][A-Z0-9-]{1,23}$/.test(code)) {
       add(
         'FAIL',
         'ROAD-6',
@@ -216,7 +280,7 @@ const EXECUTION_SECTIONS = [
 const DOCUMENTATION_IMPACT_SECTIONS = ['Decision Records', 'Specifications', 'Guides', 'Roadmap'] as const
 const REVIEW_SECTIONS = [
   'Delivered',
-  'Summary of changes',
+  'Change Summary',
   'Verification',
   'Outstanding concerns',
   'Post-change review',
@@ -396,6 +460,7 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
         'blocks',
         'blocked_by',
         'waiting_on_trades',
+        'task_links',
         'baseline_ref',
         'intake_disposition',
         'intake_disposition_target',
@@ -408,6 +473,9 @@ const parseItem = (repository: string, name: string, configuration?: RoadmapConf
   )
   if (unexpected.length)
     add('FAIL', 'ITEM-1', `frontmatter has unexpected field(s): ${unexpected.join(', ')}`, FORMAT, display)
+  if ('task_links' in parsed.values) {
+    validateTaskLinks(parsed.values.task_links, display)
+  }
   if (!id || id !== file[1] || !ID_RE.test(id))
     add('FAIL', 'ITEM-1', 'frontmatter id must match the filename identifier', FORMAT, display)
   if (!title?.trim()) add('FAIL', 'ITEM-1', 'title must be non-empty', FORMAT, display)

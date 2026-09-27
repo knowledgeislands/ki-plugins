@@ -21,6 +21,8 @@ adapter = "roadmap" # or kb-streams, github-issues, linear
 
 The selected adapter's `[skills.<skill-name>]` table must be declared in the same configuration. `roadmap` is valid only when `[skills.ki-repo] repo_type` is omitted or `repository`; `kb-streams` is valid only when it is `kb`. Remote adapters have no local-kind restriction. Missing, unknown, undeclared, or inapplicable values are failures, not opportunities for shape-based inference. The selector resolves this declared mapping; the host separately invokes the resolved adapter's audit rather than treating resolution as an adapter audit.
 
+Repository feature selection follows the adapter declaration rather than a parallel toggle. `ki-repo` requires GitHub Issues disabled and no `package.json` `bugs` field for `roadmap`, `kb-streams`, and `linear`; the root `[skills.ki-work-github-issues]` declaration requires Issues enabled and the canonical Issues URL.
+
 ## Common adapter boundary
 
 The selector owns only the abstract lifecycle vocabulary: capture, queue placement, readiness, delivery evidence, review evidence, closure, and an explicitly selected prune path. It does not define status labels or a state machine. Each adapter owns its concrete record identity, storage, local lifecycle/status mapping, and local rules. A process skill may ask the selector to resolve that adapter but never assumes a filesystem path, remote issue API, or KB zone.

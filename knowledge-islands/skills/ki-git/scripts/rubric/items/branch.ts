@@ -5,21 +5,39 @@ const BRANCH_1: RubricItem<GitRubricContext> = {
   code: 'BRANCH-1',
   title: 'working approach matches the delivery boundary',
   description:
-    'Single-main, branch-with-PR, and worktree-with-PR approaches follow repository policy, review needs, and concurrency.',
-  sources: ['standards-git.md'],
+    'Primary-checkout, branch-with-PR, worktree-with-PR, and local worktree integration approaches follow repository policy, review needs, concurrency, and unattended isolation.',
+  sources: ['standards-git.md#working-copy-and-review-approaches', 'standards-git.md#local-integration-write-boundary'],
   judgment: {
     scope:
       'The selected repository, requested change, current `git branch --show-current` and `git worktree list` evidence, protection policy, concurrency, and review boundary.',
     prompt:
-      'After checking branch, worktree, protection, concurrency, and review evidence, assess whether `single-working-copy-on-main`, `single-working-copy-on-branch-with-pr`, or `worktrees-with-pr` is the appropriate approach.',
+      'Does the selected approach satisfy isolation and review needs, and does local worktree integration use an authorised owner and serialised destination write without imposing remote publication?',
     outcomes: [
       'conforming',
       'use single-working-copy-on-main',
       'use single-working-copy-on-branch-with-pr',
-      'use worktrees-with-pr'
+      'use worktrees-with-pr',
+      'use worktrees-with-local-integration'
     ],
     guidance:
-      'Use the least ceremonial approach that preserves the selected protection, review, and concurrency boundary; use separate worktrees when concurrent deliveries need isolated working files.'
+      'Use the primary checkout for ordinary interactive work. Isolate unattended implementation. When delivery is local-only, independently review the candidate and integrate through the authorised serialised write boundary without requiring a push or pull request.'
+  }
+}
+
+const BRANCH_3: RubricItem<GitRubricContext> = {
+  code: 'BRANCH-3',
+  title: 'linked worktrees use a safe runtime-owned root',
+  description:
+    'Linked working files stay outside the primary working tree and Git common directory under a collision-safe runtime-owned root.',
+  sources: ['standards-git.md#worktree-location'],
+  judgment: {
+    scope:
+      'Every linked worktree path, the repository primary working tree, Git common directory, estate discovery roots, and the runtime that owns creation and retirement.',
+    prompt:
+      'Is each linked worktree contained under an explicit runtime-owned root outside the repository and its Git common directory, excluded from estate discovery, and uniquely keyed to avoid collisions?',
+    outcomes: ['conforming', 'relocate worktree root', 'define runtime ownership', 'collision risk'],
+    guidance:
+      'Use one runtime-owned application-state or XDG root with repository and task identity. Do not place working files inside the repository, under `.git`, or in an estate-scanned workspace tree.'
   }
 }
 
@@ -46,5 +64,5 @@ export const BRANCH: RubricFamily<GitRubricContext, GitRubricContext> = {
   description: 'Working-copy topology and review flow follow local protection, review, and concurrency needs.',
   standard: 'standards-git.md',
   selectContext: (context) => context,
-  items: [BRANCH_1, BRANCH_2]
+  items: [BRANCH_1, BRANCH_2, BRANCH_3]
 }

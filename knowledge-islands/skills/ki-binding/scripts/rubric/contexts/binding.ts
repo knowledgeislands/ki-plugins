@@ -1,9 +1,23 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { physicalFile, readSource, resolveSource, type ServerEntry, type SourceState } from '../../shared/binding.ts'
+import {
+  type Lifecycle,
+  physicalFile,
+  readSource,
+  resolveSource,
+  type ServerEntry,
+  type SourceState
+} from '../../shared/binding.ts'
 import type { RubricContextOptions, RubricPublicationContext, RubricSession } from '../../shared/rubric.ts'
 
-type McporterDefinition = { command?: string; args?: readonly string[]; url?: string; baseUrl?: string }
+type McporterDefinition = {
+  command?: string
+  args?: readonly string[]
+  url?: string
+  baseUrl?: string
+  headers?: Readonly<Record<string, string>>
+  lifecycle?: Lifecycle
+}
 export type McporterState =
   | { kind: 'unavailable'; path?: string }
   | { kind: 'invalid'; path: string }
@@ -34,6 +48,18 @@ const mcporter = (): McporterState => {
           : typeof definition.baseUrl === 'string'
             ? definition.baseUrl
             : undefined
+      if (definition.lifecycle !== undefined && !['ephemeral', 'keep-alive'].includes(definition.lifecycle as string))
+        return { kind: 'invalid', path: resolved }
+      const lifecycle = definition.lifecycle as Lifecycle | undefined
+      const headers = definition.headers
+      if (
+        headers !== undefined &&
+        (!headers ||
+          typeof headers !== 'object' ||
+          Array.isArray(headers) ||
+          !Object.values(headers).every((value) => typeof value === 'string'))
+      )
+        return { kind: 'invalid', path: resolved }
       if (typeof definition.command === 'string') {
         if (
           url ||
@@ -41,8 +67,17 @@ const mcporter = (): McporterState => {
             (!Array.isArray(definition.args) || !definition.args.every((arg) => typeof arg === 'string')))
         )
           return { kind: 'invalid', path: resolved }
-        servers[name] = { command: definition.command, args: (definition.args as string[] | undefined) ?? [] }
-      } else if (url) servers[name] = { url }
+        servers[name] = {
+          command: definition.command,
+          args: (definition.args as string[] | undefined) ?? [],
+          ...(lifecycle ? { lifecycle } : {})
+        }
+      } else if (url)
+        servers[name] = {
+          url,
+          ...(headers ? { headers: headers as Record<string, string> } : {}),
+          ...(lifecycle ? { lifecycle } : {})
+        }
       else return { kind: 'invalid', path: resolved }
     }
     return { kind: 'valid', path: resolved, servers }
@@ -51,10 +86,23 @@ const mcporter = (): McporterState => {
   }
 }
 
-export const mcporterMatches = (entry: ServerEntry, actual: McporterDefinition | undefined): boolean =>
-  'url' in entry
-    ? actual?.url === entry.url
-    : actual?.command === entry.command && JSON.stringify(actual?.args ?? []) === JSON.stringify(entry.args)
+const secretAwareValuesMatch = (
+  expected: Readonly<Record<string, string | { op: string }>>,
+  actual: Readonly<Record<string, string>> | undefined
+): boolean =>
+  Object.keys(actual ?? {}).length === Object.keys(expected).length &&
+  Object.entries(expected).every(([key, value]) =>
+    typeof value === 'string' ? actual?.[key] === value : typeof actual?.[key] === 'string' && Boolean(actual[key])
+  )
+
+export const mcporterMatches = (entry: ServerEntry, actual: McporterDefinition | undefined): boolean => {
+  const lifecycleMatches = entry.lifecycle === undefined || actual?.lifecycle === entry.lifecycle
+  return 'url' in entry
+    ? actual?.url === entry.url && lifecycleMatches && secretAwareValuesMatch(entry.headers ?? {}, actual?.headers)
+    : actual?.command === entry.command &&
+        JSON.stringify(actual?.args ?? []) === JSON.stringify(entry.args) &&
+        lifecycleMatches
+}
 
 export const createBindingSession = ({
   repository,

@@ -407,7 +407,7 @@ describe('runtime environment coverage', () => {
         level: 'FAIL',
         code: 'RUNTIMES-2',
         message:
-          'supported runtime coverage requires missing table(s): [skills.ki-housekeeping-claude], [skills.ki-tokenomics], [skills.ki-tokenomics-claude], [skills.ki-tokenomics-codex]',
+          'supported runtime coverage requires missing table(s): [skills.ki-binding], [skills.ki-binding-chatgpt], [skills.ki-binding-claude], [skills.ki-housekeeping-chatgpt], [skills.ki-housekeeping-claude], [skills.ki-tokenomics], [skills.ki-tokenomics-chatgpt], [skills.ki-tokenomics-claude]',
         subject: expect.any(String)
       }
     ])
@@ -431,7 +431,16 @@ describe('runtime environment coverage', () => {
     })
     runRuntimeCoverageConform(session)
 
-    const expected = ['ki-housekeeping-claude', 'ki-tokenomics', 'ki-tokenomics-claude', 'ki-tokenomics-codex']
+    const expected = [
+      'ki-binding',
+      'ki-binding-chatgpt',
+      'ki-binding-claude',
+      'ki-housekeeping-chatgpt',
+      'ki-housekeeping-claude',
+      'ki-tokenomics',
+      'ki-tokenomics-chatgpt',
+      'ki-tokenomics-claude'
+    ]
     expect(inspected).toEqual([expected])
     expect(requested).toEqual([expected])
     expect(session.proposal()).toEqual({ writes: [] })
@@ -443,11 +452,19 @@ supported_runtimes = ["claude-code", "chatgpt-codex"]
 
 [skills.ki-housekeeping-claude]
 
+[skills.ki-housekeeping-chatgpt]
+
+[skills.ki-binding]
+
+[skills.ki-binding-claude]
+
+[skills.ki-binding-chatgpt]
+
 [skills.ki-tokenomics]
 
 [skills.ki-tokenomics-claude]
 
-[skills.ki-tokenomics-codex]
+[skills.ki-tokenomics-chatgpt]
 `
     const activeRoot = repository()
     const activeRequests: string[][] = []
@@ -511,11 +528,19 @@ supported_runtimes = ["claude-code", "claude-desktop", "chatgpt-codex"]
 
 [skills.ki-tokenomics]
 
+[skills.ki-binding]
+
+[skills.ki-binding-claude]
+
+[skills.ki-binding-chatgpt]
+
 [skills.ki-housekeeping-claude]
+
+[skills.ki-housekeeping-chatgpt]
 
 [skills.ki-tokenomics-claude]
 
-[skills.ki-tokenomics-codex]
+[skills.ki-tokenomics-chatgpt]
 `)
     ).toEqual([])
   })
@@ -639,6 +664,88 @@ describe('root runtime orientation', () => {
   })
 })
 
+test('fails for .claude/CLAUDE.md at root and nested package scope', async () => {
+  const root = repository()
+  writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n')
+  writeFileSync(join(root, 'CLAUDE.md'), '@AGENTS.md\n')
+  const audit = async () => (await collectAuditFindings([root])).findings.filter(({ code }) => code === 'RUNTIMES-5')
+
+  expect(await audit()).toEqual([])
+
+  mkdirSync(join(root, '.claude'), { recursive: true })
+  mkdirSync(join(root, 'packages', 'tool', '.claude'), { recursive: true })
+  writeFileSync(join(root, '.claude', 'CLAUDE.md'), 'Root misplaced guidance.\n')
+  writeFileSync(join(root, 'packages', 'tool', '.claude', 'CLAUDE.md'), 'Nested misplaced guidance.\n')
+
+  expect(localTreePaths(root)).toContain('.claude/CLAUDE.md')
+  expect(localTreePaths(root)).toContain('packages/tool/.claude/CLAUDE.md')
+  const findings = await audit()
+  expect(findings).toHaveLength(2)
+  for (const path of ['.claude/CLAUDE.md', 'packages/tool/.claude/CLAUDE.md'])
+    expect(findings).toContainEqual(
+      expect.objectContaining({ code: 'RUNTIMES-5', level: 'FAIL', subject: expect.stringContaining(path) })
+    )
+})
+
+describe('root orientation inversion evidence', () => {
+  const findings = async (
+    agents: string,
+    claude: string
+  ): Promise<readonly { code: string; level: string; message: string; subject?: string }[]> => {
+    const root = repository()
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-repo]\nsupported_runtimes = ["claude-code", "chatgpt-codex"]\n')
+    writeFileSync(join(root, 'AGENTS.md'), agents)
+    writeFileSync(join(root, 'CLAUDE.md'), claude)
+    return (await collectAuditFindings([root])).findings.filter(({ code }) => code === 'RUNTIMES-4')
+  }
+
+  test('warns when substantial unmanaged orientation remains inverted', async () => {
+    const claudeOrientation = [
+      '@AGENTS.md',
+      ...Array.from({ length: 8 }, (_, index) => `Shared detail ${index + 1}.`)
+    ].join('\n')
+
+    expect(
+      await findings(
+        '# Orientation\n\nShared repository guidance.\n\nCommit focused changes.\n',
+        `${claudeOrientation}\n`
+      )
+    ).toEqual([
+      expect.objectContaining({
+        code: 'RUNTIMES-4',
+        level: 'WARN',
+        message: expect.stringContaining('shared repository orientation'),
+        subject: expect.stringContaining('CLAUDE.md')
+      })
+    ])
+  })
+
+  test('excludes complete Headroom blocks but counts incomplete blocks as orientation evidence', async () => {
+    const learnedLines = Array.from({ length: 8 }, (_, index) => `- Learned detail ${index + 1}.`).join('\n')
+    const complete = `@AGENTS.md\n\n# Claude-only notes\n\n<!-- headroom:learn:start -->\n${learnedLines}\n<!-- headroom:learn:end -->\n`
+    const incomplete = `@AGENTS.md\n\n# Claude-only notes\n\n<!-- headroom:learn:start -->\n${learnedLines}\n`
+    const agents = '# Orientation\n\nShared repository guidance.\n\nCommit focused changes.\n'
+
+    expect(await findings(agents, complete)).toEqual([])
+    expect(await findings(agents, incomplete)).toEqual([
+      expect.objectContaining({
+        code: 'RUNTIMES-4',
+        message: expect.stringContaining('shared repository orientation')
+      })
+    ])
+  })
+
+  test('allows a small Claude-specific appendix', async () => {
+    const appendix = [
+      '@AGENTS.md',
+      '# Claude-only notes',
+      ...Array.from({ length: 7 }, (_, index) => `Note ${index + 1}.`)
+    ].join('\n')
+
+    expect(await findings('# Orientation\n\nShared repository guidance.\n', `${appendix}\n`)).toEqual([])
+  })
+})
+
 describe('repository kind and Knowledge Base stores', () => {
   const kindFindings = async (configuration: string) => {
     const root = repository()
@@ -728,6 +835,18 @@ describe('local repository evidence', () => {
     expect(findings).toContainEqual(
       expect.objectContaining({ message: expect.stringContaining('repo_code must be a stable uppercase identifier') })
     )
+  })
+
+  test('accepts a roadmap repo_code that begins with a digit', async () => {
+    const root = repository()
+    writeFileSync(join(root, 'README.md'), '# Actual title\n')
+    writeFileSync(
+      join(root, '.ki.toml'),
+      '[skills.ki-repo]\ntitle = "Actual title"\ndescription = "Configured description."\nrepo_code = "5GE"\n\n[skills.ki-work-roadmap]\n'
+    )
+
+    const findings = (await collectAuditFindings([root])).findings.filter((finding) => finding.code === 'FILES-2')
+    expect(findings.some((finding) => finding.message.includes('repo_code'))).toBe(false)
   })
 
   test('detects the optional checkpoints subarea without creating or interpreting it', async () => {

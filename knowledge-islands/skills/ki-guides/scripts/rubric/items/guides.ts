@@ -83,11 +83,38 @@ const GUIDE_3: RubricItem<GuidesLayoutContext> = {
   }
 }
 
+const GUIDE_4: RubricItem<GuidesLayoutContext> = {
+  code: 'GUIDE-4',
+  title: 'a guide links no document outside its collection',
+  description:
+    'No guide below `docs/guides/` links a Markdown document outside the collection; code paths and sibling guides are unaffected.',
+  sources: ['standards-guides.md#a-guide-is-self-contained'],
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance:
+        'Name the document in prose instead of linking it, or move the material the guide needs into docs/guides/references/, then rerun the audit.'
+    },
+    audit: {
+      phase: 'INSPECT',
+      run: (context) =>
+        context.escapingLinks.length === 0
+          ? [{ status: 'PASS', message: 'No guide links a document outside the collection.' }]
+          : context.escapingLinks.map((link) => ({
+              status: 'VIOLATION',
+              message: 'A guide must read completely without following a link outside its collection.',
+              subject: link
+            }))
+    }
+  }
+}
+
 export const GUIDE: RubricFamily<GuidesRubricContext, GuidesLayoutContext> = {
   code: 'GUIDE',
   title: 'guide layout',
   description: 'The controlled guide root has an entry point and identifiable guide documents.',
   standard: SOURCE,
   selectContext: (context) => context.layout,
-  items: [GUIDE_1, GUIDE_2, GUIDE_3]
+  items: [GUIDE_1, GUIDE_2, GUIDE_3, GUIDE_4]
 }

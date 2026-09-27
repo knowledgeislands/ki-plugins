@@ -76,6 +76,12 @@ New capture requires a currently active exact-subtype standing import. Removing 
 
 Standing intake grants no peer write, review, priority, implementation, publication, acceptance, completion, or roadmap authority. It may augment an existing record only when the insight directly supports that record's established goal and boundary. A distinct insight, decision, dependency, or scope creates receiver-local draft work. Canonical knowledge may receive a direct capture only when knowledge itself is the outcome; any public contract or implementation change still enters receiver-local work. Agora membership is presentational relationship context only and neither activates nor is required for standing intake.
 
+### Authority lifecycle and automation boundary
+
+Activation requires a current ordinary knowledge route plus exact reciprocal receiver-owned subtype consent from both repositories. Revocation blocks every new capture immediately, while committed introduction-time evidence remains historical and reviewable. Standing intake grants no peer write, review, priority, implementation, publication, acceptance, completion, or roadmap authority.
+
+Standing intake is not automatic transport or execution. Any future agent that discovers, transfers, applies, or publishes work without a contemporaneous operator must have a separate explicit authority contract covering scheduling, idempotency, isolation, failure recovery, evidence, review, and revocation. A standing declaration or `unattended` itemized policy supplies none of that authority.
+
 ## Storage and identity
 
 The generic `+` and `-` working areas remain owned by `ki-repo`. A repository declaring `ki-trades` also carries:
@@ -139,7 +145,7 @@ The outcome proposed to the receiver.
 Authority, safety, dependency, and verification boundaries the receiver must retain when evaluating it.
 ```
 
-The eight sender fields and `phase` are required strings. `kind` is `work` or `knowledge`; a knowledge trade requires `observation: receipt`, while work requires `observation: decision` or `observation: completion`; `phase` is `preparing`, `submitted`, or `received`. `created_at` is a UTC `YYYY-MM-DDTHH:MM:SSZ` timestamp. `source_ref` is provenance only and transfers no lifecycle authority. The three payload sections are required and non-empty. The H1 is the first non-blank body line and exactly repeats `id` and `title`.
+The eight sender fields and `phase` are required strings. `kind` is `work` or `knowledge`; knowledge permits `observation: unattended` or `observation: receipt`, while work additionally permits `observation: decision` or `observation: completion`; `phase` is `preparing`, `submitted`, or `received`. `created_at` is a UTC `YYYY-MM-DDTHH:MM:SSZ` timestamp. `source_ref` is provenance only and transfers no lifecycle authority. The three payload sections are required and non-empty. The H1 is the first non-blank body line and exactly repeats `id` and `title`.
 
 An inbound receiver copy sets `phase: received` and adds `decision_status: unconsidered` and, when the committed sender reference is available, `received_from_ref: <full-commit>`. It may also carry receiver-local `reviewed_at`, `rationale`, `applied_commit`, `adopted_as`, `retained_as`, or `superseded_by`. Receiver-local commit references are 40 lower-case hexadecimal characters. No other frontmatter key is valid.
 
@@ -180,13 +186,14 @@ The receiver alone moves its inbound decision status:
 
 ## Observation policies
 
-The sender chooses one policy without imposing an obligation on the receiver:
+A sender chooses one policy for an itemized `TRD-*` record without imposing an obligation on the receiver:
 
-- Knowledge uses `receipt` — the sender waits only until receipt is observable.
-- Work uses `decision` — the sender waits for a terminal receiver disposition: `applied`, `adopted`, `declined`, or `superseded`.
-- Work uses `completion` — the sender waits for selected-adapter, owner-valid completion evidence for local work. This protocol has no such resolver, so it fails closed: `applied`, `adopted`, path scans, and absent records never satisfy completion. `declined` and `superseded` may resolve it because no delivery remains due.
+- Knowledge or work may use `unattended` — no response is requested, but the sender still waits until explicit receipt is observable.
+- Knowledge or work may use `receipt` — the sender waits only until explicit receipt is observable without making a statement about whether a response was requested.
+- Work may use `decision` — the sender waits for a terminal receiver disposition: `applied`, `adopted`, `declined`, or `superseded`.
+- Work may use `completion` — the sender waits for selected-adapter, owner-valid completion evidence for local work. This protocol has no such resolver, so it fails closed: `applied`, `adopted`, path scans, or absent records never satisfy completion. `declined` and `superseded` may resolve it because no delivery remains due.
 
-`parked` and `clarify` are non-terminal under every policy that waits beyond receipt. A policy grants no deadline, delivery guarantee, response guarantee, priority, or implementation commitment.
+`parked` and `clarify` remain non-terminal under every policy and continue to wait beyond receipt. `unattended` and `receipt` have the same evidenced release boundary; their only distinction is sender intent about a response. Neither bypasses receiver-created receipt or receiver-owned disposition. A policy grants no deadline, delivery guarantee, response guarantee, priority, implementation, acceptance, or completion authority.
 
 ## Release and pruning
 

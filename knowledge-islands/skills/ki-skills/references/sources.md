@@ -21,8 +21,8 @@ Abbreviations match the `(SOURCE)` tags in the standards and [rubric](rubric.md)
 
 | Tag  | Source                               | Scope                  | Last reviewed |
 | ---- | ------------------------------------ | ---------------------- | ------------- |
-| SPEC | [Agent Skills specification][spec]   | Format and constraints | 2026-08-12    |
-| —    | [`skills-ref validate`][skills-ref]‡ | Demonstration validator | 2026-08-12   |
+| SPEC | [Agent Skills specification][spec]   | Format and constraints | 2026-09-26    |
+| —    | [`skills-ref validate`][skills-ref]‡ | Demonstration validator | 2026-09-26   |
 
 ‡ The reference library explicitly says it is demonstration-only and unsuitable as a production validator; it remains supporting validation evidence subordinate to the specification.
 
@@ -34,17 +34,17 @@ The Agent Skills [documentation index][agentskills-index] is the inventory autho
 
 | Tag | Source                                                     | Scope                 | Last reviewed |
 | --- | ---------------------------------------------------------- | --------------------- | ------------- |
-| AS  | [Agent Skills documentation index][agentskills-index]      | Page inventory        | 2026-08-12    |
-| AS  | [Agent Skills overview][home]                              | Conceptual overview   | 2026-08-12    |
-| AS  | [Skill-creator quickstart][quickstart]                     | First-skill workflow  | 2026-08-12    |
-| AS  | [Skill-creator best practices][agentskills-best-practices] | Authoring guidance    | 2026-08-12    |
-| AS  | [Optimising descriptions][optimizing-descriptions]         | Description quality   | 2026-08-12    |
-| AS  | [Evaluating skills][evaluating-skills]                     | Evaluation practice   | 2026-08-12    |
-| AS  | [Using scripts][using-scripts]                             | Script execution      | 2026-08-12    |
-| AS  | [Client showcase][clients]                                 | Client inventory      | 2026-08-12    |
-| AS  | [Adding skills support][adding-skills-support]             | Client implementation | 2026-08-12    |
-| BP  | [Skill authoring best practices][bp]                       | Authoring checklist   | 2026-08-12    |
-| ENG | [Equipping agents with Agent Skills][eng]†                 | Design rationale      | 2026-08-12    |
+| AS  | [Agent Skills documentation index][agentskills-index]      | Page inventory        | 2026-09-26    |
+| AS  | [Agent Skills overview][home]                              | Conceptual overview   | 2026-09-26    |
+| AS  | [Skill-creator quickstart][quickstart]                     | First-skill workflow  | 2026-09-26    |
+| AS  | [Skill-creator best practices][agentskills-best-practices] | Authoring guidance    | 2026-09-26    |
+| AS  | [Optimising descriptions][optimizing-descriptions]         | Description quality   | 2026-09-26    |
+| AS  | [Evaluating skills][evaluating-skills]                     | Evaluation practice   | 2026-09-26    |
+| AS  | [Using scripts][using-scripts]                             | Script execution      | 2026-09-26    |
+| AS  | [Client showcase][clients]                                 | Client inventory      | 2026-09-26    |
+| AS  | [Adding skills support][adding-skills-support]             | Client implementation | 2026-09-26    |
+| BP  | [Skill authoring best practices][bp]                       | Authoring checklist   | 2026-09-26    |
+| ENG | [Equipping agents with Agent Skills][eng]†                 | Design rationale      | 2026-09-26    |
 
 † Published 2025-10-16; updated to announce the open standard 2025-12-18.
 
@@ -54,13 +54,13 @@ The Claude blog is a discovery source, not a normative standard. On each REFRESH
 
 | Tag  | Source                     | Scope                                            | Last reviewed |
 | ---- | -------------------------- | ------------------------------------------------ | ------------- |
-| BLOG | [Claude blog][claude-blog] | Agentic-practice and authoring article discovery | 2026-07-28    |
+| BLOG | [Claude blog][claude-blog] | Agentic-practice and authoring article discovery | 2026-09-26    |
 
 ## Runtime overlay: OpenAI
 
 | Tag | Source | Scope | Last reviewed |
 | --- | --- | --- | --- |
-| OA | [OpenAI Build skills][openai-skills] | ChatGPT/Codex runtime overlay | 2026-09-15 |
+| OA | [OpenAI Build skills][openai-skills] | ChatGPT/Codex runtime overlay | 2026-09-26 |
 
 `OA` documents OpenAI runtime discovery, listing, path metadata, implicit invocation, and `agents/openai.yaml`. It qualifies runtime claims but never changes the portable Agent Skills contract.
 
@@ -70,17 +70,17 @@ The OpenAI News page is a discovery source, not a normative standard. On each RE
 
 | Tag    | Source                     | Scope                                            | Last reviewed |
 | ------ | -------------------------- | ------------------------------------------------ | ------------- |
-| OPENAI | [OpenAI News][openai-news] | Agentic-practice and authoring article discovery | 2026-08-12    |
+| OPENAI | [OpenAI News][openai-news] | Agentic-practice and authoring article discovery | 2026-09-26    |
 
 ## Community
 
 | Tag | Source | Scope | Last reviewed |
 | --- | --- | --- | --- |
-| COMMUNITY | [Skill Authoring Patterns][patterns] | Patterns and feedback | 2026-08-22 |
-| COMMUNITY | [obra/superpowers writing-skills][superpowers]† | Convergent conventions | 2026-08-22 |
-| COMMUNITY | [skills.sh — Open Agent Skills Ecosystem][skills-sh] | Registry and security | 2026-08-22 |
-| GASTOWN | [Gas Town Hall][gastown-hall] | Multi-agent orchestration and harness-practice discovery | 2026-07-29 |
-| FAFF | [shftwst/faff][faff] | Claude Code delivery-harness and autonomy-gate discovery | 2026-07-29 |
+| COMMUNITY | [Skill Authoring Patterns][patterns] | Patterns and feedback | 2026-09-26 |
+| COMMUNITY | [obra/superpowers writing-skills][superpowers]† | Convergent conventions | 2026-09-26 |
+| COMMUNITY | [skills.sh — Open Agent Skills Ecosystem][skills-sh] | Registry and security | 2026-09-26 |
+| GASCITY | [Gas City][gas-city] | Multi-agent orchestration and harness-practice discovery | 2026-09-26 |
+| FAFF | [shftwst/faff][faff] | Claude Code delivery-harness and autonomy-gate discovery | 2026-09-26 |
 
 † Community restatement of the best-practices document.
 
@@ -88,38 +88,38 @@ The OpenAI News page is a discovery source, not a normative standard. On each RE
 
 | Tag                       | Source                       | Scope            | Last reviewed |
 | ------------------------- | ---------------------------- | ---------------- | ------------- |
-| ki-agentic-harness README | The repo's own `README.md` | Harness structure | 2026-08-12 |
-| ADR-KI-HARNESS-SKILLS-004 | Local decision record | Standalone skills and variation | 2026-08-12 |
-| ADR-KI-HARNESS-SKILLS-006 | Local decision record | Kind, taxonomy, and dependencies | 2026-08-12 |
+| ki-agentic-harness README | The repo's own `README.md` | Harness structure | 2026-09-26 |
+| ADR-KI-HARNESS-SKILLS-004 | Local decision record | Standalone skills and variation | 2026-09-26 |
+| ADR-KI-HARNESS-SKILLS-006 | Local decision record | Kind, taxonomy, and dependencies | 2026-09-26 |
 
-The README is cited only for the harness's five-part structure. Local decision records, rather than the README, support the semantic house claims.
+The README is cited only for the harness's four-part structure. Local decision records, rather than the README, support the semantic house claims.
 
 ## Runtime overlay: Claude Code
 
 | Tag | Source                     | Scope                   | Last reviewed |
 | --- | -------------------------- | ----------------------- | ------------- |
-| CC  | [Claude Code — skills][cc] | Claude runtime overlay† | 2026-08-12    |
+| CC  | [Claude Code — skills][cc] | Claude runtime overlay† | 2026-09-26    |
 
 † Claude Code extensions and runtime behaviour. This overlay may qualify a portable or Knowledge Islands rule for Claude Code, but never weakens the portable contract.
 
 ## Last review
 
-REFRESH last run **2026-08-22**. It fetched [the documentation index][agentskills-index] first; it still lists the same nine pages and the specification retains the portable format and budgets. The review reconciled current description-voice guidance without otherwise changing capability scope.
+REFRESH last run **2026-09-26**. It fetched [the documentation index][agentskills-index] first; it still lists the same nine pages and the specification retains the portable format and budgets. The review found no immediate standard or rubric change; material follow-ups are routed to `KI-HARNESS-GOV-112`.
 
 - **SPEC:** portable fields and constraints remain current. `allowed-tools` is the only portable tool declaration and remains experimental; `disallowed-tools` is not in the specification.
 - **Agent Skills home:** accessible; three-stage progressive disclosure (metadata ~100 tok / instructions < 5000 tok / resources on demand). Spec unchanged.
 - **Description voice:** the current Agent Skills description guide prefers direct imperative phrasing, while Anthropic and community guidance retains third person. The portable rule now accepts either activation-oriented form and continues to reject first-/second-person explanation.
 - **CC:** `disallowed-tools` and `background` remain Claude Code extensions; the former accepts a string or YAML list, while `background` applies only with `context: fork`.
-- **OA:** Targeted evidence was rechecked on 2026-09-15. OpenAI documents `.agents/skills` discovery, initial name/description/path listings, a two-per-cent or 8,000-character initial-list budget, description shortening before possible omission warnings, `agents/openai.yaml`, and `allow_implicit_invocation`. Description remains the primary signal for implicit matching, not the only listed metadata.
+- **OA:** Targeted evidence was rechecked on 2026-09-26. OpenAI documents `.agents/skills` discovery, initial name/description/path listings, a two-per-cent or 8,000-character initial-list budget, description shortening before possible omission warnings, `agents/openai.yaml`, and `allow_implicit_invocation`. Description remains the primary signal for implicit matching, not the only listed metadata.
 - **ENG:** published 2025-10-16 and updated 2025-12-18; it remains rationale, not a normative source.
 - **BLOG (Claude blog):** added as a discovery source. Future REFRESH runs scan it for articles materially relevant to agent skills, agentic practice, or authoring workflows; an article is supporting evidence, not a normative rule by itself.
 - **OPENAI (OpenAI News):** added as a discovery source. Future REFRESH runs scan it for articles materially relevant to agent skills, agentic practice, or authoring workflows; an article is supporting evidence, not a normative rule by itself.
-- **GASTOWN (Gas Town Hall):** added as a discovery source. Future REFRESH runs scan its announcements and documentation for material multi-agent orchestration or harness-practice lessons; its practice is supporting evidence, not a normative rule by itself.
+- **GASCITY (Gas City):** the former Gas Town Hall source now redirects to a Beads-native software-factory platform. Its changed orchestration shape is routed to `KI-HARNESS-GOV-112`; its practice remains supporting evidence, not a normative rule by itself.
 - **FAFF (shftwst/faff):** added as a discovery source. Future REFRESH runs review its delivery-loop contracts, autonomy levels, and gate design for transferable lessons; its Claude Code-specific implementation is supporting evidence, not a portable rule by itself.
 - **COMMUNITY:** the reviewed pattern guide, Superpowers guidance, and skills.sh registry remain supporting evidence. They introduce no further portable constraint; the soft ~300-line split suggestion remains below our 500-line WARN and is not adopted as a separate cap.
 - **`skills-ref`:** the repository now explicitly labels the reference library demonstration-only and not for production. Keep it as supporting validation evidence; the specification remains the normative baseline.
 - **In-house scan:** the then-current governed skill set passed its skill-quality audit, including `ki-skills` itself. Exact commands and fleet counts are intentionally omitted because both change as the host and skill set evolve.
-- **Open watch-items:** re-fetch `superpowers` directly next run (carried forward).
+- **Open watch-items:** assess the bounded Gas City, current-model, and AHP follow-ups in `KI-HARNESS-GOV-112`; no other source disagreement requires a standard or rubric change.
 
 (What past reviews changed in the standard / rubric / linter is in git.)
 
@@ -139,7 +139,7 @@ REFRESH last run **2026-08-22**. It fetched [the documentation index][agentskill
 [claude-blog]: https://claude.com/blog
 [openai-news]: https://openai.com/news/
 [openai-skills]: https://learn.chatgpt.com/docs/build-skills
-[gastown-hall]: https://gastownhall.ai/
+[gas-city]: https://gascity.com/
 [faff]: https://github.com/shftwst/faff
 [skills-ref]: https://github.com/agentskills/agentskills/tree/main/skills-ref
 [patterns]: https://generativeprogrammer.com/p/skill-authoring-patterns-from-anthropics

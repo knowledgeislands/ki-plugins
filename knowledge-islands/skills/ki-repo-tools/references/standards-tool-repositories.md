@@ -129,7 +129,7 @@ A physical `man/<tool>.1` is the installed command reference. It stays aligned w
 
 ## The qualified `ki-repo-tools` marker
 
-A `tools-*` repo opts in by declaring a **keyless** `[skills.ki-repo-tools]` table in its `.ki.toml`. It is validated **down**: the checker reads only this table and warns on any unknown key inside it (there are none today), never reading another skill's table. `ki repo conform --skill ki-repo-tools` adds it to an existing parseable configuration when it is safe to do so.
+A `tools-*` repo opts in by declaring `[skills.ki-repo-tools]` in `.ki.toml`. A keyless table retains repository-owned installer files. The optional `profile`, `tool`, `repository`, `env_prefix`, `manual_path`, and profile-specific `public_key_path` keys select a managed projection defined by the [tool shared-code standard](standards-tool-shared-code.md). The checker validates down and never reads another skill's table. `ki repo conform --skill ki-repo-tools` may add the keyless marker to an existing parseable configuration, but it never selects a profile.
 
 A language conditional is declared as its **own** table, not a key here: a TS/Bun tool carries both `ki-repo-tools` and `ki-engineering` qualified declarations.
 

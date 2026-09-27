@@ -25,6 +25,8 @@ The declaration also activates the retained `+/_BATCHES/README.md` capability sc
 
 `[skills.ki-work]` declares exactly one adapter and the matching adapter table is declared beside it. `roadmap` is the default for an ordinary Project repository; `kb-streams` is the default for a Knowledge Base; `github-issues` and `linear` are explicit alternatives. Resolution has no fallback: an absent, unknown, undeclared, or inapplicable declaration stops the process rather than guessing from a directory. This skill owns abstract lifecycle terms, while the owning adapter retains concrete status mapping, record storage, identity, and structural rules.
 
+The selected adapter also controls the GitHub Issues feature through `ki-repo`: it stays disabled, with no `package.json` `bugs` field, unless the root `[skills.ki-work-github-issues]` table is declared.
+
 ## Operating modes
 
 Carries the universal **AUDIT · CONFORM · EDUCATE · REFRESH** modes. Invoked as `help` / `-h` / `?`, it emits generated HELP and stops. With no recognised mode, it emits the same HELP and, only in an interactive session, offers the mode choice and prompts for the target shown in `argument-hint`.

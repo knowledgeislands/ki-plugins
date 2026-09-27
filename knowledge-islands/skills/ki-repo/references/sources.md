@@ -8,19 +8,19 @@ The authoritative sources behind [the repository standard](standards-repository.
 
 | Source | Governs | Last reviewed |
 | --- | --- | --- |
-| [REST: repository settings][repo-settings] | merge methods, auto-delete-branch, features, description, visibility, and repository-administration permission | 2026-08-12 |
-| [REST: branch protection][branch-protection] | the optional `branch-protection` body (PR, `build` check, linear) | 2026-08-12 |
-| [Repository rulesets][rulesets] | the modern alternative to classic protection (private-repo path) | 2026-08-12 |
-| [REST: Dependabot alerts / fixes][dependabot] | `vulnerability-alerts`, `automated-security-fixes` endpoints | 2026-08-12 |
-| [Secret scanning detection scope][secret-scanning] | public automatic scanning and private/internal GitHub Secret Protection boundary | 2026-08-12 |
-| [REST: Actions permissions for a repository][actions] | `allowed_actions` policy | 2026-08-12 |
-| [`gh` CLI manual][gh-cli] | `gh repo list/view/edit`, `gh api` — how evidence is read and confirmed live changes are applied | 2026-08-12 |
-| [SPDX License List][spdx] | authoritative license identifiers, including MIT and UNLICENSED | 2026-08-12 |
-| [Choose a License][choosealicense] | supporting license-selection guidance | 2026-08-12 |
+| [REST: repository settings][repo-settings] | merge methods, auto-delete-branch, features, description, visibility, and repository-administration permission | 2026-09-26 |
+| [REST: branch protection][branch-protection] | the optional `branch-protection` body (PR, `build` check, linear) | 2026-09-26 |
+| [Repository rulesets][rulesets] | the modern alternative to classic protection (private-repo path) | 2026-09-26 |
+| [REST: Dependabot alerts / fixes][dependabot] | `vulnerability-alerts`, `automated-security-fixes` endpoints | 2026-09-26 |
+| [Secret scanning detection scope][secret-scanning] | public automatic scanning and private/internal GitHub Secret Protection boundary | 2026-09-26 |
+| [REST: Actions permissions for a repository][actions] | `allowed_actions` policy | 2026-09-26 |
+| [`gh` CLI manual][gh-cli] | `gh repo list/view/edit`, `gh api` — how evidence is read and confirmed live changes are applied | 2026-09-26 |
+| [SPDX License List][spdx] | authoritative license identifiers, including MIT and UNLICENSED | 2026-09-26 |
+| [Choose a License][choosealicense] | supporting license-selection guidance | 2026-09-26 |
 
 ## Last review
 
-REFRESH last run **2026-08-12** against all nine tracked sources. No source required a changed GitHub setting, criterion, or implementation. The review corrected the licence/visibility summary, made SPDX the identifier authority and Choose a License supporting selection guidance, and replaced the inaccurate `repo-admin` shorthand with GitHub's current **Administration** repository permission.
+REFRESH last run **2026-09-26** against all nine tracked sources. Repository settings, classic protection and rulesets, Dependabot endpoints, secret-scanning scope, Actions permissions, CLI routes, and licence guidance remain available. GitHub's current REST examples use API version `2026-03-10`, but no governed field or criterion changed in this refresh.
 
 - **REST repository settings / `gh` CLI**: merge controls, branch deletion, feature fields, description, visibility, and CLI evidence/application routes remain available. Setting repository properties requires the exact repository-administration permission; inspect the account and exact proposed write before mutation.
 - **REST branch protection / rulesets**: classic branch protection and rulesets coexist. The optional classic-protection check remains valid; watch for a future deprecation or recommendation change.

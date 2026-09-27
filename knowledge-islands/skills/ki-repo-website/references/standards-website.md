@@ -32,6 +32,8 @@ The selected site root owns the implementation package manifest, implementation 
 
 ## 3. Build seam
 
+The public `ki:site:*` alias has three auditable terminal forms: the exact selected-package command, one exact `self:site:<primary>:<verb>` hop to that command, or exact `turbo run <task>` delegation when root `turbo.json` declares the matching task (`build`, `ki:site:dev`, or `clean`). Turborepo adoption and task-graph quality remain owned by `ki-engineering`; this seam checks only that the named task exists and matches the public verb. Direct `--cwd` command chains, undeclared or mismatched tasks, additional shell commands, missing aliases, and cyclic forwarding remain invalid.
+
 The selected implementation generates `dist/` at its site root: `apps/site/dist/` by default and `dist/` for an explicit flat repository. Generated output is ignored by Git and recreated by the build.
 
 The repository root `package.json` exposes public aliases that delegate to the selected site package:

@@ -65,6 +65,21 @@ const RUNTIMES_4: RubricItem<RuntimesRubricContext> = {
   }
 }
 
+const RUNTIMES_5: RubricItem<RuntimesRubricContext> = {
+  code: 'RUNTIMES-5',
+  title: 'Claude orientation location',
+  description: 'Repository-local Claude orientation is not stored at .claude/CLAUDE.md at any depth.',
+  sources: [SOURCE],
+  mechanical: {
+    level: 'FAIL',
+    remediation: {
+      class: 'diagnostic',
+      guidance: 'Move shared guidance into root AGENTS.md and Claude-specific guidance into root CLAUDE.md.'
+    },
+    audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.runtimes5, 'FAIL') }
+  }
+}
+
 const RUNTIMES_J1: RubricItem<RuntimesRubricContext> = {
   code: 'RUNTIMES-J1',
   title: 'Runtime orientation split',
@@ -86,5 +101,5 @@ export const RUNTIMES: RubricFamily<RepoRubricContext, RuntimesRubricContext> = 
   description: 'Declared agent-runtime support and orientation.',
   standard: SOURCE,
   selectContext: (context) => context.runtimes,
-  items: [RUNTIMES_1, RUNTIMES_2, RUNTIMES_3, RUNTIMES_4, RUNTIMES_J1]
+  items: [RUNTIMES_1, RUNTIMES_2, RUNTIMES_3, RUNTIMES_4, RUNTIMES_5, RUNTIMES_J1]
 }

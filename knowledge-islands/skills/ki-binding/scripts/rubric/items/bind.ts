@@ -5,7 +5,7 @@ const BIND_1: RubricItem<BindingRubricContext> = {
   code: 'BIND-1',
   title: 'mcporter agrees with source definitions',
   description:
-    'An explicitly selected mcporter target has the complete non-secret definitions for each mcporter-targeted server.',
+    'An explicitly selected mcporter target has the complete non-secret definitions for each mcporter-targeted server, including header names, literal header values, and lifecycle; secret-derived header values are checked only for non-empty presence.',
   sources: ['standards-cross-surface-binding.md'],
   mechanical: {
     level: 'WARN',

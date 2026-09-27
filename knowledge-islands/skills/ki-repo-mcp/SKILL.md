@@ -6,8 +6,8 @@ ki-runtime-binding: true
 ki-shared-dependencies: [ki-skills:rubric]
 ki-depends-on: []
 description: >
-  Audit or scaffold KI MCP server code for workspace-MCP layout, dependency injection, tool naming, access
-  gates, logging, and security. Use `ki-engineering` for common toolchains, `ki-skills` for SKILL.md, and
+  Audit or scaffold KI MCP server code for source-release readiness, workspace-MCP layout, dependency injection,
+  tool naming, access gates, logging, and security. Use `ki-engineering` for common toolchains, `ki-skills` for SKILL.md, and
   `ki-repo` for repository settings.
 argument-hint: 'audit <repo> | conform <repo> | educate <repo> | help | refresh'
 ---
@@ -18,7 +18,7 @@ You are helping audit, conform, or scaffold a **workspace MCP server** — one o
 
 This skill audits declared **server source shape** — `src/` layout, config injection, tool declarations, and tooling. A structural result is not evidence that a server was registered, loaded, secured, or executed. A repo's GitHub configuration and standard files, and a `SKILL.md`'s prose, are out of scope (other skills own those). How the skills divide the work is documented once in the ki-agentic-harness `README.md`.
 
-The full, quotable standard lives in [Workspace MCP Standard](references/standards-mcp-servers.md); the line-by-line pass/fail items live in [Audit Rubric](references/rubric.md). The hosted rubric contract is [`scripts/rubric/items/index.ts`](scripts/rubric/items/index.ts), enforced by `ki repo audit --skill ki-repo-mcp`. Read those when you need detail; this file is the operating procedure.
+The full server-shape standard lives in [Workspace MCP Standard](references/standards-mcp-servers.md), [MCP shared code](references/standards-mcp-shared-code.md) owns optional vendored utility profiles, and [MCP source distribution](references/standards-mcp-distribution.md) owns versioned source-release evidence and the installer hand-off. The line-by-line pass/fail items live in [Audit Rubric](references/rubric.md). The hosted rubric contract is [`scripts/rubric/items/index.ts`](scripts/rubric/items/index.ts), enforced by `ki repo audit --skill ki-repo-mcp`. Read those when you need detail; this file is the operating procedure.
 
 ## The canonical shape at a glance
 
@@ -99,6 +99,6 @@ Both are report-only from ki-repo-mcp. Client registration, web/admin changes, r
 ## Notes
 
 - This skill targets the standard documented in the sibling repos' own `CLAUDE.md` files; when they disagree, the **majority shape** is the standard and the outlier is a finding (unless the outlier is a deliberate, documented exception). When unsure whether a divergence is intentional, ask rather than "fix" it.
-- Keep the shared `utils/` helpers (`access-level.ts`, `annotations.ts`, `audit-log.ts`) in sync across repos — a fix to one usually applies to all.
+- Keep shared utilities aligned through the optional `legacy-v1-core` or `modern-v2-core` profile where a repository has deliberately adopted one. Undeclared utilities remain repository-owned; never copy a majority implementation over domain-specific audit or result behaviour.
 - The standard sits on top of a moving spec. When citing a requirement, know whether it is **spec-driven** (traces to the official MCP spec in [the source list](references/sources.md)) or **house style** — never present a workspace preference as a protocol "MUST". Run Mode REFRESH when in doubt.
-- Full detail: [Workspace MCP Standard](references/standards-mcp-servers.md), [Audit Rubric](references/rubric.md), and the tracked [source list](references/sources.md).
+- Full detail: [Workspace MCP Standard](references/standards-mcp-servers.md), [MCP source distribution](references/standards-mcp-distribution.md), [Audit Rubric](references/rubric.md), and the tracked [source list](references/sources.md).

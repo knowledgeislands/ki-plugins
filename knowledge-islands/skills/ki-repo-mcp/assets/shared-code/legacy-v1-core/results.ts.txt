@@ -1,0 +1,12 @@
+// @ki-managed ki-repo-mcp profile=legacy-v1-core version=1
+export const errorResult = (action: string, error: unknown) => ({
+  isError: true as const,
+  content: [
+    { type: 'text' as const, text: `Error ${action}: ${error instanceof Error ? error.message : String(error)}` }
+  ]
+})
+
+export const jsonResult = (payload: Record<string, unknown>) => ({
+  structuredContent: payload,
+  content: [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }]
+})

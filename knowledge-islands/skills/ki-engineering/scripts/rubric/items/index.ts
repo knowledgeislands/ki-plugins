@@ -17,6 +17,7 @@ import { SCRIPTS } from './scripts.ts'
 import { SYNC } from './sync.ts'
 import { TEST } from './test.ts'
 import { TOML } from './toml.ts'
+import { TURBO } from './turbo.ts'
 import { TYPESCRIPT } from './typescript.ts'
 
 export default {
@@ -38,6 +39,7 @@ export default {
     SYNC,
     DEPENDENCIES,
     GENERATED,
+    TURBO,
     DESIGN,
     REVIEW,
     TEST,

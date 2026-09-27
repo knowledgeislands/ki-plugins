@@ -186,7 +186,7 @@ If the repo runs a GitHub Action that commits to `main` before deploy (e.g. a co
 
 ## 10. Write the Cloudflare guide
 
-Record every dashboard-owned setting from the steps above in **`docs/guides/cloudflare.md`** — the one guide for every Cloudflare aspect of this repository ([standard §6](standards-cloudflare-hosting.md#6-the-cloudflare-guide--dashboard-owned-settings)). Capture the exact values an operator enters: the Workers Builds build command, deploy command, and root directory (§9); the domain and redirect choices (§7–8); whether `workers.dev` serves (§6). Link to `wrangler.jsonc` for everything the config already declares rather than duplicating it. From now on, a dashboard change and its guide edit travel together.
+Record every dashboard-owned setting from the steps above in **`docs/guides/developer/cloudflare.md`** — the developer and maintainer guide for every Cloudflare aspect of this repository ([standard §6](standards-cloudflare-hosting.md#6-the-cloudflare-guide--dashboard-owned-settings)). Capture the exact values an operator enters: the Workers Builds build command, deploy command, and root directory (§9); the domain and redirect choices (§7–8); whether `workers.dev` serves (§6). Link to `wrangler.jsonc` for everything the config already declares rather than duplicating it. From now on, a dashboard change and its guide edit travel together.
 
 ---
 

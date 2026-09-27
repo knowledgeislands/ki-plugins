@@ -18,6 +18,8 @@ Use this checklist before publishing a release of a repository governed by `ki-r
 
 ## 3. Validate the candidate
 
+When a shared delivery profile is declared, confirm `ki-repo-tools` reports every managed installer and packaging file exact before running repository-specific release gates. Profile conformance never substitutes for executing the installer against the candidate release.
+
 - Run `ki repo audit --repo .` and resolve its applicable mechanical findings. Complete the judgment review for version alignment, CLI surface, manual distribution, and the companion formula.
 - Run every native quality gate declared by the tool. A shell entrypoint runs ShellCheck and Bats; a package.json-bearing tool also follows `ki-engineering` for its build, lint, type, and test gates.
 - Exercise changed command paths and error handling proportionately to risk. Confirm `--help` and `--version` from the candidate rather than an installed copy.

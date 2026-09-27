@@ -4,13 +4,15 @@ import { auditEvidence, type EvidenceRubricContext, type RepoRubricContext } fro
 const TOGGLE_1: RubricItem<EvidenceRubricContext> = {
   code: 'TOGGLE-1',
   title: 'Repository feature toggles',
-  description: 'Issues are enabled and Wiki and Projects are disabled unless explicitly overridden.',
+  description:
+    'Issues are enabled exactly when ki-work-github-issues is declared; Wiki and Projects are disabled unless explicitly overridden.',
   sources: ['standards-repository.md'],
   mechanical: {
     level: 'FAIL',
     remediation: {
       class: 'diagnostic',
-      guidance: 'Align the repository feature settings or record an explicit override, then rerun the audit.'
+      guidance:
+        'Align Issues with the selected work adapter and the other repository feature settings with their overrides, then rerun the audit.'
     },
     audit: { phase: 'INSPECT', run: (context) => auditEvidence(context.evidence, 'FAIL') }
   }

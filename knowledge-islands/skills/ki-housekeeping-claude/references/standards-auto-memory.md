@@ -2,6 +2,15 @@
 
 _A bounded local-format standard for `ki-housekeeping-claude`. Native Claude settings establish the memory location; Headroom-rendered output is separate evidence and does not establish native selection or loading. Recorded source decisions and dates are tracked in [sources.md](sources.md)._
 
+## Contents
+
+- [Layout](#layout)
+- [Repair boundary](#repair-boundary)
+- [`MEMORY.md`](#memorymd)
+- [Repairing a regenerated cross-repo learned pattern](#repairing-a-regenerated-cross-repo-learned-pattern)
+- [`memory/*.md` frontmatter](#memorymd-frontmatter)
+- [What does not belong in a memory](#what-does-not-belong-in-a-memory)
+
 ## Layout
 
 ```text
@@ -15,11 +24,19 @@ _A bounded local-format standard for `ki-housekeeping-claude`. Native Claude set
 
 ## Repair boundary
 
-The structured rubric first requires a readable native settings record. When it contains no `autoMemoryDirectory` override, it selects the documented default `.claude/projects/<selected-repository-slug>/memory` directory. A contained string override selects that directory instead, including a worktree-specific location. Missing or malformed settings, disabled or unsupported override values, and overrides outside `.claude/` are unavailable evidence, not a default-path clean result. Once selected, the rubric never enumerates or reports foreign project memories and never follows a symlinked Claude root, selected directory, memory file, or `MEMORY.md`.
+KI policy keeps agent-local auto-memory off by default. Set `autoMemoryEnabled: false` in reviewed, chezmoi-managed user settings. For a deliberate one-project opt-in, set `autoMemoryEnabled: true` in that repository's `.claude/settings.local.json`; a reviewed shared `.claude/settings.json` also scopes the opt-in to that project. Project-local settings outrank shared project settings, which outrank user settings. Managed settings and session `--settings` can outrank all three; confirm the effective setting with Claude Code `/status` when either applies. `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` disables memory even for an opted-in project, while `=0` forces it on despite `autoMemoryEnabled: false`. A shell environment override takes precedence over a settings `env` value. Do not use `=0` as a global opt-in.
+
+The reviewed user setting is `{"autoMemoryEnabled": false}`. A deliberate per-project opt-in sets `auto_memory = "enabled"` in that repository's `.ki.toml` and `{"autoMemoryEnabled": true}` in its `.claude/settings.local.json` (or a reviewed shared `.claude/settings.json`). Keep the local file untracked and verify the effective state with `/memory` or `/status` before relying on it.
+
+The checker resolves the readable user, shared project, and project-local settings and the visible `CLAUDE_CODE_DISABLE_AUTO_MEMORY` override. A repository declaring `[skills.ki-housekeeping-claude]` sets `auto_memory = "transition"` during reconciliation, `"disabled"` afterward, or `"enabled"` for an explicit project opt-in; absence is a FAIL even though the checker treats it as disabled for bounded inspection. This KI lifecycle value is separate from Claude's boolean `autoMemoryEnabled`. Transition temporarily permits legacy enabled memory without a project opt-in, but SELECT-2 always warns until the transition is closed. Disabled KI policy makes index/file criteria not applicable even when effective Claude memory remains enabled; that runtime mismatch fails SELECT-1. An existing selected memory directory under omitted or disabled KI policy warns at SELECT-2 even when it contains no Markdown files. Enabled memory passes SELECT-1 only with policy enabled and a project-scoped Claude opt-in, or during transition.
+
+The selected directory is Claude's documented default `.claude/projects/<selected-repository-slug>/memory` unless a contained `autoMemoryDirectory` override selects another; Claude requires that override to be absolute or start with `~/`. Malformed settings, unsupported values, and out-of-bounds overrides fail selection. The checker cannot prove a managed or `--settings` override from repository files; verify those in the running Claude session. Once selected, it never enumerates or reports foreign project memories and never follows a symlinked Claude root, selected directory, memory file, or `MEMORY.md`.
 
 Two repairs are safe enough to propose through one operation-scoped draft: align a frontmatter `name` to an already-safe kebab-case physical filename, and append a contained unindexed memory file to an existing physical `MEMORY.md`. The host validates and publishes the coalesced proposal.
 
 Creating a missing index, renaming memory files, removing dangling entries, deduplicating names, changing content doctrine, editing generated Headroom data, promoting content, and deleting files or database records remain manual.
+
+Neither disabling memory nor CONFORM creates an empty `MEMORY.md` or deletes existing memories. In transition, inspect existing notes and route durable value through reviewed repository guidance or KB intake and approval. Keep the source files until that reconciliation is approved and safely completed; only then change `auto_memory` to `"disabled"`. For omitted policy with no memory directory, explicitly declare `"disabled"` after checking the selected location. Under omitted or disabled policy, an existing selected directory warrants review even if empty: decide whether to opt in explicitly or reconcile and retire it through a separate approved action. The KB's tracked `Admin/MEMORY.md` is a repository index, not Claude auto-memory, and remains in place.
 
 ## `MEMORY.md`
 

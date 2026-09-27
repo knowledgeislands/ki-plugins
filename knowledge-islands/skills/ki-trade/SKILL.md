@@ -60,5 +60,6 @@ With no recognised operation, show the lifecycle, observation policies, availabl
 
 - This is a process skill, not a universal AUDIT / CONFORM / EDUCATE / REFRESH checker.
 - `unattended` means no response is requested; it still retains the submitted copy until receipt is observable.
+- `unattended` is an itemized observation policy, not a standing intake, automatic transport, execution, acceptance, or publication grant.
 - `completion` observes the receiver's linked local work; it does not create a generic trade-completed state.
 - Installed as a core user skill by `ki bootstrap`; it is not a repository-governance root.

@@ -69,6 +69,8 @@ For `[skills.ki-repo-website-app]`, `assets.not_found_handling` is not optional:
 
 ## 4. The script family
 
+The public hosting alias may resolve through the exact selected-package terminal command, one exact `self:site:<primary>:<operation>` hop, or exact `turbo run <operation>` delegation when root `turbo.json` declares that operation. The hosting seam checks exact `deploy`, `preview`, or `upload` task presence without duplicating `ki-engineering`'s generic task-graph adoption and quality checks. Direct `--cwd` command chains, undeclared or mismatched tasks, additional shell commands, missing aliases, and cyclic forwarding remain invalid.
+
 The selected site's `<site-root>/package.json` owns local operations:
 
 - **`deploy`** → `bunx wrangler deploy`.
@@ -89,7 +91,7 @@ The root `ki:site:build` / `ki:site:dev` aliases and local build/dev operations 
 
 ## 6. The Cloudflare guide — dashboard-owned settings
 
-Part of a deployment's contract lives in the Cloudflare dashboard, where no versioned file can express it: the Workers Builds build command, deploy command, and root directory; custom-domain and redirect choices; whether `workers.dev` serves. A hosted repository therefore carries **`docs/guides/cloudflare.md`** — the one guide for every Cloudflare aspect of that repository.
+Part of a deployment's contract lives in the Cloudflare dashboard, where no versioned file can express it: the Workers Builds build command, deploy command, and root directory; custom-domain and redirect choices; whether `workers.dev` serves. A hosted repository therefore carries **`docs/guides/developer/cloudflare.md`** — the developer and maintainer guide for every Cloudflare aspect of that repository. The exact role stays inside the audience route governed by `ki-guides` rather than bypassing it with a root-level file.
 
 The split rule: **`wrangler.jsonc` owns everything it can express; the guide records only what the dashboard owns**, as the exact values an operator enters — a build-command row, a redirect rule — so the dashboard can be reconstructed from the repository alone and a settings change is visible in review. The guide duplicates nothing the config already declares; it links to `wrangler.jsonc` for the versioned half. When a dashboard setting changes, the guide changes in the same breath — a guide that trails the dashboard is drift, exactly the kind this file exists to catch.
 

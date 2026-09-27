@@ -139,6 +139,47 @@ export default defineConfig({
 })
 ```
 
+### Canonical `turbo.json` for a website workspace repo (§0)
+
+The house shape, taken from `5g-emerge-ibc2026`. Every website repository with a `workspaces` array carries this file with only its own package names substituted, so the task graph reads the same everywhere and a drift is visible as a diff rather than as a judgement.
+
+```jsonc
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "stream",
+  "remoteCache": { "enabled": false }, // explicit intent, never by omission (TURBO-3)
+  "globalDependencies": ["tsconfig.json", "vitest.config.ts"],
+  "tasks": {
+    "build": { "dependsOn": ["^build"], "inputs": ["$TURBO_DEFAULT$"] },
+    "@scope/site#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$"], // a deployable hashes its whole workspace
+      "outputs": ["dist/**"]
+    },
+    "clean": { "cache": false },
+    "deploy": { "cache": false },
+    "ki:site:dev": { "cache": false, "persistent": true },
+    "preview": { "cache": false, "persistent": true },
+    "test": { "dependsOn": ["^typecheck"] },
+    "typecheck": { "dependsOn": ["^typecheck"] }
+  }
+}
+```
+
+Two things make it work, and both live outside this file. Each non-root workspace carries its own `build`, `typecheck` and `test` scripts — the package-local lifecycle surface, not root namespace entries (§2) — so each is a cache unit of its own. The root delegates to the graph rather than chaining workspaces by hand:
+
+```jsonc
+{
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "self:typecheck": "bunx tsc --noEmit && turbo run typecheck"
+  }
+}
+```
+
+Verify adoption by running the build twice: the second run reports `FULL TURBO`. A second run that rebuilds is a graph that is caching nothing, whatever the configuration says.
+
 ### Minimal `[skills.ki-engineering]` table in `.ki.toml`
 
 The table is a conformance marker — its presence declares "the engineering standard applies here". It carries no top-level keys because capabilities (tests, compiled build, env config) are auto-detected from repo markers (`vitest.config.*`, `tsconfig.build.json`, `.env*.example`). The only allowed sub-structure is a `[skills.ki-engineering.checks]` table for deliberate waivers. A repo that fully conforms writes the table header and nothing else.

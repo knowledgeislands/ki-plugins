@@ -17,7 +17,7 @@ Line-by-line criteria for auditing ki-binding. Classifications are derived from 
 
 Portable source validity, client targeting, and non-secret mcporter definition evidence.
 
-- **BIND-1 [M] — mcporter agrees with source definitions** — An explicitly selected mcporter target has the complete non-secret definitions for each mcporter-targeted server. (standards-cross-surface-binding.md)
+- **BIND-1 [M] — mcporter agrees with source definitions** — An explicitly selected mcporter target has the complete non-secret definitions for each mcporter-targeted server, including header names, literal header values, and lifecycle; secret-derived header values are checked only for non-empty presence. (standards-cross-surface-binding.md)
   - _Remediation:_ diagnostic — Select an authoritative mcporter config through MCPORTER_CONFIG, then reconcile its full non-secret targeted definitions through the binding workflow.
 - **BIND-2 [M] — Single MCP source is valid** — The resolved canonical source is a physical file with a closed, portable server schema. (standards-cross-surface-binding.md)
   - _Remediation:_ diagnostic — Correct the canonical MCP source so every server has one valid transport definition and current, intentional client targets.

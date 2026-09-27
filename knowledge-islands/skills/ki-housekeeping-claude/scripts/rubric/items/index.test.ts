@@ -16,7 +16,7 @@ describe('ki-housekeeping-claude rubric catalogue', () => {
       'RUBRIC'
     ])
     const codes = definition.families.flatMap((family) => family.items.map((item) => item.code))
-    expect(codes).toHaveLength(21)
+    expect(codes).toHaveLength(22)
     expect(new Set(codes).size).toBe(codes.length)
   })
 

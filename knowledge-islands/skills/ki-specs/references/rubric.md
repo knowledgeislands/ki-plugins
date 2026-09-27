@@ -72,8 +72,8 @@ Requirement headings, prefixes, and append-only IDs form a coherent registry.
 
 Active requirements state normative behaviour.
 
-- **REQ-1 [M] — requirements carry an RFC-2119 keyword** — Each active requirement contains an uppercase RFC-2119 keyword so its statement is normative and testable. (standards-specs.md)
-  - _Remediation:_ diagnostic — Rewrite the affected requirement with the intended RFC-2119 keyword, then rerun the audit.
+- **REQ-1 [M] — requirement statements carry a BCP 14 keyword** — The opening statement paragraph of each active requirement contains an uppercase BCP 14 keyword. (standards-specs.md)
+  - _Remediation:_ diagnostic — Add the intended BCP 14 keyword to the requirement statement, then rerun the audit.
 
 ## VERIFY — verification hooks
 

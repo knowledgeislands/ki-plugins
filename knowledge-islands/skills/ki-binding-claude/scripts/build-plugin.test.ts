@@ -143,7 +143,7 @@ test('successful publication replaces both generated paths and preserves repo sc
   expect(lstatSync(join(outDir, 'test-plugin', 'skills', 'ki-binding-claude', 'SKILL.md')).isFile()).toBe(true)
   expect(lstatSync(join(outDir, 'test-plugin', 'skills', 'ki-recap', 'SKILL.md')).isFile()).toBe(true)
   expect(lstatSync(join(outDir, 'test-plugin', 'skills', 'ki-authoring', 'SKILL.md')).isFile()).toBe(true)
-  expectPathAbsent(join(outDir, 'test-plugin', 'skills', 'ki-binding-codex'))
+  expectPathAbsent(join(outDir, 'test-plugin', 'skills', 'ki-binding-chatgpt'))
   expectPathAbsent(join(outDir, '.claude-plugin', 'previous-marketplace.txt'))
   expectPathAbsent(join(outDir, 'test-plugin', 'previous-plugin.txt'))
   expect(readFileSync(marker, 'utf8')).toBe('keep\n')

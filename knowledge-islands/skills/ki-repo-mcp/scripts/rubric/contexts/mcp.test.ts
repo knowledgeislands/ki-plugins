@@ -5,8 +5,10 @@ import { join } from 'node:path'
 import type { RubricContextOptions } from '../../shared/rubric.ts'
 import { KI } from '../items/applicability.ts'
 import { CI } from '../items/ci.ts'
+import { DIST } from '../items/distribution.ts'
 import { PKG } from '../items/package.ts'
 import { PROTO } from '../items/protocol.ts'
+import { SHARED } from '../items/shared-code.ts'
 import { TOOL } from '../items/tools.ts'
 import { createMcpSession } from './mcp.ts'
 
@@ -97,6 +99,18 @@ const protocolItem = () => {
   return item.mechanical
 }
 
+const distributionItem = () => {
+  const item = DIST.items.find((candidate) => candidate.code === 'DIST-1')
+  if (!item?.mechanical) throw new Error('DIST-1 mechanical item is missing')
+  return item.mechanical
+}
+
+const sharedItem = () => {
+  const item = SHARED.items.find((candidate) => candidate.code === 'SHARED-1')
+  if (!item?.mechanical) throw new Error('SHARED-1 mechanical item is missing')
+  return item.mechanical
+}
+
 const writeDependencies = (packagePath: string, dependencies: Record<string, string>): void => {
   const packageJson = JSON.parse(readFileSync(packagePath, 'utf8')) as Record<string, unknown>
   packageJson.dependencies = dependencies
@@ -158,6 +172,24 @@ test('symlinked mutation targets remain report-only', () => {
   expect(readFileSync(outsidePackage, 'utf8')).toBe('{}\n')
 })
 
+test('release-owner decisions remain diagnostic and unsafe evidence is never conformed', () => {
+  const { repository } = fixture()
+  const outside = temporaryDirectory('ki-repo-mcp-lock-outside-')
+  writeFileSync(join(outside, 'bun.lock'), 'lockfileVersion = 1\n')
+  symlinkSync(join(outside, 'bun.lock'), join(repository, 'bun.lock'))
+  const session = createMcpSession(options(repository, 'conform'))
+  const { context } = rootContext(session)
+
+  expect(distributionItem().conform).toBeUndefined()
+  expect(distributionItem().audit.run(DIST.selectContext(context))).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ status: 'VIOLATION', subject: 'bun.lock' }),
+      expect.objectContaining({ status: 'VIOLATION', subject: 'package.json' })
+    ])
+  )
+  expect(session.proposal()).toEqual({ writes: [] })
+})
+
 test('unrelated repositories route only the applicability family', () => {
   const repository = temporaryDirectory('ki-repo-mcp-unrelated-')
   const session = createMcpSession(options(repository, 'audit'))
@@ -165,6 +197,78 @@ test('unrelated repositories route only the applicability family', () => {
 
   expect(subject.families).toEqual(['KI'])
   expect(applicabilityItem().audit.run(KI.selectContext(context))[0]?.status).toBe('NOT_APPLICABLE')
+})
+
+test('declared shared-code profile proposes only missing managed files', () => {
+  const { repository, config } = fixture()
+  writeFileSync(config, '[skills.ki-repo]\n[skills.ki-repo-mcp]\nprofile = "modern-v2-core"\n')
+  writeFileSync(join(repository, 'src', 'utils', 'errors.ts'), 'export const errMessage = String\n')
+  for (const file of ['access-level.ts', 'annotations.ts', 'results.ts'])
+    rmSync(join(repository, 'src', 'utils', file), { force: true })
+  const initial = createMcpSession(options(repository, 'conform'))
+  const initialContext = rootContext(initial).context
+  sharedItem().conform?.run(SHARED.selectContext(initialContext))
+  for (const write of initial.proposal().writes) writeFileSync(join(repository, write.path), write.content)
+  rmSync(join(repository, 'src', 'utils', 'access-level.ts'))
+  rmSync(join(repository, 'src', 'utils', 'annotations.ts'))
+  const session = createMcpSession(options(repository, 'conform'))
+  const { context } = rootContext(session)
+
+  sharedItem().conform?.run(SHARED.selectContext(context))
+
+  expect(
+    session
+      .proposal()
+      .writes.map((write) => write.path)
+      .sort()
+  ).toEqual(['src/utils/access-level.ts', 'src/utils/annotations.ts'])
+  expect(sharedItem().audit.run(SHARED.selectContext(context))).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ status: 'VIOLATION', subject: 'src/utils/access-level.ts' }),
+      expect.objectContaining({ status: 'VIOLATION', subject: 'src/utils/annotations.ts' }),
+      expect.objectContaining({ status: 'PASS', subject: 'src/utils/results.ts' })
+    ])
+  )
+})
+
+test('shared-code profile refuses all writes when managed bytes drift', () => {
+  const { repository, config } = fixture()
+  writeFileSync(config, '[skills.ki-repo]\n[skills.ki-repo-mcp]\nprofile = "legacy-v1-core"\n')
+  writeFileSync(join(repository, 'src', 'utils', 'access-level.ts'), 'modified\n')
+  rmSync(join(repository, 'src', 'utils', 'annotations.ts'))
+  rmSync(join(repository, 'src', 'utils', 'results.ts'), { force: true })
+  writeFileSync(join(repository, 'src', 'utils', 'local.ts'), 'export const local = true\n')
+  writeFileSync(join(repository, 'src', 'utils', 'old.ts'), '// @ki-managed ki-repo-mcp profile=retired version=1\n')
+  const session = createMcpSession(options(repository, 'conform'))
+  const { context } = rootContext(session)
+
+  sharedItem().conform?.run(SHARED.selectContext(context))
+
+  expect(session.proposal().writes).toEqual([])
+  expect(sharedItem().audit.run(SHARED.selectContext(context))).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ status: 'VIOLATION', subject: 'src/utils/access-level.ts' }),
+      expect.objectContaining({ status: 'VIOLATION', subject: 'src/utils/old.ts' }),
+      expect.objectContaining({ status: 'INFO' })
+    ])
+  )
+})
+
+test('shared-code profile rejects missing repository-owned seams', () => {
+  const { repository, config } = fixture()
+  writeFileSync(config, '[skills.ki-repo]\n[skills.ki-repo-mcp]\nprofile = "modern-v2-core"\n')
+  rmSync(join(repository, 'src', 'utils', 'errors.ts'), { force: true })
+  const session = createMcpSession(options(repository, 'conform'))
+  const { context } = rootContext(session)
+
+  sharedItem().conform?.run(SHARED.selectContext(context))
+
+  expect(session.proposal().writes).toEqual([])
+  expect(sharedItem().audit.run(SHARED.selectContext(context))).toContainEqual({
+    status: 'VIOLATION',
+    message: 'Required repository-owned seam is missing or unsafe: src/utils/errors.ts.',
+    subject: 'src/utils/errors.ts'
+  })
 })
 
 test('result-envelope checks bind each helper use to its own source file', () => {

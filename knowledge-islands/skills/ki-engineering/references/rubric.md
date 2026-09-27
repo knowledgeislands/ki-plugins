@@ -20,6 +20,7 @@ Line-by-line criteria for auditing ki-engineering. Classifications are derived f
 - [SYNC — Dependency synchronisation](#sync--dependency-synchronisation)
 - [DEPS — Dependency freshness](#deps--dependency-freshness)
 - [GEN — Generated surfaces](#gen--generated-surfaces)
+- [TURBO — Workspace task graph](#turbo--workspace-task-graph)
 - [DESIGN — Code design](#design--code-design)
 - [REVIEW — Change-aware consistency review](#review--change-aware-consistency-review)
 - [TEST — Tests](#test--tests)
@@ -205,7 +206,20 @@ Available dependency updates are surfaced and deliberately applied.
 Managed discovery surfaces carry consistent tool exclusions.
 
 - **GEN-1 [M] — Managed discovery surfaces share exclusions** — Known generated or managed discovery surfaces have matching Biome, Knip, and Markdown exclusions, and no legacy `.ki` runtime exclusion remains. (standards-engineering.md)
-  - _Remediation:_ diagnostic — Align the Engineering-owned Biome and Knip exclusions deliberately, use ki-authoring for its wholly owned `.rumdl.toml`, remove legacy runtime exclusions, then rerun the audit.
+  - _Remediation:_ diagnostic — Align the Engineering-owned Biome and Knip exclusions deliberately, use ki-authoring for its wholly owned `.rumdl.toml`, remove legacy runtime exclusions, then rerun the audit. Knip may call managed-surface ignore entries unused configuration hints; that expected hint does not override the cross-tool GEN-1 contract.
+
+## TURBO — Workspace task graph
+
+→ [standard](standards-engineering.md)
+
+Turborepo adoption, task correspondence, and cache boundaries for Bun workspaces.
+
+- **TURBO-1 [M] — Task-graph adoption** — A repository declaring workspaces has a readable turbo.json with a non-empty task graph. (standards-engineering.md)
+  - _Remediation:_ diagnostic — Adopt or repair the Turborepo task graph described by the engineering standard, then rerun the audit.
+- **TURBO-2 [M] — Task correspondence** — Every workspace declares the lifecycle scripts it has, build included where it emits output, and configured Turborepo tasks correspond in both directions. (standards-engineering.md)
+  - _Remediation:_ diagnostic — Adopt or repair the Turborepo task graph described by the engineering standard, then rerun the audit.
+- **TURBO-3 [M] — Cache boundaries** — Remote caching is explicit, local state is ignored, workspace packages stay out of root dependencies, and deployable builds hash their whole workspace. (standards-engineering.md)
+  - _Remediation:_ diagnostic — Adopt or repair the Turborepo task graph described by the engineering standard, then rerun the audit.
 
 ## DESIGN — Code design
 

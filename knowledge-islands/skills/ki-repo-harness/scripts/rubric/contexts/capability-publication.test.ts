@@ -168,6 +168,27 @@ test('fails closed when applicability collection invariants drift', () => {
     expect(prepareCapabilityPublication(undefined, sources)).toMatchObject({ state: 'unsafe' })
 })
 
+test('a non-KI provider publishes its own capabilities without republishing the KI baseline', () => {
+  const sources = [source('hnr-backend'), source('hnr-review', { kind: 'process' })]
+  const draft = prepareCapabilityPublication('# Skills\n', sources, 'hnr')
+  expect(draft.state).toBe('missing')
+  expect(draft.issues).toEqual([])
+  expect(draft.counts).toEqual({ total: 2, governance: 1, process: 1 })
+  expect(prepareCapabilityPublication(draft.merged, sources, 'hnr').state).toBe('in-sync')
+})
+
+test('a non-KI provider still rejects invalid applicability and detector ownership', () => {
+  const invalid = [
+    [source('hnr-backend', { applicability: 'baseline' })],
+    [source('hnr-backend', { applicability: 'invocation-only' })],
+    [source('hnr-review', { kind: 'process', applicability: 'declaration-only' })],
+    [source('hnr-backend', { detects: ['hnr-other'] })],
+    [source('hnr-backend', { dependencies: ['hnr-missing'] })],
+    [{ path: 'skills/hnr-backend/SKILL.md', content: '# Missing metadata\n' }]
+  ]
+  for (const sources of invalid) expect(prepareCapabilityPublication(undefined, sources, 'hnr').state).toBe('unsafe')
+})
+
 test('rejects unknown dependencies and ambiguous marker layouts', () => {
   expect(
     prepareCapabilityPublication(undefined, estate([source('ki-example', { dependencies: ['ki-missing'] })]))

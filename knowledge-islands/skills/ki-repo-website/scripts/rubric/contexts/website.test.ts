@@ -115,6 +115,55 @@ describe('website core context', () => {
   })
 })
 
+test('accepts only an exact Turborepo task declared by the root task graph', () => {
+  const repository = root()
+  mkdirSync(join(repository, 'apps', 'site'), { recursive: true })
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-website]\n')
+  writeFileSync(
+    join(repository, 'apps', 'site', 'package.json'),
+    JSON.stringify({ scripts: { build: 'build', 'ki:site:dev': 'dev', clean: 'clean' } })
+  )
+  writeFileSync(join(repository, '.gitignore'), 'apps/site/dist/\n')
+  const rootPackage = join(repository, 'package.json')
+  const turbo = join(repository, 'turbo.json')
+  const buildOutcomes = () => {
+    const context = createWebsiteCoreSession(options(repository)).subjects[0]?.context()
+    if (!context) throw new Error('missing website context')
+    return SITE.items.find((item) => item.code === 'SITE-4')?.mechanical?.audit.run(context) ?? []
+  }
+
+  writeFileSync(
+    rootPackage,
+    JSON.stringify({
+      scripts: {
+        'ki:site:build': 'turbo run build',
+        'ki:site:dev': 'bun run --cwd apps/site ki:site:dev',
+        'ki:site:clean': 'bun run --cwd apps/site clean'
+      }
+    })
+  )
+  writeFileSync(turbo, '{\n// root task graph\n"tasks":{"build":{}}\n}\n')
+  expect(buildOutcomes()).not.toContainEqual(expect.objectContaining({ status: 'VIOLATION' }))
+
+  writeFileSync(turbo, '{"tasks":{"clean":{}}}\n')
+  expect(buildOutcomes()).toContainEqual(expect.objectContaining({ status: 'VIOLATION' }))
+
+  writeFileSync(
+    rootPackage,
+    JSON.stringify({ scripts: { 'ki:site:build': 'turbo run clean', 'ki:site:dev': 'dev', 'ki:site:clean': 'clean' } })
+  )
+  expect(buildOutcomes()).toContainEqual(expect.objectContaining({ status: 'VIOLATION' }))
+
+  writeFileSync(
+    rootPackage,
+    JSON.stringify({
+      scripts: { 'ki:site:build': 'turbo run build && echo chained', 'ki:site:dev': 'dev', 'ki:site:clean': 'clean' }
+    })
+  )
+  writeFileSync(turbo, '{"tasks":{"build":{}}}\n')
+  expect(buildOutcomes()).toContainEqual(expect.objectContaining({ status: 'VIOLATION' }))
+})
+
 test('diagnoses an explicitly materialised apps/site default', () => {
   const repository = root()
   writeFileSync(join(repository, '.ki.toml'), '[skills.ki-repo-website]\nsite-root = "apps/site"\n')

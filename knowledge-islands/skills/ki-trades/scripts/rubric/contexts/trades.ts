@@ -18,7 +18,7 @@ const SUBTYPE = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 const UTC_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
 const FULL_COMMIT = /^[0-9a-f]{40}$/
 const TRADE_KINDS = ['work', 'knowledge'] as const
-const OBSERVATION_POLICIES = ['receipt', 'decision', 'completion'] as const
+const OBSERVATION_POLICIES = ['unattended', 'receipt', 'decision', 'completion'] as const
 const DECISION_STATUSES = [
   'unconsidered',
   'in_progress',
@@ -1082,7 +1082,8 @@ const parseRecord = (root: string, path: string, direction: Direction, channels:
       subject: path
     })
   if (kind && observation) {
-    const permitted = kind === 'knowledge' ? ['receipt'] : ['decision', 'completion']
+    const permitted =
+      kind === 'knowledge' ? ['unattended', 'receipt'] : ['unattended', 'receipt', 'decision', 'completion']
     if (!permitted.includes(observation))
       outcomes.push({
         status: 'VIOLATION',
@@ -1112,7 +1113,7 @@ const remoteRecord = (root: string, path: string, direction: Direction): TradeRe
 
 const releaseEligible = (record: TradeRecord, receiptVisible: boolean): boolean => {
   if (!record.observation) return false
-  if (record.observation === 'receipt') return receiptVisible
+  if (record.observation === 'unattended' || record.observation === 'receipt') return receiptVisible
   if (!record.decisionStatus || !TERMINAL_DECISION_STATUSES.has(record.decisionStatus)) return false
   if (record.observation === 'decision') return true
   // Completion is selected-adapter evidence, not a consequence of applied/adopted status,

@@ -3,12 +3,14 @@ import { createMcpSession, type McpRubricContext } from '../contexts/mcp.ts'
 import { KI } from './applicability.ts'
 import { CI } from './ci.ts'
 import { CFG } from './configuration.ts'
+import { DIST } from './distribution.ts'
 import { DOC } from './documentation.ts'
 import { LAY } from './layout.ts'
 import { PKG } from './package.ts'
 import { PROTO } from './protocol.ts'
 import { RUBRIC } from './publication.ts'
 import { SCR } from './scripts.ts'
+import { SHARED } from './shared-code.ts'
 import { TEST } from './testing.ts'
 import { TOOL } from './tools.ts'
 import { UTIL } from './utilities.ts'
@@ -29,5 +31,5 @@ export default {
     'ki:test:smoke'
   ],
   createSession: createMcpSession,
-  families: [KI, LAY, DOC, CFG, UTIL, TEST, TOOL, PROTO, PKG, SCR, CI, RUBRIC]
+  families: [KI, LAY, DOC, CFG, UTIL, SHARED, TEST, TOOL, PROTO, PKG, SCR, CI, DIST, RUBRIC]
 } satisfies SkillRubricDefinition<McpRubricContext>

@@ -6,6 +6,15 @@ The authoritative and community sources behind the [Workspace MCP Standard](stan
 
 Two layers feed the standard: the **official MCP specification** (what every conformant server must do) and the **in-house workspace convention** (the opinionated shape the six sibling repos share on top of the spec). A finding is only "spec-driven" if it traces to the Authoritative table; everything else is house style and should be labelled as such so it is not mistaken for a protocol requirement.
 
+## Contents
+
+- [Authoritative MCP sources](#authoritative-official-mcp-spec)
+- [Community sources](#community)
+- [In-house evidence](#in-house-the-workspace-convention)
+- [Source-distribution sources](#source-distribution)
+- [Last review](#last-review)
+- [Previous review](#previous-review)
+
 ## Authoritative (official MCP spec)
 
 The spec is versioned by date. Track the **latest released** version and note the current one here.
@@ -55,6 +64,18 @@ The standard is defined as the **majority shape** across the six sibling repos u
 
 ※ The per-repo statement of its own invariants — the standard tracks these and flags drift.
 
+## Source distribution
+
+These primary sources ground the separate source-install contract. They do not make package or registry publication mandatory.
+
+| Tag | Source | Governs | Last reviewed |
+| --- | ------ | ------- | ------------- |
+| SEMVER | [Semantic Versioning 2.0.0][semver] | Version grammar and precedence | 2026-09-24 |
+| GIT-TAG | [Git tag documentation][git-tag] | Annotated release tags and object identity | 2026-09-24 |
+| GITHUB-RELEASE | [GitHub release management][github-release] | Owner-designated stable release marker | 2026-09-24 |
+| BUN-INSTALL | [Bun install documentation][bun-install] | Frozen lockfile installation | 2026-09-24 |
+| BUN-LOCK | [Bun lockfile documentation][bun-lock] | Committed dependency evidence | 2026-09-24 |
+
 ## Last review
 
 REFRESH last ran **2026-09-02** for the profile reanchor. The official specification index still resolves to **2026-07-28**, its changelog still requires `server/discover` and result discriminators, and the TypeScript SDK release surface still publishes the v1 SDK alongside the v2 server and client package families.
@@ -92,3 +113,13 @@ TOOLS/SEC/AUTH and the Community/In-house rows were not re-fetched this pass (fi
 [auth]: https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization
 [annotations]: https://blog.modelcontextprotocol.io/posts/2026-03-16-tool-annotations/
 [csi]: https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf
+
+[semver]: https://semver.org/
+
+[git-tag]: https://git-scm.com/docs/git-tag
+
+[github-release]: https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository
+
+[bun-install]: https://bun.sh/docs/pm/cli/install
+
+[bun-lock]: https://bun.sh/docs/pm/lockfile

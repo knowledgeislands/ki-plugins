@@ -1,6 +1,6 @@
 export const REVIEW_PACKET_HEADINGS = [
   'Delivered',
-  'Summary of changes',
+  'Change Summary',
   'Verification',
   'Outstanding concerns',
   'Post-change review',

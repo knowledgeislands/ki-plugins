@@ -68,7 +68,7 @@ Workers Static Assets hosting standard.
   - _Review prompt:_ Confirm audits, conformance, local builds, tests, and dry evaluation inspect ki:site:upload without executing Wrangler; only an explicitly authorised operator or Workers Builds service may supply Cloudflare credentials and create the remote version.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Revise the hosting design through the responsible site owner, record a named gap, or record an explicit justified exclusion.
-- **WCF-26 [M + J] — the Cloudflare guide** — A tracked guide at docs/guides/cloudflare.md records the dashboard-owned settings — Workers Builds commands, domains, redirects — that wrangler.jsonc cannot express. (standards-cloudflare-hosting.md#6-the-cloudflare-guide--dashboard-owned-settings)
+- **WCF-26 [M + J] — the Cloudflare guide** — A tracked guide at docs/guides/developer/cloudflare.md records the dashboard-owned settings — Workers Builds commands, domains, redirects — that wrangler.jsonc cannot express. (standards-cloudflare-hosting.md#6-the-cloudflare-guide--dashboard-owned-settings)
   - _Remediation:_ diagnostic — Correct the evidenced Cloudflare hosting issue through the responsible site owner; hosted conform does not infer deployment or security intent.
   - _Evidence scope:_ The Cloudflare Worker, static assets, deployment configuration, and evidence named by this criterion.
   - _Review prompt:_ Confirm the guide records the exact dashboard-owned values — Workers Builds build/deploy commands and root directory, domain and redirect choices, workers.dev — matching the live dashboard, and duplicates nothing wrangler.jsonc already declares.

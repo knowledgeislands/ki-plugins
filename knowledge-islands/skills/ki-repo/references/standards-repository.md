@@ -44,6 +44,10 @@ Every repo carries these at the root. A local audit reads the selected checkout'
 
 **Root orientation for a multi-runtime repo.** When a repo's declared [`supported_runtimes`](standards-configuration.md#harnesses-and-the-skills-namespace) includes a runtime other than `claude-code` (e.g. `chatgpt-codex`), the repo's orientation should live in a literal physical root `AGENTS.md` — not an `@`-import index or a redirect to `CLAUDE.md`, since a non-Claude-Code runtime can't resolve that syntax — with any root `CLAUDE.md` containing a bare `@AGENTS.md` import line and staying a thin, Claude-only appendix. `RUNTIMES-4` reports violations as WARN while the existing estate is conformed; promotion to FAIL requires a separately reviewed conformance boundary. The check is root-only and does not infer a violation from nested orientation files. A repo whose `supported_runtimes` is `["claude-code"]` only has no reason to split: `CLAUDE.md` alone, with its own topic-file imports, is sufficient.
 
+**Claude orientation location.** `.claude/CLAUDE.md` is not an orientation location, at repository root or within a nested package. `RUNTIMES-5` fails on each such repository file independently of the declared runtimes. Move shared guidance into root `AGENTS.md` and Claude-only details into root `CLAUDE.md` after reviewing their scope; the audit does not move or delete either file.
+
+**Orientation records local facts and points at the skill.** A root `AGENTS.md` (or `CLAUDE.md` where it is the only orientation file) carries what is true of this repository and nothing a declared skill already owns: its subject, its paths, its published surface, its own scripts, and the working rules that are genuinely local. A restated skill rule is a second copy of a governed contract in a file nothing checks, so it goes stale silently and then contradicts the skill it was copied from — and because orientation is always in context, the stale copy is the one an agent acts on. Where orientation needs to invoke a governed rule, name the skill or the Decision Record and stop there rather than summarising its content. `ki-repo` reviews this as a governance lens rather than a mechanical check: judging whether a sentence restates a contract needs the skill's text, not a pattern match.
+
 **Repository-local ki-self projection.** A repository may author a local `ki-self` at `.agents/skills/ki-self/`; this is its one canonical committed source and Codex reads it directly. It is repository-specific governance, not a bootstrap payload or installed-harness capability. If `claude-code` is declared in `supported_runtimes`, `.claude/skills/ki-self` must be a non-broken relative symbolic link resolving to that canonical source. If Claude Code is not declared, that projection must be absent. Do not maintain a copied Claude skill directory. This check is conditional because `ki-self` itself remains optional; once present, its runtime projection must match the declared support surface.
 
 **Runtime skill ignore contract.** `.gitignore` follows the declared `supported_runtimes`: `claude-code` requires `.claude/skills/*`; `chatgpt-codex` requires `.agents/skills/*`. Every repository re-includes the reserved canonical `.agents/skills/ki-self/` source with `!.agents/skills/ki-self/` and `!.agents/skills/ki-self/**`, regardless of the declared runtime set, so it remains trackable whenever a repository elects to author it. These rules keep bootstrap-created links out of history without excluding the canonical local source.
@@ -125,7 +129,7 @@ For every repo on github.com:
 | Description | Equals declared `ki-repo` `description`; synced with `package.json` where present | One-line identity on GitHub. |
 | Merge methods | **Squash only** — merge-commit off, rebase off | One commit per PR; clean, linear `main`. |
 | Auto-delete branch | On | No stale merged branches. |
-| Issues | On | The tracker. |
+| Issues | Off unless `[skills.ki-work-github-issues]` is declared | Follows the selected work adapter. |
 | Wiki | Off | Docs live in-repo. |
 | Projects | Off | Unused. |
 | Discussions | Off | Unused. |
@@ -135,6 +139,8 @@ Public repos additionally carry **topics** — per-repo discovery metadata, not 
 **`main` is open by default** — no branch protection, so direct pushes are allowed and no PR, status check, or linear-history rule gates it. Squash-only merge (above) keeps history tidy for PRs that do happen, but nothing forces work through a PR. A repo that _wants_ a protected `main` overrides the `branch-protection` check on (see [Per-repo overrides](#per-repo-overrides)) — protection is then `main`: require a PR (0 approvals), the `build` status check, linear history, no force-push, no deletion, admins **not** enforced.
 
 ### Package.json identity & metadata
+
+`bugs` is adapter-selected metadata, not a generic GitHub default. It is absent unless the root `[skills.ki-work-github-issues]` table is declared; when declared, `bugs.url` is exactly `https://github.com/<owner>/<repository>/issues`.
 
 The engineering coverage manifest assigns the `package.json` **identity & metadata** keys to this skill (engineering owns the closed key set; this skill owns their content). Where the repo has a `package.json`, these are checked:
 
@@ -147,7 +153,7 @@ The engineering coverage manifest assigns the `package.json` **identity & metada
 | `license`     | matches the declared `license` id (`UNLICENSED` if proprietary) — above | FAIL      |
 | `private`     | `true` iff the repo is private                                          | FAIL      |
 | `repository`  | carries a `url`; should reference the repo's `owner/name`               | FAIL/WARN |
-| `bugs`        | carries a `url`                                                         | WARN      |
+| `bugs`        | absent unless `ki-work-github-issues` is declared; then canonical URL   | FAIL      |
 | `homepage`    | present                                                                 | WARN      |
 | `keywords`    | non-empty array                                                         | WARN      |
 
@@ -189,6 +195,8 @@ branch-protection = true   # default off — protect `main` on this repo
 
 ## Per-repo overrides
 
+GitHub Issues is not an override. The root `[skills.ki-work-github-issues]` declaration is the authority: absent means Issues disabled and no `package.json` `bugs`; present means Issues enabled and the canonical GitHub Issues URL.
+
 The rubric carries the **org default** for every check. Most are bedrock — file presence, default branch, description, merge policy, auto-delete-branch, visibility, Dependabot — and aren't negotiable. License is bedrock and **declared, not inferred from visibility**: a repo names its license as an SPDX id in `[skills.ki-repo]` `license` (default MIT), and the auditor checks that the live GitHub license (`license`), a present LICENSE file (`license-file`), and `package.json` `"license"` (`package-license`) all match it. A proprietary declaration (`UNLICENSED`/`proprietary`) expects no recognised OSI license on GitHub — including GitHub's `unlicensed` classification for a custom copyright licence — and `"UNLICENSED"` in `package.json`. Visibility is a separate, independent check — a private repo may be MIT, a public repo proprietary. The rest are **overridable**: a repo flips one for itself with a single boolean in its `[skills.ki-repo.checks]` table, where `true` = enforce this check and `false` = don't. A check you omit takes the org default, so **a fully-conforming repo writes no overrides at all**. The auditor reports every active override as a `note` (never a failure), so a deliberate departure stays visible without reading as drift.
 
 | Check               | Org default | When enforced, the auditor requires…                |
@@ -196,7 +204,6 @@ The rubric carries the **org default** for every check. Most are bedrock — fil
 | `branch-protection` | **off**     | `main`: enforces the protection set ‡               |
 | `wiki`              | on          | Wiki disabled.                                      |
 | `projects`          | on          | Projects disabled.                                  |
-| `issues`            | on          | Issues enabled.                                     |
 | `topics`            | on          | _(public)_ non-empty topics, synced with keywords †. |
 | `secret-scanning`   | on          | _(public)_ secret scanning enabled.                 |
 | `push-protection`   | on          | _(public)_ secret-scanning push protection enabled. |
@@ -241,12 +248,15 @@ public=(mcp-housekeeping-claude mcp-git-audit mcp-gsuite mcp-kb-fs mcp-ki-repo-k
 # Visibility is verified (declared vs live), not set here; change actual visibility deliberately:
 #   gh repo edit knowledgeislands/<name> --visibility public|private --accept-visibility-change-consequences
 
-# Layer 2 — every repo: squash-only + auto-delete branch + Wiki/Projects off
+# Layer 2 — every repo: squash-only + auto-delete branch + Issues/Wiki/Projects off
 for r in $all; do
   gh repo edit "knowledgeislands/$r" \
     --enable-merge-commit=false --enable-rebase-merge=false --enable-squash-merge=true \
-    --delete-branch-on-merge=true --enable-wiki=false --enable-projects=false
+    --delete-branch-on-merge=true --enable-issues=false --enable-wiki=false --enable-projects=false
 done
+
+# Re-enable Issues only where .ki.toml declares [skills.ki-work-github-issues].
+gh repo edit knowledgeislands/<github-issues-repo> --enable-issues=true
 
 # Layer 2 — descriptions and topics (both per repo; topics public-only).
 # Topics mirror the repo's package.json "keywords" — set both from the same list.
@@ -271,6 +281,10 @@ for r in $public; do
     | gh api -X PATCH "repos/knowledgeislands/$r" --input -
 done
 ```
+
+Booleans in `gh api` need `-F`, not `-f`. `-f has_projects=false` sends the string `"false"`, which the API accepts and ignores: the call succeeds, the response still reports `true`, and the setting is silently unchanged. The `-F allow_update_branch=true` above is the correct form, and the difference is invisible unless the response is read back.
+
+Syncing a description is a cascade rather than a single edit. `.ki.toml`, the root `package.json` and any workspace member `package.json` each carry one, and the audit blocks on the next one as soon as the previous is fixed, so expect to walk all of them in one pass rather than to finish after the first.
 
 Layer 1 files are added with a normal commit, pushed straight to `main` (it is unprotected) or via a PR if you prefer.
 

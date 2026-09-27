@@ -4,7 +4,7 @@ The canonical shape shared by every stdio MCP server in the `knowledgeislands/` 
 
 ## Applicability
 
-The standard applies when a repository either declares `[skills.ki-repo-mcp]` in `.ki.toml` or carries the structural marker `src/mcp-server/`. Neither signal means the standard is not applicable and the hosted audit reports one `NA`; either signal activates the complete audit. A declaration with missing structure remains an applicable, failing MCP repository, and MCP structure without a declaration remains applicable and is audited for the missing marker.
+The standard applies only when a repository declares `[skills.ki-repo-mcp]` in `.ki.toml`. The optional `profile` key selects a supported whole-file projection from the [MCP shared-code standard](standards-mcp-shared-code.md); an absent key leaves existing utilities repository-owned. Detected MCP-shaped source remains coverage evidence for `ki-repo`, not selection authority for this skill.
 
 ## Contents
 

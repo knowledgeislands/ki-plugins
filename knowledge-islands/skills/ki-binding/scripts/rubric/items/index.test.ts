@@ -2,8 +2,9 @@ import { afterEach, expect, test } from 'bun:test'
 import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { ServerEntry } from '../../shared/binding.ts'
 import type { RubricFamily } from '../../shared/rubric.ts'
-import { type BindingRubricContext, createBindingSession } from '../contexts/binding.ts'
+import { type BindingRubricContext, createBindingSession, mcporterMatches } from '../contexts/binding.ts'
 import catalogue from './index.ts'
 
 const temporaryDirectories: string[] = []
@@ -82,7 +83,7 @@ test('the session honours an explicit MCP source override', () => {
   expect(context.source).toBe(source)
   expect(context.sourceState).toMatchObject({ kind: 'valid' })
 })
-test('the closed schema rejects unsupported fields and missing URL client transport', () => {
+test('the closed schema rejects misplaced or unsupported fields and missing URL client transport', () => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-binding-repository-'))
   const userHome = mkdtempSync(join(tmpdir(), 'ki-binding-home-'))
   temporaryDirectories.push(repository, userHome)
@@ -109,7 +110,94 @@ test('the closed schema rejects unsupported fields and missing URL client transp
     userHome,
     configuration: {}
   }).subjects[0]?.context() as BindingRubricContext
+  expect(context.sourceState).toMatchObject({ kind: 'invalid', message: expect.stringContaining('stdio fields') })
+  writeFileSync(
+    source,
+    'mcpServers:\n  - name: ki-stdio\n    clients: [mcporter]\n    command: node\n    unknown: true\n'
+  )
+  context = createBindingSession({
+    mode: 'audit',
+    repository,
+    userHome,
+    configuration: {}
+  }).subjects[0]?.context() as BindingRubricContext
   expect(context.sourceState).toMatchObject({ kind: 'invalid', message: expect.stringContaining('unsupported field') })
+  writeFileSync(
+    source,
+    'mcpServers:\n  - name: ki-url\n    clients: [mcporter]\n    url: https://example.invalid/mcp\n    transports:\n      mcporter: http\n    lifecycle: forever\n'
+  )
+  context = createBindingSession({
+    mode: 'audit',
+    repository,
+    userHome,
+    configuration: {}
+  }).subjects[0]?.context() as BindingRubricContext
+  expect(context.sourceState).toMatchObject({ kind: 'invalid', message: expect.stringContaining('lifecycle') })
+  writeFileSync(
+    source,
+    'mcpServers:\n  - name: ki-url\n    clients: [mcporter]\n    url: https://example.invalid/mcp\n    transports:\n      mcporter: http\n    headers:\n      Authorization:\n        op: vault/item/field\n'
+  )
+  context = createBindingSession({
+    mode: 'audit',
+    repository,
+    userHome,
+    configuration: {}
+  }).subjects[0]?.context() as BindingRubricContext
+  expect(context.sourceState).toMatchObject({ kind: 'invalid', message: expect.stringContaining('headers') })
+})
+test('definitions accept typed headers and bounded lifecycle overrides', () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-binding-repository-'))
+  const userHome = mkdtempSync(join(tmpdir(), 'ki-binding-home-'))
+  temporaryDirectories.push(repository, userHome)
+  const source = join(userHome, 'mcp-servers.yaml')
+  process.env.KI_MCP_SOURCE = source
+  writeFileSync(
+    source,
+    'mcpServers:\n  - name: ki-url\n    clients: [mcporter]\n    url: https://example.invalid/mcp\n    transports:\n      mcporter: http\n    headers:\n      Authorization:\n        op: op://vault/item/field\n      X-Literal: literal-value\n    lifecycle: ephemeral\n  - name: ki-stdio\n    clients: [mcporter]\n    command: node\n    lifecycle: keep-alive\n'
+  )
+  const context = createBindingSession({
+    mode: 'audit',
+    repository,
+    userHome,
+    configuration: {}
+  }).subjects[0]?.context() as BindingRubricContext
+  expect(context.sourceState).toMatchObject({
+    kind: 'valid',
+    entries: [
+      {
+        headers: { Authorization: { op: 'op://vault/item/field' }, 'X-Literal': 'literal-value' },
+        lifecycle: 'ephemeral'
+      },
+      {
+        lifecycle: 'keep-alive'
+      }
+    ]
+  })
+})
+test('mcporter comparison verifies resolved headers and explicit lifecycle overrides', () => {
+  const entry: ServerEntry = {
+    name: 'ki-url',
+    clients: ['mcporter'],
+    url: 'https://example.invalid/mcp',
+    transports: { mcporter: 'http' },
+    headers: { Authorization: { op: 'op://vault/item/field' } },
+    lifecycle: 'ephemeral'
+  }
+  expect(
+    mcporterMatches(entry, {
+      url: 'https://example.invalid/mcp',
+      headers: { Authorization: 'resolved-secret' },
+      lifecycle: 'ephemeral'
+    })
+  ).toBe(true)
+  expect(
+    mcporterMatches(entry, {
+      url: 'https://example.invalid/mcp',
+      headers: { Authorization: 'resolved-secret' },
+      lifecycle: 'keep-alive'
+    })
+  ).toBe(false)
+  expect(mcporterMatches(entry, { url: 'https://example.invalid/mcp', lifecycle: 'ephemeral' })).toBe(false)
 })
 test('missing selected targets stay unavailable and wrong definitions violate', () => {
   const repository = mkdtempSync(join(tmpdir(), 'ki-binding-repository-'))

@@ -4,7 +4,7 @@ Worked examples for distinguishing the source-harness container from its install
 
 ## Source-harness layout
 
-The five shelves stay visible in source even when a shelf is intentionally empty:
+The four shelves stay visible in source even when a shelf is intentionally empty:
 
 ```text
 skills/
@@ -16,8 +16,6 @@ subagents/
   README.md
   governance/
     ki-skills-lead.md
-mcp/
-  README.md
 evals/
   README.md
   scenarios/
@@ -30,6 +28,8 @@ ROADMAP.md
 ```
 
 Semantic grouping beneath `skills/` is valid. The capability identity still comes from the leaf directory and its `SKILL.md` name.
+
+MCP servers remain in independently released `mcp-*` repositories and do not occupy a source-harness shelf.
 
 ## Installed compatible payload
 

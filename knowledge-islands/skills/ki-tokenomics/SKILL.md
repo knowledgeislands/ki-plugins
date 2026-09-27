@@ -12,7 +12,7 @@ argument-hint: 'audit | conform | help | educate | refresh'
 
 # Knowledge Islands tokenomics
 
-`ki-tokenomics` owns the portable policy for the context a runtime carries on every turn. The policy is deliberately separate from inspecting a vendor's files: `ki-tokenomics-claude` and `ki-tokenomics-codex` compose this skill and supply their documented, bounded runtime evidence.
+`ki-tokenomics` owns the portable policy for the context a runtime carries on every turn. The policy is deliberately separate from inspecting a vendor's files: `ki-tokenomics-claude` and `ki-tokenomics-chatgpt` compose this skill and supply their documented, bounded runtime evidence.
 
 The standing surface is the selected repository's instructions, memory, installed-skill descriptions, MCP tool definitions, and settings or output configuration. An audit attributes each measured cost to its repository or runtime-user layer and routes an artifact fix to its owner: `ki-repo-mcp` for an MCP server, `ki-skills` for a skill description, and the relevant runtime adapter for runtime configuration.
 
@@ -65,7 +65,7 @@ Refresh only in `ki-agentic-harness`; from an installed copy, stop and redirect 
 
 ## Composition
 
-- `ki-tokenomics-claude` and `ki-tokenomics-codex` compose this policy with their own documented runtime evidence. They do not share fallback paths or inspect the other runtime.
+- `ki-tokenomics-claude` and `ki-tokenomics-chatgpt` compose this policy with their own documented runtime evidence. They do not share fallback paths or inspect the other runtime.
 - `ki-repo-mcp` owns MCP-server design; `ki-skills` owns skill descriptions; a runtime adapter owns its instruction, memory, and settings evidence.
 
 ## Notes

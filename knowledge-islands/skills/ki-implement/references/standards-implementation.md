@@ -50,7 +50,7 @@ Run the item's stated verification after integration and inspect its actual resu
 For a roadmap record, insert `## Review` immediately before `## Discussion`, with these exact `###` headings in this order. The roadmap work-item format owns this schema; do not create a parallel version.
 
 1. `Delivered` — approved boundary and exclusions, with immutable baseline and resulting evidence.
-2. `Summary of changes` — concrete changed files, material decisions, and approved deviations.
+2. `Change Summary` — concrete changed files, material decisions, and approved deviations.
 3. `Verification` — exact gates and outcomes.
 4. `Outstanding concerns` — unresolved, unchecked, or failing issues, or an explicit none.
 5. `Post-change review` — a fresh assessment of goal, scope, regression risk, and acceptance readiness.

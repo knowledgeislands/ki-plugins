@@ -20,6 +20,8 @@ This skill configures and explains one GitHub repository's Issues as a future fo
 
 Read [the GitHub Issues adapter standard](references/standards-github-issues.md) before configuring or operating the adapter. Read [the generated rubric](references/rubric.md) for the checkable configuration contract.
 
+Its root declaration is the repository-local selection signal `ki-repo` uses to require the GitHub Issues feature and canonical `package.json` `bugs` URL. Repositories without this declaration keep Issues disabled and omit that package field.
+
 ## Operating modes
 
 Carries the universal **AUDIT · CONFORM · EDUCATE · REFRESH** modes. `help` / `-h` / `?` describes the adapter and stops.

@@ -25,7 +25,8 @@ test('the session identifies the controlled root, guides, and retired roots', ()
   expect(context.layout).toEqual({
     directoryExists: true,
     indexExists: true,
-    headingIssues: ['docs/guides/developer/broken.md']
+    headingIssues: ['docs/guides/developer/broken.md'],
+    escapingLinks: []
   })
   expect(context.boundary.retiredRoots).toEqual(['docs/spec'])
   expect(session.proposal()).toEqual({ writes: [] })
@@ -41,4 +42,57 @@ test('a docs/logs path is left to its specialised owner', () => {
   if (!context) throw new Error('ki-guides session did not expose its repository subject')
 
   expect(context.boundary.retiredRoots).toEqual([])
+})
+
+test('flat, grouped, and intentionally mixed collections remain structurally valid', () => {
+  for (const guides of [['overview.md'], ['developer/workflow.md'], ['overview.md', 'developer/workflow.md']]) {
+    const repository = temporaryRepository()
+    mkdirSync(join(repository, 'docs/guides'), { recursive: true })
+    writeFileSync(join(repository, 'docs/guides/README.md'), '# Guides\n')
+    for (const guide of guides) {
+      const path = join(repository, 'docs/guides', guide)
+      mkdirSync(join(path, '..'), { recursive: true })
+      writeFileSync(path, '# Guide\n')
+    }
+
+    const session = createGuidesSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
+    const context = session.subjects[1]?.context()
+    if (!context) throw new Error('ki-guides session did not expose its repository subject')
+
+    expect(context.layout).toEqual({
+      directoryExists: true,
+      indexExists: true,
+      headingIssues: [],
+      escapingLinks: []
+    })
+    expect(session.proposal()).toEqual({ writes: [] })
+  }
+})
+
+test('a link to a document outside the collection escapes; code paths and siblings do not', () => {
+  const repository = temporaryRepository()
+  mkdirSync(join(repository, 'docs/guides/developer'), { recursive: true })
+  writeFileSync(join(repository, 'docs/guides/README.md'), '# Guides\n')
+  writeFileSync(
+    join(repository, 'docs/guides/developer/workflow.md'),
+    [
+      '# Workflow',
+      '',
+      'A sibling: [provenance](provenance.md), and the index: [guides](../README.md).',
+      'Code is the subject: [the script](../../../scripts/verify.ts) and [a directory](../../../src/).',
+      'An external URL: [Bun](https://bun.sh).',
+      'Escaping: [a decision](../../decisions/ADR-001-a-decision.md) and [the orientation](../../../AGENTS.md#working-here).',
+      ''
+    ].join('\n')
+  )
+  writeFileSync(join(repository, 'docs/guides/developer/provenance.md'), '# Provenance\n')
+
+  const session = createGuidesSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
+  const context = session.subjects[1]?.context()
+  if (!context) throw new Error('ki-guides session did not expose its repository subject')
+
+  expect(context.layout.escapingLinks).toEqual([
+    'docs/guides/developer/workflow.md -> ../../decisions/ADR-001-a-decision.md',
+    'docs/guides/developer/workflow.md -> ../../../AGENTS.md#working-here'
+  ])
 })

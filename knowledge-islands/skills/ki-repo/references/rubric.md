@@ -108,8 +108,8 @@ GitHub merge and branch-cleanup behaviour.
 
 Issues, Wiki, and Projects settings.
 
-- **TOGGLE-1 [M] — Repository feature toggles** — Issues are enabled and Wiki and Projects are disabled unless explicitly overridden. (standards-repository.md)
-  - _Remediation:_ diagnostic — Align the repository feature settings or record an explicit override, then rerun the audit.
+- **TOGGLE-1 [M] — Repository feature toggles** — Issues are enabled exactly when ki-work-github-issues is declared; Wiki and Projects are disabled unless explicitly overridden. (standards-repository.md)
+  - _Remediation:_ diagnostic — Align Issues with the selected work adapter and the other repository feature settings with their overrides, then rerun the audit.
 
 ## VIS — Visibility
 
@@ -237,6 +237,8 @@ Declared agent-runtime support and orientation.
   - _Remediation:_ diagnostic — Restore the canonical ki-self source and applicable runtime projection, then rerun the audit.
 - **RUNTIMES-4 [M] — Root runtime orientation** — A multi-runtime repository exposes shared root orientation through a physical AGENTS.md and a thin Claude import. (standards-repository.md)
   - _Remediation:_ diagnostic — Move shared root orientation into AGENTS.md, import it from CLAUDE.md with a bare @AGENTS.md line, and rerun the audit.
+- **RUNTIMES-5 [M] — Claude orientation location** — Repository-local Claude orientation is not stored at .claude/CLAUDE.md at any depth. (standards-repository.md)
+  - _Remediation:_ diagnostic — Move shared guidance into root AGENTS.md and Claude-specific guidance into root CLAUDE.md.
 - **RUNTIMES-J1 [J] — Runtime orientation split** — Multi-runtime repositories use a shared AGENTS.md orientation with a thin Claude import unless a justified exception applies. (standards-repository.md)
   - _Evidence scope:_ The shared AGENTS.md and runtime-specific orientation files for every declared runtime.
   - _Review prompt:_ Review whether orientation is shared cleanly across the declared runtimes without duplicated or Claude-only instructions.

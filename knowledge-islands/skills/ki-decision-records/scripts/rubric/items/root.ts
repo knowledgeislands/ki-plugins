@@ -25,7 +25,7 @@ const ROOT_1: RubricItem<RootRubricContext> = {
       run: (context: RootRubricContext) => {
         const firstId = context.indexIds[0]
         const first = firstId ? context.records.find((record) => record.id === firstId) : undefined
-        if (!first || !/^GDR-[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-001$/.test(first.id))
+        if (!first || !/^GDR-[A-Z0-9]*[A-Z][A-Z0-9]*(?:-[A-Z0-9]*[A-Z][A-Z0-9]*)*-001$/.test(first.id))
           return [
             {
               status: 'VIOLATION',

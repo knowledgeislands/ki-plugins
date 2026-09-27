@@ -15,6 +15,7 @@ Line-by-line criteria for auditing ki-repo-tools. Classifications are derived fr
 - [COMP — completion capabilities](#comp--completion-capabilities)
 - [MAN — manual capabilities](#man--manual-capabilities)
 - [CONFIG — configuration](#config--configuration)
+- [SHARED — Shared delivery projection](#shared--shared-delivery-projection)
 
 ## RUBRIC — Generated rubric publication
 
@@ -183,5 +184,14 @@ Man-page linting requirements.
 
 Applicability marker and validate-down keys.
 
-- **CONFIG-1 [M] — Opt-in marker and keys** — A keyless qualified `ki-repo-tools` marker is present and validated down. (standards-tool-repositories.md)
+- **CONFIG-1 [M] — Opt-in marker and delivery profile** — A qualified `ki-repo-tools` marker is present and any delivery-profile keys are validated down. (standards-tool-repositories.md)
+  - _Remediation:_ automatic
+
+## SHARED — Shared delivery projection
+
+→ [standard](standards-tool-shared-code.md#managed-delivery-profile-contract)
+
+Optional digested installer and release-packaging profiles.
+
+- **SHARED-1 [M] — Declared tool delivery projection** — An optional declared delivery profile renders exact installer and packaging files from digested skill-owned templates while preserving repository-owned release seams. (standards-tool-shared-code.md#managed-delivery-profile-contract)
   - _Remediation:_ automatic

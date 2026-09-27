@@ -95,6 +95,9 @@ const publicCommandValid = (context: WebsiteCoreContext, verb: 'build' | 'dev' |
   if (context.siteRoot === '.') return true
   const terminal = expectedTerminal(context, verb)
   if (command === terminal) return true
+  const task = /^turbo run ([A-Za-z0-9:_#@/.-]+)$/.exec(command)?.[1]
+  const expectedTask = verb === 'dev' ? 'ki:site:dev' : verb
+  if (task) return task === expectedTask && context.turboTasks.includes(task)
   if (context.selectionMode !== 'multi' || !context.siteName) return false
   const aliasKey = `self:site:${context.siteName}:${verb}`
   return command === `bun run ${aliasKey}` && context.scripts[aliasKey]?.trim() === terminal
@@ -137,7 +140,7 @@ const lifecycleScript = (code: string, verb: 'build' | 'dev' | 'clean', purpose:
             }
           : {
               status: 'VIOLATION',
-              message: `ki:site:${verb} must be the exact primary terminal command or one exact self:site alias hop.`,
+              message: `ki:site:${verb} must be the exact primary terminal command, one exact self:site alias hop, or an exact declared "turbo run ${localKey}" task.`,
               subject: 'package.json'
             }
       )

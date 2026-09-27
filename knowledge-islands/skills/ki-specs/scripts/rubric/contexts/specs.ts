@@ -9,12 +9,13 @@ import type {
 
 const DEFAULT_DIRECTORY = 'docs/specs'
 const INDEX_FILE = 'index.md'
-const RFC2119 =
+const BCP14_KEYWORD =
   /\b(MUST NOT|MUST|SHALL NOT|SHALL|SHOULD NOT|SHOULD|MAY|REQUIRED|RECOMMENDED|NOT RECOMMENDED|OPTIONAL)\b/
-const REQUIREMENT_HEADING = /^###\s+([A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*)-(\d{3,})\s+—\s+(.+?)\s*$/
+const REQUIREMENT_HEADING = /^###\s+([A-Z0-9]*[A-Z][A-Z0-9]*(?:-[A-Z0-9]*[A-Z][A-Z0-9]*)*)-(\d{3,})\s+—\s+(.+?)\s*$/
 const H3 = /^###\s+(.+?)\s*$/
-const NEAR_MISS_HEADING = /^###\s+([A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-\d{3,})\s*(?:[–—-]{1,2})\s*(\S.*?)\s*$/
-const RETIRED_ID = /\b([A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*)-(\d{3,})\b/g
+const NEAR_MISS_HEADING =
+  /^###\s+([A-Z0-9]*[A-Z][A-Z0-9]*(?:-[A-Z0-9]*[A-Z][A-Z0-9]*)*-\d{3,})\s*(?:[–—-]{1,2})\s*(\S.*?)\s*$/
+const RETIRED_ID = /\b([A-Z0-9]*[A-Z][A-Z0-9]*(?:-[A-Z0-9]*[A-Z][A-Z0-9]*)*)-(\d{3,})\b/g
 
 export type SpecRequirement = {
   readonly file: string
@@ -328,6 +329,7 @@ export const createSpecsSession = ({
         (line, index) => index > requirement.index && index < nextRequirement && /^##\s+/.test(line)
       )
       const block = lines.slice(requirement.index + 1, nextH2 >= 0 ? nextH2 : nextRequirement).join('\n')
+      const statement = block.trimStart().split(/\n\s*\n|^_(?:Conformance|Verify|Evidence):_/m, 1)[0] ?? ''
       const conformanceLabels = block.match(/^_Conformance:_.*$/gm) ?? []
       const conformance =
         conformanceLabels.length === 1
@@ -345,7 +347,7 @@ export const createSpecsSession = ({
         ...(requirement.owner ? { owner: requirement.owner } : {}),
         ...(requirement.duplicateOf ? { duplicateOf: requirement.duplicateOf } : {}),
         deprecated: /deprecated/i.test(requirement.title) || /^~~/.test(requirement.title.trim()),
-        hasNormativeKeyword: RFC2119.test(block),
+        hasNormativeKeyword: BCP14_KEYWORD.test(statement),
         hasVerify: /_Verify:_/.test(block),
         ...(conformance ? { conformance } : {}),
         hasConformanceLabel: conformanceLabels.length > 0,

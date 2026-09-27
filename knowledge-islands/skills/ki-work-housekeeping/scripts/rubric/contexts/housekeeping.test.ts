@@ -74,6 +74,15 @@ test('accepts a valid non-KB housekeeping template', () => {
   ])
 })
 
+test('accepts a housekeeping template whose repository code begins with a digit', () => {
+  const repository = temporaryDirectory()
+  const root = join(repository, 'docs', 'housekeeping')
+  mkdirSync(root, { recursive: true })
+  writeFileSync(join(root, '5GE-P2-HK-001-monthly-maintenance.md'), template('5GE-P2-HK-001'))
+
+  expect(outcomes(repository)[0]?.status).toBe('PASS')
+})
+
 test('reports an invalid schedule without mutating the template', () => {
   const repository = temporaryDirectory()
   const root = join(repository, 'docs', 'housekeeping')

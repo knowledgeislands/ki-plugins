@@ -30,7 +30,7 @@ It does not choose work, create or reshape a plan, close a lifecycle, or delete 
 3. Apply the approved plan within its boundary.
 4. When `ki-delegation` is active in the same scope, apply its suitability test and coordinator-first contract. For suitable substantial work, keep the primary agent available as coordinator while bounded subagents execute the approved worker lanes; otherwise continue locally. Create or confirm the durable packet before spawning workers.
 5. Review and integrate bounded results, run the required verification, and record the evidence.
-6. Create the roadmap-owned required review packet—`Delivered`, `Summary of changes`, `Verification`, `Outstanding concerns`, `Post-change review`, then `Mini recap`—transition the record to `awaiting-review`, and stop.
+6. Create the roadmap-owned required review packet—`Delivered`, `Change Summary`, `Verification`, `Outstanding concerns`, `Post-change review`, then `Mini recap`—transition the record to `awaiting-review`, and stop.
 
 The caller or `ki-accept` owns the next decision.
 

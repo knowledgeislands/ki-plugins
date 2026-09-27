@@ -180,7 +180,8 @@ const markerCount = (content: string, marker: string): number => content.split(m
 
 export const prepareCapabilityPublication = (
   readme: string | undefined,
-  sources: readonly CapabilitySource[]
+  sources: readonly CapabilitySource[],
+  prefix = 'ki'
 ): CapabilityPublicationDraft => {
   const parsed = sources.map(parseCapabilitySource)
   const issues = parsed.flatMap((result) => (result.issue ? [result.issue] : []))
@@ -199,8 +200,10 @@ export const prepareCapabilityPublication = (
     .filter((entry) => entry.applicability === 'baseline')
     .map((entry) => entry.name)
     .sort()
-  if (baseline.join(',') !== 'ki-authoring,ki-repo')
+  if (prefix === 'ki' && baseline.join(',') !== 'ki-authoring,ki-repo')
     issues.push('baseline applicability must contain exactly ki-authoring and ki-repo')
+  if (prefix !== 'ki' && baseline.length > 0)
+    issues.push('baseline applicability is reserved for the ki source harness')
 
   for (const entry of entries) {
     if (entry.kind === 'process' && entry.applicability !== 'invocation-only')
@@ -212,8 +215,9 @@ export const prepareCapabilityPublication = (
   }
 
   const detector = entries.find((entry) => entry.name === 'ki-repo')
-  if (!detector || detector.detects.length === 0) issues.push('ki-repo must declare a non-empty ki-detects registry')
-  else {
+  if ((prefix === 'ki' || detector) && (!detector || detector.detects.length === 0))
+    issues.push('ki-repo must declare a non-empty ki-detects registry')
+  if (detector) {
     if (new Set(detector.detects).size !== detector.detects.length)
       issues.push('ki-repo ki-detects registry contains duplicates')
     for (const target of detector.detects) {

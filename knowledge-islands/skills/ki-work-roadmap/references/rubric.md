@@ -62,7 +62,7 @@ Canonical generated-index structure, placement, and readiness.
   - _Conforming guidance:_ Confirm the lifecycle move with its owner, record a gap, or record an explicit exclusion; never choose the move automatically.
 - **ROAD-6 [M] — repository work-item code** — The ki-repo table declares a valid stable repository code; roadmap configuration declares either repository-wide themes or fixed area-to-theme namespaces. (standards-repository-roadmaps.md)
   - _Remediation:_ diagnostic — Correct the configured repository code, theme vocabulary, or fixed area map from authoritative repository configuration.
-- **ROAD-7 [M] — issue-allocation ledger** — docs/roadmap/_ISSUES.md records the repository-wide or fixed-area high-water marks, preventing a pruned issue number from being reused. (standards-repository-roadmaps.md)
+- **ROAD-7 [M] — issue-allocation ledger** — docs/roadmap/_ISSUES.md records repository-wide or fixed-area high-water marks. A number is reserved by committing the applicable ledger advance on its own before the record is written, in the one designated writing checkout the repository serialises roadmap writes through. The mechanical checks read the ledger alone — its issuing mode, its exact match against the configured areas, and its high-water floor against retained items — and cannot observe the commit ordering or the checkout that made the advance. (standards-repository-roadmaps.md)
   - _Remediation:_ automatic
 - **ROAD-8 [J] — lifecycle and pruning commit boundaries** — Lifecycle transitions may share their coherent work commit; a prune-only commit removes one or more eligible records only after each has landed as done. (standards-repository-roadmaps.md)
   - _Evidence scope:_ The Git history and proposed commits that create or transition work records, land accepted done records, or prune selected records.
@@ -93,6 +93,11 @@ Flat work-item identity, grouping, lifecycle, and dependencies.
   - _Review prompt:_ Review whether each dependency represents a real execution relationship without hiding a priority or acceptance decision.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Correct the declared relationship with the owning work-item decision, record a gap, or record an explicit exclusion.
+- **ITEM-6 [J] — external task links** — Verified provider-qualified task associations live on each work item without claiming live ownership or replacing its KI lifecycle. (standards-work-item-format.md, standards-repository-roadmaps.md)
+  - _Evidence scope:_ Work items with verified external task associations and the corresponding task-side references.
+  - _Review prompt:_ Do each item’s task links and task-side backlinks agree on governing ownership and purpose, preserve historical associations, and avoid inferring a current claim, release, or KI acceptance from a task link alone?
+  - _Outcomes:_ conforming; gap; exclusion
+  - _Conforming guidance:_ Reconcile against repository and task evidence, correct only verified links in the designated primary checkout, or record the unresolved association as a named gap.
 
 ## INDEX — root orientation
 

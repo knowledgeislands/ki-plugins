@@ -15,6 +15,7 @@ export const RUMDL_DEFAULT = `# rumdl owns Markdown wholly: formatting and linti
 
 [global]
 exclude = [
+  ".git",
   "node_modules",
   "dist",
   "src/generated",

@@ -441,3 +441,170 @@ describe('decision-record index links', () => {
     ])
   })
 })
+
+describe('decision dependency graph', () => {
+  const dependentRecord = ({
+    id,
+    title,
+    dependsOn,
+    note = ''
+  }: {
+    id: string
+    title: string
+    dependsOn: string
+    note?: string
+  }) => `---
+id: ${id}
+title: '${title}'
+date: 2026-07-22
+status: current
+decision_type: architecture
+decision_type_url: https://knowledgeislands.info/specifications/decision-records/adr
+${dependsOn}---
+
+# ${id}: ${title}
+
+## Context
+
+The collection needs a durable decision record.
+
+## Decision
+
+The repository records this decision.
+
+## Consequences
+
+The decision remains readable. ${note}
+`
+
+  const dependsFixture = (
+    files: ReadonlyArray<{ file: string; id: string; title: string; dependsOn: string; note?: string }>,
+    indexIds: readonly string[]
+  ) => {
+    const root = mkdtempSync(join(tmpdir(), 'ki-decision-records-depends-'))
+    temporaryRoots.push(root)
+    const directory = join(root, 'docs', 'decisions')
+    writeFileSync(join(root, '.ki.toml'), '[skills.ki-decision-records]\n')
+    mkdirSync(directory, { recursive: true })
+    for (const file of files) writeFileSync(join(directory, file.file), dependentRecord(file))
+    const entries = indexIds
+      .map((id, index) => {
+        const file = files.find((candidate) => candidate.id === id)
+        return `${index + 1}. [${id}](${file?.file ?? `${id}.md`}) — ${file?.title ?? 'unknown'}.`
+      })
+      .join('\n')
+    writeFileSync(join(directory, 'README.md'), `# Decisions\n\n${entries}\n`)
+    return createDecisionRecordsSession({
+      mode: 'audit',
+      repository: root,
+      userHome: tmpdir(),
+      configuration: {}
+    }).subjects[0]?.context() as DecisionRecordsRubricContext
+  }
+
+  test('accepts resolvable, acyclic dependencies in reveal order, including a wrapped list and a foreign scope', () => {
+    const context = dependsFixture(
+      [
+        { file: 'ADR-EXAMPLE-001-first-decision.md', id: 'ADR-EXAMPLE-001', title: 'First decision', dependsOn: '' },
+        {
+          file: 'GDR-EXAMPLE-001-second-decision.md',
+          id: 'GDR-EXAMPLE-001',
+          title: 'Second decision',
+          dependsOn: 'decision_depends_on: [ADR-EXAMPLE-001]\n'
+        },
+        {
+          file: 'ADR-EXAMPLE-002-third-decision.md',
+          id: 'ADR-EXAMPLE-002',
+          title: 'Third decision',
+          dependsOn: 'decision_depends_on:\n  - ADR-EXAMPLE-001\n  - GDR-EXAMPLE-001\n  - SDR-ELSEWHERE-004\n'
+        }
+      ],
+      ['ADR-EXAMPLE-001', 'GDR-EXAMPLE-001', 'ADR-EXAMPLE-002']
+    )
+
+    expect(context.depends.records.find((record) => record.id === 'ADR-EXAMPLE-002')?.dependsOn).toEqual([
+      'ADR-EXAMPLE-001',
+      'GDR-EXAMPLE-001',
+      'SDR-ELSEWHERE-004'
+    ])
+    expect(audit('DEPENDS-1', context)?.[0]?.status).toBe('PASS')
+    expect(audit('DEPENDS-2', context)?.[0]?.status).toBe('PASS')
+    expect(audit('DEPENDS-3', context)?.[0]?.status).toBe('PASS')
+  })
+
+  test('reports an unresolved local target, a malformed entry, a cycle, and a dependency the index places later', () => {
+    const context = dependsFixture(
+      [
+        {
+          file: 'ADR-EXAMPLE-001-first-decision.md',
+          id: 'ADR-EXAMPLE-001',
+          title: 'First decision',
+          dependsOn: 'decision_depends_on: [ADR-EXAMPLE-002, ADR-EXAMPLE-009, adopting-decision-records]\n'
+        },
+        {
+          file: 'ADR-EXAMPLE-002-second-decision.md',
+          id: 'ADR-EXAMPLE-002',
+          title: 'Second decision',
+          dependsOn: 'decision_depends_on: [ADR-EXAMPLE-001]\n'
+        }
+      ],
+      ['ADR-EXAMPLE-001', 'ADR-EXAMPLE-002']
+    )
+
+    expect(audit('DEPENDS-1', context)?.map((outcome) => outcome.subject)).toEqual([
+      'ADR-EXAMPLE-001',
+      'ADR-EXAMPLE-001'
+    ])
+    expect(audit('DEPENDS-2', context)?.[0]).toMatchObject({
+      status: 'VIOLATION',
+      subject: 'ADR-EXAMPLE-001 -> ADR-EXAMPLE-002 -> ADR-EXAMPLE-001'
+    })
+    expect(audit('DEPENDS-3', context)?.[0]).toMatchObject({ status: 'VIOLATION', subject: 'ADR-EXAMPLE-001' })
+  })
+
+  test('reports a body citation of a higher-numbered record of the same type, and allows another type', () => {
+    const context = dependsFixture(
+      [
+        {
+          file: 'ADR-EXAMPLE-001-first-decision.md',
+          id: 'ADR-EXAMPLE-001',
+          title: 'First decision',
+          dependsOn: '',
+          note: 'ADR-EXAMPLE-002 generalises this, and GDR-EXAMPLE-001 carries the governance of it.'
+        },
+        {
+          file: 'ADR-EXAMPLE-002-second-decision.md',
+          id: 'ADR-EXAMPLE-002',
+          title: 'Second decision',
+          dependsOn: 'decision_depends_on: [ADR-EXAMPLE-001]\n',
+          note: 'ADR-EXAMPLE-001 is the record this one builds on.'
+        },
+        { file: 'GDR-EXAMPLE-001-third-decision.md', id: 'GDR-EXAMPLE-001', title: 'Third decision', dependsOn: '' }
+      ],
+      ['ADR-EXAMPLE-001', 'ADR-EXAMPLE-002', 'GDR-EXAMPLE-001']
+    )
+
+    expect(audit('DEPENDS-4', context)).toEqual([
+      expect.objectContaining({ status: 'VIOLATION', subject: 'ADR-EXAMPLE-001' })
+    ])
+  })
+
+  test('treats a self-dependency as a cycle', () => {
+    const context = dependsFixture(
+      [
+        {
+          file: 'ADR-EXAMPLE-001-first-decision.md',
+          id: 'ADR-EXAMPLE-001',
+          title: 'First decision',
+          dependsOn: 'decision_depends_on: [ADR-EXAMPLE-001]\n'
+        }
+      ],
+      ['ADR-EXAMPLE-001']
+    )
+
+    expect(audit('DEPENDS-2', context)?.[0]).toMatchObject({
+      status: 'VIOLATION',
+      subject: 'ADR-EXAMPLE-001 -> ADR-EXAMPLE-001'
+    })
+  })
+})

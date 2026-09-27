@@ -342,6 +342,61 @@ test('a requirement cannot borrow a keyword or Verify hook from a later H2 or Ga
   expect(mechanicalItem(VERIFY, 'VERIFY-1').audit.run(verificationContext as never)[0]?.status).toBe('VIOLATION')
 })
 
+for (const [source, extra] of [
+  ['a later paragraph', 'Additional context MUST stay separate.'],
+  ['the Verify hook', '_Verify:_ the test MUST check expiry.'],
+  ['the Evidence field', '_Evidence:_ the test MUST have passed.']
+] as const) {
+  test(`a requirement cannot borrow a BCP 14 keyword from ${source}`, () => {
+    const { repository, area } = fixture()
+    writeFileSync(
+      area,
+      [
+        '# Authentication — AUTH',
+        '',
+        '### AUTH-001 — Session lifetime',
+        '',
+        'A session expires after issue.',
+        '',
+        extra,
+        '',
+        '_Conformance:_ pending',
+        '',
+        '_Verify:_ session test checks expiry.',
+        ''
+      ].join('\n')
+    )
+    const session = createSpecsSession(options(repository, 'audit'))
+    const context = REQ.selectContext(session.subjects[0]?.context() as never)
+
+    expect(mechanicalItem(REQ, 'REQ-1').audit.run(context as never)[0]?.status).toBe('VIOLATION')
+  })
+}
+
+test('a wrapped opening statement satisfies the BCP 14 keyword check', () => {
+  const { repository, area } = fixture()
+  writeFileSync(
+    area,
+    [
+      '# Authentication — AUTH',
+      '',
+      '### AUTH-001 — Session lifetime',
+      '',
+      'A session',
+      'MUST expire after issue.',
+      '',
+      '_Conformance:_ pending',
+      '',
+      '_Verify:_ session test checks expiry.',
+      ''
+    ].join('\n')
+  )
+  const session = createSpecsSession(options(repository, 'audit'))
+  const context = REQ.selectContext(session.subjects[0]?.context() as never)
+
+  expect(mechanicalItem(REQ, 'REQ-1').audit.run(context as never)[0]?.status).toBe('PASS')
+})
+
 test('duplicate areas-table prefix ownership is reported rather than overwritten', () => {
   const { repository } = fixture()
   writeFileSync(
@@ -363,4 +418,36 @@ test('duplicate areas-table prefix ownership is reported rather than overwritten
     status: 'VIOLATION',
     message: expect.stringContaining('AUTH')
   })
+})
+
+test('a requirement prefix may begin with a digit when the segment carries a letter', () => {
+  const repository = temporaryDirectory('ki-specs-digit-prefix-')
+  const directory = join(repository, 'docs', 'specs')
+  mkdirSync(directory, { recursive: true })
+  declareSpecs(repository)
+  writeFileSync(
+    join(directory, 'index.md'),
+    ['# Specifications', '', '| File | Prefix |', '| --- | --- |', '| telemetry.md | 5GE-P2 |', ''].join('\n')
+  )
+  writeFileSync(
+    join(directory, 'telemetry.md'),
+    [
+      '# Telemetry — 5GE-P2',
+      '',
+      '## Collection',
+      '',
+      '### 5GE-P2-001 — Component status',
+      '',
+      'A component MUST report a status.',
+      '',
+      '_Verify:_ telemetry.test.ts checks the status vocabulary.',
+      ''
+    ].join('\n')
+  )
+
+  const context = identityContext(createSpecsSession(options(repository, 'audit')))
+
+  expect(context.requirements.map((requirement) => requirement.prefix)).toEqual(['5GE-P2'])
+  expect(context.requirements.map((requirement) => requirement.serial)).toEqual([1])
+  expect(context.headingIssues).toEqual([])
 })

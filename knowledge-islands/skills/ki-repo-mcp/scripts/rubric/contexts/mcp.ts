@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { lstatSync, readdirSync, readFileSync } from 'node:fs'
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import type {
@@ -6,12 +7,28 @@ import type {
   RubricPublicationContext,
   RubricSession
 } from '../../shared/rubric.ts'
+import { normalizeGitHubRepository } from './distribution.ts'
+import { type McpSharedCodeContext, prepareMcpSharedCode } from './shared-code.ts'
 
 const CONFIG_FILE = '.ki.toml'
 const CONFIG_SECTION = 'ki-repo-mcp'
 const PACKAGE_FILE = 'package.json'
 const MCP_MAIN = 'dist/mcp-server/index.js'
-const FAMILY_CODES = ['KI', 'LAY', 'DOC', 'CFG', 'UTIL', 'TEST', 'TOOL', 'PROTO', 'PKG', 'SCR', 'CI'] as const
+const FAMILY_CODES = [
+  'KI',
+  'LAY',
+  'DOC',
+  'CFG',
+  'UTIL',
+  'SHARED',
+  'TEST',
+  'TOOL',
+  'PROTO',
+  'PKG',
+  'SCR',
+  'CI',
+  'DIST'
+] as const
 
 type NodeKind = 'missing' | 'file' | 'directory' | 'unsafe'
 type ConfigState = 'missing' | 'unsafe' | 'malformed' | 'absent' | 'present'
@@ -27,6 +44,7 @@ export type McpApplicabilityContext = {
   readonly applicable: boolean
   readonly config: ConfigState
   readonly configKeys: readonly string[]
+  readonly sharedProfile: unknown
   readonly addMarker?: () => void
 }
 
@@ -84,6 +102,15 @@ export type McpCiContext = {
   readonly workflow: string | null
 }
 
+export type McpDistributionContext = {
+  readonly packageJson: Readonly<Record<string, unknown>> | null
+  readonly lockfile: { readonly path: string; readonly tracked: boolean } | null
+  readonly repositoryIdentity: string | null
+  readonly headCommit: string | null
+  readonly releaseTag: string | null
+  readonly releaseTagAnnotated: boolean
+}
+
 export type McpRubricContext = {
   readonly rubric: RubricPublicationContext
   readonly applicability: McpApplicabilityContext
@@ -91,12 +118,14 @@ export type McpRubricContext = {
   readonly documentation: McpDocumentationContext
   readonly configuration: McpConfigurationContext
   readonly utilities: McpUtilitiesContext
+  readonly sharedCode: McpSharedCodeContext
   readonly testing: McpTestingContext
   readonly tools: McpToolsContext
   readonly protocol: McpProtocolContext
   readonly package: McpPackageContext
   readonly scripts: McpScriptsContext
   readonly ci: McpCiContext
+  readonly distribution: McpDistributionContext
 }
 
 const asTable = (value: unknown): Record<string, unknown> | null =>
@@ -136,16 +165,23 @@ const sourceFilesBelow = (root: string, directory: string): SourceFile[] => {
 const inspectConfig = (
   path: string,
   kind: NodeKind
-): { readonly state: ConfigState; readonly keys: readonly string[]; readonly content: string | null } => {
-  if (kind === 'missing') return { state: 'missing', keys: [], content: null }
-  if (kind !== 'file') return { state: 'unsafe', keys: [], content: null }
+): {
+  readonly state: ConfigState
+  readonly keys: readonly string[]
+  readonly content: string | null
+  readonly sharedProfile: unknown
+} => {
+  if (kind === 'missing') return { state: 'missing', keys: [], content: null, sharedProfile: undefined }
+  if (kind !== 'file') return { state: 'unsafe', keys: [], content: null, sharedProfile: undefined }
   const content = readFileSync(path, 'utf8')
   try {
     const document = Bun.TOML.parse(content) as Record<string, unknown>
     const table = asTable(asTable(document.skills)?.[CONFIG_SECTION])
-    return table ? { state: 'present', keys: Object.keys(table), content } : { state: 'absent', keys: [], content }
+    return table
+      ? { state: 'present', keys: Object.keys(table), content, sharedProfile: table.profile }
+      : { state: 'absent', keys: [], content, sharedProfile: undefined }
   } catch {
-    return { state: 'malformed', keys: [], content }
+    return { state: 'malformed', keys: [], content, sharedProfile: undefined }
   }
 }
 
@@ -164,6 +200,17 @@ const inspectPackage = (
 }
 
 const packageScripts = (value: Record<string, unknown> | null): Record<string, unknown> => asTable(value?.scripts) ?? {}
+
+const gitOutput = (root: string, arguments_: readonly string[]): string | null => {
+  try {
+    return execFileSync('git', ['-C', root, ...arguments_], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim()
+  } catch {
+    return null
+  }
+}
 
 /**
  * Strip comments from one source line, carrying block-comment state across lines.
@@ -228,7 +275,7 @@ export const createMcpSession = ({
   const configPath = at(CONFIG_FILE)
   const configEvidence = rootExists
     ? inspectConfig(configPath, nodeKind(configPath))
-    : { state: 'missing' as const, keys: [], content: null }
+    : { state: 'missing' as const, keys: [], content: null, sharedProfile: undefined }
   const applicable = rootExists && configEvidence.state === 'present'
   const packagePath = at(PACKAGE_FILE)
   const packageEvidence = rootExists
@@ -238,6 +285,16 @@ export const createMcpSession = ({
   const originalPackage = packageEvidence.value
   const packageDraft = originalPackage ? structuredClone(originalPackage) : null
   let packageChanged = false
+  const lockfilePath = ['bun.lock', 'bun.lockb'].find((file) => nodeKind(at(file)) === 'file')
+  const origin = rootExists ? gitOutput(root, ['remote', 'get-url', 'origin']) : null
+  const head = rootExists ? gitOutput(root, ['rev-parse', '--verify', 'HEAD']) : null
+  const version = typeof originalPackage?.version === 'string' ? originalPackage.version : null
+  const expectedTag = version ? `v${version}` : null
+  const tagsAtHead = rootExists
+    ? (gitOutput(root, ['tag', '--points-at', 'HEAD'])?.split('\n').filter(Boolean) ?? [])
+    : []
+  const releaseTag = expectedTag && tagsAtHead.includes(expectedTag) ? expectedTag : null
+  const releaseTagType = releaseTag ? gitOutput(root, ['cat-file', '-t', `refs/tags/${releaseTag}`]) : null
   const regularDocument = (file: 'ROADMAP.md' | 'CONTRIBUTING.md' | 'SECURITY.md' | 'CHANGELOG.md'): string | null =>
     nodeKind(at(file)) === 'file' ? readFileSync(at(file), 'utf8') : null
   const vitestFile =
@@ -250,6 +307,13 @@ export const createMcpSession = ({
       'vitest.config.cjs'
     ].find((file) => nodeKind(at(file)) === 'file') ?? null
   const toolFiles = sourceFiles.filter((file) => file.path.startsWith('src/tools/') && !file.path.endsWith('.test.ts'))
+  const conformWrites = new Map<string, ConformWrite>()
+  const sharedCode = prepareMcpSharedCode({
+    root,
+    profile: configEvidence.sharedProfile,
+    mode,
+    writes: conformWrites
+  })
   const context: McpRubricContext = {
     rubric: { publication },
     applicability: {
@@ -257,7 +321,8 @@ export const createMcpSession = ({
       rootExists,
       applicable,
       config: configEvidence.state,
-      configKeys: configEvidence.keys
+      configKeys: configEvidence.keys,
+      sharedProfile: configEvidence.sharedProfile
     },
     layout: {
       requiredDirectories: ['config', 'mcp-server', 'tools', 'main', 'utils'].map((directory) => ({
@@ -306,6 +371,7 @@ export const createMcpSession = ({
         present: sourceByPath.has(`src/utils/${file}`)
       }))
     },
+    sharedCode,
     testing: {
       vitestFile,
       source: vitestFile ? readFileSync(at(vitestFile), 'utf8') : null
@@ -364,6 +430,19 @@ export const createMcpSession = ({
         nodeKind(at('.github', 'workflows', 'ci.yml')) === 'file'
           ? readFileSync(at('.github', 'workflows', 'ci.yml'), 'utf8')
           : null
+    },
+    distribution: {
+      packageJson: originalPackage,
+      lockfile: lockfilePath
+        ? {
+            path: lockfilePath,
+            tracked: gitOutput(root, ['ls-files', '--error-unmatch', '--', lockfilePath]) === lockfilePath
+          }
+        : null,
+      repositoryIdentity: origin ? (normalizeGitHubRepository(origin) ?? null) : null,
+      headCommit: head && /^[0-9a-f]{40}$/.test(head) ? head : null,
+      releaseTag,
+      releaseTagAnnotated: releaseTagType === 'tag'
     }
   }
 
@@ -376,6 +455,7 @@ export const createMcpSession = ({
       const writes: ConformWrite[] = []
       if (packageChanged && packageDraft && packageEvidence.content !== null)
         writes.push({ path: PACKAGE_FILE, content: `${JSON.stringify(packageDraft, null, 2)}\n` })
+      writes.push(...conformWrites.values())
       return { writes }
     }
   }

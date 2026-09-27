@@ -1,5 +1,6 @@
 import type { AuditOutcome, RubricFamily, RubricItem, RubricOutcomes } from '../../shared/rubric.ts'
 import type { McpApplicabilityContext, McpRubricContext } from '../contexts/mcp.ts'
+import { supportedMcpSharedProfiles } from '../contexts/shared-code.ts'
 
 const STANDARD = 'standards-mcp-servers.md#applicability'
 const outcome = (status: AuditOutcome['status'], message: string, subject?: string): RubricOutcomes<AuditOutcome> => [
@@ -10,7 +11,7 @@ const KI_CONFIG: RubricItem<McpApplicabilityContext> = {
   code: 'KI-CONFIG',
   title: 'MCP applicability and declaration',
   description:
-    'Only [skills.ki-repo-mcp] declares this optional standard applicable. Detected MCP-shaped source is coverage evidence for ki-repo, not local selection authority; declared keys are rejected because this skill has no configuration options.',
+    'Only [skills.ki-repo-mcp] declares this optional standard applicable. Its optional profile selects one supported whole-file shared-code projection; every other key is rejected.',
   sources: [STANDARD],
   mechanical: {
     level: 'WARN',
@@ -50,12 +51,20 @@ const KI_CONFIG: RubricItem<McpApplicabilityContext> = {
             'No [skills.ki-repo-mcp] table; add it to mark this repository as governed.',
             '.ki.toml'
           )
+        const unknownKeys = context.configKeys.filter((key) => key !== 'profile')
+        if (unknownKeys.length > 0)
+          return outcome(
+            'VIOLATION',
+            `Unknown keys under [skills.ki-repo-mcp]: ${unknownKeys.join(', ')} (validate-down).`,
+            '.ki.toml'
+          )
+        if (
+          context.sharedProfile !== undefined &&
+          (typeof context.sharedProfile !== 'string' || !supportedMcpSharedProfiles().includes(context.sharedProfile))
+        )
+          return outcome('VIOLATION', `profile must be one of: ${supportedMcpSharedProfiles().join(', ')}.`, '.ki.toml')
         return context.configKeys.length > 0
-          ? outcome(
-              'VIOLATION',
-              `Unknown keys under [skills.ki-repo-mcp]: ${context.configKeys.join(', ')} (validate-down).`,
-              '.ki.toml'
-            )
+          ? outcome('PASS', `Configured MCP governance profile: ${String(context.sharedProfile)}.`, '.ki.toml')
           : outcome('PASS', '[skills.ki-repo-mcp] table is present.', '.ki.toml')
       }
     }
@@ -65,7 +74,7 @@ const KI_CONFIG: RubricItem<McpApplicabilityContext> = {
 export const KI: RubricFamily<McpRubricContext, McpApplicabilityContext> = {
   code: 'KI',
   title: 'Applicability and declaration',
-  description: 'Scope activation and the keyless ki-repo-mcp governance declaration.',
+  description: 'Scope activation and the optional shared-code profile declaration.',
   standard: STANDARD,
   selectContext: (context) => context.applicability,
   items: [KI_CONFIG]

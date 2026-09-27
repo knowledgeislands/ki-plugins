@@ -17,7 +17,7 @@ You are helping audit, conform, or scaffold a **`tools-*` repo** — a repo hold
 
 This skill rides on `ki-repo` (local files, GitHub settings) but **not** `ki-engineering` — a bash tool has no TypeScript/Bun toolchain to govern, so no `ki-engineering` declaration is assumed (the same pattern `ki-repo-kb` follows). If the tool grows a `package.json`, that changes: it then declares `[skills.ki-engineering]` too and defers its lint/test there (see the capability rule below).
 
-The full, quotable standard lives in [the tool-repository standard](references/standards-tool-repositories.md); the line-by-line pass/fail items live in [the generated rubric](references/rubric.md). `ki repo audit` and `ki repo conform` inspect the structured mechanical contract directly through the host. They never execute a target binary, installer, package manager, CI workflow, or network validator; runtime and release evidence are explicit separate diagnostics.
+The full, quotable standard lives in [the tool-repository standard](references/standards-tool-repositories.md), while [tool shared code](references/standards-tool-shared-code.md) owns optional installer and release-packaging profiles. The line-by-line pass/fail items live in [the generated rubric](references/rubric.md). `ki repo audit` and `ki repo conform` inspect the structured mechanical contract directly through the host. They never execute a target binary, installer, package manager, CI workflow, or network validator; runtime and release evidence are explicit separate diagnostics.
 
 ## Container, not contents
 
@@ -57,7 +57,7 @@ Mirrors `ki-engineering`'s capability-conditional pattern: what the repo _is_ de
 
 ## The qualified `ki-repo-tools` marker
 
-A `tools-*` repo opts into this standard by declaring a **keyless** `[skills.ki-repo-tools]` table in its `.ki.toml`. The table is validated **down** (this skill reads only its own table and warns on any unknown key inside it). `ki-repo` owns selecting the declaration; this skill may only set executable bits on verified physical `bin/*` files and `install.sh`. Missing content, malformed or unsafe paths, external releases, and Homebrew operations remain report-only.
+A `tools-*` repo opts into this standard by declaring `[skills.ki-repo-tools]` in `.ki.toml`. A keyless table leaves installer and packaging files repository-owned. The optional `profile` plus its validated parameters selects one managed delivery projection; every other key is rejected. `ki-repo` owns selecting the declaration, and conformance never selects a profile or overwrites modified managed files.
 
 ## Release readiness
 

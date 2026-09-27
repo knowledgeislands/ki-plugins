@@ -5,11 +5,13 @@
 - [Naming convention](#naming-convention)
 - [Prefix table](#prefix-table)
 - [Placement](#placement)
+- [Supporting material](#supporting-material)
 - [Frontmatter](#frontmatter)
 - [Sections](#sections)
 - [Templates](#templates)
 - [Collection root](#collection-root)
 - [Index](#index)
+- [Dependency graph](#dependency-graph)
 - [Writing guidance](#writing-guidance)
 
 The normative standard behind [the generated rubric](rubric.md). Grounded in Michael Nygard's original 2011 ADR format (see [the source list](sources.md)) with house additions: decision-specific metadata, type-specific prefixes, and `## References`. Unified from the former `ki-adrs` and `ki-kdrs` instruments. A DR is a concise, self-contained **living present-state record**: it states the decision as it stands now and is edited in place, without historical narrative, a supersession chain, or changelog (see [Writing guidance](#writing-guidance)). Mode REFRESH re-reads the sources and proposes diffs here.
@@ -22,7 +24,7 @@ The normative standard behind [the generated rubric](rubric.md). Grounded in Mic
 
 - The filename is **`<ID>-<title-slug>.md`**: the canonical uppercase ID, a dash, then the title lowercased with every run of non-ASCII-alphanumeric characters replaced by one `-`, and leading or trailing dashes removed.
 - The H1 is **`<ID>: <title>`**. **`<PREFIX>`** is one of nine type-specific prefixes (see the prefix table below); it begins the ID and encodes `decision_type` at the filename level.
-- **`<SCOPE>`** is one or more uppercase alpha-leading segments separated by `-`. KB island repos use the island's identifier as the first segment (e.g. `ARCADIA`). A scope segment matches `[A-Z][A-Z0-9]*`; a digit-only segment is invalid. Multi-level scopes are valid for sub-domain decisions (e.g. `ARCADIA-TOOLS`).
+- **`<SCOPE>`** is one or more uppercase alphanumeric segments separated by `-`. KB island repos use the island's identifier as the first segment (e.g. `ARCADIA`). A scope segment matches `[A-Z0-9]*[A-Z][A-Z0-9]*`: it may lead with a digit, so a repository whose `repo_code` does (e.g. `5GE-P2`) uses that code unchanged as its scope, and it must carry at least one letter, because a digit-only segment could not be told apart from `NNN`. Multi-level scopes are valid for sub-domain decisions (e.g. `ARCADIA-TOOLS`).
 - **`NNN`** is a zero-padded decimal serial (≥ 3 digits). Serials in each prefix+scope series **start at `001` and are contiguous** — no gaps, whatever the cause. Numbering is **per prefix within the `<SCOPE>` namespace** — `GDR-KI-ARCADIA-001` and `SDR-KI-ARCADIA-001` may share the integer `001` because they carry different prefixes, and each prefix runs its own unbroken `001…NNN` sequence. The full DR code (prefix + scope + serial) is the globally unique identifier. A pending DR not yet assigned a real serial uses the literal string `XXX` in place of `NNN` (e.g. `GDR-KI-ARCADIA-XXX-pending-decision.md`); it is renamed to the next available per-prefix serial once it is numbered. If a record is **reclassified** to a different prefix (e.g. an ADR that is really a governance decision becomes a GDR), it takes the next serial in its new series and its old serial is **not** left vacant: the remaining records in the old series renumber to close the gap, and every citation of the shifted codes is swept in the same change. Git history and commit messages that mention the old codes are accepted staleness. A shared decision declares `shared_record: true` in every approved copy and uses the canonical projection defined under Frontmatter for identity comparison. It retains its canonical ID. Where the receiving collection has no ordinary record in that prefix+scope, the mirror is excluded from local serial-continuity calculation; where it does, the mirror stays in the series. This narrow exception never applies to an ordinary local record. Examples: `GDR-KI-ARCADIA-001-adopting-decision-records.md`, `SDR-KI-ARCADIA-001-knowledge-islands-strategy.md`, `ADR-KI-HARNESS-001-repository-structure-the-five-part-bundle.md`.
 
 ## Prefix table
@@ -52,6 +54,18 @@ Each `decision_type_url` expands from `https://knowledgeislands.info/specificati
 
 The repo type is declared in `.ki.toml` under `[skills.ki-decision-records]` (or inferred from `[skills.ki-repo-kb]` presence). The checker auto-detects the decisions directory (`docs/decisions/` then `Admin/Governance/Decisions/`) and picks the matching index file by mode; pass an explicit path to override.
 
+## Supporting material
+
+A DR is self-contained: it MUST read completely without following any link, which is why skills, guides, workflows and standards a decision grounds in are named in its body rather than listed as links. Some material genuinely supports a collection without being a decision — a survey of adjacent projects, an evidence table, a coverage matrix, a triage of findings. It is longer than a record body should be, it changes on a different cadence from the decisions it informs, and writing it as a DR would misfile it.
+
+That material lives in a `references/` directory **inside** the decisions directory: `docs/decisions/references/` in a code repository, `Admin/Governance/Decisions/references/` in a KB. Keeping it inside the tree is the point. A record may then cite it by a relative sibling path without reaching outside the decisions collection, so the collection stays movable and self-contained as a unit, and a reader who has the decisions has everything they support.
+
+Do not confuse this directory with the `## References` section, which is a list of followable links inside one record and takes only sibling DRs and external URLs. A supporting file is cited from a record's **body**, where the reader meets it, under the same rule as any other named artefact.
+
+What belongs there: material the collection's records depend on or are informed by, that is not itself a decision. What does not: anything that _is_ a decision, which gets a record; documentation a reader outside the decisions tree is expected to find, which belongs in the documentation corpus; and anything short enough to sit in the one record that needs it.
+
+A supporting file MAY be cited by several records, by one, or by none — standing evidence nothing cites is legitimate. Its filename is an ordinary descriptive slug, not a record identifier, and the checker does not read it as a record. The index MUST say the directory exists and what belongs in it, but supporting files are NOT entries in the ordered list, which carries one item per DR and nothing else.
+
 ## Frontmatter
 
 Every Decision Record begins with YAML frontmatter. `id`, `title`, `date`, `status`, `decision_type`, and `decision_type_url` are required in every repository. Generic `type` and `type_url` are reserved for generic note metadata and are prohibited here. This keeps the decision classification explicit without creating a competing generic type taxonomy.
@@ -77,7 +91,7 @@ decision_type_url: https://knowledgeislands.info/specifications/decision-records
 - `decision_type_url` exactly matches the house reference URL in the table above.
 - Choose the prefix by what the decision is actually about. If the filename and metadata disagree, a human resolves whether the canonical ID or the metadata is wrong; CONFORM never chooses by overwriting either side.
 - CONFORM may make only source-preserving scalar metadata repairs on a parseable, regular, non-symlink record whose filename is already canonical: remove generic `type`; rename a canonical legacy `type_url` when `decision_type_url` is absent; and add missing canonical decision-type fields derived from the existing prefix. It refuses malformed, ambiguous, conflicting, or non-canonical sources.
-- `decision_depends_on` is an optional YAML list of full DR codes that this decision logically depends on (e.g. `["GDR-KI-ARCADIA-001"]`). Cross-scope (cross-repo) references are permitted. Body prose cites only backward — no forward references to higher-numbered DRs of the same type. Omit the field when there are no dependencies.
+- `decision_depends_on` is an optional YAML list of full DR codes that this decision logically depends on (e.g. `["GDR-KI-ARCADIA-001"]`). Cross-scope (cross-repo) references are permitted. Those edges form one directed acyclic graph across the whole collection, and body prose cites only backward, both under [Dependency graph](#dependency-graph). Omit the field when there are no dependencies.
 - `shared_record: true` is an optional, narrow marker for one decision mirrored across approved repositories. Shared identity is the deterministic projection of decision-owned frontmatter in this fixed order — `id`, `title`, `date`, `status`, `decision_type`, `decision_type_url`, optional `decision_depends_on`, `shared_record` — followed by the complete body with LF line endings. `note_type` is the sole excluded container field; no category of repository-local metadata is implicitly excluded, and every unknown frontmatter field fails closed. The record keeps its canonical foreign ID. It is excluded from a receiving collection’s serial series only when that prefix+scope has no ordinary local records; otherwise it remains part of the local sequence. Use the marker in every copy, including the canonical source copy. It does not make ordinary local records shareable or relax any other metadata, body, index, or identity rule.
 
 ## Sections
@@ -173,6 +187,20 @@ The index file — `Decisions.md` in a KB, `README.md` in a code repo (GitHub re
 Each item links the record by its ID and gives a short gloss of what it decides. Per-record dates and maintenance status live in each record's frontmatter, not in the index. There is no decision lifecycle marker — records are living and present-state.
 
 CONFORM may append a missing entry or restore a link target only for a recognised, regular, non-symlink record whose canonical filename is deterministically known. It preserves existing entry order, numbering markers, and unrelated index prose; stale links, duplicates, ordering, unordered links, and entries for non-canonical records remain human review.
+
+## Dependency graph
+
+`decision_depends_on` states which records a decision rests on. Taken together those edges form one directed graph over the whole collection, and it MUST be acyclic. This is a property of the collection rather than of any one record, so it is checked across every prefix at once: the ascending-serial rule constrains order only within a single prefix, and in a mature collection most dependency edges cross prefixes, where nothing else constrains them at all.
+
+**Every target in a scope this collection owns must exist.** A dependency on a record the collection does not hold is either a typo or a citation of something renumbered or removed, and either way it is a dead end for the reader who follows it. Cross-scope (cross-repo) targets are permitted and are not resolved here, because the collection holding them is not the collection being checked (mechanical — DEPENDS-1).
+
+**No record may depend on itself, directly or through a chain.** A cycle asserts that each record in it must be read before the others, which no reading order satisfies. It usually means one edge is not a dependency at all but a cross-reference: two records share a subject, so each names the other, and only one of them actually rests on the other. Fix it by dropping the weaker edge, or — where the two genuinely cannot be reconsidered independently — by merging them into the one record that owns the concern (mechanical — DEPENDS-2).
+
+**A dependency appears before its dependent in the index.** Reveal order exists so that reading top to bottom never asks for a decision on trust, and an edge pointing back up the list contradicts that. The usual fix is to move the dependent later; where the edge itself is wrong, the field changes instead (mechanical — DEPENDS-3).
+
+**Body prose cites only backward.** A record names a lower-numbered record of its own type, never a higher-numbered one. The declared edges are a reader's map; the prose is the argument, and an argument that points at a decision taken later is one a future author has to come back and edit every time something downstream lands — which is how a record acquires the running commentary a living present-state record is supposed to be free of. Where a later record extends, narrows or settles something, the later record says so, because it is the one that knows (mechanical — DEPENDS-4).
+
+Reclassifying a record — changing its prefix because it turned out to be about product rather than architecture, say — moves every edge it carries from inside one prefix to across two, so that is the moment the graph most needs rechecking. Renumbering a series moves the field's codes along with every other citation of the shifted record, in the same change.
 
 ## Writing guidance
 

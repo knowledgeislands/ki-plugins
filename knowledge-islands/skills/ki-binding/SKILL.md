@@ -14,7 +14,7 @@ argument-hint: 'audit [project] | conform [project] | help | educate [project] |
 
 # Knowledge Islands MCP binding
 
-`ki-binding` owns the portable canonical MCP declaration, not any vendor's configuration files. The one source resolves explicit `$KI_MCP_SOURCE` first, then `$XDG_CONFIG_HOME/ki/mcp-servers.yaml` (default `~/.config/ki/mcp-servers.yaml`). Each `mcpServers` entry has a unique `name`, non-empty `clients:`, and one closed stdio or URL definition. URL entries declare one supported transport for every targeted client.
+`ki-binding` owns the portable canonical MCP declaration, not any vendor's configuration files. The one source resolves explicit `$KI_MCP_SOURCE` first, then `$XDG_CONFIG_HOME/ki/mcp-servers.yaml` (default `~/.config/ki/mcp-servers.yaml`). Each `mcpServers` entry has a unique `name`, non-empty `clients:`, and one closed stdio or URL definition. URL entries may declare typed literal or 1Password-reference headers, every URL entry declares one supported transport for each targeted client, and either definition may select the bounded `ephemeral` or `keep-alive` lifecycle.
 
 The source has client tokens because it serves several clients, but a client adapter owns that client's native configuration and safe writer. This root itself audits only the vendor-neutral mcporter projection. Read [the standard](references/standards-cross-surface-binding.md), [generated rubric](references/rubric.md), and [sources](references/sources.md) for the contract.
 
@@ -43,5 +43,5 @@ Explain this portable boundary and stop without changing anything.
 ## Runtime bindings and renderer composition
 
 - `ki-binding-claude` owns Claude Code, Desktop, Cowork, web convention, and the plugin builder.
-- `ki-binding-codex` owns Codex TOML comparison and the merge-safe native renderer.
+- `ki-binding-chatgpt` owns Codex TOML comparison and the merge-safe native renderer.
 - `ki-binding-chezmoi` composes this root with `ki-repo-dotfiles-chezmoi` for a renderer-specific source-repository path.

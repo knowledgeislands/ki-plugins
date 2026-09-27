@@ -8,7 +8,7 @@ ki-supported-runtimes: [claude-code]
 ki-shared-dependencies: [ki-skills:rubric]
 description: >
   Audit non-secret Claude Code repository evidence—instructions, rules, settings, imports, and MCP
-  declarations—for portable tokenomics. Use `ki-tokenomics` for policy and `ki-tokenomics-codex` for Codex
+  declarations—for portable tokenomics. Use `ki-tokenomics` for policy and `ki-tokenomics-chatgpt` for Codex
   evidence; effective session state is outside this filesystem audit.
 argument-hint: 'audit | conform | educate | refresh | help'
 ---

@@ -31,7 +31,8 @@ test('the structured catalogue preserves every decision-record criterion', () =>
     'FM',
     'TYPE-FIT',
     'BODY',
-    'INDEX'
+    'INDEX',
+    'DEPENDS'
   ])
   expect(items.map((item) => item.code)).toEqual([
     'FILENAME-0',
@@ -61,7 +62,11 @@ test('the structured catalogue preserves every decision-record criterion', () =>
     'INDEX-4',
     'INDEX-6',
     'INDEX-7',
-    'INDEX-8'
+    'INDEX-8',
+    'DEPENDS-1',
+    'DEPENDS-2',
+    'DEPENDS-3',
+    'DEPENDS-4'
   ])
   expect(items.filter((item) => item.judgment)).toHaveLength(9)
   expect(items.filter((item) => item.mechanical).every((item) => Boolean(item.mechanical?.remediation))).toBe(true)
@@ -174,4 +179,59 @@ test('repository-root Markdown is not treated as decision records', () => {
   expect(filenameItem?.mechanical?.audit.run(filenameContext as NonNullable<typeof filenameContext>)).toEqual([
     expect.objectContaining({ status: 'PASS' })
   ])
+})
+
+test('a scope may begin with a digit when the segment carries a letter', () => {
+  const repository = mkdtempSync(join(tmpdir(), 'ki-decision-records-digit-scope-'))
+  temporaryDirectories.push(repository)
+  const directory = join(repository, 'docs', 'decisions')
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(join(repository, '.ki.toml'), '[skills.ki-decision-records]\n')
+  writeFileSync(
+    join(directory, 'README.md'),
+    '# Decisions\n\n1. [GDR-5GE-P2-001](GDR-5GE-P2-001-adopting-decision-records.md) — Adopting Decision Records\n'
+  )
+  writeFileSync(
+    join(directory, 'GDR-5GE-P2-001-adopting-decision-records.md'),
+    `---
+id: GDR-5GE-P2-001
+title: 'Adopting Decision Records'
+date: 2026-09-25
+status: current
+decision_type_url: https://knowledgeislands.info/specifications/decision-records/gdr
+decision_type: governance
+---
+
+# GDR-5GE-P2-001: Adopting Decision Records
+
+## Context
+
+The repository code leads with a digit.
+
+## Decision
+
+The collection uses that code unchanged as its scope.
+
+## Consequences
+
+One identifier serves the roadmap and the records.
+`
+  )
+
+  const session = catalogue.createSession({ mode: 'audit', repository, userHome: tmpdir(), configuration: {} })
+  const rootContext = session.subjects[1]?.context() as NonNullable<DecisionRecordsRubricContext>
+  const filename = families.find((candidate) => candidate.code === 'FILENAME')
+  const root = families.find((candidate) => candidate.code === 'ROOT')
+
+  expect(
+    filename?.items
+      .find((item) => item.code === 'FILENAME-0')
+      ?.mechanical?.audit.run(filename.selectContext(rootContext))
+  ).toEqual([expect.objectContaining({ status: 'PASS' })])
+  expect(
+    root?.items
+      .find((item) => item.code === 'ROOT-1')
+      ?.mechanical?.audit.run(root.selectContext(rootContext))
+      .some((outcome) => outcome.status === 'VIOLATION')
+  ).toBe(false)
 })

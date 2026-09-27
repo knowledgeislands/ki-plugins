@@ -24,6 +24,7 @@ export type WebsiteCoreContext = {
   readonly sitePackageState: PackageState
   readonly scripts: Readonly<Record<string, string>>
   readonly siteScripts: Readonly<Record<string, string>>
+  readonly turboTasks: readonly string[]
   readonly gitignore: string | null
 }
 
@@ -33,6 +34,23 @@ const safeFile = (path: string): boolean => {
     return state.isFile() && !state.isSymbolicLink()
   } catch {
     return false
+  }
+}
+
+const turboTasks = (root: string): readonly string[] => {
+  const path = join(root, 'turbo.json')
+  if (!safeFile(path)) return []
+  try {
+    const source = readFileSync(path, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|\s)\/\/.*$/gm, '$1')
+      .replace(/,\s*([}\]])/g, '$1')
+    const parsed = JSON.parse(source) as { tasks?: unknown }
+    return parsed.tasks && typeof parsed.tasks === 'object' && !Array.isArray(parsed.tasks)
+      ? Object.keys(parsed.tasks)
+      : []
+  } catch {
+    return []
   }
 }
 
@@ -62,7 +80,8 @@ const contextFor = (
   selection: WebsiteSelection,
   site: WebsiteSite,
   packageEvidence: ReturnType<typeof parsePackage>,
-  gitignore: string | null
+  gitignore: string | null,
+  declaredTurboTasks: readonly string[]
 ): WebsiteCoreContext => {
   const sitePackagePath = site.root === '.' ? 'package.json' : `${site.root}/package.json`
   const sitePackageEvidence =
@@ -92,6 +111,7 @@ const contextFor = (
     ...packageEvidence,
     sitePackageState: sitePackageEvidence.packageState,
     siteScripts: sitePackageEvidence.scripts,
+    turboTasks: declaredTurboTasks,
     gitignore
   }
 }
@@ -108,8 +128,9 @@ export const createWebsiteCoreSession = ({
     : { packageState: 'missing' as const, scripts: {} }
   const gitignore =
     available && safeFile(join(root, '.gitignore')) ? readFileSync(join(root, '.gitignore'), 'utf8') : null
+  const declaredTurboTasks = available ? turboTasks(root) : []
   const contexts = selection.sites.map((site) =>
-    contextFor(root, available, publication, selection, site, packageEvidence, gitignore)
+    contextFor(root, available, publication, selection, site, packageEvidence, gitignore, declaredTurboTasks)
   )
   const primary = contexts.find((context) => context.primary) ?? contexts[0]
   if (!primary) throw new Error('website selection produced no site context')

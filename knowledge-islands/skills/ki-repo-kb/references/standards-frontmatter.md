@@ -22,7 +22,7 @@ The authoritative definition of frontmatter fields for all notes in a Knowledge 
 | `tags` | Optional | Topical / temporal / source labels (`topic/*`, `date/*`, `source/*`) — retained, but never the **kind** classifier |
 | `author` | Recommended | `AI-assisted` / `Manual` / `Mixed` |
 
-† NOTE-1c delegates metadata classification for `Streams/Roadmap/**`, `Streams/Housekeeping/**`, direct batch records under `+/_BATCHES/`, active `+/_CHECKPOINTS/<thread>.md` checkpoints, and peer-qualified `TRD-*.md` protocol records under either staging area to their owning skills. These records still undergo YAML, key-shape, and declared required-field checks. Nested checkpoint paths, including `_RETIRED`, are not delegated. Local session digests under `-/_DIGESTS/` remain governed here.
+† NOTE-1c delegates metadata classification for `Streams/Roadmap/**`, `Streams/Housekeeping/**`, direct batch records under `+/_BATCHES/`, active `+/_CHECKPOINTS/<thread>.md` checkpoints, canonical acquisition records under `+/_ACQUIRE/<adapter>/*.md`, and peer-qualified `TRD-*.md` protocol records under either staging area to their owning skills. These records still undergo YAML, key-shape, and declared required-field checks. Nested checkpoint or acquisition paths, including `_RETIRED`, are not delegated. Local session digests under `-/_DIGESTS/` remain governed here.
 
 ‡ Component-specific status values remain under their component owners while KB-wide metadata reconciliation is pending.
 

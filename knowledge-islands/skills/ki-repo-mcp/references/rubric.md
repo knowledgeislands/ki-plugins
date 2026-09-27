@@ -13,21 +13,23 @@ Line-by-line criteria for auditing ki-repo-mcp. Classifications are derived from
 - [DOC — MCP documentation](#doc--mcp-documentation)
 - [CFG — Configuration](#cfg--configuration)
 - [UTIL — Shared utilities](#util--shared-utilities)
+- [SHARED — Shared-code projection](#shared--shared-code-projection)
 - [TEST — Test wiring](#test--test-wiring)
 - [TOOL — Tool surface](#tool--tool-surface)
 - [PROTO — Protocol profile](#proto--protocol-profile)
 - [PKG — Package entry points](#pkg--package-entry-points)
 - [SCR — MCP scripts](#scr--mcp-scripts)
 - [CI — Smoke CI](#ci--smoke-ci)
+- [DIST — MCP source distribution](#dist--mcp-source-distribution)
 - [RUBRIC — Generated rubric publication](#rubric--generated-rubric-publication)
 
 ## KI — Applicability and declaration
 
 → [standard](standards-mcp-servers.md#applicability)
 
-Scope activation and the keyless ki-repo-mcp governance declaration.
+Scope activation and the optional shared-code profile declaration.
 
-- **KI-CONFIG [M] — MCP applicability and declaration** — Only [skills.ki-repo-mcp] declares this optional standard applicable. Detected MCP-shaped source is coverage evidence for ki-repo, not local selection authority; declared keys are rejected because this skill has no configuration options. (standards-mcp-servers.md#applicability)
+- **KI-CONFIG [M] — MCP applicability and declaration** — Only [skills.ki-repo-mcp] declares this optional standard applicable. Its optional profile selects one supported whole-file shared-code projection; every other key is rejected. (standards-mcp-servers.md#applicability)
   - _Remediation:_ diagnostic — Declare the selected standard through the repository configuration owner.
 
 ## LAY — Source layout
@@ -81,6 +83,15 @@ The shared access, annotation, and audit-log utilities are present.
   - _Review prompt:_ Verify audit logging never captures secrets and tool errors are errorResult envelopes so the audit wrapper sees them.
   - _Outcomes:_ conforming; gap; exclusion
   - _Conforming guidance:_ Make security-sensitive changes only with the responsible authority, or record a named gap or explicit exclusion.
+
+## SHARED — Shared-code projection
+
+→ [standard](standards-mcp-shared-code.md#managed-profile-contract)
+
+Optional skill-owned vendored MCP utilities and explicit repository-owned seams.
+
+- **SHARED-1 [M] — Declared shared-code projection** — An optional declared MCP shared-code profile agrees byte-for-byte with its skill-owned manifest while local extension files remain outside the managed set. (standards-mcp-shared-code.md#managed-profile-contract)
+  - _Remediation:_ automatic
 
 ## TEST — Test wiring
 
@@ -145,6 +156,19 @@ Smoke-test wiring is mechanically visible while execution remains an explicit ex
   - _Remediation:_ diagnostic — Add the smoke invocation to the CI workflow when the declared smoke script exists.
 - **CI-2 [M] — MCP smoke execution** — When ki:test:smoke is defined, its execution remains an explicit verification step outside hosted audit and conform. (standards-mcp-servers.md#8-packagejson)
   - _Remediation:_ diagnostic — Run the declared smoke script explicitly and investigate its result outside hosted audit or conform.
+
+## DIST — MCP source distribution
+
+→ [standard](standards-mcp-distribution.md)
+
+Versioned source releases provide immutable build and provenance evidence without package publication.
+
+- **DIST-1 [M + J] — Source-release readiness** — The repository distinguishes valid development source from annotated release evidence while warning on invalid or malformed source-release evidence. (standards-mcp-distribution.md)
+  - _Remediation:_ diagnostic — Development-only INFO needs no repair. Repair invalid package, build, lockfile, repository, or HEAD evidence, but leave versions, tags, releases, repository identity, and workflow changes to the repository owner.
+  - _Evidence scope:_ Repository release settings, source accessibility, stable-release marker, and installer provenance receipt.
+  - _Review prompt:_ Verify public and private source access without changing visibility, ensure omitted versions resolve only the owner-designated latest stable release, and compare the installer receipt with the selected tag and commit.
+  - _Outcomes:_ ready; development-only; provenance-mismatch; exclusion
+  - _Conforming guidance:_ The owner cuts or designates releases; CONFORM must not mint versions or tags, publish a release, change repository identity, or rewrite workflows.
 
 ## RUBRIC — Generated rubric publication
 

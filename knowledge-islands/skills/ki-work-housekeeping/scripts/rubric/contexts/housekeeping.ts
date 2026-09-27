@@ -3,7 +3,7 @@ import { basename, join, relative, resolve } from 'node:path'
 import type { AuditOutcome, RubricContextOptions, RubricPublicationContext, RubricSession } from '../types.ts'
 import { evaluateHousekeepingSchedule, FULL_COMMIT_REF, type HousekeepingSchedule } from './schedule.ts'
 
-const TEMPLATE_ID = /^[A-Z][A-Z0-9-]{1,23}-HK-\d{3,}$/
+const TEMPLATE_ID = /^[A-Z0-9][A-Z0-9-]{1,23}-HK-\d{3,}$/
 const RUN_ID = /^[A-Z][A-Z0-9-]{1,31}-\d{3,}$/
 const CADENCE = /^P[1-9]\d*[DWM]$/
 const DATE = /^\d{4}-\d{2}-\d{2}$/

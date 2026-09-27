@@ -17,19 +17,18 @@ The [generated rubric](rubric.md) is the checkable publication of this standard.
 
 ## Source and installed boundaries
 
-A **source harness** is one versioned repository that co-locates five agentic shelves:
+A **source harness** is one versioned repository that co-locates four agentic shelves:
 
 | Directory    | Source concern                                            |
 | ------------ | --------------------------------------------------------- |
 | `skills/`    | Agent Skills, optionally grouped by semantic category     |
 | `subagents/` | Agent definitions and their source organisation           |
-| `mcp/`       | MCP server packages or a shelf routing to their own repos |
 | `evals/`     | Behavioural evaluation scenarios and results              |
 | `hooks/`     | Runtime hook payloads and installation material           |
 
 These shelves are authored and reviewed together, but not every shelf is part of the current installed payload.
 
-A **compatible installed harness** is a verified regular-file payload acquired and registered by the `ki` host. The current payload contains `skills/`, `subagents/`, and `hooks/`. MCP servers and evals remain source-harness concerns until the host publishes those capability kinds.
+A **compatible installed harness** is a verified regular-file payload acquired and registered by the `ki` host. The current payload contains `skills/`, `subagents/`, and `hooks/`. Evals remain a source-harness concern until the host publishes that capability kind. MCP servers are separate repositories and are not a harness capability kind.
 
 The installed payload, not a checkout, runtime projection, cache, or repository-local `.ki/` directory, is the operation source. A nearby checkout never becomes authoritative because a name matches or a symlink points to it.
 
@@ -39,7 +38,7 @@ The source repository therefore defines capability semantics and carries their s
 
 ## Capability publication
 
-The collection pass requires every skill to carry a valid `ki-applicability` classification and publishes that classification for each capability. It enforces exactly `ki-repo` and `ki-authoring` as baseline, every process as invocation-only, and governance capabilities outside invocation-only. It also requires `ki-repo` to be the sole owner of a non-empty `ki-detects` registry, resolves every target, and proves bidirectional agreement between the registry and all skills classified as detected. Missing or contradictory applicability metadata makes publication unsafe rather than silently omitting a capability.
+The collection pass requires every skill to carry a valid `ki-applicability` classification and publishes that classification for each capability. Every process is invocation-only, governance capabilities cannot be invocation-only, and `ki-repo` is the sole detector owner. For the source harness declaring `prefix = "ki"`, the complete baseline is exactly `ki-repo` and `ki-authoring`; its non-empty `ki-detects` registry must resolve every target and agree bidirectionally with all skills classified as detected. Other provider prefixes do not own baseline skills and are not required to republish the KI baseline or detector registry. Missing or contradictory applicability metadata makes publication unsafe rather than silently omitting a capability.
 
 A compatible harness publishes typed capabilities. The current recognised capability kind is `skill`; the other source shelves reserve their kinds until host support lands.
 
@@ -53,21 +52,22 @@ A populated skills shelf publishes one generated capability catalogue between th
 
 AUDIT compares the marker-bounded bytes with the deterministic rendering. Missing, renamed, removed, or changed skills therefore stale the publication mechanically. CONFORM may add a missing generated section or replace one exact marker-bounded section while preserving authored content around it. It refuses malformed skill frontmatter, unknown dependencies, duplicate capability names, unsafe files, and missing, duplicate, partial, or reversed markers rather than guessing at a repair. `ki-skills` remains the owner of individual skill quality and frontmatter semantics; this standard uses those source facts only to publish the Harness inventory.
 
+That split has a verification consequence worth stating. Editing a `SKILL.md` description is authoring against `ki-skills`, and an author who audits with `ki-skills` alone gets a clean pass over a catalogue their edit has just staled, because no skill-scoped gate but this one reads `skills/README.md`. A frontmatter change is therefore complete only when `ki repo conform --skill ki-repo-harness` has regenerated the catalogue, or a whole-repository `ki repo audit` has confirmed CAP-2 still passes.
+
 The root `README.md` does not have to repeat a numeric skill summary. When it uses the recognised complete claim — total Agent Skills followed by governance and process counts — AUDIT compares all three values with the same canonical frontmatter inventory. CONFORM replaces only those three numeric tokens when exactly one complete claim is present and stale, preserving its links and surrounding authored prose. An absent claim is not applicable; incomplete or multiple numeric claims, unreadable source evidence, and malformed canonical frontmatter remain diagnostic because a safe replacement cannot be inferred.
 
 ## Source-harness layout
 
-Every source harness has all five directories at its physical repository root, each with a physical `README.md` explaining its purpose and status:
+Every source harness has all four directories at its physical repository root, each with a physical `README.md` explaining its purpose and status:
 
 ```text
 skills/       README.md
 subagents/    README.md
-mcp/          README.md
 evals/        README.md
 hooks/        README.md
 ```
 
-An empty shelf is valid. Its README distinguishes intentional reserved structure from accidental absence.
+An empty shelf is valid. Its README distinguishes intentional reserved structure from accidental absence. MCP server source does not belong in a harness shelf; each server remains in its independently governed `mcp-*` repository.
 
 The source root also contains physical `CLAUDE.md`, `ROADMAP.md`, and `.ki.toml` files. Symlinked, dangling, directory-valued, device, or unreadable evidence is unsafe and does not satisfy a physical-file or physical-directory requirement.
 
@@ -87,7 +87,7 @@ Every discovered skill name begins with the declared Harness prefix followed by 
 
 The source-harness `CLAUDE.md` is its runtime-bound orientation. It:
 
-1. explains what the source harness is and names all five shelves;
+1. explains what the source harness is and names all four shelves;
 2. gives the current status of every shelf;
 3. routes working conventions to the skill or document that owns each concern;
 4. lists the direct `ki` audit, conform, and rubric-publication commands plus the repository test and TypeScript gates; and

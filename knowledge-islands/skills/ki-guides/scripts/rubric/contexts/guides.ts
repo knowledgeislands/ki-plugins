@@ -10,6 +10,7 @@ export type GuidesLayoutContext = {
   readonly directoryExists: boolean
   readonly indexExists: boolean
   readonly headingIssues: readonly string[]
+  readonly escapingLinks: readonly string[]
 }
 
 export type GuidesBoundaryContext = {
@@ -61,6 +62,33 @@ const guideFiles = (root: string, directory: string): string[] => {
   return files.sort()
 }
 
+/**
+ * Relative links from one guide to a Markdown document outside the collection.
+ *
+ * A guide must read completely without following a link, so the collection can
+ * be moved or published as a unit. Code is not a document: a path to a script,
+ * a directory, or a configuration file names the subject the guide explains,
+ * and only a link whose target is another `.md` prose document breaks the rule.
+ * Sibling guides are the exception the collection is navigated by.
+ */
+const escapingLinks = (root: string, file: string, content: string): string[] => {
+  const guidesRoot = join(root, GUIDES_DIRECTORY)
+  const from = join(root, file, '..')
+  const found: string[] = []
+  for (const match of content.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
+    const target = match[1] as string
+    if (/^(?:[a-z][a-z0-9+.-]*:|#|\/)/i.test(target)) continue
+    const path = target.split('#')[0] as string
+    if (!path.endsWith('.md')) continue
+    const resolved = resolve(from, path)
+    const inside = relative(guidesRoot, resolved)
+    if (inside && (isAbsolute(inside) || inside === '..' || inside.startsWith('../'))) {
+      found.push(`${file} -> ${target}`)
+    }
+  }
+  return found
+}
+
 const h1Count = (content: string): number => {
   let fenced = false
   let count = 0
@@ -83,12 +111,12 @@ export const createGuidesSession = ({
   const directoryExists = safeDirectory(root, directory)
   const indexPath = join(directory, INDEX_FILE)
   const indexExists = directoryExists && isFile(indexPath)
-  const headingIssues = directoryExists
-    ? guideFiles(root, directory).filter((file) => h1Count(readFileSync(join(root, file), 'utf8')) !== 1)
-    : []
+  const files = directoryExists ? guideFiles(root, directory) : []
+  const headingIssues = files.filter((file) => h1Count(readFileSync(join(root, file), 'utf8')) !== 1)
+  const escaping = files.flatMap((file) => escapingLinks(root, file, readFileSync(join(root, file), 'utf8')))
   const context: GuidesRubricContext = {
     rubric: { publication },
-    layout: { directoryExists, indexExists, headingIssues },
+    layout: { directoryExists, indexExists, headingIssues, escapingLinks: escaping },
     boundary: { retiredRoots: RETIRED_ROOTS.filter((path) => existsSync(join(root, path))) },
     judgment: {}
   }
