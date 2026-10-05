@@ -1,36 +1,20 @@
 # ki-plugins
 
-The Knowledge Islands **Claude plugin marketplace** — the Cowork-surface packaging of the [ki-agentic-harness](https://github.com/knowledgeislands/ki-agentic-harness).
+## Retired and archived
 
-## Status
+This repository was retired on 5 October 2026 and is archived read-only on GitHub. It was a generated Claude plugin marketplace that projected the [ki-agentic-harness](https://github.com/knowledgeislands/ki-agentic-harness) skills and governance agents onto Claude Cowork. It is no longer refreshed, enabled or treated as a distribution surface, and it receives no further changes.
 
-**Paused.** This projection is retained for possible future Cowork use, but it is not currently refreshed, developed, or treated as an active distribution surface. Its generated contents remain intact; resume it only when Cowork plugin distribution becomes useful again.
+## Install Knowledge Islands skills instead
 
-This repo is a **generated projection**, not a source. The harness is the single source of truth for the Knowledge Islands skills and agents; this marketplace is a lossy, per-surface projection of it (see `ADR-KI-HARNESS-005`). Its contents are produced by the harness's generator and must never be hand-edited:
+- **The `ki` CLI** is the main installer. It acquires the harness and installs its skills for your agents; see [`tools-ki`](https://github.com/knowledgeislands/tools-ki).
+- **Quick skills-only route:** outside a Knowledge Islands setup, add individual skills directly from the harness:
 
-```bash
-# from a ki-agentic-harness checkout
-bun run ki:binding:build-plugin /path/to/ki-plugins
-```
+  ```sh
+  npx skills add knowledgeislands/ki-agentic-harness -s <skill> -a <agent>
+  ```
 
-## Layout
-
-```text
-.claude-plugin/marketplace.json      # marketplace manifest → one plugin: knowledge-islands
-knowledge-islands/
-  .claude-plugin/plugin.json         # plugin manifest (name, version, description, author)
-  skills/                            # the ki-* governance skills (generated, verbatim)
-  agents/                            # the governance agents (generated, flattened)
-```
-
-## Scope (v1) — skills + agents only
-
-MCP servers are **deferred**. The Knowledge Islands MCP servers are host-local (they read host filesystem paths and resolve secrets via 1Password), and Cowork runs plugins in a gVisor sandbox that cannot reach the host. Skills and agents are plain files and port cleanly; the server half needs sandbox-portability work first (bundle a self-contained server via `${CLAUDE_PLUGIN_ROOT}`, mount the KB, or expose authenticated remote endpoints). Bundled skill `scripts/` ship as files but are not expected to run inside the sandbox.
-
-## Enablement
-
-Registered and toggled per surface by the harness's `ki-binding` skill — it adds this repo under `extraKnownMarketplaces` and sets `"knowledge-islands@ki-plugins": true` in Cowork's `cowork_settings.json`. Do not wire it by hand; run `ki-binding` CONFORM.
+The retirement decision is recorded in the harness decision collection (`ADR-KI-HARNESS-015`).
 
 ## License
 
-Proprietary — see [LICENSE](LICENSE). Public visibility does not grant a license to use, copy, or redistribute.
+Proprietary - see [LICENSE](LICENSE). Public visibility does not grant a license to use, copy, or redistribute.
